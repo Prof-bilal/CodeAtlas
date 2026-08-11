@@ -1,0 +1,32 @@
+{
+  "name": "@atlas/usage",
+  "version": "0.0.0",
+  "description": "Usage / credits tracking for CodeAtlas — local, tri-state (actual/estimated/unknown) token & cost accounting behind a UsagePort.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "biome format --write ."
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "@atlas/core": "workspace:*",
+    "@atlas/shared": "workspace:*"
+  }
+}
