@@ -1,6 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { Budget, UsageScope } from "@atlas/core";
-import { colNumber, colString, count, type Row } from "./row";
+import { type Row, colString, count } from "./row";
 
 /** CRUD for the `Budgets` table (soft targets — never block calls). */
 export class BudgetRepository {
@@ -37,9 +37,9 @@ export class BudgetRepository {
   }
 
   public all(): Budget[] {
-    return (this.db.prepare("SELECT * FROM Budgets ORDER BY scope_kind, scope_value").all() as Row[]).map(
-      budgetFromRow,
-    );
+    return (
+      this.db.prepare("SELECT * FROM Budgets ORDER BY scope_kind, scope_value").all() as Row[]
+    ).map(budgetFromRow);
   }
 
   public clear(): number {

@@ -33,9 +33,11 @@ README.md
 | `docs/CONTEXT_SDK.md` | The Context API/SDK — the single read interface consumers use. |
 | `docs/DEPENDENCIES.md` | Allowed import directions + dependency-add policy. |
 | `docs/AI_PROVIDERS.md` | Provider interface & adapters. |
+| `docs/USAGE.md` | AI Usage & Credits: tri-state actual/estimated/unknown provenance, pricing abstraction, budgets/limits, collection seams, `atlas usage`. |
 | `docs/AGENT_ORCHESTRATOR.md` | Unified AI CLI (planned). |
 | `docs/AGENT_SESSIONS.md` | Agent Session Manager (implemented): session lifecycle, states, CLI commands, failure/shutdown behavior. |
 | `docs/AGENT_TOOLKIT.md` | Agent Toolkit (planned): curated tool registry/install/config/security. |
+| `docs/TOOL_REGISTRY.md` | Tool Registry (implemented, Task 19): record schema, per-field provenance, shipped catalog + local overlay, SDK surface. |
 | `docs/CLI.md` | The `atlas` CLI contract. |
 | `docs/MCP.md` | The MCP server: configuration + full tool reference. |
 | `docs/VSCODE.md` | The VS Code extension (`@atlas/extension`): what it does and how it consumes the SDK. |
@@ -62,6 +64,8 @@ README.md
   `docs/DEPENDENCIES.md` (ownership + allowed imports).
 - **Touch an indexer/analyzer?** Read `docs/CONTEXT.md` (the pipeline) +
   `docs/MODULES.md`.
+- **Touch provider calls / usage / credits?** Read `docs/AI_PROVIDERS.md` +
+  `docs/USAGE.md`.
 - **Tooling/setup?** Read `docs/DEVELOPMENT.md`. **Contributing?** Read
   `docs/CONTRIBUTING.md`.
 - **Behavior change?** Read `docs/TESTING.md` + `docs/CHANGE_POLICY.md`.

@@ -31,18 +31,23 @@ enforced by ESLint (`no-restricted-imports`) — see `docs/DEPENDENCIES.md`.
 before doing anything. Its companion `docs/FEATURE_STATUS.md` is the feature
 status table. Never assume planned features exist; verify against code.
 
-Non-obvious facts (verified as of 2026-08-09):
+Non-obvious facts (verified as of 2026-08-11):
 
 - `@atlas/context` (context ranking/assembly) is **intentionally a stub** — its
   methods throw `ComingSoonError` by design (ADR-001). Do **not** "fix" it.
-- The CLI has **eight** subcommands. `atlas search`, `atlas mcp`, and
-  `atlas sessions` are wired (through the **Context SDK**,
-  `@atlas/mcp`, and `createSessionManager()` respectively);
-  `init`/`build`/`update`/`explain`/`doctor` still print "Coming Soon".
+- The CLI has **nine** subcommands. `atlas search`, `atlas mcp`,
+  `atlas sessions`, and `atlas usage` are wired (through the **Context SDK**,
+  `@atlas/mcp`, `createSessionManager()`, and `createUsageService()`
+  respectively); `init`/`build`/`update`/`explain`/`doctor` still print
+  "Coming Soon".
 - **`createContextSDK` (`@atlas/sdk`)** is the single read interface consumers
   (CLI, MCP, VS Code extension, agents) use to read indexed context. Consumers
   must **not** reach for the SQLite database, `@atlas/search`,
-  `@atlas/storage`, or `@atlas/summary` directly.
+  `@atlas/storage`, or `@atlas/summary` directly. **AI usage/credits**
+  (`@atlas/usage`, tri-state actual/estimated/unknown tokens & cost,
+  budgets/limits) is likewise reached **only** through the SDK
+  (`createUsageService`) — see `docs/USAGE.md` (ADR-009); its store
+  (`.codeatlas/usage.db`) is separate from the context database.
 - **MCP (`@atlas/mcp`) and the VS Code extension (`@atlas/extension`) are
   implemented** thin SDK consumers. The **Agent Orchestrator (Direction B)** is
   mostly planned — the narrow **AI CLI connection layer (`@atlas/agents`,
@@ -57,10 +62,15 @@ Non-obvious facts (verified as of 2026-08-09):
   `createContextSDK`, never the DB directly) and delivers it through the session
   manager (`launch`/`attach` via `SessionPort`). No CLI `atlas context` command
   is wired yet — the follow-up.
-- **Direction C — the Agent Toolkit (`@atlas/toolkit`, `atlas tools`) is
-  entirely [PLANNED]**: a curated, security-gated registry/installer/
-  configurator for open-source developer/AI-agent tools. Do **not** reference
-  it as existing. Design contract: `docs/AGENT_TOOLKIT.md`.
+- **Direction C — the Agent Toolkit (`@atlas/toolkit`, `atlas tools`)**: the
+  **Tool Registry foundation (Task 19) is implemented** — `@atlas/toolkit`
+  behind `ToolRegistryPort` in `core`, composed via `createToolRegistry()` in
+  `@atlas/sdk`: a curated, schema-validated, provenance-auditable catalog
+  (`packages/toolkit/src/catalog.json`) merged with a local overlay. The Tool
+  Manifest, Compatibility Engine, Installer, Configurator, and Security/Trust
+  evaluation remain **[PLANNED]** — do **not** reference them as existing.
+  Design contract: `docs/AGENT_TOOLKIT.md`; registry details:
+  `docs/TOOL_REGISTRY.md`.
 - Pipelines that are implemented and tested: scanner, hashing, manifest,
   parser (TypeScript only — **[PARTIAL]**), graph, SQLite storage, search,
   summaries, cache, providers. Parser known gaps: renamed imports and

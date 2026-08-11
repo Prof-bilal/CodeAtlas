@@ -22,6 +22,21 @@ export type {
   RunStatus,
   TaskPlan,
 } from "./ports/orchestrator.port";
+export type {
+  FieldProvenance,
+  InstallMethod,
+  ProvenanceSource,
+  ToolDependency,
+  ToolField,
+  ToolInstallMethodType,
+  ToolProvenance,
+  ToolRegistryPort,
+  ToolRegistryRecord,
+  ToolRegistrySource,
+  ToolSecurityStatus,
+  ToolSecurityStatusValue,
+  ToolTrustLevel,
+} from "./ports/tool-registry.port";
 export type { CachePort } from "./ports/cache.port";
 export type { ContextBuilderPort } from "./ports/context.port";
 export type { Cycle, GraphPort } from "./ports/graph.port";

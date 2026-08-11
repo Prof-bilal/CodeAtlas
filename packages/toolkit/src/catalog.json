@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "tools": [
+    {
+      "name": "biome",
+      "description": "A fast linter and formatter for JavaScript and TypeScript with import sorting, organization, and first-class editor integration.",
+      "repository": "https://github.com/biomejs/biome",
+      "website": "https://biomejs.dev",
+      "documentation": "https://biomejs.dev/guides/getting-started/",
+      "license": "MIT",
+      "version": "1.9.4",
+      "categories": ["AI Quality", "Developer Productivity", "Code Analysis"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        { "type": "npm", "packageId": "@biomejs/biome" },
+        { "type": "binary", "note": "prebuilt platform binaries from GitHub releases" },
+        { "type": "github-release", "packageId": "biomejs/biome" }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "biomejs",
+      "lastUpdate": "2026-08-01",
+      "stars": 18000,
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "npm registry / GitHub releases as of 2026-08-11, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "GitHub repository activity — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "GitHub stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "ripgrep",
+      "description": "A line-oriented, regex-based recursive search tool that respects gitignore rules and is extremely fast on large trees.",
+      "repository": "https://github.com/BurntSushi/ripgrep",
+      "website": null,
+      "documentation": "https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md",
+      "license": "MIT OR Unlicense",
+      "version": "14.1.1",
+      "categories": ["Code Analysis", "CLI Utilities"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        { "type": "binary", "note": "prebuilt binaries from GitHub releases" },
+        { "type": "github-release", "packageId": "BurntSushi/ripgrep" },
+        { "type": "cargo", "packageId": "ripgrep" }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "BurntSushi",
+      "lastUpdate": "2026-07-01",
+      "stars": 52000,
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "crates.io / GitHub releases as of 2026-08-11, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "GitHub repository activity — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "GitHub stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "uv",
+      "description": "An extremely fast Python package and project manager written in Rust — a drop-in replacement for pip, pip-tools, and virtualenv.",
+      "repository": "https://github.com/astral-sh/uv",
+      "website": "https://docs.astral.sh/uv/",
+      "documentation": "https://docs.astral.sh/uv/",
+      "license": "MIT OR Apache-2.0",
+      "version": "0.5.0",
+      "categories": ["CLI Utilities", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        { "type": "binary", "note": "standalone installer / prebuilt binaries" },
+        { "type": "github-release", "packageId": "astral-sh/uv" },
+        { "type": "pip", "packageId": "uv" },
+        { "type": "cargo", "packageId": "uv" }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "astral-sh",
+      "lastUpdate": "2026-08-05",
+      "stars": 31000,
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "PyPI / GitHub releases as of 2026-08-11, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "GitHub repository activity — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "GitHub stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "semgrep",
+      "description": "Static analysis at editor speed: pattern-based code search, custom rules, and security linting across many languages.",
+      "repository": "https://github.com/semgrep/semgrep",
+      "website": "https://semgrep.dev",
+      "documentation": "https://semgrep.dev/docs/",
+      "license": "LGPL-2.1",
+      "version": "1.100.0",
+      "categories": ["Code Analysis", "AI Quality", "Testing"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        { "type": "pip", "packageId": "semgrep" },
+        { "type": "binary", "note": "prebuilt binaries from GitHub releases" },
+        { "type": "github-release", "packageId": "semgrep/semgrep" },
+        { "type": "npm", "packageId": "@semgrep/cli" }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "semgrep",
+      "lastUpdate": "2026-08-08",
+      "stars": 11500,
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "PyPI / GitHub releases as of 2026-08-11, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "GitHub repository activity — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "GitHub stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "github-mcp-server",
+      "description": "GitHub's official Model Context Protocol server: repository, issue, PR, and Actions tools for MCP-compatible AI agents.",
+      "repository": "https://github.com/github/github-mcp-server",
+      "website": "https://github.com/github/github-mcp-server",
+      "documentation": "https://github.com/github/github-mcp-server/blob/main/README.md",
+      "license": "MIT",
+      "version": "0.9.0",
+      "categories": ["MCP", "Agent Tools"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": ["claude", "gemini", "codex", "opencode"],
+      "installMethods": [
+        { "type": "binary", "note": "prebuilt binaries from GitHub releases" },
+        { "type": "github-release", "packageId": "github/github-mcp-server" },
+        { "type": "mcp", "note": "register as an MCP server for MCP-compatible agents" }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "github",
+      "lastUpdate": "2026-07-20",
+      "stars": 12500,
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "GitHub releases as of 2026-08-11, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "GitHub repository activity — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "GitHub stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    }
+  ]
+}

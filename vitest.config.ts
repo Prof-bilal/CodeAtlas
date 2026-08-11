@@ -1,5 +1,5 @@
-import { defineConfig } from "vitest/config";
 import { fileURLToPath } from "node:url";
+import { defineConfig } from "vitest/config";
 
 /** Resolve an absolute path relative to this repository root. */
 function repoPath(relativePath: string): string {
@@ -22,6 +22,8 @@ const atlasAliases: Record<string, string> = {
   "@atlas/search": repoPath("packages/search/src/index.ts"),
   "@atlas/sdk": repoPath("packages/sdk/src/index.ts"),
   "@atlas/agents": repoPath("packages/agents/src/index.ts"),
+  "@atlas/usage": repoPath("packages/usage/src/index.ts"),
+  "@atlas/toolkit": repoPath("packages/toolkit/src/index.ts"),
   "@atlas/mcp": repoPath("packages/mcp/src/index.ts"),
 };
 

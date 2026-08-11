@@ -208,6 +208,12 @@ importers:
       '@atlas/summary':
         specifier: workspace:*
         version: link:../summary
+      '@atlas/toolkit':
+        specifier: workspace:*
+        version: link:../toolkit
+      '@atlas/usage':
+        specifier: workspace:*
+        version: link:../usage
 
   packages/search:
     dependencies:
@@ -241,6 +247,24 @@ importers:
       '@atlas/hashing':
         specifier: workspace:*
         version: link:../hashing
+
+  packages/toolkit:
+    dependencies:
+      '@atlas/core':
+        specifier: workspace:*
+        version: link:../core
+      '@atlas/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/usage:
+    dependencies:
+      '@atlas/core':
+        specifier: workspace:*
+        version: link:../core
+      '@atlas/shared':
+        specifier: workspace:*
+        version: link:../shared
 
 packages:
 

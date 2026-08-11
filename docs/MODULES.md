@@ -126,6 +126,25 @@ Responsible for **querying** the indexed context with ranked, typo-aware results
   call AI, or walk the file system. It reads data exclusively through the
   `ContextDatabasePort` snapshot.
 
+### AI Usage & Credits — « `@atlas/usage` » — **[IMPLEMENTED]**
+Responsible for recording, aggregating, budgeting, and enforcing AI usage
+(agent, provider, model, task, session, tokens, requests, latency, cost).
+
+- Owns: `UsageService` implementing `UsagePort` (in `core`); the **tri-state
+  provenance model** (`actual`/`estimated`/`unknown` — never guess, `unknown`
+  value is `null`); cost computed at record time; `PricingSource` abstraction
+  (pricing quarantined — no `if (provider === …)` switches in logic); the
+  `StaticPricingSource` built-in estimated table; `UsageStore` on its own
+  SQLite DB (`.codeatlas/usage.db`, `node:sqlite`, separate from the context
+  DB); budgets (soft, never block) and limits (hard, fail-safe via
+  `checkLimit` → deny by default); collection seams `withUsageTracking` /
+  `trackAgentRun` with opt-in token estimation.
+- Must **NOT**: store prompts, API keys, or provider secrets (`taskRef` is an
+  anonymized hash); write to the context database; import feature packages
+  (core + shared only). Privacy/security per `docs/SECURITY.md` + `docs/PRIVACY.md`.
+- Consumers reach it through **`@atlas/sdk`** (`createUsageService`) — never the
+  store/repositories directly. See [USAGE.md](./USAGE.md) + ADR-009.
+
 ---
 
 ## AI provider layer
@@ -185,29 +204,36 @@ and never bypasses the Context SDK.
   slash commands and interactive TTY handling remain planned. See
   [CURRENT_STATE.md](./CURRENT_STATE.md).
 
-### Agent Toolkit — « `@atlas/toolkit` » — **[PLANNED]**
+### Agent Toolkit — « `@atlas/toolkit` » — **[PARTIAL]**
 Responsible for the curated open-source tool ecosystem (Direction C): discover,
-install, configure, and verify high-quality developer/AI-agent tools. **No code
-exists yet** — see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) for the design
-contract. Sub-modules (all **[PLANNED]**):
+install, configure, and verify high-quality developer/AI-agent tools. See
+[AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) for the design contract and
+[TOOL_REGISTRY.md](./TOOL_REGISTRY.md) for the implemented registry. Sub-modules:
 
-- **Tool Registry** — authoritative catalog: metadata, categories, versions,
-  licenses, repositories, install methods, compatibility, configuration,
-  security/trust status. Kept separate from any future recommendation engine.
-- **Tool Manifest** — per-installed-tool state (provenance, verification,
-  applied config, trust level) in `.codeatlas/`, mirroring the Scanner manifest
-  pattern. Owned by `@atlas/toolkit`.
-- **Compatibility Engine** — evaluates a tool's declared requirements (OS,
-  runtime, package manager, AI CLI availability/version via `AgentPort`, MCP,
-  architecture, permissions) against the detected environment.
-- **Tool Installer** — `InstallerPort` + one adapter per ecosystem
-  (npm/pip/cargo/go/binary/GitHub release/MCP); **never** blind execution of
-  third-party install scripts; user-approval flow; provenance recorded.
-- **Tool Configurator** — `ConfiguratorPort` + one adapter per target
-  (Claude/Gemini/Codex/OpenCode/MCP/VS Code); auto-configuration after install;
-  provider logic quarantined in adapters.
-- **Security / Trust** — security status (`verified`/`reviewed`/`community`/
-  `unverified`/`blocked`), trust hierarchy, and the approval gate.
+- **Tool Registry** — **[IMPLEMENTED]** (Task 19): authoritative catalog of
+  *what exists*. `ToolRegistryPort` in `core`; `ToolRegistryService` +
+  `RegistryStore` + `RegistrySchema` in `@atlas/toolkit`; composed by the SDK as
+  `createToolRegistry()`. Curated, schema-validated, per-field
+  provenance-auditable catalog (`src/catalog.json`, versioned) merged with a
+  local overlay by name (user wins, catalog never mutated). Extensible
+  categories; security/trust/install/compat fields declared + validated here but
+  **evaluated by later tasks**; fail-loud validation (no network).
+- **Tool Manifest** — **[PLANNED]** — per-installed-tool state (provenance,
+  verification, applied config, trust level) in `.codeatlas/`, mirroring the
+  Scanner manifest pattern. Owned by `@atlas/toolkit`.
+- **Compatibility Engine** — **[PLANNED]** — evaluates a tool's declared
+  requirements (OS, runtime, package manager, AI CLI availability/version via
+  `AgentPort`, MCP, architecture, permissions) against the detected environment.
+- **Tool Installer** — **[PLANNED]** — `InstallerPort` + one adapter per
+  ecosystem (npm/pip/cargo/go/binary/GitHub release/MCP); **never** blind
+  execution of third-party install scripts; user-approval flow; provenance
+  recorded.
+- **Tool Configurator** — **[PLANNED]** — `ConfiguratorPort` + one adapter per
+  target (Claude/Gemini/Codex/OpenCode/MCP/VS Code); auto-configuration after
+  install; provider logic quarantined in adapters.
+- **Security / Trust** — **[PLANNED]** — security status
+  (`verified`/`reviewed`/`community`/`unverified`/`blocked`), trust hierarchy,
+  and the approval gate.
 - Must **NOT**: import feature packages directly (core + shared only), bundle or
   fork third-party tools into the repository, auto-install without explicit
   user approval, or execute arbitrary `install.sh`. Configuration writes to
@@ -240,8 +266,10 @@ Responsible for the **stable programmatic interface** through which consumers
 Responsible for the command-line interface.
 
 - Owns: `atlas` program, subcommands, and (planned) `/agent` router entry.
-- Current state: `search` runs through the Context SDK and `mcp` starts the
-  MCP server; `init`/`build`/`update`/`explain`/`doctor` print "Coming Soon".
+- Current state: `search` runs through the Context SDK, `mcp` starts the MCP
+  server, `sessions` manages agent sessions (`createSessionManager`), and
+  `usage` reports AI usage & credits (`createUsageService`); the other five
+  (`init`/`build`/`update`/`explain`/`doctor`) print "Coming Soon".
 - Must **NOT**: contain business logic; it delegates to the SDK (and to
   `@atlas/mcp` to start the server).
 
@@ -291,7 +319,7 @@ Responsible for editor integration.
 | Security of command execution | Agent Orchestrator (`@atlas/agents` connection layer + planned router) — see [SECURITY.md](./SECURITY.md) |
 | Which files are "in scope" | Scanner (files) + Hashing (changes) |
 | What a symbol *is*       | Parser (`Symbol`) + Core entity |
-| Where data lives         | `@atlas/storage` (+ manifest file) |
+| Where data lives         | `@atlas/storage` (+ manifest file, + `@atlas/usage`'s own `usage.db`) |
 | How context gets picked  | `@atlas/context` (stub) |
 | What tools a user may install | Agent Toolkit Registry + Security/Trust (planned) |
 | How tools get installed/configured | Agent Toolkit Installer + Configurator (planned) |
@@ -305,7 +333,7 @@ Responsible for editor integration.
 - **Ports** are how modules communicate — a module never imports another
   feature package's concrete classes.
 - **`core` + `shared`** are the only things feature packages may import
-  (including the planned `@atlas/toolkit` and the implemented `@atlas/agents`).
+  (including `@atlas/toolkit` — registry implemented — and `@atlas/agents`).
 - **`sdk`** is what `cli`, `mcp`, and the VS Code extension (`apps/extension`)
   consume for context; `cli` may additionally import `@atlas/mcp` to start the
   server. Planned `atlas tools`/`atlas setup` follow the same rule: delegate to

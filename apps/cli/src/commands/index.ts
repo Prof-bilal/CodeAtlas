@@ -7,6 +7,7 @@ import { registerMcp } from "./mcp";
 import { registerSearch } from "./search";
 import { registerSessions } from "./sessions";
 import { registerUpdate } from "./update";
+import { registerUsage } from "./usage";
 
 /** Register every CLI command on the given program. */
 export function registerCommands(program: Command): void {
@@ -15,6 +16,7 @@ export function registerCommands(program: Command): void {
   registerUpdate(program);
   registerSearch(program);
   registerSessions(program);
+  registerUsage(program);
   registerExplain(program);
   registerDoctor(program);
   registerMcp(program);

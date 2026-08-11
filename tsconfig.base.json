@@ -40,6 +40,8 @@
       "@atlas/search": ["./packages/search/src/index.ts"],
       "@atlas/sdk": ["./packages/sdk/src/index.ts"],
       "@atlas/agents": ["./packages/agents/src/index.ts"],
+      "@atlas/usage": ["./packages/usage/src/index.ts"],
+      "@atlas/toolkit": ["./packages/toolkit/src/index.ts"],
       "@atlas/mcp": ["./packages/mcp/src/index.ts"]
     }
   }

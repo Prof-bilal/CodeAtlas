@@ -1,10 +1,14 @@
 # Agent Toolkit
 
-> **Status: [PLANNED]** — this document is the **design contract** for a new
-> first-class CodeAtlas subsystem. None of the Toolkit code exists yet. Do
-> **not** claim any part of it is implemented. The one implemented building
-> block it will build on is `@atlas/agents` (the AI CLI connection layer) —
-> see [CURRENT_STATE.md](./CURRENT_STATE.md) and [MODULES.md](./MODULES.md).
+> **Status: [PARTIAL]** — this document is the **design contract** for a new
+> first-class CodeAtlas subsystem. As of Task 19 the **Tool Registry foundation
+> is implemented** (see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md)): `@atlas/toolkit`
+> behind `ToolRegistryPort` in `core`, composed by the SDK as
+> `createToolRegistry()`. **Every other Toolkit component in this document is
+> still [PLANNED]** — do not claim them as implemented. The one other
+> implemented building block the Toolkit builds on is `@atlas/agents` (the AI
+> CLI connection layer) — see [CURRENT_STATE.md](./CURRENT_STATE.md) and
+> [MODULES.md](./MODULES.md).
 
 ---
 
@@ -107,11 +111,13 @@ flowchart TB
 
 ### Where the Toolkit lives
 
-Planned, consistent with [DEPENDENCIES.md](./DEPENDENCIES.md):
+Consistent with [DEPENDENCIES.md](./DEPENDENCIES.md) (the package + registry
+port now exist; the remaining components are planned):
 
 - A new feature package `@atlas/toolkit` (imports **only** `core` + `shared`),
-  hosting the Registry, Manifest, Compatibility, Installer, Configurator, and
-  Security/Trust services behind **new ports in `core`**.
+  hosting the Registry (**implemented**), and the Manifest, Compatibility,
+  Installer, Configurator, and Security/Trust services behind **new ports in
+  `core`** (planned).
 - A thin Toolkit **CLI surface** (`atlas tools ...`) added in `apps/cli`,
   which delegates to the SDK — never to feature packages directly.
 - SDK wiring (`@atlas/sdk`) composes the Toolkit behind its ports, exactly as
@@ -133,7 +139,9 @@ directly; anything it needs from CodeAtlas context comes through the
 
 ## 3. Tool Registry
 
-**Owner:** `@atlas/toolkit` (planned).
+**Owner:** `@atlas/toolkit` — **[IMPLEMENTED]** (Task 19, registry foundation;
+see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md)). The sections below remain the
+design contract for how the registry feeds later tasks.
 
 The Registry is the **authoritative catalog of what exists** — the *"what is
 there"* layer. It is deliberately **separate from the Recommendation Engine**

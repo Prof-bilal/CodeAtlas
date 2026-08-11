@@ -1,4 +1,4 @@
-import type { UsageScope } from "@atlas/core";
+import type { LimitCheck, UsageScope } from "@atlas/core";
 
 /** Base class for usage-module errors. */
 export class UsageError extends Error {
@@ -18,13 +18,13 @@ export class UnknownPriceError extends UsageError {
 
 /** A hard usage limit would be exceeded — the call must be denied (fail safe). */
 export class UsageLimitExceededError extends UsageError {
-  public readonly scope: UsageScope;
+  public readonly check: LimitCheck;
   public readonly reason: string;
 
-  public constructor(scope: UsageScope, reason: string) {
+  public constructor(scope: UsageScope, reason: string, check: LimitCheck) {
     super(`Usage limit exceeded for ${scope.kind} "${scope.value}": ${reason}`);
     this.name = "UsageLimitExceededError";
-    this.scope = scope;
+    this.check = check;
     this.reason = reason;
   }
 }

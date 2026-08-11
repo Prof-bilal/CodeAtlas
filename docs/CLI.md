@@ -3,8 +3,9 @@
 The command-line contract for the `atlas` binary.
 
 > **Status:** the command *surface* exists. **`atlas search` is wired to the
-> Context SDK**, **`atlas mcp` starts the MCP server**, and **`atlas sessions`
-> manages AI agent sessions**; the other five commands still print
+> Context SDK**, **`atlas mcp` starts the MCP server**, **`atlas sessions`
+> manages AI agent sessions**, and **`atlas usage` reports AI usage &
+> credits**; the other five commands still print
 > `[atlas <cmd>] Coming Soon` and do not call any service. The detailed
 > behavior below is the **contract** — flagged **[implemented]** / **[stubbed]**
 > / **[planned]** per command.
@@ -37,6 +38,10 @@ Options take precedence over environment/config where they overlap.
 | `atlas sessions` / `atlas sessions list` | **[implemented]** | List tracked AI agent sessions (table). |
 | `atlas sessions info <id>` | **[implemented]** | Show details for one session (provider, status, repository, pid, started/ended, exit code). Never prints keys/env. |
 | `atlas sessions stop <id>` | **[implemented]** | Gracefully stop a running session (`✓ Session stopped`); missing/bad id exits `1` with a message. Sessions are created programmatically via the SDK (`createSessionManager`). |
+| `atlas usage` (bare) | **[implemented]** | Print the usage summary (same as `atlas usage summary`). Reads `.codeatlas/usage.db` via `createUsageService()` from the SDK (ADR-009). See [USAGE.md](./USAGE.md). |
+| `atlas usage summary` | **[implemented]** | Totals (events, requests, tokens, cost, avg latency) + budget status. `--json` → `{ statistics, budgets }`. Tri-state rendering: `unknown` where no data, `(estimated)` labels where a figure is an estimate. |
+| `atlas usage list` | **[implemented]** | Table of recorded usage events (ID, agent, provider, model, tokens, cost, latency, when); "No usage recorded." when empty. `--json` → `{ records }`; `--provider <provider>` filters. |
+| `atlas usage budgets` | **[implemented]** | Per-scope budget status lines; "No budgets." when none. `--json` → `{ budgets }`. |
 | `atlas explain <target>` | **[stubbed]** `Coming Soon` | Explain a symbol or concept; deterministic mode first, AI explanation only when a provider is configured. |
 | `atlas doctor` | **[stubbed]** `Coming Soon` | Diagnose installation & project issues (Node version, `.codeatlas` presence & integrity, agent binaries for the orchestrator, provider config sanity). |
 | `atlas config` | **[planned]** — not registered | View/edit configuration (providers, keys source, agents, ignored dirs). Keys never printed. |
@@ -86,8 +91,9 @@ is documented in [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
 - **Exit codes:** `0` success, `1` user/usage error (`atlas search` already
   exits `1` when no index exists), `2` internal/engine error (reserved).
 - **Non-zero exit on failure** with a stderr message; no silent partial success.
-- **`--json`** output flag proposed for machine-readable output on commands that
-  return data (search, build, status).
+- **`--json`** output flag for machine-readable output on data-returning
+  commands — implemented on `search`, `usage summary`, `usage list`, and
+  `usage budgets`; proposed for the rest (build, status).
 - **No business logic in the CLI.** Commands parse args and delegate to the SDK.
   The CLI imports only `@atlas/sdk` (enforced by eslint).
 - **Help text** is the contract of record for users; update it when the contract changes.
@@ -100,6 +106,7 @@ is documented in [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
 atlas search   → createContextSDK({ dbPath }) → context.search.search(...)
 atlas mcp      → @atlas/mcp startStdioServer({ root })
 atlas sessions → createSessionManager() → SessionPort (list/get/stop)
+atlas usage    → createUsageService({ filePath }) → UsagePort (summary/list/budgets)
 atlas init/build/update/explain/doctor → "Coming Soon" (future: Scanner → Hashing
                                           → Parser → Graph → ContextStore)
 ```

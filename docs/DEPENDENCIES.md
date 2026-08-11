@@ -24,9 +24,11 @@ The rules below are enforced by ESLint `no-restricted-imports` (see
 | `providers`| core, shared                                                   | everything else |
 | `summary`  | core, shared                                                   | everything else |
 | `search`   | core, shared                                                   | everything else |
+| `usage`    | core, shared                                                   | everything else |
 | `context`  | core, shared                                                   | everything else |
 | `agents`   | core, shared                                                   | everything else |
-| `sdk`      | shared, core, hashing, scanner, parser, storage, graph, context, cache, providers, summary, search, agents *(`agents` was added when the SDK composed the connection layer for the session manager — ADR-007)* | — |
+| `toolkit`  | core, shared                                                   | everything else |
+| `sdk`      | shared, core, hashing, scanner, parser, storage, graph, context, cache, providers, summary, search, usage, agents *(`agents` was added when the SDK composed the connection layer for the session manager — ADR-007; `usage` when it composed the usage service — ADR-009)* | — |
 | `cli`      | `sdk`, `mcp`                                                   | every other `@atlas/*` feature package |
 | `mcp`      | `sdk`                                                          | every `@atlas/*` feature package |
 
@@ -43,12 +45,19 @@ Rules that follow:
    follow the same rule (SDK only).
 4. Feature packages **implement** `core` ports; they never depend on concrete
    classes from other feature packages.
-5. **Planned `@atlas/toolkit`** (Agent Toolkit) is a feature package: it may
-   import **only** `core` + `shared`, reads CodeAtlas context through the
-   **Context SDK**/port seams, and is composed behind its ports by `@atlas/sdk`.
-   `atlas tools`/`atlas setup` in the CLI delegate to the SDK and must **not**
-   import `@atlas/toolkit` directly. See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
-5. **Cross-package types** are imported with `import type` to avoid runtime
+5. **`@atlas/usage`** (Usage & Credits) is a feature package: it may import
+   **only** `core` + `shared`; the SDK composes it as `createUsageService()` and
+   consumers (CLI) reach it via the SDK, never the store/repositories directly.
+   See [USAGE.md](./USAGE.md) + ADR-009.
+6. **`@atlas/toolkit`** (Agent Toolkit) is a feature package: it imports
+   **only** `core` + `shared` (the Tool Registry foundation — Task 19 — is
+   implemented; the remaining Toolkit components are planned), reads CodeAtlas
+   context through the **Context SDK**/port seams, and is composed behind its
+   ports by `@atlas/sdk` (`createToolRegistry`).
+   `atlas tools`/`atlas setup` in the CLI (planned) delegate to the SDK and must
+   **not** import `@atlas/toolkit` directly. See
+   [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) + [TOOL_REGISTRY.md](./TOOL_REGISTRY.md).
+7. **Cross-package types** are imported with `import type` to avoid runtime
    coupling (enforced: `@typescript-eslint/consistent-type-imports`).
 
 ### Forbidden patterns (reject in review)

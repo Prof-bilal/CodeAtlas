@@ -20,6 +20,8 @@ const ALL_PACKAGES = [
   "@atlas/search",
   "@atlas/sdk",
   "@atlas/agents",
+  "@atlas/usage",
+  "@atlas/toolkit",
   "@atlas/mcp",
 ];
 
@@ -36,6 +38,8 @@ const DEPENDENCY_MATRIX = {
   "packages/cache": ["@atlas/core", "@atlas/shared"],
   "packages/providers": ["@atlas/core", "@atlas/shared"],
   "packages/agents": ["@atlas/core", "@atlas/shared"],
+  "packages/usage": ["@atlas/core", "@atlas/shared"],
+  "packages/toolkit": ["@atlas/core", "@atlas/shared"],
   "packages/summary": ["@atlas/core", "@atlas/shared"],
   "packages/search": ["@atlas/core", "@atlas/shared"],
   "packages/sdk": [
@@ -52,6 +56,8 @@ const DEPENDENCY_MATRIX = {
     "@atlas/summary",
     "@atlas/search",
     "@atlas/agents",
+    "@atlas/usage",
+    "@atlas/toolkit",
   ],
   "apps/cli": ["@atlas/sdk", "@atlas/mcp"],
   "apps/extension": ["@atlas/sdk"],

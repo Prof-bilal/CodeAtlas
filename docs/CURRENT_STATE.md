@@ -1,7 +1,7 @@
 # CodeAtlas — Current State
 
 > **Read this first.** This document records what *actually* exists in the
-> repository as of **2026-08-09** (re-verified against code), so AI agents do
+> repository as of **2026-08-11** (re-verified against code), so AI agents do
 > not mistake planned features for implemented ones. Each section is tagged:
 >
 > - **[IMPLEMENTED]** — production code exists and is tested.
@@ -36,7 +36,7 @@ every package's source and tests.
 
 ```
 apps/
-  cli/          # Commander.js CLI — `search`+`mcp` wired, 5 others stubbed   [PARTIAL]
+  cli/          # Commander.js CLI — `search`+`mcp`+`sessions`+`usage` wired, 5 stubbed  [PARTIAL]
   extension/    # VS Code extension (@atlas/extension) — SDK consumer         [IMPLEMENTED]
 packages/
   shared/       # Base types, Result, branded IDs, VERSION, ComingSoonError  [EXISTING]
@@ -50,8 +50,10 @@ packages/
   providers/    # Claude / OpenAI / DeepSeek / Gemini adapters               [EXISTING]
   summary/      # AI file/folder/module/project summaries                     [EXISTING]
   search/       # Ranked, fuzzy-aware project search (vector-ready)          [EXISTING]
+  usage/        # AI usage & credits: tri-state tokens/cost, budgets, limits [EXISTING]
   context/      # Context ranking & assembly                                  [STUB]
   agents/       # AI CLI connection layer (AgentPort)                         [EXISTING]
+  toolkit/      # Agent Toolkit — Tool Registry foundation (Task 19)          [PARTIAL]
   mcp/          # MCP server exposing context to AI tools                      [EXISTING]
   sdk/         # Composition root (Container)                                  [EXISTING]
 docs/            # (this documentation system)
@@ -67,7 +69,8 @@ examples/        # README placeholder only (no runnable examples)
 - `core` declares domain entities (`Project`, `SourceFile`, `Symbol`, `Reference`,
   `GraphNode`, `GraphEdge`, `ContextItem`) and the `*Port` interfaces
   (`ScannerPort`, `ParserPort`, `StoragePort`, `GraphPort`, `ContextBuilderPort`,
-  `CachePort`, `ProviderPort`, `HashPort`, `SummaryPort`, `ContextDatabasePort`).
+  `CachePort`, `ProviderPort`, `HashPort`, `SummaryPort`, `ContextDatabasePort`,
+  `UsagePort`).
   No infrastructure, no implementation — contracts only.
 - `shared` provides `Result`/`ok`/`fail`/`isOk`, branded types
   (`FilePath`, `SymbolId`, `ProjectId`, `NodeId`, `EdgeId`, `CacheKey`),
@@ -184,6 +187,42 @@ examples/        # README placeholder only (no runnable examples)
   `renderSearchHits`/`contextDbPath`/`createProjectContainer` back the
   `atlas search` command.
 
+### AI Usage & Credits (`packages/usage`) — **[EXISTING]**
+
+- `UsageService` implements the **`UsagePort`** contract (new port in `core`):
+  `record` / `getUsage` / `listUsage` / `statistics` / `setBudget` /
+  `budgetStatus` / `listBudgets` / `setLimit` / `checkLimit` / `listLimits` /
+  `close`.
+- **Tri-state provenance — never guess:** every token, cost, latency, and price
+  value is `actual`, `estimated` (documented, labeled heuristic), or `unknown`
+  (`value: null`); aggregation keeps `unknown` unknown; cost is computed at
+  record time from tokens + pricing (`computeCost`). See `docs/USAGE.md`.
+- **Pricing is quarantined** behind `PricingSource` (`priceFor` +
+  `listProviders`); `StaticPricingSource` ships a built-in estimated table
+  (claude/openai/deepseek/gemini — "published list price, not verified").
+  Unknown provider/model fails cleanly (`UnknownPriceError`). No
+  `if (provider === …)` switches in business logic.
+- **Collection seams:** `withUsageTracking({ estimateTokens?, recordOnError? })`
+  wraps provider calls and records actual (or **opt-in estimated**) tokens;
+  `trackAgentRun` records agent-session runs as `session` events (tokens unknown
+  by design). `estimateTokens` uses `Math.ceil(len/4)` character→token and is
+  exported from `@atlas/usage` (not from `@atlas/sdk`, which already exports a
+  different `estimateTokens` from context-integration).
+- **Budgets (soft, never block) vs limits (hard, fail-safe):** `checkLimit`
+  returns a failed `Result` (`UsageLimitExceededError`) when a projected call
+  would exceed a hard limit — deny by default; reads are never blocked.
+- **Privacy:** records never contain prompts, API keys, or provider secrets;
+  `taskRef` is an anonymized hash.
+- **Persistence:** `UsageStore` — its own SQLite DB (`.codeatlas/usage.db`,
+  `node:sqlite`, schema + migrations in `@atlas/usage`), separate from the
+  context database. Defaults to `:memory:`.
+- **SDK surface:** `createUsageService({ filePath?, store?, pricing? })` in
+  `@atlas/sdk` returns a wired `UsagePort`; errors (`UsageError`,
+  `UnknownPriceError`, `UsageLimitExceededError`) re-exported. CLI `atlas usage`
+  is wired (see CLI section). Tests:
+  `packages/usage/tests/{collector,pricing,usage.service,usage-store,integration}.test.ts`
+  (no provider credentials / network). See ADR-009.
+
 ### Context ranking & assembly (`packages/context`) — **[STUB]**
 
 - `ContextBuilderService` implements `ContextBuilderPort` but **both** methods
@@ -217,13 +256,16 @@ examples/        # README placeholder only (no runnable examples)
 
 ### CLI (`apps/cli`) — **[PARTIAL]**
 
-- Commander.js program `atlas`, eight subcommands — `init`, `build`, `update`,
-  `search`, `explain`, `doctor`, `mcp`, `sessions`. **`search` is wired to the
-  Context SDK**: it opens `.codeatlas/context.db` (via `ATLAS_ROOT` or cwd) with
-  `createContextSDK`, runs `context.search.search(...)`, and prints ranked
-  hits. **`mcp` starts the MCP server** (`startStdioServer`) for the current
-  project. **`sessions` manages agent sessions** (`list`/`info`/`stop`) via
-  `createSessionManager()` from the SDK. The other five commands still print
+- Commander.js program `atlas`, nine subcommands — `init`, `build`, `update`,
+  `search`, `sessions`, `usage`, `explain`, `doctor`, `mcp`. **`search` is wired
+  to the Context SDK**: it opens `.codeatlas/context.db` (via `ATLAS_ROOT` or
+  cwd) with `createContextSDK`, runs `context.search.search(...)`, and prints
+  ranked hits. **`mcp` starts the MCP server** (`startStdioServer`) for the
+  current project. **`sessions` manages agent sessions**
+  (`list`/`info`/`stop`) via `createSessionManager()` from the SDK. **`usage`
+  reports AI usage & credits** (`summary`/`list`/`budgets`, bare `atlas usage`
+  = summary, `--json` per subcommand) through `createUsageService()` from the
+  SDK against `.codeatlas/usage.db`. The other five commands still print
   `[atlas <command>] Coming Soon`. No `/agent`-style slash commands (the agent
   router is planned).
 - Dependency note: the CLI may import `@atlas/sdk` **and** `@atlas/mcp` (so it
@@ -231,8 +273,10 @@ examples/        # README placeholder only (no runnable examples)
 - `atlas search` accepts positional query words plus `--limit`, `--type`,
   `--no-fuzzy`, and `--json`; it reports a friendly error and exit code `1`
   when no context database exists.
-- Tests assert the command list, version, placeholder text, and `atlas search`
-  end-to-end against a fixture database (including the missing-index error).
+- Tests assert the command list, version, placeholder text, `atlas search`
+  end-to-end against a fixture database (including the missing-index error),
+  and the `usage` rendering/CLI (`usageDbPath`, `formatMeasured`,
+  `renderUsageSummary`, `renderUsageTable`, fresh-project empty output, JSON).
 
 ### MCP server (`packages/mcp`) — **[IMPLEMENTED]**
 
@@ -371,13 +415,27 @@ examples/        # README placeholder only (no runnable examples)
   session manager, and the multi-agent plan executor are real; the router on
   top of them is the planned orchestrator.
 
-### Agent Toolkit (Direction C) — **[PLANNED]**
+### Agent Toolkit (Direction C) — **[PARTIAL]**
 
-- **Does not exist.** No tool registry, installer, configurator, compatibility
-  engine, security/trust system, `atlas tools`, or `/tools`. This is the design
-  contract only — see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md). It will build on
-  the Context SDK (for reading context) and `@atlas/agents` (for AI CLI
-  detection).
+- **Tool Registry foundation (Task 19) is implemented.** `@atlas/toolkit`
+  behind a new `ToolRegistryPort` in `core`, composed by the SDK as
+  `createToolRegistry()`. It is the authoritative catalog of *what exists*:
+  a curated, schema-validated, **per-field provenance-auditable** record set
+  (name, description, repository, website, documentation, license, version,
+  categories, supported OS/agents, install methods, dependencies, security
+  status, trust level, maintainer, last-update + star signals) shipped as a
+  versioned data file (`packages/toolkit/src/catalog.json`), merged with a
+  **local overlay** by name (user records win; the catalog is never mutated).
+  Categories are **extensible** (any non-empty string). Validation is
+  **fail-loud** — version mismatch / malformed record / unreadable overlay
+  throw typed errors; nothing is skipped silently. External metadata is
+  advisory only and recorded as `external` provenance — never trusted blindly,
+  never auto-approved. The install/compat/security **fields are declared and
+  validated here but evaluated by later tasks** (Tasks 21/22/24). No network,
+  no database. See [TOOL_REGISTRY.md](./TOOL_REGISTRY.md).
+- **Everything else is still [PLANNED]**: the Tool Manifest, Compatibility
+  Engine, Installer, Configurator, Security/Trust evaluation, the `atlas
+  tools`/`/tools` CLI surface. See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
 
 ---
 
@@ -387,7 +445,7 @@ examples/        # README placeholder only (no runnable examples)
 | ------------------------------------- | -------------- |
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking intentionally stubbed; `search` + `mcp` are CLI-wired |
 | **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`) and the session manager (`SessionManager`, `atlas sessions`) are implemented and SDK-wired, and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) is implemented and tested; router/slash commands **0%** |
-| **C. Agent Toolkit** (curated tool registry → install → configure → verify) | **0%** — entirely planned (see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)) |
+| **C. Agent Toolkit** (curated tool registry → install → configure → verify) | ~10% — **Task 19 registry foundation implemented** (`@atlas/toolkit` behind `ToolRegistryPort`, SDK `createToolRegistry`, shipped catalog + local overlay, per-field provenance); Manifest/Compatibility/Installer/Configurator/Security evaluation/`atlas tools` are **0%** ([PLANNED]) |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
 at: (1) the other CLI commands (build/update/init/explain/doctor are stubs),
@@ -409,10 +467,12 @@ absent.
 3. **No git history.** `.husky`, `commitlint`, `.gitignore`, `pre-commit` hooks
    are all configured but have never run against a commit.
 4. **CI/CD**: no `.github/`, no `.gitlab-ci.yml`, no CI config at all.
-5. **`.codeatlas/`**: currently only `manifest.json` is written there (by the
-   Scanner manifest). The rest of the target layout
-   (`.codeatlas/context.db`, `graph.json`, `symbols.json`, `summaries/`) does
-   not exist yet — it is a **target** architecture.
+5. **`.codeatlas/`**: currently `manifest.json` (by the Scanner manifest) and
+   `usage.db` (by `@atlas/usage` / `atlas usage`) are written there. The rest
+   of the target layout (`.codeatlas/context.db`, `graph.json`, `symbols.json`,
+   `summaries/`) does not exist yet — it is a **target** architecture
+   (context.db is produced only when an indexing run happens, e.g. via the SDK
+   write edge or a future `atlas build`).
 6. **Existing docs at the time of writing this audit:** root `ARCHITECTURE.md`,
    root `agents.md` (agent catalog), `README.md`, `docs/README.md`,
    `examples/README.md`. No `CLAUDE.md`. These docs predate/replace with the

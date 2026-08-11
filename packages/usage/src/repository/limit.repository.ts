@@ -1,6 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { UsageLimit, UsageScope } from "@atlas/core";
-import { colNumber, colString, count, type Row } from "./row";
+import { type Row, colString, count } from "./row";
 
 /** CRUD for the `Limits` table (hard caps — deny calls when exceeded). */
 export class LimitRepository {
@@ -37,9 +37,9 @@ export class LimitRepository {
   }
 
   public all(): UsageLimit[] {
-    return (this.db.prepare("SELECT * FROM Limits ORDER BY scope_kind, scope_value").all() as Row[]).map(
-      limitFromRow,
-    );
+    return (
+      this.db.prepare("SELECT * FROM Limits ORDER BY scope_kind, scope_value").all() as Row[]
+    ).map(limitFromRow);
   }
 
   public clear(): number {

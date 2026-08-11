@@ -63,6 +63,21 @@ export {
 } from "./context/errors";
 export { ReadRepositories, WriteRepositories } from "./context/repositories";
 export { createSessionManager, type CreateSessionManagerOptions } from "./sessions/index";
+export { createUsageService, type CreateUsageServiceOptions } from "./usage/index";
+export { createToolRegistry, type CreateToolRegistryOptions } from "./toolkit/index";
+export { withUsageTracking, trackAgentRun, StaticPricingSource } from "@atlas/usage";
+export type { TrackingContext, WithUsageTrackingOptions } from "@atlas/usage";
+export {
+  UsageError,
+  UnknownPriceError,
+  UsageLimitExceededError,
+} from "@atlas/usage";
+export {
+  RegistryError,
+  RegistryLoadError,
+  RegistrySchemaVersionError,
+  RegistryValidationError,
+} from "@atlas/toolkit";
 export {
   createContextIntegration,
   type AttachInput,
@@ -135,6 +150,44 @@ export type {
   RoleStatus,
   RunStatus,
   TaskPlan,
+} from "@atlas/core";
+export type {
+  Budget,
+  BudgetInput,
+  BudgetStatus,
+  CostRecord,
+  GroupedUsageStatistics,
+  LatencyStatistics,
+  LimitCheck,
+  LimitInput,
+  MeasuredQuantity,
+  ModelPrice,
+  PricingSource,
+  QuantitySource,
+  TokenUsageRecord,
+  UsageEventInput,
+  UsageLimit,
+  UsagePort,
+  UsageProjection,
+  UsageQuery,
+  UsageRecord,
+  UsageScope,
+  UsageStatistics,
+} from "@atlas/core";
+export type {
+  FieldProvenance,
+  InstallMethod,
+  ProvenanceSource,
+  ToolDependency,
+  ToolField,
+  ToolInstallMethodType,
+  ToolProvenance,
+  ToolRegistryPort,
+  ToolRegistryRecord,
+  ToolRegistrySource,
+  ToolSecurityStatus,
+  ToolSecurityStatusValue,
+  ToolTrustLevel,
 } from "@atlas/core";
 export {
   InvalidRepositoryPathError,

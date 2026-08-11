@@ -78,6 +78,15 @@ export type UsageEventInput =
       readonly outputTokens?: number;
       /** Exact total tokens, when the provider reported them. */
       readonly totalTokens?: number;
+      /**
+       * Estimated input tokens from a documented heuristic (e.g. character→token).
+       * Only used when the provider reported **no** usage — this is opt-in, never
+       * a silent guess; such tokens carry `estimated` provenance.
+       */
+      readonly estimatedInputTokens?: number;
+      /** Estimated output tokens (documented heuristic). See
+       * {@link estimatedInputTokens}. */
+      readonly estimatedOutputTokens?: number;
       /** Agent id owning the call; defaults to `provider`. */
       readonly agent?: string;
       /** Session the call ran in, when known. */
@@ -205,8 +214,8 @@ export interface Budget {
 /** Current consumption vs a budget. */
 export interface BudgetStatus {
   readonly budget: Budget;
-  readonly consumedTokens: MeasuredQuantity;
-  readonly consumedCost: MeasuredQuantity;
+  readonly consumedTokens: TokenUsageRecord;
+  readonly consumedCost: CostRecord;
   /** 0–100, or `null` when there is no token limit / no data. */
   readonly tokenPercent: number | null;
   readonly costPercent: number | null;

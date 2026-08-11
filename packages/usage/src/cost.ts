@@ -1,4 +1,10 @@
-import type { CostRecord, MeasuredQuantity, ModelPrice, QuantitySource, TokenUsageRecord } from "@atlas/core";
+import type {
+  CostRecord,
+  MeasuredQuantity,
+  ModelPrice,
+  QuantitySource,
+  TokenUsageRecord,
+} from "@atlas/core";
 
 /**
  * Combine two provenance sources, "worst wins": `unknown` > `estimated` >
@@ -25,10 +31,7 @@ export function combineSources(a: QuantitySource, b: QuantitySource): QuantitySo
  * - otherwise `input/1e6 × inputPerMillion + output/1e6 × outputPerMillion`,
  *   with the confidence being the *worst* of the token and price sources.
  */
-export function computeCost(
-  tokens: TokenUsageRecord,
-  price: ModelPrice | undefined,
-): CostRecord {
+export function computeCost(tokens: TokenUsageRecord, price: ModelPrice | undefined): CostRecord {
   if (price === undefined) {
     return {
       currency: null,

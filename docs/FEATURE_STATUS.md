@@ -1,7 +1,7 @@
 # CodeAtlas Feature Status
 
 Single source of truth for what each feature is — **verified against the code**
-(see [CURRENT_STATE.md](./CURRENT_STATE.md), last audit 2026-08-09).
+(see [CURRENT_STATE.md](./CURRENT_STATE.md), last audit 2026-08-11).
 
 ---
 
@@ -32,7 +32,8 @@ Single source of truth for what each feature is — **verified against the code*
 | Search | **[IMPLEMENTED]** | `@atlas/search` builds a ranked in-memory index (symbols, files, modules, **dependencies**, summaries) with fuzzy matching behind a vector-ready scorer seam (no embeddings yet); `searchContext` still provides the DB-level LIKE fallback |
 | Context ranking & assembly (`@atlas/context`) | **[STUB]** | Both methods throw `ComingSoonError` — intentional |
 | Context API / SDK (`createContextSDK`) | **[IMPLEMENTED]** | Read-first façade in `@atlas/sdk`: files/symbols/dependencies/modules/summaries/search/project sub-APIs, typed errors, `status()`, deterministic `getRelevantContext()`, split read/write edge; DB hidden behind repositories (see `docs/CONTEXT_SDK.md`, ADR-005) |
-| CLI | **[PARTIAL]** | `search` routes through the Context SDK and `mcp` starts the MCP server; `init`/`build`/`update`/`explain`/`doctor` still print "Coming Soon" |
+| Usage & Credits (`@atlas/usage`, `UsagePort`) | **[IMPLEMENTED]** | Tri-state actual/estimated/unknown provenance for tokens/cost/latency/price (never guessed); `PricingSource` abstraction (built-in estimated `StaticPricingSource`); `UsageStore` on `.codeatlas/usage.db` (`node:sqlite`, separate from the context DB); `withUsageTracking`/`trackAgentRun` collection seams with opt-in token estimation; soft budgets + fail-safe hard limits; SDK `createUsageService`; CLI `atlas usage` (summary/list/budgets). ADR-009. See docs/USAGE.md |
+| CLI | **[PARTIAL]** | `search` routes through the Context SDK, `mcp` starts the MCP server, `sessions` manages agent sessions, and `usage` reports AI usage — all through the SDK; `init`/`build`/`update`/`explain`/`doctor` still print "Coming Soon" |
 | Unified AI CLI (`/claude`, `/gemini`, `/codex`, `/opencode`, `/deepseek`) | **[PLANNED]** | No router/slash commands — see AGENT_ORCHESTRATOR.md |
 | AI CLI Connection layer (`@atlas/agents`, `AgentPort`) | **[IMPLEMENTED]** | Per-CLI adapters, executable detection, supervised one-shot runs + `ProcessRunner.launch()` for supervised long-running processes — behind `AgentPort`/`SessionPort` in `core`; composed by the SDK for sessions (`createSessionManager`), not yet wired for the router/slash commands |
 | Agent Session Manager (`SessionPort`) | **[IMPLEMENTED]** | In-memory manager in `@atlas/agents` (`SessionManager`); `createSessionManager()` from the SDK; `atlas sessions list/info/stop`; independent concurrent sessions, graceful stop/terminate, shutdown, terminal-session pruning (no DB). Sessions launched with `captureOutput: true` have their bounded stdout/stderr captured and readable via `getSessionOutput` even after exit. See docs/AGENT_SESSIONS.md |
@@ -43,8 +44,8 @@ Single source of truth for what each feature is — **verified against the code*
 | MCP | **[IMPLEMENTED]** | `@atlas/mcp`: stdio server (official `@modelcontextprotocol/sdk`) exposing 6 tools that read through the **Context SDK** (`createContextSDK` sub-APIs) — deterministic search/deps/explain/overview, opt-in AI summary generation; `codeatlas-mcp` binary **and** `atlas mcp` CLI command; tools only (no resources/prompts) |
 | VS Code integration | **[IMPLEMENTED]** | `@atlas/extension` (in `apps/extension`): Activity Bar + 5 tree views (project/symbols/modules/summaries/dependencies), `codeatlas.*` palette commands, status-bar indicator; reads only through the Context SDK (`createContextSDK`); `atlas build`/`update` shell out to the CLI (pipeline still "Coming Soon" — see `docs/VSCODE.md`) |
 | JetBrains / other editor integrations | **[PLANNED]** | No code |
-| Agent Toolkit subsystem (`@atlas/toolkit`) | **[PLANNED]** | No code — see AGENT_TOOLKIT.md |
-| Tool Registry | **[PLANNED]** | No code — authoritative curated catalog (in `@atlas/toolkit`) |
+| Agent Toolkit subsystem (`@atlas/toolkit`) | **[PARTIAL]** | Package + `ToolRegistryPort` + SDK `createToolRegistry` exist (Task 19 registry foundation); Manifest, Compatibility, Installer, Configurator, Security/Trust evaluation, `atlas tools` CLI all remain [PLANNED] |
+| Tool Registry | **[IMPLEMENTED]** | `@atlas/toolkit` behind `ToolRegistryPort` in `core`, composed via `createToolRegistry()` in `@atlas/sdk`: curated, schema-validated, provenance-auditable catalog (`packages/toolkit/src/catalog.json`) + local overlay merged by name (user wins, catalog never mutated); per-field provenance (curated/external/user/unknown — external never trusted blindly); extensible categories; fail-loud validation (`RegistrySchemaVersionError`/`RegistryValidationError`/`RegistryLoadError`); no network. Install/compat/security fields declared + validated here, evaluated by Tasks 21/22/24. See docs/TOOL_REGISTRY.md |
 | Tool Manifest System | **[PLANNED]** | No code — per-installed-tool state in `.codeatlas/` |
 | Tool Discovery (`atlas tools` search/list) | **[PLANNED]** | No code |
 | Tool Compatibility Engine | **[PLANNED]** | No code |
@@ -66,14 +67,18 @@ Single source of truth for what each feature is — **verified against the code*
 - Parser/graph: renamed imports & `export default <expr>` cross-file resolution.
 - Providers: placeholder default model ids; no streaming.
 - Storage: engine `>=22.5.0` vs monorepo `>=20.19.0` (node:sqlite).
-- CLI: `atlas search` and `atlas mcp` are wired; `init`/`build`/`update`/
-  `explain`/`doctor` remain stubs.
+- CLI: `atlas search`, `atlas mcp`, `atlas sessions`, and `atlas usage` are
+  wired; `init`/`build`/`update`/`explain`/`doctor` remain stubs.
 - `@atlas/agents`: implements `AgentPort` (+`SessionPort` session manager with
   `captureOutput`/`getSessionOutput`); the SDK composes it for sessions
   (`createSessionManager`) and for the multi-agent orchestrator
   (`createOrchestrator`, which drives `SessionPort`), but the **router and
   slash commands** (`atlas /claude`, …) and interactive TTY handling are absent.
-- Agent Toolkit: entirely planned — see `docs/AGENT_TOOLKIT.md`.
+- Agent Toolkit: **registry foundation only** (Task 19) is implemented —
+  `@atlas/toolkit` behind `ToolRegistryPort`, SDK `createToolRegistry`, shipped
+  catalog + local overlay, per-field provenance, extensible categories. Tool
+  Manifest, Compatibility Engine, Installer, Configurator, Security/Trust
+  evaluation, and `atlas tools` remain planned — see `docs/TOOL_REGISTRY.md`.
 - Vector search: embeddings are planned; `@atlas/search` exposes the
   `RelevanceScorer` seam so an embedding scorer can be added without callers
   changing.

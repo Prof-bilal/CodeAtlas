@@ -1,4 +1,4 @@
-import type { PricingSource, ModelPrice } from "@atlas/core";
+import type { ModelPrice, PricingSource } from "@atlas/core";
 import type { Result } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
 import { UnknownPriceError } from "./errors";
@@ -16,22 +16,21 @@ export interface StaticPriceEntry {
  * ids). They are always returned with `source: "estimated"` so nothing is ever
  * presented as exact. Any model not listed yields `unknown`, never a guess.
  */
-export const BUILTIN_PRICING: Readonly<
-  Record<string, Readonly<Record<string, StaticPriceEntry>>>
-> = {
-  claude: {
-    "claude-sonnet-5": { currency: "USD", inputPerMillion: 3, outputPerMillion: 15 },
-  },
-  openai: {
-    "gpt-4o": { currency: "USD", inputPerMillion: 2.5, outputPerMillion: 10 },
-  },
-  deepseek: {
-    "deepseek-chat": { currency: "USD", inputPerMillion: 0.27, outputPerMillion: 1.1 },
-  },
-  gemini: {
-    "gemini-1.5-pro": { currency: "USD", inputPerMillion: 1.25, outputPerMillion: 5 },
-  },
-};
+export const BUILTIN_PRICING: Readonly<Record<string, Readonly<Record<string, StaticPriceEntry>>>> =
+  {
+    claude: {
+      "claude-sonnet-5": { currency: "USD", inputPerMillion: 3, outputPerMillion: 15 },
+    },
+    openai: {
+      "gpt-4o": { currency: "USD", inputPerMillion: 2.5, outputPerMillion: 10 },
+    },
+    deepseek: {
+      "deepseek-chat": { currency: "USD", inputPerMillion: 0.27, outputPerMillion: 1.1 },
+    },
+    gemini: {
+      "gemini-1.5-pro": { currency: "USD", inputPerMillion: 1.25, outputPerMillion: 5 },
+    },
+  };
 
 const PRICE_NOTE = "published list price, not verified";
 
@@ -41,9 +40,7 @@ const PRICE_NOTE = "published list price, not verified";
  * {@link PricingSource} abstraction and never contains a provider `switch`.
  */
 export class StaticPricingSource implements PricingSource {
-  private readonly table: Readonly<
-    Record<string, Readonly<Record<string, StaticPriceEntry>>>
-  >;
+  private readonly table: Readonly<Record<string, Readonly<Record<string, StaticPriceEntry>>>>;
 
   public constructor(
     table: Readonly<Record<string, Readonly<Record<string, StaticPriceEntry>>>> = BUILTIN_PRICING,

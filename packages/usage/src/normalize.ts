@@ -7,6 +7,8 @@ export function normalizeEvent(event: UsageEventInput, id: string): Omit<UsageRe
     const input = finiteNumber(event.inputTokens);
     const output = finiteNumber(event.outputTokens);
     const total = finiteNumber(event.totalTokens);
+    const estimatedInput = finiteNumber(event.estimatedInputTokens);
+    const estimatedOutput = finiteNumber(event.estimatedOutputTokens);
     const reported = input !== null || output !== null || total !== null;
     return {
       id,
@@ -22,7 +24,7 @@ export function normalizeEvent(event: UsageEventInput, id: string): Omit<UsageRe
       latencyMs: event.latencyMs,
       exitCode: null,
       timedOut: false,
-      tokens: providerTokens(input, output, total, reported),
+      tokens: providerTokens(input, output, total, estimatedInput, estimatedOutput, reported),
     };
   }
   return {
@@ -50,22 +52,42 @@ export function normalizeEvent(event: UsageEventInput, id: string): Omit<UsageRe
 /**
  * Provider token quantities with the tri-state model:
  * - a finite reported value → `actual` (the provider measured it);
- * - absent everywhere → every field `unknown` (never guessed);
- * - a missing total is derived by `input + output` when both are known
+ * - nothing reported but opt-in estimates supplied → `estimated` (documented
+ *   heuristic, clearly labeled);
+ * - nothing at all → every field `unknown` (never guessed);
+ * - a missing reported total is derived by `input + output` when both are known
  *   (exact arithmetic on reported values, so still `actual`).
  */
 function providerTokens(
   input: number | null,
   output: number | null,
   total: number | null,
+  estimatedInput: number | null,
+  estimatedOutput: number | null,
   reported: boolean,
 ): TokenUsageRecord {
   if (!reported) {
+    if (estimatedInput !== null || estimatedOutput !== null) {
+      const estimatedTotal =
+        estimatedInput !== null && estimatedOutput !== null
+          ? estimated(estimatedInput + estimatedOutput)
+          : unknownQuantity("total tokens were not estimated");
+      return {
+        input:
+          estimatedInput === null
+            ? unknownQuantity("input tokens were not estimated")
+            : estimated(estimatedInput),
+        output:
+          estimatedOutput === null
+            ? unknownQuantity("output tokens were not estimated")
+            : estimated(estimatedOutput),
+        total: estimatedTotal,
+      };
+    }
     const missing = unknownQuantity("provider reported no token usage");
     return { input: missing, output: missing, total: missing };
   }
-  const derivedTotal =
-    total ?? (input !== null && output !== null ? input + output : null);
+  const derivedTotal = total ?? (input !== null && output !== null ? input + output : null);
   return {
     input: input === null ? unknownQuantity("provider did not report input tokens") : actual(input),
     output:
@@ -85,6 +107,12 @@ function actual(value: number): MeasuredQuantity {
   return { source: "actual", value };
 }
 
+function estimated(value: number): MeasuredQuantity {
+  return { source: "estimated", value, note: TOKEN_ESTIMATE_NOTE };
+}
+
 function unknownQuantity(note: string): MeasuredQuantity {
   return { source: "unknown", value: null, note };
 }
+
+const TOKEN_ESTIMATE_NOTE = "character→token estimate, not actual";

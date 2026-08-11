@@ -1,6 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { MeasuredQuantity, QuantitySource, UsageQuery, UsageRecord } from "@atlas/core";
-import { colBoolean, colNumber, colString, count, type Row } from "./row";
+import { type Row, colBoolean, colNumber, colString, count } from "./row";
 
 /**
  * CRUD for the `UsageEvents` table. A usage record stores normalized token and
@@ -61,7 +61,9 @@ export class UsageRepository {
 
   /** Every record, oldest → newest. */
   public all(): UsageRecord[] {
-    const rows = this.db.prepare("SELECT * FROM UsageEvents ORDER BY occurred_at, id").all() as Row[];
+    const rows = this.db
+      .prepare("SELECT * FROM UsageEvents ORDER BY occurred_at, id")
+      .all() as Row[];
     return rows.map(usageFromRow);
   }
 
@@ -129,15 +131,20 @@ function usageFromRow(row: Row): UsageRecord {
     tokens: { input, output, total },
     cost: {
       currency: colString(row, "cost_currency"),
-      amount: quantityFromRow(row, "cost_amount", "cost_src"),
+      amount: quantityFromRow(row, "cost_amount", "cost_src", "cost_note"),
     },
   };
 }
 
-function quantityFromRow(row: Row, valueKey: string, sourceKey = `${valueKey}_src`): MeasuredQuantity {
+function quantityFromRow(
+  row: Row,
+  valueKey: string,
+  sourceKey = `${valueKey}_src`,
+  noteKey = `${valueKey}_note`,
+): MeasuredQuantity {
   const source = colString(row, sourceKey) as QuantitySource | null;
   const value = nullableNumber(row, valueKey);
-  const note = colString(row, `${valueKey}_note`);
+  const note = colString(row, noteKey);
   return {
     source: source ?? "unknown",
     value,

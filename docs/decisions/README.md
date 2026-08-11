@@ -43,6 +43,7 @@ ADR-002.md       ...
 | [ADR-006](./ADR-006.md) | Agent Toolkit is a curated, opt-in registry/installer/configurator for open-source tools — never blind `install.sh`, never fork/bundle third-party tools; ports in `core`, composed by SDK | Proposed | 2026-08-10 |
 | [ADR-007](./ADR-007.md) | Agent Session Manager: `SessionPort` in `core`, implemented in `@atlas/agents` (`SessionManager`), composed by the SDK (`createSessionManager`); in-memory, terminal sessions pruned | Accepted | 2026-08-10 |
 | [ADR-008](./ADR-008.md) | Context → Agent integration lives inside `@atlas/sdk` as a `context-integration` module (`createContextIntegration`, context packages delivered through `SessionPort`) | Accepted | 2026-08-11 |
+| [ADR-009](./ADR-009.md) | Usage & Credits as a dedicated `@atlas/usage` feature package behind `UsagePort` (tri-state actual/estimated/unknown provenance, `PricingSource` abstraction, budgets/limits, `atlas usage`) | Accepted | 2026-08-11 |
 
 ---
 

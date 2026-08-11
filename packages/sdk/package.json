@@ -38,6 +38,8 @@
     "@atlas/search": "workspace:*",
     "@atlas/shared": "workspace:*",
     "@atlas/storage": "workspace:*",
-    "@atlas/summary": "workspace:*"
+    "@atlas/summary": "workspace:*",
+    "@atlas/usage": "workspace:*",
+    "@atlas/toolkit": "workspace:*"
   }
 }
