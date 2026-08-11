@@ -1,0 +1,111 @@
+{
+  "name": "@atlas/extension",
+  "displayName": "CodeAtlas",
+  "description": "AI context for your codebase, right in the editor. Search symbols, explore dependencies, view summaries, and run atlas build/update.",
+  "version": "0.0.0",
+  "publisher": "codeatlas",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/extension.js",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "activationEvents": ["*"],
+  "categories": ["Other"],
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "biome format --write ."
+  },
+  "dependencies": {
+    "@atlas/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.92.0"
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codeatlas",
+          "title": "CodeAtlas",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codeatlas": [
+        {
+          "id": "codeatlas.project",
+          "name": "Project"
+        },
+        {
+          "id": "codeatlas.symbols",
+          "name": "Symbols"
+        },
+        {
+          "id": "codeatlas.modules",
+          "name": "Modules"
+        },
+        {
+          "id": "codeatlas.summaries",
+          "name": "Summaries"
+        },
+        {
+          "id": "codeatlas.dependencies",
+          "name": "Dependencies"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codeatlas.openOverview",
+        "title": "CodeAtlas: Open Project Overview"
+      },
+      {
+        "command": "codeatlas.searchSymbols",
+        "title": "CodeAtlas: Search Symbols"
+      },
+      {
+        "command": "codeatlas.searchFiles",
+        "title": "CodeAtlas: Search Files"
+      },
+      {
+        "command": "codeatlas.showModules",
+        "title": "CodeAtlas: Show Modules"
+      },
+      {
+        "command": "codeatlas.showSummaries",
+        "title": "CodeAtlas: Show Summaries"
+      },
+      {
+        "command": "codeatlas.showDependencies",
+        "title": "CodeAtlas: Show Dependency Graph"
+      },
+      {
+        "command": "codeatlas.runBuild",
+        "title": "CodeAtlas: Run atlas build"
+      },
+      {
+        "command": "codeatlas.runUpdate",
+        "title": "CodeAtlas: Run atlas update"
+      },
+      {
+        "command": "codeatlas.refresh",
+        "title": "CodeAtlas: Refresh"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "codeatlas.refresh",
+          "when": "view == codeatlas.symbols || view == codeatlas.project",
+          "group": "navigation"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "@atlas/sdk",
+  "version": "0.0.0",
+  "description": "Public programmatic API and composition root for CodeAtlas.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "biome format --write ."
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "dependencies": {
+    "@atlas/agents": "workspace:*",
+    "@atlas/cache": "workspace:*",
+    "@atlas/context": "workspace:*",
+    "@atlas/core": "workspace:*",
+    "@atlas/graph": "workspace:*",
+    "@atlas/hashing": "workspace:*",
+    "@atlas/parser": "workspace:*",
+    "@atlas/providers": "workspace:*",
+    "@atlas/scanner": "workspace:*",
+    "@atlas/search": "workspace:*",
+    "@atlas/shared": "workspace:*",
+    "@atlas/storage": "workspace:*",
+    "@atlas/summary": "workspace:*"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": true,
+    "skipLibCheck": true,
+
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+
+    "noEmit": true,
+
+    "paths": {
+      "@atlas/shared": ["./packages/shared/src/index.ts"],
+      "@atlas/core": ["./packages/core/src/index.ts"],
+      "@atlas/hashing": ["./packages/hashing/src/index.ts"],
+      "@atlas/scanner": ["./packages/scanner/src/index.ts"],
+      "@atlas/parser": ["./packages/parser/src/index.ts"],
+      "@atlas/storage": ["./packages/storage/src/index.ts"],
+      "@atlas/graph": ["./packages/graph/src/index.ts"],
+      "@atlas/context": ["./packages/context/src/index.ts"],
+      "@atlas/cache": ["./packages/cache/src/index.ts"],
+      "@atlas/providers": ["./packages/providers/src/index.ts"],
+      "@atlas/summary": ["./packages/summary/src/index.ts"],
+      "@atlas/search": ["./packages/search/src/index.ts"],
+      "@atlas/sdk": ["./packages/sdk/src/index.ts"],
+      "@atlas/agents": ["./packages/agents/src/index.ts"],
+      "@atlas/mcp": ["./packages/mcp/src/index.ts"]
+    }
+  }
+}

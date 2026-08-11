@@ -1,0 +1,33 @@
+{
+  "name": "@atlas/parser",
+  "version": "0.0.0",
+  "description": "Language-agnostic source parsing for CodeAtlas.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "biome format --write ."
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "dependencies": {
+    "@atlas/core": "workspace:*",
+    "@atlas/shared": "workspace:*",
+    "ts-morph": "^28.0.0"
+  }
+}

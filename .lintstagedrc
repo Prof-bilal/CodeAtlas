@@ -1,0 +1,4 @@
+{
+  "*.{ts,tsx}": ["eslint --fix", "biome check --write"],
+  "*.{json,md,yml,yaml}": ["biome check --write"]
+}

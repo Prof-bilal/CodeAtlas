@@ -1,0 +1,330 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { CodeAtlasContext } from "../src/context";
+import { HANDLERS, type HandlerContext } from "../src/handlers";
+import { ToolDomainError, ToolInputError } from "../src/validation";
+import { createFixture, silentLogger, type Fixture } from "./fixture";
+
+function handlerContext(fx: Fixture): HandlerContext {
+  return { ctx: new CodeAtlasContext({ root: fx.root }), logger: silentLogger() };
+}
+
+/** Run `fn` against a fixture index, always releasing the SQLite handle. */
+async function withFixture(fn: (ctx: HandlerContext) => Promise<void>): Promise<void> {
+  const fx = createFixture();
+  const ctx = handlerContext(fx);
+  try {
+    await fn(ctx);
+  } finally {
+    ctx.ctx.close();
+    fx.cleanup();
+  }
+}
+
+/** Run `fn` against a root with no index (domain-error paths). */
+async function withEmptyRoot(fn: (ctx: HandlerContext) => Promise<void>): Promise<void> {
+  const root = mkdtempSync(join(tmpdir(), "atlas-mcp-noidx-"));
+  const ctx: HandlerContext = { ctx: new CodeAtlasContext({ root }), logger: silentLogger() };
+  try {
+    await fn(ctx);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+interface SymbolHit {
+  readonly name: string;
+  readonly path: string | null;
+  readonly symbolKind?: string;
+  readonly documentation: string | null;
+  readonly score: number;
+}
+interface SymbolSearchResult {
+  readonly hits: readonly SymbolHit[];
+  readonly total: number;
+}
+
+describe("search_symbols", () => {
+  it("returns ranked symbol hits enriched with kind and documentation", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.search_symbols(ctx, {
+        query: "double",
+      })) as SymbolSearchResult;
+      expect(result.total).toBeGreaterThan(0);
+      const hit = result.hits.find((entry) => entry.name === "double");
+      expect(hit).toBeDefined();
+      expect(hit?.symbolKind).toBe("function");
+      expect(hit?.path).toBe("/src/math.ts");
+      expect(hit?.documentation).toContain("Docs for double");
+    });
+  });
+
+  it("filters by symbol kind", async () => {
+    await withFixture(async (ctx) => {
+      const asClass = (await HANDLERS.search_symbols(ctx, {
+        query: "double",
+        kind: "class",
+      })) as SymbolSearchResult;
+      expect(asClass.total).toBe(0);
+
+      const asFunction = (await HANDLERS.search_symbols(ctx, {
+        query: "MathUtils",
+        kind: "class",
+      })) as SymbolSearchResult;
+      expect(asFunction.hits[0]?.symbolKind).toBe("class");
+    });
+  });
+
+  it("honors the limit", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.search_symbols(ctx, {
+        query: "a",
+        limit: 1,
+      })) as SymbolSearchResult;
+      expect(result.hits.length).toBeLessThanOrEqual(1);
+    });
+  });
+
+  it("rejects a missing query", async () => {
+    await withFixture(async (ctx) => {
+      await expect(HANDLERS.search_symbols(ctx, {})).rejects.toThrow(ToolInputError);
+      await expect(HANDLERS.search_symbols(ctx, {})).rejects.toThrow(/"query"/);
+    });
+  });
+
+  it("fails cleanly when no index exists", async () => {
+    await withEmptyRoot(async (ctx) => {
+      await expect(HANDLERS.search_symbols(ctx, { query: "double" })).rejects.toThrow(
+        ToolDomainError,
+      );
+      await expect(HANDLERS.search_symbols(ctx, { query: "double" })).rejects.toThrow(
+        /No context index found/,
+      );
+    });
+  });
+});
+
+describe("search_files", () => {
+  it("returns file hits with detected language", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.search_files(ctx, { query: "auth" })) as {
+        hits: ReadonlyArray<{ path: string | null; language: string | undefined; score: number }>;
+        total: number;
+      };
+      const hit = result.hits.find((entry) => entry.path === "/src/auth.ts");
+      expect(hit).toBeDefined();
+      expect(hit?.language).toBe("typescript");
+    });
+  });
+
+  it("matches file content", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.search_files(ctx, { query: "x * 2" })) as {
+        hits: ReadonlyArray<{ path: string | null }>;
+      };
+      expect(result.hits.some((entry) => entry.path === "/src/math.ts")).toBe(true);
+    });
+  });
+
+  it("rejects a missing query", async () => {
+    await withFixture(async (ctx) => {
+      await expect(HANDLERS.search_files(ctx, {})).rejects.toThrow(ToolInputError);
+    });
+  });
+});
+
+describe("get_summary", () => {
+  it("returns a stored file summary", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.get_summary(ctx, { target: "/src/math.ts" })) as {
+        found: boolean;
+        generated: boolean;
+        summaries: ReadonlyArray<{ kind: string; target: string; overview: string }>;
+      };
+      expect(result.found).toBe(true);
+      expect(result.generated).toBe(false);
+      expect(result.summaries[0]?.kind).toBe("file");
+      expect(result.summaries[0]?.overview).toContain("Math utilities");
+    });
+  });
+
+  it("reports a missing summary without erroring", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.get_summary(ctx, { target: "/src/missing.ts" })) as {
+        found: boolean;
+        message: string;
+      };
+      expect(result.found).toBe(false);
+      expect(result.message).toContain("generate");
+    });
+  });
+
+  it("matches the project summary by kind", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.get_summary(ctx, { target: "project" })) as {
+        found: boolean;
+        summaries: ReadonlyArray<{ kind: string; overview: string }>;
+      };
+      expect(result.found).toBe(true);
+      expect(result.summaries[0]?.kind).toBe("project");
+      expect(result.summaries[0]?.overview).toContain("demo project");
+    });
+  });
+
+  it("honors the kind hint", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.get_summary(ctx, { target: "/src", kind: "module" })) as {
+        found: boolean;
+        summaries: ReadonlyArray<{ kind: string }>;
+      };
+      expect(result.found).toBe(true);
+      expect(result.summaries[0]?.kind).toBe("module");
+    });
+  });
+
+  it("fails cleanly when generating without a provider", async () => {
+    await withFixture(async (ctx) => {
+      await expect(
+        HANDLERS.get_summary(ctx, { target: "/src/nope.ts", generate: true }),
+      ).rejects.toThrow(ToolDomainError);
+      await expect(
+        HANDLERS.get_summary(ctx, { target: "/src/nope.ts", generate: true }),
+      ).rejects.toThrow(/Summary generation failed/);
+    });
+  });
+});
+
+describe("get_dependencies", () => {
+  it("returns all persisted edges with labels", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.get_dependencies(ctx, {})) as {
+        count: number;
+        total: number;
+        dependencies: ReadonlyArray<{ fromLabel: string; toLabel: string; relation: string }>;
+      };
+      expect(result.count).toBe(2);
+      expect(result.total).toBe(2);
+      expect(result.dependencies[0]?.relation).toBe("imports");
+    });
+  });
+
+  it("filters by file-path node and direction", async () => {
+    await withFixture(async (ctx) => {
+      const outgoing = (await HANDLERS.get_dependencies(ctx, {
+        node: "/src/math.ts",
+        direction: "incoming",
+      })) as { count: number; dependencies: ReadonlyArray<{ fromLabel: string }> };
+      expect(outgoing.count).toBe(1);
+      expect(outgoing.dependencies[0]?.fromLabel).toBe("/src/auth.ts");
+    });
+  });
+
+  it("resolves a symbol name to its node", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.get_dependencies(ctx, {
+        node: "double",
+        direction: "incoming",
+      })) as { count: number; nodeFound: boolean };
+      expect(result.nodeFound).toBe(true);
+      expect(result.count).toBe(1);
+    });
+  });
+
+  it("filters by relation kind", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.get_dependencies(ctx, { relation: "calls" })) as {
+        count: number;
+      };
+      expect(result.count).toBe(1);
+    });
+  });
+
+  it("reports when a node does not exist", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.get_dependencies(ctx, { node: "/src/nope.ts" })) as {
+        count: number;
+        nodeFound: boolean;
+      };
+      expect(result.nodeFound).toBe(false);
+      expect(result.count).toBe(0);
+    });
+  });
+});
+
+describe("explain_module", () => {
+  it("explains a folder with files, symbols, dependencies, and summary", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.explain_module(ctx, { path: "/src" })) as {
+        fileCount: number;
+        symbolCount: number;
+        dependencyCount: number;
+        module: { path: string; moduleType: string } | null;
+        summary: { kind: string } | null;
+      };
+      expect(result.module?.path).toBe("/src");
+      expect(result.module?.moduleType).toBe("folder");
+      expect(result.fileCount).toBe(2);
+      expect(result.symbolCount).toBe(3);
+      expect(result.dependencyCount).toBe(2);
+      expect(result.summary?.kind).toBe("module");
+    });
+  });
+
+  it("can exclude the summary and dependencies", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.explain_module(ctx, {
+        path: "/src",
+        includeSummary: false,
+        includeDependencies: false,
+      })) as { summary: unknown; dependencies: unknown };
+      expect(result.summary).toBeNull();
+      expect(result.dependencies).toHaveLength(0);
+    });
+  });
+});
+
+describe("project_overview", () => {
+  it("returns counts, languages, and the stored project summary", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.project_overview(ctx, {})) as {
+        counts: Record<string, number>;
+        languages: Record<string, number>;
+        summary: { kind: string; overview: string } | null;
+      };
+      expect(result.counts).toEqual({
+        files: 3,
+        symbols: 3,
+        modules: 1,
+        dependencies: 2,
+        summaries: 3,
+      });
+      expect(result.languages).toEqual({ typescript: 2, markdown: 1 });
+      expect(result.summary?.kind).toBe("project");
+    });
+  });
+
+  it("includes listings with detail full", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.project_overview(ctx, { detail: "full" })) as {
+        modules: unknown[];
+        topFiles: unknown[];
+        topSymbols: unknown[];
+      };
+      expect(result.modules).toHaveLength(1);
+      expect(result.topFiles).toHaveLength(3);
+      expect(result.topSymbols).toHaveLength(3);
+    });
+  });
+
+  it("omits the summary when includeSummary is false", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.project_overview(ctx, { includeSummary: false })) as Record<
+        string,
+        unknown
+      >;
+      expect(result["summary"]).toBeUndefined();
+    });
+  });
+});

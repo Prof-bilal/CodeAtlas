@@ -1,0 +1,27 @@
+{
+  "name": "@atlas/cli",
+  "version": "0.0.0",
+  "description": "Command-line interface for CodeAtlas.",
+  "type": "module",
+  "bin": {
+    "atlas": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "biome format --write ."
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "dependencies": {
+    "@atlas/mcp": "workspace:*",
+    "@atlas/sdk": "workspace:*",
+    "commander": "^12.1.0"
+  }
+}

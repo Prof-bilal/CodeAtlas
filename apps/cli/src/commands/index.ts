@@ -1,0 +1,21 @@
+import type { Command } from "commander";
+import { registerBuild } from "./build";
+import { registerDoctor } from "./doctor";
+import { registerExplain } from "./explain";
+import { registerInit } from "./init";
+import { registerMcp } from "./mcp";
+import { registerSearch } from "./search";
+import { registerSessions } from "./sessions";
+import { registerUpdate } from "./update";
+
+/** Register every CLI command on the given program. */
+export function registerCommands(program: Command): void {
+  registerInit(program);
+  registerBuild(program);
+  registerUpdate(program);
+  registerSearch(program);
+  registerSessions(program);
+  registerExplain(program);
+  registerDoctor(program);
+  registerMcp(program);
+}
