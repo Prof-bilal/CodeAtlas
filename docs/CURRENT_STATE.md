@@ -433,9 +433,9 @@ examples/        # README placeholder only (no runnable examples)
   never auto-approved. The install/compat/security **fields are declared and
   validated here but evaluated by later tasks** (Tasks 21/22/24). No network,
   no database. See [TOOL_REGISTRY.md](./TOOL_REGISTRY.md).
-- **Everything else is still [PLANNED]**: the Compatibility Engine, Installer,
-  Configurator, Security/Trust evaluation, the `atlas tools`/`/tools` CLI
-  surface. See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
+- **Everything else is still [PLANNED]**: the Installer, Configurator,
+  Security/Trust evaluation, the `atlas tools`/`/tools` CLI surface. See
+  [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
 
 ### Tool Manifest System — **[IMPLEMENTED]**
 
@@ -465,6 +465,38 @@ examples/        # README placeholder only (no runnable examples)
   by later Toolkit tasks, surfaced in the SDK/CLI with Task 25. No network, no
   database. See [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
 
+### Compatibility Engine — **[IMPLEMENTED]**
+
+- **Task 21 implemented.** `@atlas/toolkit` ships the **Compatibility Engine**
+  (`compatibility.service.ts` behind `CompatibilityPort` in `core`, composed by
+  the SDK as `createCompatibilityEngine()`): it determines whether a tool
+  **can safely operate in the user's environment** before any install or
+  configuration step. It compares a tool's *declared* requirements (a Tool
+  Manifest's `compatibility` object — OS, architecture, runtimes with version
+  ranges, package-manager availability, AI CLIs, MCP, permissions) against the
+  *detected* environment and returns one of four states
+  (`compatible` / `partially-compatible` / `incompatible` / `unknown`) with
+  per-check evidence, grouped sub-checks, and a single overall verdict.
+- **Trust rules enforced**: it **never installs anything** and **never fails
+  open** — an `incompatible` tool is reported as **not installable in this
+  environment** (rendered explicitly, never silently skipped). `unknown` means
+  "cannot determine" and is **flagged, never guessed** (e.g. a runtime version
+  that cannot be parsed downgrades to `unknown`, not a guess). Declared
+  permissions are **advisory** — reported but never downgrade the verdict
+  (enforcement belongs to the installer's consent flow).
+- **AI-CLI detection is not reimplemented**: every agent check routes through
+  `AgentPort` (`@atlas/agents`). OS aliases (`windows`→`win32`,
+  `macos`→`darwin`) and architecture aliases (`x86_64`/`amd64`→`x64`) are
+  normalized. Environment detection (`EnvironmentDetector`) is **read-only and
+  offline** — no network, no implicit installs, binaries located by PATH
+  scanning (`spawn`-safe, no shell strings).
+- **SDK surface**: `createCompatibilityEngine()` in `@atlas/sdk` (defaults to a
+  real `AgentService` + `EnvironmentDetector`; both injectable for offline
+  tests). `renderCompatibilityReport()` turns a report into the design
+  contract's per-check `✓ / ~ / ✗ / ?` output. No CLI wiring yet — the `atlas
+  tools` surface arrives with the Installer/Configurator (Tasks 22/23). See
+  [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §6.
+
 ---
 
 ## 4. Intended vs. actual
@@ -473,7 +505,7 @@ examples/        # README placeholder only (no runnable examples)
 | ------------------------------------- | -------------- |
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking intentionally stubbed; `search` + `mcp` are CLI-wired |
 | **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`) and the session manager (`SessionManager`, `atlas sessions`) are implemented and SDK-wired, and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) is implemented and tested; router/slash commands **0%** |
-| **C. Agent Toolkit** (curated tool registry → install → configure → verify) | ~20% — **Task 19 registry foundation implemented** (`@atlas/toolkit` behind `ToolRegistryPort`, SDK `createToolRegistry`, shipped catalog + local overlay, per-field provenance) and **Task 20 Tool Manifest implemented** (versioned/validated/extensible per-installed-tool state in `.codeatlas/tools/`); Compatibility/Installer/Configurator/Security evaluation/`atlas tools` are **0%** ([PLANNED]) |
+| **C. Agent Toolkit** (curated tool registry → install → configure → verify) | ~25% — **Task 19 registry foundation implemented** (`@atlas/toolkit` behind `ToolRegistryPort`, SDK `createToolRegistry`, shipped catalog + local overlay, per-field provenance), **Task 20 Tool Manifest implemented** (versioned/validated/extensible per-installed-tool state in `.codeatlas/tools/`), and **Task 21 Compatibility Engine implemented** (`CompatibilityPort`, SDK `createCompatibilityEngine`, offline read-only environment detection, fail-closed verdicts); Installer/Configurator/Security evaluation/`atlas tools` are **0%** ([PLANNED]) |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
 at: (1) the other CLI commands (build/update/init/explain/doctor are stubs),

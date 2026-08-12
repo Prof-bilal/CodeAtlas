@@ -109,3 +109,13 @@ export class ManifestLoadError extends ManifestError {
     this.name = "ManifestLoadError";
   }
 }
+
+// ── Compatibility Engine errors ──────────────────────────────────────────────
+
+/** Base class for compatibility-engine errors. */
+export class CompatibilityError extends Error {
+  public constructor(message: string) {
+    super(message);
+    this.name = "CompatibilityError";
+  }
+}

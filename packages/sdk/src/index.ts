@@ -65,6 +65,10 @@ export { ReadRepositories, WriteRepositories } from "./context/repositories";
 export { createSessionManager, type CreateSessionManagerOptions } from "./sessions/index";
 export { createUsageService, type CreateUsageServiceOptions } from "./usage/index";
 export { createToolRegistry, type CreateToolRegistryOptions } from "./toolkit/index";
+export {
+  createCompatibilityEngine,
+  type CreateCompatibilityEngineOptions,
+} from "./toolkit/index";
 export { withUsageTracking, trackAgentRun, StaticPricingSource } from "@atlas/usage";
 export type { TrackingContext, WithUsageTrackingOptions } from "@atlas/usage";
 export {
@@ -78,6 +82,22 @@ export {
   RegistrySchemaVersionError,
   RegistryValidationError,
 } from "@atlas/toolkit";
+export {
+  CompatibilityError,
+  compatibilityStateGlyph,
+  EnvironmentDetector,
+  renderCompatibilityReport,
+} from "@atlas/toolkit";
+export type {
+  CompatibilityCheck,
+  CompatibilityEvaluationInput,
+  CompatibilityPort,
+  CompatibilityReport,
+  CompatibilityRequirements,
+  CompatibilityRuntime,
+  CompatibilityState,
+} from "@atlas/core";
+export type { EnvironmentDetectorOptions } from "@atlas/toolkit";
 export {
   createContextIntegration,
   type AttachInput,

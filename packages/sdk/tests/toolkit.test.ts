@@ -2,7 +2,12 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { RegistryValidationError, createToolRegistry } from "../src/index";
+import {
+  EnvironmentDetector,
+  RegistryValidationError,
+  createCompatibilityEngine,
+  createToolRegistry,
+} from "../src/index";
 
 const tempDirs: string[] = [];
 afterEach(() => {
@@ -84,5 +89,37 @@ describe("createToolRegistry (SDK surface)", () => {
   it("returns undefined for an unknown tool", () => {
     const registry = createToolRegistry();
     expect(registry.getTool("does-not-exist")).toBeUndefined();
+  });
+});
+
+describe("createCompatibilityEngine (SDK surface)", () => {
+  it("returns a working CompatibilityPort that evaluates declared requirements", async () => {
+    const engine = createCompatibilityEngine({
+      environment: new EnvironmentDetector({
+        platform: "win32",
+        arch: "x64",
+        nodeVersion: "v22.14.0",
+        findExecutable: (binary) => (binary === "node" ? "C:\\bin\\node.exe" : null),
+      }),
+    });
+    const result = await engine.evaluate({
+      toolName: "fixture-tool",
+      toolVersion: "1.0.0",
+      requirements: {
+        os: ["win32"],
+        runtimes: [{ name: "node", versionRange: ">=20.19.0" }],
+        agents: [],
+        mcp: false,
+        architecture: ["x64"],
+        permissions: [],
+      },
+      installMethod: null,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    expect(result.value.overall).toBe("compatible");
+    expect(result.value.notInstallable).toBe(false);
   });
 });

@@ -72,9 +72,17 @@ Non-obvious facts (verified as of 2026-08-11):
   installed tool's state, persisted per tool in `.codeatlas/tools/<name>.json`
   mirroring the Scanner manifest pattern, loaded as untrusted input (never
   executed, prototype-pollution safe, size-bounded, path-safe names). See
-  `docs/TOOL_MANIFEST.md`. The Compatibility Engine, Installer, Configurator,
-  and Security/Trust evaluation remain **[PLANNED]** — do **not** reference
-  them as existing. Design contract: `docs/AGENT_TOOLKIT.md`; registry details:
+  `docs/TOOL_MANIFEST.md`. **The Compatibility Engine (Task 21) is
+  implemented** — `@atlas/toolkit` behind `CompatibilityPort` in `core`,
+  composed via `createCompatibilityEngine()` in `@atlas/sdk`: evaluates a
+  tool's declared requirements (OS/architecture/runtimes/package manager/AI
+  CLIs via `AgentPort`/MCP/permissions) against the detected, injectable
+  environment (`EnvironmentDetector`); never installs anything and **never
+  fails open** — `incompatible` ⇒ not installable here, `unknown` flagged never
+  guessed, declared permissions advisory. See `docs/AGENT_TOOLKIT.md` §6. The
+  Installer, Configurator, and Security/Trust evaluation remain
+  **[PLANNED]** — do **not** reference them as existing. Design contract:
+  `docs/AGENT_TOOLKIT.md`; registry details:
   `docs/TOOL_REGISTRY.md`.
 - Pipelines that are implemented and tested: scanner, hashing, manifest,
   parser (TypeScript only — **[PARTIAL]**), graph, SQLite storage, search,

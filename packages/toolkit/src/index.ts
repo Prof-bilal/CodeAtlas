@@ -1,4 +1,5 @@
 export {
+  CompatibilityError,
   ManifestError,
   ManifestLoadError,
   ManifestSchemaVersionError,
@@ -73,3 +74,21 @@ export type {
   ToolManifestSourceKind,
   ToolVerificationStatus,
 } from "./manifest-schema";
+export {
+  CompatibilityEngineService,
+  type CompatibilityEngineOptions,
+} from "./compatibility.service";
+export {
+  defaultReadVersion,
+  EnvironmentDetector,
+  findExecutable,
+  type EnvironmentDetectorOptions,
+  type PackageManagerInfo,
+  type RuntimeInfo,
+} from "./environment";
+export { compatibilityStateGlyph, renderCompatibilityReport } from "./render";
+export {
+  extractVersion,
+  satisfiesVersionRange,
+  type VersionTuple,
+} from "./version-range";

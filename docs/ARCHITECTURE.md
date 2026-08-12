@@ -52,12 +52,14 @@ and [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md)).
 **Direction C — Agent Toolkit.** A curated interface to discover, install,
 configure, and verify high-quality open-source developer/AI-agent tools.
 **Foundations implemented** — the **Tool Registry** (`@atlas/toolkit` behind
-`ToolRegistryPort`, composed via `createToolRegistry()`) and the **Tool Manifest
+`ToolRegistryPort`, composed via `createToolRegistry()`), the **Tool Manifest
 System** (versioned/validated/extensible per-installed-tool manifests in
-`.codeatlas/tools/`). The Compatibility Engine, Installer, Configurator, and
-Security/Trust remain **[PLANNED]** (Tasks 21–24). See
-[AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md), [TOOL_REGISTRY.md](./TOOL_REGISTRY.md),
-and [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
+`.codeatlas/tools/`), and the **Compatibility Engine** (behind
+`CompatibilityPort`, composed via `createCompatibilityEngine()`). The
+Installer, Configurator, and Security/Trust remain **[PLANNED]** (Tasks 22–24).
+See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md),
+[TOOL_REGISTRY.md](./TOOL_REGISTRY.md), and
+[TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
 
 > **Principle:** CodeAtlas *orchestrates* existing AI CLIs and tools; it does
 > not unnecessarily recreate their internal functionality.
@@ -232,6 +234,9 @@ Planned additions (not yet in the repo):
   router itself does not. See [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md).
 - **Agent Toolkit** (`@atlas/toolkit` + `atlas tools` CLI) for Direction C —
   curated tool registry, installer, configurator, compatibility, security/trust.
+  The **Tool Registry**, **Tool Manifest**, and **Compatibility Engine** are
+  implemented (Tasks 19–21); the installer/configurator/security and the CLI
+  surface remain planned.
   See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
 - **SDK consumers** and a working CLI wired end-to-end. MCP (`@atlas/mcp`) is
   an implemented SDK consumer — see [MCP.md](./MCP.md).
@@ -298,9 +303,10 @@ These divergences from a "perfect" target are intentional and documented:
    extension (`@atlas/extension`) is implemented as a thin SDK consumer. See
    [VSCODE.md](./VSCODE.md) and [ROADMAP.md](./ROADMAP.md).
 5. **Direction C (Agent Toolkit) foundations are implemented** — the **Tool
-   Registry** and **Tool Manifest System** exist in `@atlas/toolkit` (behind
-   `ToolRegistryPort`, composed via `createToolRegistry()`); the installer /
-   configurator / compatibility / security subsystems remain a design contract
+   Registry**, **Tool Manifest System**, and **Compatibility Engine** exist in
+   `@atlas/toolkit` (behind `ToolRegistryPort`/`CompatibilityPort`, composed via
+   `createToolRegistry()`/`createCompatibilityEngine()`); the installer and
+   configurator subsystems / security evaluation remain a design contract
    ([AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)). When added, they must keep the
    "orchestrate, don't bundle" and "opt-in install" principles — never blind
    execution of third-party install scripts.

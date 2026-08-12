@@ -228,9 +228,14 @@ install, configure, and verify high-quality developer/AI-agent tools. See
   Loaded as untrusted input — typed errors, never executed, `__proto__` inert,
   1 MiB bound, path-safe names. No SDK surface yet (arrives with Task 25).
   See `docs/TOOL_MANIFEST.md`.
-- **Compatibility Engine** — **[PLANNED]** — evaluates a tool's declared
-  requirements (OS, runtime, package manager, AI CLI availability/version via
-  `AgentPort`, MCP, architecture, permissions) against the detected environment.
+- **Compatibility Engine** — **[IMPLEMENTED]** (Task 21): evaluates a tool's
+  declared requirements (OS, architecture, runtimes + version ranges, package
+  manager, AI CLI availability/version via `AgentPort`, MCP, permissions)
+  against the detected environment (`EnvironmentDetector`); one of four states
+  per check + a fail-closed overall verdict (`incompatible` ⇒ not installable,
+  `unknown` flagged never guessed; permissions advisory). `compatibility.service.ts`
+  + `environment.ts` + `version-range.ts` + `render.ts` in `@atlas/toolkit`;
+  `CompatibilityPort` in `core`; SDK `createCompatibilityEngine`.
 - **Tool Installer** — **[PLANNED]** — `InstallerPort` + one adapter per
   ecosystem (npm/pip/cargo/go/binary/GitHub release/MCP); **never** blind
   execution of third-party install scripts; user-approval flow; provenance

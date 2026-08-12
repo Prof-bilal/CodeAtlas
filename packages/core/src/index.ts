@@ -39,6 +39,15 @@ export type {
 } from "./ports/tool-registry.port";
 export type { CachePort } from "./ports/cache.port";
 export type { ContextBuilderPort } from "./ports/context.port";
+export type {
+  CompatibilityCheck,
+  CompatibilityEvaluationInput,
+  CompatibilityPort,
+  CompatibilityReport,
+  CompatibilityRequirements,
+  CompatibilityRuntime,
+  CompatibilityState,
+} from "./ports/compatibility.port";
 export type { Cycle, GraphPort } from "./ports/graph.port";
 export type { HashPort } from "./ports/hash.port";
 export type { ParserPort } from "./ports/parser.port";

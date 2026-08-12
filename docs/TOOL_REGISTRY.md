@@ -146,7 +146,8 @@ mismatch **throws** (re-exported errors: `RegistryError`,
 
 ## 7. Boundaries — what this task does NOT do
 
-- No **installation** (Task 22), **compatibility evaluation** (Task 21), or
+- No **installation** (Task 22), **compatibility evaluation** (Task 21 — now
+  implemented separately, see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §6), or
   **security evaluation** (Task 24) — those fields are declared and validated
   only.
 - No network access at runtime, no auto-approval of external metadata, no

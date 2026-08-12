@@ -1,14 +1,15 @@
 # Agent Toolkit
 
 > **Status: [PARTIAL]** — this document is the **design contract** for a new
-> first-class CodeAtlas subsystem. As of Tasks 19–20 the **Tool Registry
-> foundation and the Tool Manifest System are implemented** (see
-> [TOOL_REGISTRY.md](./TOOL_REGISTRY.md) and
+> first-class CodeAtlas subsystem. As of Tasks 19–21 the **Tool Registry
+> foundation, the Tool Manifest System, and the Compatibility Engine are
+> implemented** (see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md) and
 > [TOOL_MANIFEST.md](./TOOL_MANIFEST.md)): `@atlas/toolkit` behind
-> `ToolRegistryPort` in `core`, composed by the SDK as `createToolRegistry()`.
+> `ToolRegistryPort` and `CompatibilityPort` in `core`, composed by the SDK as
+> `createToolRegistry()` and `createCompatibilityEngine()`.
 > **Every other Toolkit component in this document is still [PLANNED]** — do
-> not claim them as implemented. The one other implemented building block the
-> Toolkit builds on is `@atlas/agents` (the AI CLI connection layer) — see
+> not claim them as implemented. The Toolkit also builds on `@atlas/agents`
+> (the AI CLI connection layer, `AgentPort`) — see
 > [CURRENT_STATE.md](./CURRENT_STATE.md) and [MODULES.md](./MODULES.md).
 
 ---
@@ -294,7 +295,7 @@ small adapter, not a fork.
 
 ## 6. Compatibility Engine
 
-**Owner:** `@atlas/toolkit` (planned).
+**Owner:** `@atlas/toolkit` — **[IMPLEMENTED]** (Task 21).
 
 Before installing, the Toolkit determines whether the tool **can run in this
 environment at all**:
@@ -313,21 +314,31 @@ The Registry schema lets tools **declare** compatibility requirements (see §3).
 The Compatibility Engine evaluates them against the **detected environment**,
 using `@atlas/agents` (`AgentPort`) for AI-CLI availability and version.
 
+Implemented pieces (`packages/toolkit`): `CompatibilityEngineService` behind
+`CompatibilityPort` in `core`; `EnvironmentDetector` (read-only, offline,
+injectable OS/arch/Node-version/binary resolver); a minimal documented semver
+range matcher (`version-range.ts` — `*`, exact, `> >= < <= =`, `^`/`~`, AND
+groups, `||` OR; everything else fails closed); and `renderCompatibilityReport`
+(`✓ / ~ / ✗ / ?` per check, sub-checks indented, then the overall verdict).
+Composed by the SDK as `createCompatibilityEngine()`.
+
 Example output:
 
 ```text
-Token Tool
-
-✓ Windows
-✓ Node 20+
-✓ Claude
-✓ Gemini
-
-✗ Python 3.12 required
+Tool: Token Tool (v1.4.2)
+✓ OS — running on win32
+✓ Node >=20.19.0 — found node (v22.14.0)
+✓ AI agents
+  ✓ claude — found claude v2.0.1
+  ✗ gemini — AI CLI 'gemini' not found on PATH
+✓ Architecture — running on x64
+? Python >=3.12 — found python3 (banana) but its version could not be parsed
+OVERALL: partially-compatible
 ```
 
 A tool that fails compatibility is surfaced as **not installable in this
-environment** — it is not auto-installed and not silently skipped.
+environment** (`OVERALL: incompatible — not installable in this environment`)
+— it is not auto-installed and not silently skipped.
 
 ---
 
@@ -582,7 +593,7 @@ outputs, high churn) feed the **future** Recommendation Engine — see
 | ------- | ------------ |
 | Tool catalog | `@atlas/toolkit` Registry — **implemented** (Task 19) |
 | Installed-tool state | Tool Manifest in `.codeatlas/tools/` — **implemented** (Task 20) |
-| Compatibility | `@atlas/toolkit` Compatibility Engine (planned) |
+| Compatibility | `@atlas/toolkit` Compatibility Engine — **implemented** (Task 21) |
 | Installers | `InstallerPort` + per-ecosystem adapters (planned) |
 | Configuration | `ConfiguratorPort` + per-target adapters (planned) |
 | Security / trust | `@atlas/toolkit` Security & Trust (planned) |

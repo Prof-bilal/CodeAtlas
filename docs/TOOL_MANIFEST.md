@@ -169,7 +169,8 @@ Per [SECURITY.md](./SECURITY.md) and the Task 24 threat list:
 
 ## 8. Boundaries — what this task does NOT do
 
-- **No installation** (Task 22), **no compatibility evaluation** (Task 21), and
+- **No installation** (Task 22), **no compatibility evaluation** (Task 21 — now
+  implemented separately, see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §6), and
   **no security evaluation** (Task 24) — only declares/records the fields those
   tasks evaluate.
 - **No context database** access — installed-tool state is plain JSON in

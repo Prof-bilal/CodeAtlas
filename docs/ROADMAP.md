@@ -129,8 +129,9 @@ Launch and supervise existing AI coding CLIs. See
 ## Phase 6 — Agent Toolkit *(in progress — Direction C)*
 
 Curated, verified ecosystem of open-source developer / AI-agent tools:
-discover, install, configure, verify. The Tool Registry (**Task 19**) and Tool
-Manifest System (**Task 20**) are **[IMPLEMENTED]** — see
+discover, install, configure, verify. The Tool Registry (**Task 19**), Tool
+Manifest System (**Task 20**), and **Compatibility Engine (Task 21)** are
+**[IMPLEMENTED]** — see
 [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) for the design contract,
 [TOOL_REGISTRY.md](./TOOL_REGISTRY.md), and [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
 
@@ -141,8 +142,11 @@ The remaining items below are **[PLANNED]**.
    configuration, security/trust status).
 2. **Tool Manifest System** — **[IMPLEMENTED]** versioned/validated/extensible
    per-installed-tool state in `.codeatlas/tools/`.
-3. **Compatibility Engine** — evaluate declared requirements (OS, runtime,
-   package-manager, AI CLI via `AgentPort`, MCP, architecture, permissions).
+3. **Compatibility Engine** — **[IMPLEMENTED]** evaluates declared requirements
+   (OS, architecture, runtime version ranges, package-manager, AI CLI via
+   `AgentPort`, MCP, permissions) against the detected environment; fail-closed
+   verdicts (`incompatible` ⇒ not installable, `unknown` flagged never
+   guessed); offline + read-only; `createCompatibilityEngine()` in the SDK.
 4. **Tool Installer** — `InstallerPort` + per-ecosystem adapters
    (npm/pip/cargo/go/binary/GitHub release/MCP); user-approval flow; **no blind
    `install.sh` execution**; provenance recorded.
