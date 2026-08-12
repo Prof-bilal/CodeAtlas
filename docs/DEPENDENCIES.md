@@ -50,12 +50,12 @@ Rules that follow:
    consumers (CLI) reach it via the SDK, never the store/repositories directly.
    See [USAGE.md](./USAGE.md) + ADR-009.
 6. **`@atlas/toolkit`** (Agent Toolkit) is a feature package: it imports
-   **only** `core` + `shared` (the Tool Registry foundation — Task 19 — and the
-   Tool Manifest System — Task 20 — are implemented; the remaining Toolkit
-   components are planned), reads CodeAtlas context through the **Context
+   **only** `core` + `shared` (the Registry, Manifest, Compatibility Engine,
+   Installer, and Configurator are implemented; Security/Trust remains planned),
+   reads CodeAtlas context through the **Context
    SDK**/port seams, and is composed behind its ports by `@atlas/sdk`
    (`createToolRegistry`).
-   `atlas tools`/`atlas setup` in the CLI (planned) delegate to the SDK and must
+   `atlas tools configure` and future `atlas tools`/`atlas setup` commands delegate to the SDK and must
    **not** import `@atlas/toolkit` directly. See
    [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) + [TOOL_REGISTRY.md](./TOOL_REGISTRY.md)
    + [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).

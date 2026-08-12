@@ -1,7 +1,7 @@
 {
   "name": "@atlas/toolkit",
   "version": "0.0.0",
-  "description": "Agent Toolkit for CodeAtlas — curated tool registry (Task 19) and per-installed-tool manifest system (Task 20).",
+  "description": "Agent Toolkit for CodeAtlas — curated tool registry (Task 19), per-installed-tool manifest system (Task 20), compatibility engine (Task 21), and safe tool installer (Task 22).",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

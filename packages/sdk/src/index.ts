@@ -13,6 +13,17 @@ export type {
   SummaryPort,
   Symbol,
 } from "@atlas/core";
+export type {
+  ConfiguratorPort,
+  ConfiguratorRequest,
+  ConfigurationChange,
+  ConfigurationPlan,
+  ConfigurationTarget,
+  ConfigurationTargetCheck,
+  ConfigurationTargetFailure,
+  ConfigurationVerification,
+  ConfigureOutcome,
+} from "@atlas/core";
 export {
   Container,
   createProjectContainer,
@@ -69,6 +80,8 @@ export {
   createCompatibilityEngine,
   type CreateCompatibilityEngineOptions,
 } from "./toolkit/index";
+export { createInstaller, type CreateInstallerOptions } from "./toolkit/index";
+export { createConfigurator, type CreateConfiguratorOptions } from "./toolkit/index";
 export { withUsageTracking, trackAgentRun, StaticPricingSource } from "@atlas/usage";
 export type { TrackingContext, WithUsageTrackingOptions } from "@atlas/usage";
 export {
@@ -88,6 +101,16 @@ export {
   EnvironmentDetector,
   renderCompatibilityReport,
 } from "@atlas/toolkit";
+export {
+  InstallApprovalDeniedError,
+  InstallBlockedError,
+  InstallFailedError,
+  InstallInvalidRequestError,
+  InstallNotCompatibleError,
+  InstallProcessError,
+  InstallUnsupportedMethodError,
+  InstallerError,
+} from "@atlas/toolkit";
 export type {
   CompatibilityCheck,
   CompatibilityEvaluationInput,
@@ -96,6 +119,17 @@ export type {
   CompatibilityRequirements,
   CompatibilityRuntime,
   CompatibilityState,
+} from "@atlas/core";
+export type {
+  InstallApproval,
+  InstallerPort,
+  InstallOutcome,
+  InstallPlan,
+  InstallPlanCommand,
+  InstallRollbackStatus,
+  InstallVerificationStatus,
+  ToolInstallInstruction,
+  ToolInstallRequest,
 } from "@atlas/core";
 export type { EnvironmentDetectorOptions } from "@atlas/toolkit";
 export {

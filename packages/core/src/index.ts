@@ -48,6 +48,28 @@ export type {
   CompatibilityRuntime,
   CompatibilityState,
 } from "./ports/compatibility.port";
+export type {
+  InstallApproval,
+  InstallerPort,
+  InstallOutcome,
+  InstallPlan,
+  InstallPlanCommand,
+  InstallRollbackStatus,
+  InstallVerificationStatus,
+  ToolInstallInstruction,
+  ToolInstallRequest,
+} from "./ports/installer.port";
+export type {
+  ConfiguratorPort,
+  ConfiguratorRequest,
+  ConfigurationChange,
+  ConfigurationPlan,
+  ConfigurationTarget,
+  ConfigurationTargetCheck,
+  ConfigurationTargetFailure,
+  ConfigurationVerification,
+  ConfigureOutcome,
+} from "./ports/configurator.port";
 export type { Cycle, GraphPort } from "./ports/graph.port";
 export type { HashPort } from "./ports/hash.port";
 export type { ParserPort } from "./ports/parser.port";

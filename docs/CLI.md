@@ -5,7 +5,8 @@ The command-line contract for the `atlas` binary.
 > **Status:** the command *surface* exists. **`atlas search` is wired to the
 > Context SDK**, **`atlas mcp` starts the MCP server**, **`atlas sessions`
 > manages AI agent sessions**, and **`atlas usage` reports AI usage &
-> credits**; the other five commands still print
+> credits**, and **`atlas tools configure` configures installed, supported tool
+> targets**; the other five commands still print
 > `[atlas <cmd>] Coming Soon` and do not call any service. The detailed
 > behavior below is the **contract** — flagged **[implemented]** / **[stubbed]**
 > / **[planned]** per command.
@@ -47,12 +48,13 @@ Options take precedence over environment/config where they overlap.
 | `atlas config` | **[planned]** — not registered | View/edit configuration (providers, keys source, agents, ignored dirs). Keys never printed. |
 | `atlas agents` | **[planned]** — not registered | List discovered agent CLIs for the orchestrator (Direction B). The connection layer (`@atlas/agents` behind `AgentPort`) is implemented; the CLI command is not. |
 | `atlas agents <name>` | **[planned]** — not registered | Launch/inspect a specific agent session. |
-| `atlas tools` | **[planned]** — not registered | Agent Toolkit overview: recommended + installed tools (Direction C — see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)). |
+| `atlas tools` | **[implemented]** parent command | Agent Toolkit commands (Direction C — see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)). |
 | `atlas tools search <query>` | **[planned]** — not registered | Search the curated tool registry. |
 | `atlas tools install <tool>` | **[planned]** — not registered | Install a tool through the user-approval/security flow. |
 | `atlas tools remove <tool>` | **[planned]** — not registered | Uninstall a tool + remove its configuration. |
 | `atlas tools update` | **[planned]** — not registered | Update installed tools / the local registry. |
 | `atlas tools doctor` | **[planned]** — not registered | Reconcile installed tools vs manifest vs environment. |
+| `atlas tools configure <tool>` | **[implemented]** | Configure only installed agents/hosts declared by the tool; `--dry-run` renders exact changes, `--json` emits machine-readable output, and `--config-home` supports managed/test user-config roots. |
 | `atlas setup` | **[planned]** — not registered | Guided environment → agent → tool recommendation → install → configure → verify (no auto-install without consent). |
 
 ### Agent slash commands (Direction B — **[planned]**, see AGENT_ORCHESTRATOR.md)
@@ -107,6 +109,7 @@ atlas search   → createContextSDK({ dbPath }) → context.search.search(...)
 atlas mcp      → @atlas/mcp startStdioServer({ root })
 atlas sessions → createSessionManager() → SessionPort (list/get/stop)
 atlas usage    → createUsageService({ filePath }) → UsagePort (summary/list/budgets)
+atlas tools configure → createConfigurator() → ConfiguratorPort → target adapters
 atlas init/build/update/explain/doctor → "Coming Soon" (future: Scanner → Hashing
                                           → Parser → Graph → ContextStore)
 ```

@@ -26,7 +26,7 @@ CodeAtlas is an open-source AI toolchain with three product directions:
 | --------- | ------------ | -------------- |
 | **A. Context Engine** | Scan → parse → graph → store → search → feed relevant context to AI | ~90% implemented |
 | **B. Unified AI CLI Orchestrator** | Launch & supervise installed AI coding CLIs (Claude / Gemini / Codex / OpenCode), coordinate sessions, later coordinate multiple agents | Connection layer, session manager, **multi-agent orchestrator**, and usage/credits implemented; router/slash commands planned |
-| **C. Agent Toolkit** | Curated, security-gated discovery/install/config of open-source developer & AI-agent tools | Registry foundation (Task 19) + Tool Manifest (Task 20) implemented; Compatibility/Installer/Configurator/Security/CLI planned (Tasks 21–25) |
+| **C. Agent Toolkit** | Curated, security-gated discovery/install/config of open-source developer & AI-agent tools | Tasks 19–23 implemented (Registry, Manifest, Compatibility, Installer, Configurator); Security/Trust and the broader CLI remain planned (Tasks 24–25) |
 
 ### Conceptual system
 
@@ -176,12 +176,12 @@ described concisely below with what it contributes to the next stages.
 | 16 | Context → Agent Integration | ✅ COMPLETED | `context-integration` module in `@atlas/sdk` (ADR-008): `createContextIntegration()` assembles a budgeted, deny-filtered, provider-independent `ContextPackage` per task via the Context SDK (ranked files/symbols/summaries/dependencies + overview + repo instructions, each scored with a reason), enforces item/token budgets, drops secrets (exclusion record), reports an honest staleness signal (`ContextSDK.hashes()` vs working tree), and delivers the package through `SessionPort` (`launch` seeds a new session's prompt; `attach` starts a `CREATED` session, typed `ContextAttachUnsupportedError` for live ones). `buildPackage`/`explain`/`launch`/`attach` + render helpers. No CLI wiring yet (Task 26). |
 | 17 | Multi-Agent Orchestration | ✅ COMPLETED | `createOrchestrator()` in `@atlas/sdk` (Direction B): a `TaskPlan` decomposes the user task into bounded, explicit agent roles; the executor runs roles in parallel or sequential through `SessionPort` (never reimplementing process/session management), collects typed results, combines them with attribution, and surfaces conflicts. Timeout (kill via `stopSession`, honest partial output), cancellation (stop remaining roles, `shutdown()` cleanup), bounded retry (launch failures only). See `docs/AGENT_ORCHESTRATOR.md`. |
 | 18 | Usage / Credits | ✅ COMPLETED | `@atlas/usage` behind `UsagePort`, composed as `createUsageService()` (ADR-009). Tri-state actual/estimated/unknown tokens & cost (never guessed), `PricingSource` abstraction (no hardcoded prices in logic), dedicated `.codeatlas/usage.db` store, `withUsageTracking`/`trackAgentRun` collection seams, soft budgets + fail-safe hard limits, `atlas usage` (summary/list/budgets). See `docs/USAGE.md`. |
-| 19 | Tool Registry | ✅ COMPLETED | `@atlas/toolkit` behind `ToolRegistryPort` in `core`, composed as `createToolRegistry()`: a curated, schema-validated, provenance-auditable catalog (`catalog.json`) merged with a local overlay, extensible categories. Registry only — no installer/compat/security (Tasks 21–24). See `docs/TOOL_REGISTRY.md`. |
+| 19 | Tool Registry | ✅ COMPLETED | `@atlas/toolkit` behind `ToolRegistryPort` in `core`, composed as `createToolRegistry()`: a curated, schema-validated, provenance-auditable catalog (`catalog.json`) merged with a local overlay, extensible categories. See `docs/TOOL_REGISTRY.md`. |
 | 20 | Tool Manifest | ✅ COMPLETED | Versioned (`TOOL_MANIFEST_SCHEMA_VERSION = 1`), validated, extensible manifest recording **one installed tool's** state (compatibility/installation/configuration/security declarations + applied state + trust at install). Persisted per tool in `.codeatlas/tools/<name>.json`, mirroring the Scanner manifest pattern; loaded as untrusted input (never executed, prototype-pollution safe, size-bounded, path-safe names). See `docs/TOOL_MANIFEST.md`. |
 
-The remaining tasks — **21 Compatibility Engine, 22 Tool Installer, 23 Tool
-Configurator, 24 Security/Trust, 25 Toolkit CLI, 26 Context CLI** — are
-**[PLANNED]**. Each is a full spec in the sections below.
+The remaining tasks — **24 Security/Trust, 25 Toolkit CLI, 26 Context CLI** — are
+**[PLANNED]**. Tasks 21–23 are implemented; each task remains fully specified
+in the sections below for auditability.
 
 ---
 
@@ -833,7 +833,9 @@ Compatibility (21) · Installer (22) · Configurator (23) · Security/Trust (24)
 
 # Task 21 — Compatibility Engine
 
-> **Status:** [PLANNED] — no code exists. Roadmap Phase 6 (Direction C).
+> **Status:** [IMPLEMENTED] — completed 2026-08-12. This section is retained as
+> the historical implementation specification; do not reimplement. Verify
+> against `docs/CURRENT_STATE.md` and `docs/AGENT_TOOLKIT.md` before changes.
 > Depends on Task 19 (Registry) + Task 20 (Manifest). **Does not install anything.**
 
 ## Goal
@@ -909,7 +911,9 @@ Compatibility Result
 
 # Task 22 — Tool Installer
 
-> **Status:** [PLANNED] — no code exists. Roadmap Phase 6 (Direction C).
+> **Status:** [IMPLEMENTED] — completed 2026-08-12. This section is retained as
+> the historical implementation specification; do not reimplement. Verify
+> against `docs/CURRENT_STATE.md` and `docs/AGENT_TOOLKIT.md` before changes.
 > Depends on Tasks 19–21. **Security-critical task — follow `docs/SECURITY.md`
 > strictly.** Do **not** implement every installer unless the architecture makes
 > it appropriate for the MVP (a safe subset is acceptable).
@@ -1010,7 +1014,9 @@ Verification
 
 # Task 23 — Tool Configurator
 
-> **Status:** [PLANNED] — no code exists. Roadmap Phase 6 (Direction C).
+> **Status:** [IMPLEMENTED] — completed 2026-08-12. This section is retained as
+> the historical implementation specification; do not reimplement. Verify
+> against `docs/CURRENT_STATE.md` and `docs/AGENT_TOOLKIT.md` before changes.
 > Depends on Tasks 19–22.
 
 ## Goal

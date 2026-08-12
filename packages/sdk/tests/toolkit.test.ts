@@ -1,11 +1,16 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Readable } from "node:stream";
+import type { CompatibilityPort, CompatibilityReport } from "@atlas/core";
+import { type Result, ok } from "@atlas/shared";
+import { InstallerProcess, type InstallerSpawnFn } from "@atlas/toolkit";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   EnvironmentDetector,
   RegistryValidationError,
   createCompatibilityEngine,
+  createInstaller,
   createToolRegistry,
 } from "../src/index";
 
@@ -121,5 +126,92 @@ describe("createCompatibilityEngine (SDK surface)", () => {
     }
     expect(result.value.overall).toBe("compatible");
     expect(result.value.notInstallable).toBe(false);
+  });
+});
+
+describe("createInstaller (SDK surface)", () => {
+  it("returns an InstallerPort and plans an npm install without executing", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "atlas-sdk-installer-"));
+    tempDirs.push(dir);
+
+    const compat: CompatibilityPort = {
+      async evaluate(): Promise<Result<CompatibilityReport>> {
+        return ok({
+          toolName: "fixture-tool",
+          toolVersion: "1.0.0",
+          overall: "compatible",
+          notInstallable: false,
+          checks: [],
+        });
+      },
+    };
+
+    const calls: { command: string; args: readonly string[]; shell?: boolean }[] = [];
+    const spawnFn: InstallerSpawnFn = (command, args, options) => {
+      calls.push({ command, args, shell: options.shell });
+      const stream = new Readable({ read() {} });
+      stream.push(null);
+      const proc = {
+        pid: 1,
+        stdout: stream,
+        stderr: stream,
+        kill: () => true,
+        on: (event: string, listener: unknown) => {
+          if (event === "close") {
+            (listener as (c: number | null) => void)(0);
+          }
+          return proc;
+        },
+      };
+      return proc;
+    };
+    const process = new InstallerProcess({ spawnFn, defaultTimeoutMs: 1000 });
+
+    const installer = createInstaller({
+      compatibility: compat,
+      process,
+      resolveBinary: () => null,
+      readVersion: () => null,
+      now: () => new Date("2026-08-12T12:00:00.000Z"),
+    });
+
+    const plan = await installer.plan({
+      name: "fixture-tool",
+      description: "A fixture.",
+      toolVersion: "1.0.0",
+      installation: {
+        type: "npm",
+        package: "fixture-tool",
+        source: null,
+        checksum: null,
+        versionRange: null,
+      },
+      security: { status: "unverified", trust: "unverified" },
+      compatibility: {
+        toolName: "fixture-tool",
+        toolVersion: "1.0.0",
+        requirements: {
+          os: [],
+          runtimes: [],
+          agents: [],
+          mcp: false,
+          architecture: [],
+          permissions: [],
+        },
+        installMethod: null,
+      },
+      cwd: dir,
+    });
+    expect(plan.ok).toBe(true);
+    if (!plan.ok) {
+      return;
+    }
+    expect(plan.value.command).toEqual({
+      binary: "npm",
+      args: ["install", "--global", "fixture-tool"],
+      cwd: dir,
+    });
+    expect(calls.length).toBe(0); // plan never executes
+    expect(installer.implementedTypes).toEqual(["npm", "pip", "cargo", "go"]);
   });
 });

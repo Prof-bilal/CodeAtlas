@@ -1,14 +1,15 @@
 # Agent Toolkit
 
 > **Status: [PARTIAL]** — this document is the **design contract** for a new
-> first-class CodeAtlas subsystem. As of Tasks 19–21 the **Tool Registry
-> foundation, the Tool Manifest System, and the Compatibility Engine are
-> implemented** (see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md) and
-> [TOOL_MANIFEST.md](./TOOL_MANIFEST.md)): `@atlas/toolkit` behind
-> `ToolRegistryPort` and `CompatibilityPort` in `core`, composed by the SDK as
-> `createToolRegistry()` and `createCompatibilityEngine()`.
-> **Every other Toolkit component in this document is still [PLANNED]** — do
-> not claim them as implemented. The Toolkit also builds on `@atlas/agents`
+> first-class CodeAtlas subsystem. As of Tasks 19–23 the **Tool Registry
+> foundation, the Tool Manifest System, the Compatibility Engine, the Tool
+> Installer, and the Tool Configurator are implemented** (see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md),
+> [TOOL_MANIFEST.md](./TOOL_MANIFEST.md), and [CURRENT_STATE.md](./CURRENT_STATE.md)):
+> `@atlas/toolkit` behind `ToolRegistryPort`, `CompatibilityPort`, and
+> `InstallerPort` in `core`, composed by the SDK as `createToolRegistry()`,
+> `createCompatibilityEngine()`, and `createInstaller()`.
+> **Security/Trust evaluation remains [PLANNED]**. The Tool Configurator and
+> `atlas tools configure` CLI surface are implemented for Task 23. The Toolkit also builds on `@atlas/agents`
 > (the AI CLI connection layer, `AgentPort`) — see
 > [CURRENT_STATE.md](./CURRENT_STATE.md) and [MODULES.md](./MODULES.md).
 
@@ -105,20 +106,20 @@ flowchart TB
 ```
 
 > `@atlas/agents` (the narrow spawn/detect boundary behind `AgentPort`) is
-> implemented but **not yet wired** into the SDK or CLI. The Toolkit's
-> Configurator will depend on the `AgentPort` seam (and the existing adapters)
+> implemented. The Configurator is wired through the SDK and depends on the
+> `AgentPort` seam (and the existing adapters)
 > for AI-CLI detection — it must **not** duplicate executable detection or
 > provider-specific launch arguments.
 
 ### Where the Toolkit lives
 
-Consistent with [DEPENDENCIES.md](./DEPENDENCIES.md) (the package + registry
-port now exist; the remaining components are planned):
+Consistent with [DEPENDENCIES.md](./DEPENDENCIES.md) (the package and toolkit
+ports exist; Security/Trust remains planned):
 
 - A new feature package `@atlas/toolkit` (imports **only** `core` + `shared`),
-  hosting the Registry and Tool Manifest (**implemented**), and the
-  Compatibility, Installer, Configurator, and Security/Trust services behind
-  **new ports in `core`** (planned).
+  hosting the Registry, Tool Manifest, Compatibility, Installer, and
+  Configurator (**implemented**) plus Security/Trust behind a new port in
+  `core` (planned).
 - A thin Toolkit **CLI surface** (`atlas tools ...`) added in `apps/cli`,
   which delegates to the SDK — never to feature packages directly.
 - SDK wiring (`@atlas/sdk`) composes the Toolkit behind its ports, exactly as
@@ -245,7 +246,18 @@ is actually present.
 
 ## 5. Tool Installer
 
-**Owner:** `@atlas/toolkit` (planned).
+**Owner:** `@atlas/toolkit` — **[IMPLEMENTED]** (Task 22) with a safe MVP subset.
+
+> **Implemented (Task 22):** `InstallerPort` in `core` + `InstallerService` in
+> `@atlas/toolkit`, composed via `createInstaller()` in `@atlas/sdk`. Adapters
+> ship for the **safe MVP subset** (`npm`, `pip`, `cargo`, `go`); `binary`,
+> `github-release`, and `mcp` are declared by the port but not yet executable —
+> adding one is a **new small adapter**, never a fork. Every command is an
+> argument-array spawn (`shell:false`), approval is mandatory, `blocked` tools
+> fail closed, verification reports `verified`/`unverified`/`failed` honestly,
+> and a Tool Manifest (Task 20) records provenance with best-effort rollback.
+> See [CURRENT_STATE.md](./CURRENT_STATE.md) and the
+> `packages/toolkit/tests/installer-*.test.ts` suite (incl. adversarial tests).
 
 The Installer enforces the product decision from the brief: **automatic
 installation is opt-in; the user stays in control.**
@@ -411,7 +423,7 @@ but the override is visible and recorded.
 
 ## 9. Tool Configurator
 
-**Owner:** `@atlas/toolkit` (planned).
+**Owner:** `@atlas/toolkit` (**implemented**, Task 23).
 
 A major purpose of the Toolkit is **automatic configuration**: after install,
 the tool is wired into the agents/environment that can use it.
@@ -594,11 +606,11 @@ outputs, high churn) feed the **future** Recommendation Engine — see
 | Tool catalog | `@atlas/toolkit` Registry — **implemented** (Task 19) |
 | Installed-tool state | Tool Manifest in `.codeatlas/tools/` — **implemented** (Task 20) |
 | Compatibility | `@atlas/toolkit` Compatibility Engine — **implemented** (Task 21) |
-| Installers | `InstallerPort` + per-ecosystem adapters (planned) |
-| Configuration | `ConfiguratorPort` + per-target adapters (planned) |
+| Installers | `InstallerPort` + per-ecosystem adapters — **implemented** (Task 22, MVP subset `npm`/`pip`/`cargo`/`go`) |
+| Configuration | `ConfiguratorPort` + per-target adapters — **implemented** (Task 23) |
 | Security / trust | `@atlas/toolkit` Security & Trust (planned) |
 | AI-CLI detection | `@atlas/agents` (`AgentPort`) — **implemented** |
-| CLI surface | `apps/cli` `atlas tools`/`atlas setup` (planned) |
+| CLI surface | `atlas tools configure` — **implemented**; remaining `atlas tools` commands and `atlas setup` planned |
 | Recommendation | separate future module (planned) |
 | Benchmarking | separate future subsystem (planned) |
 

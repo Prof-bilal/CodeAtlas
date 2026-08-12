@@ -36,7 +36,7 @@ every package's source and tests.
 
 ```
 apps/
-  cli/          # Commander.js CLI — `search`+`mcp`+`sessions`+`usage` wired, 5 stubbed  [PARTIAL]
+  cli/          # Commander.js CLI — `search`+`mcp`+`sessions`+`usage`+`tools configure` wired, 5 stubbed  [PARTIAL]
   extension/    # VS Code extension (@atlas/extension) — SDK consumer         [IMPLEMENTED]
 packages/
   shared/       # Base types, Result, branded IDs, VERSION, ComingSoonError  [EXISTING]
@@ -53,7 +53,7 @@ packages/
   usage/        # AI usage & credits: tri-state tokens/cost, budgets, limits [EXISTING]
   context/      # Context ranking & assembly                                  [STUB]
   agents/       # AI CLI connection layer (AgentPort)                         [EXISTING]
-  toolkit/      # Agent Toolkit — Tool Registry (19) + Tool Manifest (20)     [PARTIAL]
+  toolkit/      # Toolkit — Registry (19) + Manifest (20) + Compatibility (21) + Installer (22)  [PARTIAL]
   mcp/          # MCP server exposing context to AI tools                      [EXISTING]
   sdk/         # Composition root (Container)                                  [EXISTING]
 docs/            # (this documentation system)
@@ -256,8 +256,9 @@ examples/        # README placeholder only (no runnable examples)
 
 ### CLI (`apps/cli`) — **[PARTIAL]**
 
-- Commander.js program `atlas`, nine subcommands — `init`, `build`, `update`,
-  `search`, `sessions`, `usage`, `explain`, `doctor`, `mcp`. **`search` is wired
+- Commander.js program `atlas`, ten subcommands — `init`, `build`, `update`,
+  `search`, `sessions`, `usage`, `explain`, `doctor`, `mcp`, and `tools configure`.
+  **`search` is wired
   to the Context SDK**: it opens `.codeatlas/context.db` (via `ATLAS_ROOT` or
   cwd) with `createContextSDK`, runs `context.search.search(...)`, and prints
   ranked hits. **`mcp` starts the MCP server** (`startStdioServer`) for the
@@ -265,7 +266,8 @@ examples/        # README placeholder only (no runnable examples)
   (`list`/`info`/`stop`) via `createSessionManager()` from the SDK. **`usage`
   reports AI usage & credits** (`summary`/`list`/`budgets`, bare `atlas usage`
   = summary, `--json` per subcommand) through `createUsageService()` from the
-  SDK against `.codeatlas/usage.db`. The other five commands still print
+  SDK against `.codeatlas/usage.db`. **`tools configure`** delegates to
+  `createConfigurator()` and supports dry-run. The other five commands still print
   `[atlas <command>] Coming Soon`. No `/agent`-style slash commands (the agent
   router is planned).
 - Dependency note: the CLI may import `@atlas/sdk` **and** `@atlas/mcp` (so it
@@ -431,10 +433,13 @@ examples/        # README placeholder only (no runnable examples)
   throw typed errors; nothing is skipped silently. External metadata is
   advisory only and recorded as `external` provenance — never trusted blindly,
   never auto-approved. The install/compat/security **fields are declared and
-  validated here but evaluated by later tasks** (Tasks 21/22/24). No network,
+  validated here but evaluated by later tasks** (Tasks 21–24). No network,
   no database. See [TOOL_REGISTRY.md](./TOOL_REGISTRY.md).
-- **Everything else is still [PLANNED]**: the Installer, Configurator,
-  Security/Trust evaluation, the `atlas tools`/`/tools` CLI surface. See
+- **The Configurator (Task 23) is implemented**: `ConfiguratorPort` with
+  Claude/Gemini/Codex/OpenCode/MCP/VS Code adapters, AgentPort-backed target
+  detection, merge/backup/rollback/read-back verification, dry-run support,
+  SDK composition, and `atlas tools configure`. Security/Trust evaluation and
+  the remaining `atlas tools`/`/tools` surface remain [PLANNED]. See
   [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
 
 ### Tool Manifest System — **[IMPLEMENTED]**
@@ -459,11 +464,12 @@ examples/        # README placeholder only (no runnable examples)
   safe (`__proto__` preserved inertly), size-bounded (1 MiB), and tool names are
   path-safe (can never escape `tools/`). Unknown-but-well-formed fields are
   **preserved** across serialize/parse (extensibility).
-- **No SDK surface yet** — exported from `@atlas/toolkit`
+- Manifest persistence is toolkit-internal and exported from `@atlas/toolkit`
   (`createToolManifest`, `saveToolManifest`, `loadToolManifest`,
-  `listInstalledTools`, `validateToolManifest`, `parseToolManifest`); consumed
-  by later Toolkit tasks, surfaced in the SDK/CLI with Task 25. No network, no
-  database. See [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
+  `listInstalledTools`, `validateToolManifest`, `parseToolManifest`); the
+  higher-level installer/configurator services are composed through the SDK,
+  including `atlas tools configure`. No network, no database. See
+  [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
 
 ### Compatibility Engine — **[IMPLEMENTED]**
 
@@ -493,9 +499,54 @@ examples/        # README placeholder only (no runnable examples)
 - **SDK surface**: `createCompatibilityEngine()` in `@atlas/sdk` (defaults to a
   real `AgentService` + `EnvironmentDetector`; both injectable for offline
   tests). `renderCompatibilityReport()` turns a report into the design
-  contract's per-check `✓ / ~ / ✗ / ?` output. No CLI wiring yet — the `atlas
-  tools` surface arrives with the Installer/Configurator (Tasks 22/23). See
+  contract's per-check `✓ / ~ / ✗ / ?` output. `atlas tools configure` is now
+  wired through the Configurator; the remaining tools surface is planned. See
   [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §6.
+
+### Tool Installer — **[IMPLEMENTED]**
+
+- **Task 22 implemented.** `@atlas/toolkit` ships the **Tool Installer**
+  (`installer.service.ts` behind `InstallerPort` in `core`, composed by the SDK
+  as `createInstaller()`), with **one adapter per ecosystem**
+  (`installer-adapters.ts`: `NpmAdapter` / `PipAdapter` / `CargoAdapter` /
+  `GoAdapter`) mirroring the `ProviderPort`/`AgentPort` adapter pattern — a new
+  ecosystem is a new small adapter, not a fork. A safe MVP subset (`npm`, `pip`,
+  `cargo`, `go`) is executable; `binary` / `github-release` / `mcp` are declared
+  by the port but not yet implemented (adding one is a new adapter).
+- **Official distribution channels only** — every command is spawned through the
+  ecosystem's own package manager (`npm install --global`, `pip install --user`,
+  `cargo install`, `go install <mod>@<ver>`); it **never** downloads a repo and
+  runs a third-party install script.
+- **Gates before anything runs**: request validation (safe tool name + real
+  working dir), the **Compatibility Engine** (Task 21 — an `incompatible` tool
+  is `InstallNotCompatibleError`), and a **security gate** (`blocked` status or
+  trust ⇒ `InstallBlockedError`, even with approval). `plan()` builds the exact
+  command and never executes.
+- **Approval is always required** — `install()` runs the same gates then aborts
+  with `InstallApprovalDeniedError` unless `approval.granted === true`; the
+  caller shows the exact `command`/`effect`/`dangerous` flags first.
+- **Command injection is structurally prevented** — every command is spawned as
+  an **argument array** with `shell:false` (`installer-process.ts`); hostile
+  manifest/registry values are rejected (leading `-`, whitespace, control
+  chars, oversized) or, if they pass, arrive as a single inert argv element.
+  Captured output is bounded and **secret-redacted**; no env/keys are ever
+  logged.
+- **Verification + provenance + rollback**: after install the binary is resolved
+  on PATH and, when a `versionRange` is declared, the detected version is
+  checked — the outcome records `verified` / `unverified` / `failed` honestly. A
+  Tool Manifest (Task 20) is recorded (`.codeatlas/tools/<name>.json`) with the
+  exact argv, verification status, and timestamp. On a failed install the
+  pre-install state is restored best-effort (`npm`/`pip`/`cargo` uninstall) when
+  the tool was not already present; `go` (no module-uninstall) reports rollback
+  as unsupported honestly.
+- **Tests** (`packages/toolkit/tests/installer-*.test.ts`): adapters build exact
+  argument arrays; compatibility/security gates block; approval required;
+  install→verify→manifest flow and rollback against a fake package-manager
+  executable; adversarial tests assert no shell syntax, path traversal, or
+  secret exfiltration is possible. SDK `createInstaller()` is exercised in
+  `packages/sdk/tests/toolkit.test.ts`. See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §5.
+
+
 
 ---
 
@@ -505,7 +556,7 @@ examples/        # README placeholder only (no runnable examples)
 | ------------------------------------- | -------------- |
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking intentionally stubbed; `search` + `mcp` are CLI-wired |
 | **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`) and the session manager (`SessionManager`, `atlas sessions`) are implemented and SDK-wired, and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) is implemented and tested; router/slash commands **0%** |
-| **C. Agent Toolkit** (curated tool registry → install → configure → verify) | ~25% — **Task 19 registry foundation implemented** (`@atlas/toolkit` behind `ToolRegistryPort`, SDK `createToolRegistry`, shipped catalog + local overlay, per-field provenance), **Task 20 Tool Manifest implemented** (versioned/validated/extensible per-installed-tool state in `.codeatlas/tools/`), and **Task 21 Compatibility Engine implemented** (`CompatibilityPort`, SDK `createCompatibilityEngine`, offline read-only environment detection, fail-closed verdicts); Installer/Configurator/Security evaluation/`atlas tools` are **0%** ([PLANNED]) |
+| **C. Agent Toolkit** (curated tool registry → install → configure → verify) | ~45% — Tasks 19–23 implemented: Registry, Manifest, Compatibility Engine, Installer, and Configurator with SDK composition, per-target adapters, AgentPort detection, safe user-config merge, backup/rollback, verification, dry-run, and `atlas tools configure`; Security/Trust and the broader `atlas tools` surface remain planned |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
 at: (1) the other CLI commands (build/update/init/explain/doctor are stubs),

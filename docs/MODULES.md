@@ -226,7 +226,8 @@ install, configure, and verify high-quality developer/AI-agent tools. See
   `manifest.ts` in `@atlas/toolkit`; persisted one file per tool at
   `.codeatlas/tools/<name>.json` (Scanner manifest merge policy, gitignored).
   Loaded as untrusted input — typed errors, never executed, `__proto__` inert,
-  1 MiB bound, path-safe names. No SDK surface yet (arrives with Task 25).
+  1 MiB bound, path-safe names. Manifest persistence remains toolkit-internal;
+  higher-level install/configure services are exposed through the SDK.
   See `docs/TOOL_MANIFEST.md`.
 - **Compatibility Engine** — **[IMPLEMENTED]** (Task 21): evaluates a tool's
   declared requirements (OS, architecture, runtimes + version ranges, package
@@ -236,13 +237,19 @@ install, configure, and verify high-quality developer/AI-agent tools. See
   `unknown` flagged never guessed; permissions advisory). `compatibility.service.ts`
   + `environment.ts` + `version-range.ts` + `render.ts` in `@atlas/toolkit`;
   `CompatibilityPort` in `core`; SDK `createCompatibilityEngine`.
-- **Tool Installer** — **[PLANNED]** — `InstallerPort` + one adapter per
-  ecosystem (npm/pip/cargo/go/binary/GitHub release/MCP); **never** blind
-  execution of third-party install scripts; user-approval flow; provenance
-  recorded.
-- **Tool Configurator** — **[PLANNED]** — `ConfiguratorPort` + one adapter per
-  target (Claude/Gemini/Codex/OpenCode/MCP/VS Code); auto-configuration after
-  install; provider logic quarantined in adapters.
+- **Tool Installer** — **[IMPLEMENTED]** (Task 22): `InstallerPort` in `core` +
+  `InstallerService` + `installer-adapters.ts` + `installer-process.ts` +
+  `installer-errors.ts` in `@atlas/toolkit`; one adapter per ecosystem
+  (MVP subset: npm/pip/cargo/go — `binary`/`github-release`/`mcp` declared,
+  adding one is a new adapter); **never** blind execution of third-party install
+  scripts; official distribution channels only; argument-array spawns
+  (`shell:false`), approval always required, `blocked` fails closed,
+  verification + Tool Manifest provenance + best-effort rollback. SDK
+  `createInstaller`.
+- **Tool Configurator** — **[IMPLEMENTED]** — `ConfiguratorPort` + one adapter
+  per target (Claude/Gemini/Codex/OpenCode/MCP/VS Code); AgentPort-backed
+  detection, safe user-config merge/backup/rollback/verification, dry-run, and
+  SDK `createConfigurator` composition.
 - **Security / Trust** — **[PLANNED]** — security status
   (`verified`/`reviewed`/`community`/`unverified`/`blocked`), trust hierarchy,
   and the approval gate.
@@ -280,7 +287,8 @@ Responsible for the command-line interface.
 - Owns: `atlas` program, subcommands, and (planned) `/agent` router entry.
 - Current state: `search` runs through the Context SDK, `mcp` starts the MCP
   server, `sessions` manages agent sessions (`createSessionManager`), and
-  `usage` reports AI usage & credits (`createUsageService`); the other five
+  `usage` reports AI usage & credits (`createUsageService`), and `tools configure`
+  delegates to `createConfigurator()`; the other five
   (`init`/`build`/`update`/`explain`/`doctor`) print "Coming Soon".
 - Must **NOT**: contain business logic; it delegates to the SDK (and to
   `@atlas/mcp` to start the server).
@@ -334,7 +342,7 @@ Responsible for editor integration.
 | Where data lives         | `@atlas/storage` (+ scanner manifest file, + `@atlas/usage`'s own `usage.db`, + `.codeatlas/tools/` tool manifests by `@atlas/toolkit`) |
 | How context gets picked  | `@atlas/context` (stub) |
 | What tools a user may install | Agent Toolkit Registry (implemented) + Security/Trust (planned) |
-| How tools get installed/configured | Agent Toolkit Installer + Configurator (planned) |
+| How tools get installed/configured | Agent Toolkit Installer + Configurator (implemented, Tasks 22–23) |
 | External AI CLI detection | `@atlas/agents` (`AgentPort`, implemented) |
 | Tool install safety       | Agent Toolkit Security model — see [SECURITY.md](./SECURITY.md) |
 
@@ -348,7 +356,7 @@ Responsible for editor integration.
   (including `@atlas/toolkit` — registry implemented — and `@atlas/agents`).
 - **`sdk`** is what `cli`, `mcp`, and the VS Code extension (`apps/extension`)
   consume for context; `cli` may additionally import `@atlas/mcp` to start the
-  server. Planned `atlas tools`/`atlas setup` follow the same rule: delegate to
+  server. `atlas tools configure` and planned `atlas tools`/`atlas setup` follow the same rule: delegate to
   the SDK, never import `@atlas/toolkit` directly.
 - The **Context SDK** (`createContextSDK`) is the read façade exported by
   `sdk`; it is what those consumers should call — not `getSearch()`/

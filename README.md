@@ -14,10 +14,11 @@ can reason about large codebases accurately and efficiently.
 > (`@atlas/agents`), the **Agent Session Manager** (`atlas sessions`), the
 > **multi-agent Orchestrator**, **Usage & Credits** (`atlas usage`, ADR-009),
 > Context → Agent integration (`createContextIntegration`, ADR-008), and the
-> **Agent Toolkit** registry + tool-manifest foundation (Tasks 19–20). Still
-> planned: the CLI's indexing commands (`init`/`build`/`update`/`explain`/
-> `doctor`), the Toolkit's compatibility/installer/configurator/security engine
-> and its `atlas tools` CLI (Tasks 21–25), and the `atlas context` CLI (Task 26).
+> **Agent Toolkit** registry + tool-manifest foundation (Tasks 19–20), its
+> Compatibility Engine and Installer (Tasks 21–22), and the Tool Configurator
+> with `atlas tools configure` (Task 23). Still planned: the CLI's indexing
+> commands (`init`/`build`/`update`/`explain`/`doctor`), Toolkit Security/Trust,
+> the remaining `atlas tools` CLI, and the `atlas context` CLI (Task 26).
 > The context rank/assembler (`@atlas/context`) remains a structural stub behind
 > its port by design (ADR-001).
 
@@ -144,7 +145,8 @@ linting, formatting, typing, and commit conventions on every change.
 - Incremental updates powered by hashing
 - AI context engine integration
 - Agent Toolkit: Compatibility Engine (Task 21), Installer (22), Configurator
-  (23), Security/Trust (24), and the `atlas tools` CLI (25) — see
+  (23, including `atlas tools configure`), Security/Trust (24), and the
+  remaining `atlas tools` CLI (25) — see
   `docs/AGENT_TOOLKIT.md`
 - Context CLI: `atlas context` wiring for Context → Agent integration (Task 26,
   follow-up to ADR-008)

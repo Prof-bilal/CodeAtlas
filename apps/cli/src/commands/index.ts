@@ -6,6 +6,7 @@ import { registerInit } from "./init";
 import { registerMcp } from "./mcp";
 import { registerSearch } from "./search";
 import { registerSessions } from "./sessions";
+import { registerTools } from "./tools";
 import { registerUpdate } from "./update";
 import { registerUsage } from "./usage";
 
@@ -17,6 +18,7 @@ export function registerCommands(program: Command): void {
   registerSearch(program);
   registerSessions(program);
   registerUsage(program);
+  registerTools(program);
   registerExplain(program);
   registerDoctor(program);
   registerMcp(program);

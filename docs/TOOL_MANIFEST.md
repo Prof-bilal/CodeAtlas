@@ -66,8 +66,9 @@ Tool Manifest (@atlas/toolkit)
 
 Same as the Registry: `@atlas/toolkit` imports **only** `@atlas/core` +
 `@atlas/shared`. The manifest is a data/state layer that later Toolkit tasks
-(21–24) consume *within* `@atlas/toolkit`; there is **no SDK surface yet** — it
-is wired when a consumer (Install, Configure, `atlas tools`) needs it.
+(21–24) consume *within* `@atlas/toolkit`; the SDK exposes the higher-level
+installer and configurator services, while manifest persistence remains an
+internal toolkit data layer.
 
 ## 3. Schema (`TOOL_MANIFEST_SCHEMA_VERSION = 1`)
 
@@ -175,8 +176,8 @@ Per [SECURITY.md](./SECURITY.md) and the Task 24 threat list:
   tasks evaluate.
 - **No context database** access — installed-tool state is plain JSON in
   `.codeatlas/tools/`.
-- **No SDK surface yet** — `createToolManifest`/`saveToolManifest`/
-  `loadToolManifest`/`listInstalledTools` are exported from `@atlas/toolkit`
-  and consumed by later Toolkit tasks; the SDK/CLI surface arrives with
-  Task 25 (`atlas tools`).
+- `createToolManifest`/`saveToolManifest`/`loadToolManifest`/
+  `listInstalledTools` are exported from `@atlas/toolkit` and consumed by
+  Toolkit tasks; `atlas tools configure` is available through the SDK/CLI,
+  while the remaining Task 25 command surface is planned.
 - **No execution of anything in a manifest** (§6).

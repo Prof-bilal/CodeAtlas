@@ -79,6 +79,65 @@ export {
   type CompatibilityEngineOptions,
 } from "./compatibility.service";
 export {
+  InstallerService,
+  type InstallerServiceOptions,
+} from "./installer.service";
+export { ConfiguratorService, type ConfiguratorServiceOptions } from "./configurator.service";
+export {
+  ClaudeAdapter,
+  GeminiAdapter,
+  CodexAdapter,
+  OpenCodeAdapter,
+  McpAdapter,
+  VsCodeAdapter,
+  builtinConfigurationAdapters,
+} from "./configurator-adapters";
+export {
+  FsConfigWriter,
+  applyConfigurationChange,
+  buildConfigurationChange,
+  rollbackConfiguration,
+  type ConfigWriter,
+  type ConfigurationAdapter,
+  type ConfigurationContext,
+} from "./configurator-adapter";
+export {
+  ConfiguratorError,
+  ConfiguratorRequestError,
+  ConfigReadError,
+  ConfigMergeError,
+  ConfigWriteError,
+  ConfigVerifyError,
+} from "./configurator-errors";
+export type {
+  AdapterPlan,
+  EcosystemAdapter,
+} from "./installer-adapter";
+export {
+  CargoAdapter,
+  GoAdapter,
+  NpmAdapter,
+  PipAdapter,
+} from "./installer-adapters";
+export { InstallerProcess, nodeSpawnFn } from "./installer-process";
+export type {
+  InstallerProcessOptions,
+  InstallerProcessResult,
+  InstallerProcessSpec,
+  InstallerSpawnFn,
+  SpawnedProcess,
+} from "./installer-process";
+export {
+  InstallApprovalDeniedError,
+  InstallBlockedError,
+  InstallFailedError,
+  InstallInvalidRequestError,
+  InstallNotCompatibleError,
+  InstallProcessError,
+  InstallUnsupportedMethodError,
+  InstallerError,
+} from "./installer-errors";
+export {
   defaultReadVersion,
   EnvironmentDetector,
   findExecutable,

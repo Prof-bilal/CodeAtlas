@@ -35,8 +35,9 @@ Non-obvious facts (verified as of 2026-08-11):
 
 - `@atlas/context` (context ranking/assembly) is **intentionally a stub** — its
   methods throw `ComingSoonError` by design (ADR-001). Do **not** "fix" it.
-- The CLI has **nine** subcommands. `atlas search`, `atlas mcp`,
-  `atlas sessions`, and `atlas usage` are wired (through the **Context SDK**,
+- The CLI has **ten** subcommands. `atlas search`, `atlas mcp`,
+  `atlas sessions`, `atlas usage`, and `atlas tools configure` are wired
+  (through the **Context SDK**,
   `@atlas/mcp`, `createSessionManager()`, and `createUsageService()`
   respectively); `init`/`build`/`update`/`explain`/`doctor` still print
   "Coming Soon".
@@ -79,9 +80,19 @@ Non-obvious facts (verified as of 2026-08-11):
   CLIs via `AgentPort`/MCP/permissions) against the detected, injectable
   environment (`EnvironmentDetector`); never installs anything and **never
   fails open** — `incompatible` ⇒ not installable here, `unknown` flagged never
-  guessed, declared permissions advisory. See `docs/AGENT_TOOLKIT.md` §6. The
-  Installer, Configurator, and Security/Trust evaluation remain
-  **[PLANNED]** — do **not** reference them as existing. Design contract:
+  guessed, declared permissions advisory. See `docs/AGENT_TOOLKIT.md` §6. **The
+  Tool Installer (Task 22) is implemented** — `@atlas/toolkit` behind
+  `InstallerPort` in `core`, composed via `createInstaller()` in `@atlas/sdk`:
+  a safe MVP subset (`npm`, `pip`, `cargo`, `go`) installs through **official
+  distribution channels only**; every command is an **argument-array spawn**
+  (`shell:false`, never a shell string — adversarial tests assert this);
+  **approval is always required**; the compatibility (Task 21) and security
+  (`blocked` → refuse) gates run before anything; post-install verification +
+  Tool Manifest provenance + best-effort rollback. **The Tool Configurator
+  (Task 23) is implemented** behind `ConfiguratorPort`, with per-target
+  adapters, AgentPort-backed detection, safe user-config merge/backup/rollback,
+  verification, dry-run, SDK composition, and `atlas tools configure`.
+  Security/Trust evaluation remains **[PLANNED]**. Design contract:
   `docs/AGENT_TOOLKIT.md`; registry details:
   `docs/TOOL_REGISTRY.md`.
 - Pipelines that are implemented and tested: scanner, hashing, manifest,

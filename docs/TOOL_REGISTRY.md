@@ -152,4 +152,5 @@ mismatch **throws** (re-exported errors: `RegistryError`,
   only.
 - No network access at runtime, no auto-approval of external metadata, no
   downloading or fetching.
-- No `atlas tools` CLI / slash-command surface yet.
+- `atlas tools configure` is implemented; the remaining discovery/install/
+  remove/update/doctor CLI and slash-command surface is planned.

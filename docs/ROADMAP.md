@@ -130,12 +130,14 @@ Launch and supervise existing AI coding CLIs. See
 
 Curated, verified ecosystem of open-source developer / AI-agent tools:
 discover, install, configure, verify. The Tool Registry (**Task 19**), Tool
-Manifest System (**Task 20**), and **Compatibility Engine (Task 21)** are
+Manifest System (**Task 20**), **Compatibility Engine (Task 21)**, **Tool
+Installer (Task 22)**, and **Tool Configurator (Task 23)** are
 **[IMPLEMENTED]** — see
 [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) for the design contract,
 [TOOL_REGISTRY.md](./TOOL_REGISTRY.md), and [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
 
-The remaining items below are **[PLANNED]**.
+Security/Trust and the broader CLI/slash-command surface remain **[PLANNED]**;
+the implemented items below are marked explicitly.
 
 1. **Tool Registry** — **[IMPLEMENTED]** authoritative catalog (metadata,
    categories, versions, licenses, repos, install methods, compatibility,
@@ -147,11 +149,13 @@ The remaining items below are **[PLANNED]**.
    `AgentPort`, MCP, permissions) against the detected environment; fail-closed
    verdicts (`incompatible` ⇒ not installable, `unknown` flagged never
    guessed); offline + read-only; `createCompatibilityEngine()` in the SDK.
-4. **Tool Installer** — `InstallerPort` + per-ecosystem adapters
-   (npm/pip/cargo/go/binary/GitHub release/MCP); user-approval flow; **no blind
-   `install.sh` execution**; provenance recorded.
-5. **Tool Configurator** — `ConfiguratorPort` + per-target adapters
-   (Claude/Gemini/Codex/OpenCode/MCP/VS Code).
+4. **Tool Installer** — **[IMPLEMENTED]** `InstallerPort` + safe MVP
+   per-ecosystem adapters (npm/pip/cargo/go); approval-gated argument-array
+   execution, verification, provenance, and rollback.
+5. **Tool Configurator** — **[IMPLEMENTED]** `ConfiguratorPort` + per-target
+   adapters (Claude/Gemini/Codex/OpenCode/MCP/VS Code), AgentPort-backed
+   detection, safe user-config merge/backup/rollback/verification, dry-run,
+   SDK composition, and `atlas tools configure`.
 6. **Tool Security / Trust System** — security status + trust hierarchy
    (`verified`/`reviewed`/`community`/`unverified`/`blocked`) and the approval
    gate.

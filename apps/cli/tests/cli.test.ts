@@ -89,7 +89,7 @@ async function withProject(fn: (root: string) => Promise<void>): Promise<void> {
 }
 
 describe("atlas CLI", () => {
-  it("registers all nine expected commands", () => {
+  it("registers all expected commands", () => {
     const program = createCli();
     const names = program.commands.map((command) => command.name()).sort();
     expect(names).toEqual([
@@ -100,6 +100,7 @@ describe("atlas CLI", () => {
       "mcp",
       "search",
       "sessions",
+      "tools",
       "update",
       "usage",
     ]);
