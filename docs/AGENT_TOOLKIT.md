@@ -1,14 +1,15 @@
 # Agent Toolkit
 
 > **Status: [PARTIAL]** — this document is the **design contract** for a new
-> first-class CodeAtlas subsystem. As of Task 19 the **Tool Registry foundation
-> is implemented** (see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md)): `@atlas/toolkit`
-> behind `ToolRegistryPort` in `core`, composed by the SDK as
-> `createToolRegistry()`. **Every other Toolkit component in this document is
-> still [PLANNED]** — do not claim them as implemented. The one other
-> implemented building block the Toolkit builds on is `@atlas/agents` (the AI
-> CLI connection layer) — see [CURRENT_STATE.md](./CURRENT_STATE.md) and
-> [MODULES.md](./MODULES.md).
+> first-class CodeAtlas subsystem. As of Tasks 19–20 the **Tool Registry
+> foundation and the Tool Manifest System are implemented** (see
+> [TOOL_REGISTRY.md](./TOOL_REGISTRY.md) and
+> [TOOL_MANIFEST.md](./TOOL_MANIFEST.md)): `@atlas/toolkit` behind
+> `ToolRegistryPort` in `core`, composed by the SDK as `createToolRegistry()`.
+> **Every other Toolkit component in this document is still [PLANNED]** — do
+> not claim them as implemented. The one other implemented building block the
+> Toolkit builds on is `@atlas/agents` (the AI CLI connection layer) — see
+> [CURRENT_STATE.md](./CURRENT_STATE.md) and [MODULES.md](./MODULES.md).
 
 ---
 
@@ -60,9 +61,8 @@ Curated Open Source Tools
 
 ## 2. Architecture
 
-The Toolkit is a planned layer of the **Agent Platform** side of CodeAtlas. It
-composes through the SDK (like every other consumer) and reuses `@atlas/agents`
-for AI-CLI detection.
+The Toolkit composes through the SDK (like every other consumer) and reuses
+`@atlas/agents` for AI-CLI detection.
 
 ```mermaid
 flowchart TB
@@ -115,9 +115,9 @@ Consistent with [DEPENDENCIES.md](./DEPENDENCIES.md) (the package + registry
 port now exist; the remaining components are planned):
 
 - A new feature package `@atlas/toolkit` (imports **only** `core` + `shared`),
-  hosting the Registry (**implemented**), and the Manifest, Compatibility,
-  Installer, Configurator, and Security/Trust services behind **new ports in
-  `core`** (planned).
+  hosting the Registry and Tool Manifest (**implemented**), and the
+  Compatibility, Installer, Configurator, and Security/Trust services behind
+  **new ports in `core`** (planned).
 - A thin Toolkit **CLI surface** (`atlas tools ...`) added in `apps/cli`,
   which delegates to the SDK — never to feature packages directly.
 - SDK wiring (`@atlas/sdk`) composes the Toolkit behind its ports, exactly as
@@ -220,7 +220,9 @@ benchmarks:            # future; vendor claims vs CodeAtlas benchmarks, see §12
 
 ## 4. Tool Manifest
 
-**Owner:** `@atlas/toolkit` (planned).
+**Owner:** `@atlas/toolkit` — **[IMPLEMENTED]** (Task 20). See
+[TOOL_MANIFEST.md](./TOOL_MANIFEST.md) for the schema, storage, and validation
+details.
 
 A **Tool Manifest** describes *one installed tool* on the user's machine —
 separate from the Registry entry. It records:
@@ -578,8 +580,8 @@ outputs, high churn) feed the **future** Recommendation Engine — see
 
 | Concern | Owner / seam |
 | ------- | ------------ |
-| Tool catalog | `@atlas/toolkit` Registry (planned) |
-| Installed-tool state | Tool Manifest in `.codeatlas/` (planned) |
+| Tool catalog | `@atlas/toolkit` Registry — **implemented** (Task 19) |
+| Installed-tool state | Tool Manifest in `.codeatlas/tools/` — **implemented** (Task 20) |
 | Compatibility | `@atlas/toolkit` Compatibility Engine (planned) |
 | Installers | `InstallerPort` + per-ecosystem adapters (planned) |
 | Configuration | `ConfiguratorPort` + per-target adapters (planned) |

@@ -1,11 +1,11 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { Budget, UsageLimit, UsageQuery, UsageRecord, UsageScope } from "@atlas/core";
 import { openDatabase } from "./db";
-import { lastAppliedVersion, runMigrations, type Migration } from "./migrations";
-import { inTransaction } from "./transaction";
+import { type Migration, lastAppliedVersion, runMigrations } from "./migrations";
 import { BudgetRepository } from "./repository/budget.repository";
 import { LimitRepository } from "./repository/limit.repository";
 import { UsageRepository } from "./repository/usage.repository";
+import { inTransaction } from "./transaction";
 
 export interface UsageStoreOptions {
   /** Database file path, or `":memory:"` for a throwaway store. */

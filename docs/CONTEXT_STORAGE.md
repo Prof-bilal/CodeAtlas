@@ -3,7 +3,9 @@
 How CodeAtlas persists project context, and the on-disk `.codeatlas/` layout.
 
 > **Status:** the `.codeatlas/` directory is created by the Scanner manifest
-> step; only **`manifest.json`** is written today ([IMPLEMENTED]). The
+> step; **`manifest.json`** is written today ([IMPLEMENTED]) and the
+> **`tools/`** directory — one Tool Manifest per installed tool — is written by
+> `@atlas/toolkit`'s `saveToolManifest` ([IMPLEMENTED], Task 20). The
 > **`context.db`** file is *read* by `atlas search`, the MCP server, and the VS
 > Code extension (via `createContextSDK`), and can be produced by
 > `@atlas/storage`'s `ContextStore` / the SDK write surface when an indexing
@@ -26,6 +28,7 @@ How CodeAtlas persists project context, and the on-disk `.codeatlas/` layout.
 .codeatlas/
 ├── manifest.json       # repo metadata + context versioning   [IMPLEMENTED]
 ├── context.db          # SQLite context database        [READ now][no CLI writer yet]
+├── tools/              # per-installed-tool manifests          [IMPLEMENTED]
 ├── graph.json          # exported dependency graph (optional)   [PLANNED]
 ├── symbols.json        # exported symbol index (optional)       [PLANNED]
 ├── summaries/          # per-file cache of AI summaries         [PLANNED]
@@ -73,11 +76,14 @@ Context storage must be:
 | Concern | Owner |
 | ------- | ----- |
 | Manifest write/read | `@atlas/scanner` (`manifest.ts`) |
+| Tool manifests (`tools/`) | `@atlas/toolkit` (`manifest.ts`) — installed-tool state, not context |
 | Change detection / snapshots | `@atlas/hashing` |
 | Context database (files, symbols, deps, summaries, relationships, hashes, metadata) | `@atlas/storage` |
 | Graph/symbol JSON exports | `@atlas/graph` / `@atlas/parser` (future) |
 
-Persistence **belongs to `storage`**; nothing else should write `.codeatlas/` files directly.
+Persistence **belongs to `storage`** for the context DB; other `.codeatlas/`
+files are owned by the package that defines them (scanner manifest, toolkit
+tool manifests, `@atlas/usage`'s `usage.db`).
 
 ---
 

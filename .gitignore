@@ -34,3 +34,5 @@ Thumbs.db
 
 # Generated CodeAtlas artifacts
 .codeatlas/
+ui/
+docs/Design.md

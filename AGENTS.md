@@ -66,10 +66,15 @@ Non-obvious facts (verified as of 2026-08-11):
   **Tool Registry foundation (Task 19) is implemented** — `@atlas/toolkit`
   behind `ToolRegistryPort` in `core`, composed via `createToolRegistry()` in
   `@atlas/sdk`: a curated, schema-validated, provenance-auditable catalog
-  (`packages/toolkit/src/catalog.json`) merged with a local overlay. The Tool
-  Manifest, Compatibility Engine, Installer, Configurator, and Security/Trust
-  evaluation remain **[PLANNED]** — do **not** reference them as existing.
-  Design contract: `docs/AGENT_TOOLKIT.md`; registry details:
+  (`packages/toolkit/src/catalog.json`) merged with a local overlay. **The Tool
+  Manifest System (Task 20) is implemented** — a versioned, validated,
+  extensible schema (`TOOL_MANIFEST_SCHEMA_VERSION = 1`) recording one
+  installed tool's state, persisted per tool in `.codeatlas/tools/<name>.json`
+  mirroring the Scanner manifest pattern, loaded as untrusted input (never
+  executed, prototype-pollution safe, size-bounded, path-safe names). See
+  `docs/TOOL_MANIFEST.md`. The Compatibility Engine, Installer, Configurator,
+  and Security/Trust evaluation remain **[PLANNED]** — do **not** reference
+  them as existing. Design contract: `docs/AGENT_TOOLKIT.md`; registry details:
   `docs/TOOL_REGISTRY.md`.
 - Pipelines that are implemented and tested: scanner, hashing, manifest,
   parser (TypeScript only — **[PARTIAL]**), graph, SQLite storage, search,

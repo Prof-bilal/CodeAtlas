@@ -34,10 +34,11 @@ README.md
 | `docs/DEPENDENCIES.md` | Allowed import directions + dependency-add policy. |
 | `docs/AI_PROVIDERS.md` | Provider interface & adapters. |
 | `docs/USAGE.md` | AI Usage & Credits: tri-state actual/estimated/unknown provenance, pricing abstraction, budgets/limits, collection seams, `atlas usage`. |
-| `docs/AGENT_ORCHESTRATOR.md` | Unified AI CLI (planned). |
+| `docs/AGENT_ORCHESTRATOR.md` | Unified AI CLI orchestrator (implemented, Task 17): bounded agent roles, execution, result combination. |
 | `docs/AGENT_SESSIONS.md` | Agent Session Manager (implemented): session lifecycle, states, CLI commands, failure/shutdown behavior. |
-| `docs/AGENT_TOOLKIT.md` | Agent Toolkit (planned): curated tool registry/install/config/security. |
+| `docs/AGENT_TOOLKIT.md` | Agent Toolkit (design contract; registry + manifest implemented, Tasks 19–20): curated tool registry/install/config/security. |
 | `docs/TOOL_REGISTRY.md` | Tool Registry (implemented, Task 19): record schema, per-field provenance, shipped catalog + local overlay, SDK surface. |
+| `docs/TOOL_MANIFEST.md` | Tool Manifest (implemented, Task 20): per-installed-tool state schema, `.codeatlas/tools/` layout, untrusted-input validation. |
 | `docs/CLI.md` | The `atlas` CLI contract. |
 | `docs/MCP.md` | The MCP server: configuration + full tool reference. |
 | `docs/VSCODE.md` | The VS Code extension (`@atlas/extension`): what it does and how it consumes the SDK. |

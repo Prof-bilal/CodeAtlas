@@ -10,11 +10,16 @@ can reason about large codebases accurately and efficiently.
 > graph, summary, providers, cache, and SQLite storage modules are implemented
 > and tested; the search engine, MCP server, and Context API/SDK are implemented
 > and consumed by `atlas search`, the MCP tools, and the VS Code extension. The
-> context rank/assembler (`@atlas/context`) remains a structural stub behind its
-> port by design (ADR-001), the CLI's indexing commands
-> (`init`/`build`/`update`/`explain`/`doctor`) are still "Coming Soon" stubs,
-> and the **Agent Toolkit** (curated discovery/installation of open-source
-> developer/AI-agent tools) is entirely planned — see `docs/AGENT_TOOLKIT.md`.
+> **Agent infrastructure** is also implemented: the AI CLI connection layer
+> (`@atlas/agents`), the **Agent Session Manager** (`atlas sessions`), the
+> **multi-agent Orchestrator**, **Usage & Credits** (`atlas usage`, ADR-009),
+> Context → Agent integration (`createContextIntegration`, ADR-008), and the
+> **Agent Toolkit** registry + tool-manifest foundation (Tasks 19–20). Still
+> planned: the CLI's indexing commands (`init`/`build`/`update`/`explain`/
+> `doctor`), the Toolkit's compatibility/installer/configurator/security engine
+> and its `atlas tools` CLI (Tasks 21–25), and the `atlas context` CLI (Task 26).
+> The context rank/assembler (`@atlas/context`) remains a structural stub behind
+> its port by design (ADR-001).
 
 ## Monorepo Layout
 
@@ -23,8 +28,9 @@ apps/
   cli/          # End-user CLI built with Commander.js
   extension/    # VS Code extension (@atlas/extension)
 packages/
+  shared/       # Base types, Result, branded IDs, VERSION, ComingSoonError
   core/         # Domain models, ports (interfaces), use-cases
-  scanner/      # File-system walking + ignore rules
+  scanner/      # File-system walking + ignore rules + manifest.ts
   hashing/      # SHA-256 file hashing + change detection
   parser/       # Language parsing -> normalized symbols/AST
   storage/      # Persistence layer behind core ports
@@ -34,7 +40,9 @@ packages/
   providers/    # AI model provider adapters
   summary/      # AI file/folder/module/project summaries
   search/       # Ranked, fuzzy-aware project search
-  agents/       # AI CLI connection layer (detect & run external AI CLIs)
+  agents/       # AI CLI connection + session manager (detect & run external AI CLIs)
+  usage/        # AI usage & credits: tri-state tokens/cost, budgets, limits
+  toolkit/      # Agent Toolkit: Tool Registry + Tool Manifest foundation
   mcp/          # MCP server exposing context to AI coding tools
   sdk/          # Public programmatic API (wires everything) + createContextSDK
 docs/           # Design & contributor documentation
@@ -62,13 +70,16 @@ node apps/cli/dist/index.js --help
 ```text
 atlas search <query...>  → wired — ranked search over .codeatlas/context.db
 atlas mcp                → wired — starts the MCP server over stdio
+atlas sessions           → wired — list/info/stop AI agent sessions
+atlas usage              → wired — usage summary, list, budgets
 atlas init / build / update / explain / doctor  → still "Coming Soon" placeholders
 ```
 
-`atlas search` and the MCP tools read indexed context through the **Context SDK**
-(`createContextSDK`, in `@atlas/sdk`) — they never touch the database directly.
-The indexing pipeline that *produces* that database is not yet wired into the
-CLI; that is the remaining Phase 1–2 work (see `docs/ROADMAP.md`).
+`atlas search`, `atlas sessions`, `atlas usage`, and the MCP tools read indexed
+context through the **Context SDK** (`createContextSDK`, in `@atlas/sdk`) — they
+never touch the database directly. The indexing pipeline that *produces* that
+database is not yet wired into the CLI; that is the remaining Phase 1–2 work (see
+`docs/ROADMAP.md`).
 
 ## Contributing
 
@@ -94,6 +105,12 @@ linting, formatting, typing, and commit conventions on every change.
 - **MCP Server**: Exposes indexed context to AI coding tools over MCP/stdio (6 read tools) — an SDK consumer
 - **VS Code Extension**: Activity Bar + tree views + palette commands reading context through the SDK
 - **AI CLI Connection Layer**: Detects and runs external AI coding CLIs (Claude / Gemini / Codex / OpenCode) behind `AgentPort` in `@atlas/agents`
+- **Agent Session Manager**: Manages independent live AI-CLI sessions behind `SessionPort` (`createSessionManager`, `atlas sessions`)
+- **Multi-Agent Orchestrator**: Coordinates bounded agent roles (parallel/sequential) through `SessionPort`, collects and combines results (`createOrchestrator`)
+- **Usage & Credits Agent**: Tri-state actual/estimated/unknown tokens & cost, budgets/limits, pricing abstraction, `atlas usage` (`@atlas/usage`)
+- **Context → Agent Integration**: Assembles budgeted, deny-filtered `ContextPackage`s per task and delivers them to sessions (`createContextIntegration`, ADR-008)
+- **Tool Registry**: Curated, schema-validated, provenance-auditable catalog + local overlay (`createToolRegistry`, `@atlas/toolkit`)
+- **Tool Manifest System**: Versioned, validated manifest per installed tool (`.codeatlas/tools/<name>.json`, `TOOL_MANIFEST_SCHEMA_VERSION = 1`)
 
 ## Progress
 - ✅ Scanner module implemented (recursive scan, ignored directories, structured output)
@@ -109,7 +126,14 @@ linting, formatting, typing, and commit conventions on every change.
 - ✅ Context API / SDK built (`createContextSDK` — the read/write façade, provider-independent)
 - ✅ MCP server built (`@atlas/mcp` — stdio server, 6 read-only tools consuming the SDK)
 - ✅ VS Code extension built (`@atlas/extension` — tree views + palette commands) consuming the SDK
-- ➖ CLI `atlas search` + `atlas mcp` wired through the SDK; `init`/`build`/`update`/`explain`/`doctor` still stubs
+- ✅ AI CLI connection layer built (`@atlas/agents` behind `AgentPort`)
+- ✅ Agent Session Manager built (`createSessionManager`, `atlas sessions list/info/stop`)
+- ✅ Multi-Agent Orchestrator built (`createOrchestrator` — bounded agent roles, parallel/sequential, result combination)
+- ✅ Usage & Credits built (`@atlas/usage`, `createUsageService`, `atlas usage` — tri-state tokens/cost, budgets, limits)
+- ✅ Context → Agent Integration built (`createContextIntegration` — budgeted, deny-filtered ContextPackages; ADR-008)
+- ✅ Tool Registry foundation built (`@atlas/toolkit`, `createToolRegistry` — curated catalog + local overlay)
+- ✅ Tool Manifest System built (versioned, validated, extensible per-installed-tool manifests)
+- ➖ CLI `atlas search` + `atlas mcp` + `atlas sessions` + `atlas usage` wired through the SDK; `init`/`build`/`update`/`explain`/`doctor` still stubs
 
 ## AI Agent Instructions
 - [AGENTS.md](AGENTS.md) — authoritative rules for every coding agent (Claude Code, OpenCode, Codex, Gemini CLI, …).
@@ -119,5 +143,8 @@ linting, formatting, typing, and commit conventions on every change.
 ## Next Steps
 - Incremental updates powered by hashing
 - AI context engine integration
-- Agent Toolkit: curated discovery, install, and configuration of open-source
-  developer/AI-agent tools (planned — `docs/AGENT_TOOLKIT.md`)
+- Agent Toolkit: Compatibility Engine (Task 21), Installer (22), Configurator
+  (23), Security/Trust (24), and the `atlas tools` CLI (25) — see
+  `docs/AGENT_TOOLKIT.md`
+- Context CLI: `atlas context` wiring for Context → Agent integration (Task 26,
+  follow-up to ADR-008)

@@ -44,9 +44,9 @@ Single source of truth for what each feature is — **verified against the code*
 | MCP | **[IMPLEMENTED]** | `@atlas/mcp`: stdio server (official `@modelcontextprotocol/sdk`) exposing 6 tools that read through the **Context SDK** (`createContextSDK` sub-APIs) — deterministic search/deps/explain/overview, opt-in AI summary generation; `codeatlas-mcp` binary **and** `atlas mcp` CLI command; tools only (no resources/prompts) |
 | VS Code integration | **[IMPLEMENTED]** | `@atlas/extension` (in `apps/extension`): Activity Bar + 5 tree views (project/symbols/modules/summaries/dependencies), `codeatlas.*` palette commands, status-bar indicator; reads only through the Context SDK (`createContextSDK`); `atlas build`/`update` shell out to the CLI (pipeline still "Coming Soon" — see `docs/VSCODE.md`) |
 | JetBrains / other editor integrations | **[PLANNED]** | No code |
-| Agent Toolkit subsystem (`@atlas/toolkit`) | **[PARTIAL]** | Package + `ToolRegistryPort` + SDK `createToolRegistry` exist (Task 19 registry foundation); Manifest, Compatibility, Installer, Configurator, Security/Trust evaluation, `atlas tools` CLI all remain [PLANNED] |
+| Agent Toolkit subsystem (`@atlas/toolkit`) | **[PARTIAL]** | Package + `ToolRegistryPort` + SDK `createToolRegistry` exist (Task 19 registry); Tool Manifest implemented (Task 20); Compatibility, Installer, Configurator, Security/Trust evaluation, `atlas tools` CLI all remain [PLANNED] |
 | Tool Registry | **[IMPLEMENTED]** | `@atlas/toolkit` behind `ToolRegistryPort` in `core`, composed via `createToolRegistry()` in `@atlas/sdk`: curated, schema-validated, provenance-auditable catalog (`packages/toolkit/src/catalog.json`) + local overlay merged by name (user wins, catalog never mutated); per-field provenance (curated/external/user/unknown — external never trusted blindly); extensible categories; fail-loud validation (`RegistrySchemaVersionError`/`RegistryValidationError`/`RegistryLoadError`); no network. Install/compat/security fields declared + validated here, evaluated by Tasks 21/22/24. See docs/TOOL_REGISTRY.md |
-| Tool Manifest System | **[PLANNED]** | No code — per-installed-tool state in `.codeatlas/` |
+| Tool Manifest System | **[IMPLEMENTED]** | `@atlas/toolkit` (`manifest-schema.ts` + `manifest.ts`): versioned (`TOOL_MANIFEST_SCHEMA_VERSION=1`), validated (load + before write, every problem listed), extensible (unknown fields preserved) per-installed-tool state; `.codeatlas/tools/<name>.json` (Scanner manifest merge policy); declares all 7 install ecosystems, executes nothing; untrusted-input safe (typed errors, `__proto__` inert, 1 MiB bound, path-safe names); no SDK surface yet (Task 25). See docs/TOOL_MANIFEST.md |
 | Tool Discovery (`atlas tools` search/list) | **[PLANNED]** | No code |
 | Tool Compatibility Engine | **[PLANNED]** | No code |
 | Tool Installer (`atlas tools install/remove/update`) | **[PLANNED]** | No code — `InstallerPort` + per-ecosystem adapters; no blind install scripts |
@@ -76,9 +76,10 @@ Single source of truth for what each feature is — **verified against the code*
   slash commands** (`atlas /claude`, …) and interactive TTY handling are absent.
 - Agent Toolkit: **registry foundation only** (Task 19) is implemented —
   `@atlas/toolkit` behind `ToolRegistryPort`, SDK `createToolRegistry`, shipped
-  catalog + local overlay, per-field provenance, extensible categories. Tool
-  Manifest, Compatibility Engine, Installer, Configurator, Security/Trust
-  evaluation, and `atlas tools` remain planned — see `docs/TOOL_REGISTRY.md`.
+  catalog + local overlay, per-field provenance, extensible categories, and the
+  Tool Manifest System (Task 20, `docs/TOOL_MANIFEST.md`). Compatibility Engine,
+  Installer, Configurator, Security/Trust evaluation, and `atlas tools` remain
+  planned — see `docs/TOOL_REGISTRY.md`.
 - Vector search: embeddings are planned; `@atlas/search` exposes the
   `RelevanceScorer` seam so an embedding scorer can be added without callers
   changing.

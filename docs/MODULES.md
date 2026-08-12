@@ -207,8 +207,9 @@ and never bypasses the Context SDK.
 ### Agent Toolkit — « `@atlas/toolkit` » — **[PARTIAL]**
 Responsible for the curated open-source tool ecosystem (Direction C): discover,
 install, configure, and verify high-quality developer/AI-agent tools. See
-[AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) for the design contract and
-[TOOL_REGISTRY.md](./TOOL_REGISTRY.md) for the implemented registry. Sub-modules:
+[AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) for the design contract,
+[TOOL_REGISTRY.md](./TOOL_REGISTRY.md) for the implemented registry, and
+[TOOL_MANIFEST.md](./TOOL_MANIFEST.md) for the implemented manifest. Sub-modules:
 
 - **Tool Registry** — **[IMPLEMENTED]** (Task 19): authoritative catalog of
   *what exists*. `ToolRegistryPort` in `core`; `ToolRegistryService` +
@@ -218,9 +219,15 @@ install, configure, and verify high-quality developer/AI-agent tools. See
   local overlay by name (user wins, catalog never mutated). Extensible
   categories; security/trust/install/compat fields declared + validated here but
   **evaluated by later tasks**; fail-loud validation (no network).
-- **Tool Manifest** — **[PLANNED]** — per-installed-tool state (provenance,
-  verification, applied config, trust level) in `.codeatlas/`, mirroring the
-  Scanner manifest pattern. Owned by `@atlas/toolkit`.
+- **Tool Manifest** — **[IMPLEMENTED]** (Task 20): versioned
+  (`TOOL_MANIFEST_SCHEMA_VERSION=1`), validated, extensible per-installed-tool
+  state (identity, declared compatibility/installation/configuration, recorded
+  provenance/verification/security/integration state). `manifest-schema.ts` +
+  `manifest.ts` in `@atlas/toolkit`; persisted one file per tool at
+  `.codeatlas/tools/<name>.json` (Scanner manifest merge policy, gitignored).
+  Loaded as untrusted input — typed errors, never executed, `__proto__` inert,
+  1 MiB bound, path-safe names. No SDK surface yet (arrives with Task 25).
+  See `docs/TOOL_MANIFEST.md`.
 - **Compatibility Engine** — **[PLANNED]** — evaluates a tool's declared
   requirements (OS, runtime, package manager, AI CLI availability/version via
   `AgentPort`, MCP, architecture, permissions) against the detected environment.
@@ -319,9 +326,9 @@ Responsible for editor integration.
 | Security of command execution | Agent Orchestrator (`@atlas/agents` connection layer + planned router) — see [SECURITY.md](./SECURITY.md) |
 | Which files are "in scope" | Scanner (files) + Hashing (changes) |
 | What a symbol *is*       | Parser (`Symbol`) + Core entity |
-| Where data lives         | `@atlas/storage` (+ manifest file, + `@atlas/usage`'s own `usage.db`) |
+| Where data lives         | `@atlas/storage` (+ scanner manifest file, + `@atlas/usage`'s own `usage.db`, + `.codeatlas/tools/` tool manifests by `@atlas/toolkit`) |
 | How context gets picked  | `@atlas/context` (stub) |
-| What tools a user may install | Agent Toolkit Registry + Security/Trust (planned) |
+| What tools a user may install | Agent Toolkit Registry (implemented) + Security/Trust (planned) |
 | How tools get installed/configured | Agent Toolkit Installer + Configurator (planned) |
 | External AI CLI detection | `@atlas/agents` (`AgentPort`, implemented) |
 | Tool install safety       | Agent Toolkit Security model — see [SECURITY.md](./SECURITY.md) |

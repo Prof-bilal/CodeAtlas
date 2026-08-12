@@ -51,7 +51,13 @@ and [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md)).
 
 **Direction C — Agent Toolkit.** A curated interface to discover, install,
 configure, and verify high-quality open-source developer/AI-agent tools.
-**0% implemented — entirely planned** (see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)).
+**Foundations implemented** — the **Tool Registry** (`@atlas/toolkit` behind
+`ToolRegistryPort`, composed via `createToolRegistry()`) and the **Tool Manifest
+System** (versioned/validated/extensible per-installed-tool manifests in
+`.codeatlas/tools/`). The Compatibility Engine, Installer, Configurator, and
+Security/Trust remain **[PLANNED]** (Tasks 21–24). See
+[AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md), [TOOL_REGISTRY.md](./TOOL_REGISTRY.md),
+and [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
 
 > **Principle:** CodeAtlas *orchestrates* existing AI CLIs and tools; it does
 > not unnecessarily recreate their internal functionality.
@@ -185,10 +191,10 @@ Repository
    ▼
 CodeAtlas Context ──── scan → hash → parse → graph → store → search → Context SDK
    │
-   ├──▶ Agent Sessions (Direction B — planned) ── atlas /claude · /gemini · …
-   │        agents spawn & supervise external AI CLIs (connection layer implemented)
+   ├──▶ Agent Sessions (Direction B — connection + sessions implemented) ── atlas /claude · /gemini · …
+   │        agents spawn & supervise external AI CLIs (router/slash commands planned)
    │
-   └──▶ Agent Toolkit (Direction C — planned) ── registry → install → configure → verify
+   └──▶ Agent Toolkit (Direction C — registry + manifest implemented) ── install → configure → verify (planned)
             tools improve context, tokens, quality for the agents above
 ```
 
@@ -262,7 +268,7 @@ const container = Container.create({ provider: new CustomProvider() });
 | New language support                | New parser in `parser` implementing `LanguageParser`, registered in `ParserRegistry` |
 | Alternate storage                   | New adapter in `storage` behind `StoragePort` / `ContextDatabasePort` |
 | Agent routing / `/claude` etc.      | Build on the existing `@atlas/agents` connection layer (`AgentPort`); the **Agent Session Manager** (`SessionPort`) is implemented behind the SDK; add the **router** behind the SDK (planned) |
-| Agent Toolkit (`atlas tools`)       | New `@atlas/toolkit` feature package (Registry/Installer/Configurator/Compatibility/Security behind ports in `core`) + CLI delegation to the SDK (planned) — see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) |
+| Agent Toolkit (`atlas tools`)       | `@atlas/toolkit` feature package: **Registry (`ToolRegistryPort`) + Tool Manifest are implemented** (see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md), [TOOL_MANIFEST.md](./TOOL_MANIFEST.md)); Installer/Configurator/Compatibility/Security behind ports in `core` + CLI delegation to the SDK remain (Tasks 21–25) — see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) |
 | New tool ecosystem (npm/pip/cargo/…) | New `InstallerPort` adapter per ecosystem; never blind `install.sh` execution (planned) |
 | MCP server                          | `@atlas/mcp` consumes the Context SDK (implemented); run it via `atlas mcp`; add MCP resources/prompts |
 | Editors / agents read context       | `createContextSDK` is the stable read interface — that is what they consume, never the DB |
@@ -291,11 +297,13 @@ These divergences from a "perfect" target are intentional and documented:
    orchestrator's **router and slash commands** remain planned; the VS Code
    extension (`@atlas/extension`) is implemented as a thin SDK consumer. See
    [VSCODE.md](./VSCODE.md) and [ROADMAP.md](./ROADMAP.md).
-5. **Direction C (Agent Toolkit) is planned** — the curated registry /
-   installer / configurator / compatibility / security subsystems exist only as
-   a design contract ([AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)). When added, they
-   must keep the "orchestrate, don't bundle" and "opt-in install" principles —
-   never blind execution of third-party install scripts.
+5. **Direction C (Agent Toolkit) foundations are implemented** — the **Tool
+   Registry** and **Tool Manifest System** exist in `@atlas/toolkit` (behind
+   `ToolRegistryPort`, composed via `createToolRegistry()`); the installer /
+   configurator / compatibility / security subsystems remain a design contract
+   ([AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)). When added, they must keep the
+   "orchestrate, don't bundle" and "opt-in install" principles — never blind
+   execution of third-party install scripts.
 
 ---
 

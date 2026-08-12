@@ -110,7 +110,8 @@ Launch and supervise existing AI coding CLIs. See
 - Multi-agent orchestration (`createOrchestrator`, plan builder + executor +
   result combining through `SessionPort`) — **[IMPLEMENTED]** (Task 17)
 - Router / slash commands wired to the orchestrator — **[PLANNED]**
-- Usage / credits — **[PLANNED]**
+- Usage / credits (`@atlas/usage`, tri-state tokens/cost, budgets/limits,
+  `atlas usage`) — **[IMPLEMENTED]** (see [USAGE.md](./USAGE.md), ADR-009)
 - Security hardening per [SECURITY.md](./SECURITY.md) — **[PLANNED]**
 
 ---
@@ -125,18 +126,21 @@ Launch and supervise existing AI coding CLIs. See
 
 ---
 
-## Phase 6 — Agent Toolkit *(planned — Direction C)*
+## Phase 6 — Agent Toolkit *(in progress — Direction C)*
 
 Curated, verified ecosystem of open-source developer / AI-agent tools:
-discover, install, configure, verify. **No code yet** — see
-[AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) for the design contract.
+discover, install, configure, verify. The Tool Registry (**Task 19**) and Tool
+Manifest System (**Task 20**) are **[IMPLEMENTED]** — see
+[AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) for the design contract,
+[TOOL_REGISTRY.md](./TOOL_REGISTRY.md), and [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
 
-Everything here is **[PLANNED]**.
+The remaining items below are **[PLANNED]**.
 
-1. **Tool Registry** — authoritative catalog (metadata, categories, versions,
-   licenses, repos, install methods, compatibility, configuration,
-   security/trust status).
-2. **Tool Manifest System** — per-installed-tool state in `.codeatlas/`.
+1. **Tool Registry** — **[IMPLEMENTED]** authoritative catalog (metadata,
+   categories, versions, licenses, repos, install methods, compatibility,
+   configuration, security/trust status).
+2. **Tool Manifest System** — **[IMPLEMENTED]** versioned/validated/extensible
+   per-installed-tool state in `.codeatlas/tools/`.
 3. **Compatibility Engine** — evaluate declared requirements (OS, runtime,
    package-manager, AI CLI via `AgentPort`, MCP, architecture, permissions).
 4. **Tool Installer** — `InstallerPort` + per-ecosystem adapters

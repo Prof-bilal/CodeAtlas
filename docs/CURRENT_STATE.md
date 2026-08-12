@@ -1,7 +1,7 @@
 # CodeAtlas — Current State
 
 > **Read this first.** This document records what *actually* exists in the
-> repository as of **2026-08-11** (re-verified against code), so AI agents do
+> repository as of **2026-08-12** (re-verified against code), so AI agents do
 > not mistake planned features for implemented ones. Each section is tagged:
 >
 > - **[IMPLEMENTED]** — production code exists and is tested.
@@ -53,7 +53,7 @@ packages/
   usage/        # AI usage & credits: tri-state tokens/cost, budgets, limits [EXISTING]
   context/      # Context ranking & assembly                                  [STUB]
   agents/       # AI CLI connection layer (AgentPort)                         [EXISTING]
-  toolkit/      # Agent Toolkit — Tool Registry foundation (Task 19)          [PARTIAL]
+  toolkit/      # Agent Toolkit — Tool Registry (19) + Tool Manifest (20)     [PARTIAL]
   mcp/          # MCP server exposing context to AI tools                      [EXISTING]
   sdk/         # Composition root (Container)                                  [EXISTING]
 docs/            # (this documentation system)
@@ -433,9 +433,37 @@ examples/        # README placeholder only (no runnable examples)
   never auto-approved. The install/compat/security **fields are declared and
   validated here but evaluated by later tasks** (Tasks 21/22/24). No network,
   no database. See [TOOL_REGISTRY.md](./TOOL_REGISTRY.md).
-- **Everything else is still [PLANNED]**: the Tool Manifest, Compatibility
-  Engine, Installer, Configurator, Security/Trust evaluation, the `atlas
-  tools`/`/tools` CLI surface. See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
+- **Everything else is still [PLANNED]**: the Compatibility Engine, Installer,
+  Configurator, Security/Trust evaluation, the `atlas tools`/`/tools` CLI
+  surface. See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
+
+### Tool Manifest System — **[IMPLEMENTED]**
+
+- **Task 20 implemented.** `@atlas/toolkit` now ships a **versioned, validated,
+  extensible Tool Manifest schema** (`TOOL_MANIFEST_SCHEMA_VERSION = 1`) that
+  records **one installed tool's state** on the user's machine — which tool +
+  version, where it came from (registry entry / ecosystem / release / manual),
+  install method + provenance (argv, never a shell string), verification result,
+  applied configuration + the agents it was configured for, the trust/security
+  snapshot at install time, and a doctor-able integration state.
+  Installation is declared for **all seven ecosystems** (`npm`/`pip`/`cargo`/
+  `go`/`binary`/`github-release`/`mcp`) as requirements (`type`, `package`,
+  `source`, `checksum`, `versionRange`) — **nothing is executed**.
+- **Persistence mirrors the Scanner manifest pattern**: one file per installed
+  tool at `.codeatlas/tools/<name>.json` (gitignored), merge policy
+  (`installedAt` preserved / `updatedAt` refreshed), validated **before any
+  write**.
+- **Loaded as untrusted input**: corrupted/hostile manifests fail with typed
+  errors (`ManifestValidationError` / `ManifestSchemaVersionError` /
+  `ManifestLoadError`) — never a crash, never executed; prototype-pollution
+  safe (`__proto__` preserved inertly), size-bounded (1 MiB), and tool names are
+  path-safe (can never escape `tools/`). Unknown-but-well-formed fields are
+  **preserved** across serialize/parse (extensibility).
+- **No SDK surface yet** — exported from `@atlas/toolkit`
+  (`createToolManifest`, `saveToolManifest`, `loadToolManifest`,
+  `listInstalledTools`, `validateToolManifest`, `parseToolManifest`); consumed
+  by later Toolkit tasks, surfaced in the SDK/CLI with Task 25. No network, no
+  database. See [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
 
 ---
 
@@ -445,7 +473,7 @@ examples/        # README placeholder only (no runnable examples)
 | ------------------------------------- | -------------- |
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking intentionally stubbed; `search` + `mcp` are CLI-wired |
 | **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`) and the session manager (`SessionManager`, `atlas sessions`) are implemented and SDK-wired, and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) is implemented and tested; router/slash commands **0%** |
-| **C. Agent Toolkit** (curated tool registry → install → configure → verify) | ~10% — **Task 19 registry foundation implemented** (`@atlas/toolkit` behind `ToolRegistryPort`, SDK `createToolRegistry`, shipped catalog + local overlay, per-field provenance); Manifest/Compatibility/Installer/Configurator/Security evaluation/`atlas tools` are **0%** ([PLANNED]) |
+| **C. Agent Toolkit** (curated tool registry → install → configure → verify) | ~20% — **Task 19 registry foundation implemented** (`@atlas/toolkit` behind `ToolRegistryPort`, SDK `createToolRegistry`, shipped catalog + local overlay, per-field provenance) and **Task 20 Tool Manifest implemented** (versioned/validated/extensible per-installed-tool state in `.codeatlas/tools/`); Compatibility/Installer/Configurator/Security evaluation/`atlas tools` are **0%** ([PLANNED]) |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
 at: (1) the other CLI commands (build/update/init/explain/doctor are stubs),
@@ -467,12 +495,13 @@ absent.
 3. **No git history.** `.husky`, `commitlint`, `.gitignore`, `pre-commit` hooks
    are all configured but have never run against a commit.
 4. **CI/CD**: no `.github/`, no `.gitlab-ci.yml`, no CI config at all.
-5. **`.codeatlas/`**: currently `manifest.json` (by the Scanner manifest) and
-   `usage.db` (by `@atlas/usage` / `atlas usage`) are written there. The rest
-   of the target layout (`.codeatlas/context.db`, `graph.json`, `symbols.json`,
-   `summaries/`) does not exist yet — it is a **target** architecture
-   (context.db is produced only when an indexing run happens, e.g. via the SDK
-   write edge or a future `atlas build`).
+5. **`.codeatlas/`**: currently `manifest.json` (by the Scanner manifest),
+   `usage.db` (by `@atlas/usage` / `atlas usage`), and `tools/` (one Tool
+   Manifest per installed tool, by `@atlas/toolkit` / Task 20) are written
+   there. The rest of the target layout (`.codeatlas/context.db`, `graph.json`,
+   `symbols.json`, `summaries/`) does not exist yet — it is a **target**
+   architecture (context.db is produced only when an indexing run happens, e.g.
+   via the SDK write edge or a future `atlas build`).
 6. **Existing docs at the time of writing this audit:** root `ARCHITECTURE.md`,
    root `agents.md` (agent catalog), `README.md`, `docs/README.md`,
    `examples/README.md`. No `CLAUDE.md`. These docs predate/replace with the

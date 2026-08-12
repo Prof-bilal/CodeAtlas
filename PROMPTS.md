@@ -2,19 +2,19 @@
 
 > **Purpose.** This file is the **canonical implementation prompt library** for
 > CodeAtlas. A fresh Claude Code (or any coding agent) session can open this file
-> and execute **any single Task 16–26** without needing the original design
+> and execute **any single Task 21–26** without needing the original design
 > conversation: each task below is a complete, self-contained implementation
 > prompt that says what to build, what already exists to reuse, the required
 > architecture, the security rules, the tests, and the acceptance criteria.
 >
-> **One task at a time.** When a request says "implement Task 19", implement
-> **only Task 19**. Do not start Task 20 automatically.
+> **One task at a time.** When a request says "implement Task 21", implement
+> **only Task 21**. Do not start Task 22 automatically.
 >
 > **Ground truth.** `AGENTS.md` is authoritative for repository rules;
 > `docs/CURRENT_STATE.md` is the arbiter of what actually exists. **Re-read both
 > before starting any task** — this document is a library of prompts, not a
 > substitute for inspecting the current code. Status tags below were verified
-> against code as of 2026-08-11.
+> against code as of 2026-08-12.
 
 ---
 
@@ -25,8 +25,8 @@ CodeAtlas is an open-source AI toolchain with three product directions:
 | Direction | What it does | Status in repo |
 | --------- | ------------ | -------------- |
 | **A. Context Engine** | Scan → parse → graph → store → search → feed relevant context to AI | ~90% implemented |
-| **B. Unified AI CLI Orchestrator** | Launch & supervise installed AI coding CLIs (Claude / Gemini / Codex / OpenCode), coordinate sessions, later coordinate multiple agents | Connection layer + session manager implemented; router/slash commands planned |
-| **C. Agent Toolkit** | Curated, security-gated discovery/install/config of open-source developer & AI-agent tools | 0% — entirely planned |
+| **B. Unified AI CLI Orchestrator** | Launch & supervise installed AI coding CLIs (Claude / Gemini / Codex / OpenCode), coordinate sessions, later coordinate multiple agents | Connection layer, session manager, **multi-agent orchestrator**, and usage/credits implemented; router/slash commands planned |
+| **C. Agent Toolkit** | Curated, security-gated discovery/install/config of open-source developer & AI-agent tools | Registry foundation (Task 19) + Tool Manifest (Task 20) implemented; Compatibility/Installer/Configurator/Security/CLI planned (Tasks 21–25) |
 
 ### Conceptual system
 
@@ -63,7 +63,7 @@ implementations in feature packages, composition in `sdk`):
 
 ```
 apps/
-  cli/          # Commander.js CLI — `search`+`mcp`+`sessions` wired, 5 others stubbed
+  cli/          # Commander.js CLI — `search`+`mcp`+`sessions`+`usage` wired, 5 others stubbed
   extension/    # VS Code extension (@atlas/extension) — SDK consumer
 packages/
   shared/       # Base types, Result, branded IDs, VERSION, ComingSoonError
@@ -79,8 +79,10 @@ packages/
   search/       # Ranked, fuzzy-aware project search (vector-ready scorer seam)
   context/      # Context ranking & assembly — INTENTIONAL STUB (ADR-001)
   agents/       # AI CLI connection layer (AgentPort) + Session Manager (SessionPort)
+  usage/        # AI usage & credits: tri-state tokens/cost, budgets, limits (UsagePort)
+  toolkit/      # Agent Toolkit — Tool Registry (Task 19) + Tool Manifest (Task 20)
   mcp/          # MCP server exposing context to AI tools
-  sdk/          # Composition root; createContextSDK; createSessionManager
+  sdk/          # Composition root; createContextSDK; createSessionManager; createUsageService; createOrchestrator; createToolRegistry
 docs/           # Design & contributor documentation
 ```
 
@@ -128,6 +130,19 @@ docs/           # Design & contributor documentation
   `run(AgentRunRequest)`; `AgentService` in `@atlas/agents` adds
   `resolveBinary`/`buildArgsFor`/`binaryOf` helpers; `ProcessRunner` for
   spawning (array args, no shell, timeout, supervised `launch()`).
+- `createUsageService()` (`@atlas/sdk`, → `UsagePort` in `@atlas/usage`):
+  records/aggregates usage events with **tri-state** actual/estimated/unknown
+  tokens & cost, budgets/limits, stats. Store on `.codeatlas/usage.db` (separate
+  from the context DB). See `docs/USAGE.md`, `ADR-009`.
+- `createOrchestrator()` (`@atlas/sdk`, Direction B): `TaskPlan` of bounded agent
+  roles (parallel/sequential), role execution via `SessionPort`, result
+  collection + combination, timeout/cancellation/retry, conflict detection.
+  See `docs/AGENT_ORCHESTRATOR.md`.
+- `createToolRegistry()` (`@atlas/sdk`, → `ToolRegistryPort` in `@atlas/toolkit`):
+  curated catalog (`catalog.json`) + local overlay, schema-validated,
+  provenance-auditable. See `docs/TOOL_REGISTRY.md`. Tool Manifests
+  (`TOOL_MANIFEST_SCHEMA_VERSION = 1`) persisted per tool in
+  `.codeatlas/tools/<name>.json`. See `docs/TOOL_MANIFEST.md`.
 - `SearchPort` (`@atlas/search`): `LexicalScorer` (deterministic), `RelevanceScorer`
   seam (future vector scorer plug-in point).
 - `ProviderPort` (`@atlas/providers`): `complete()` for AI model calls.
@@ -138,7 +153,7 @@ docs/           # Design & contributor documentation
 
 ## Completed Tasks
 
-Tasks **1–16 are complete**. Do **not** reimplement or modify them. Each is
+Tasks **1–20 are complete**. Do **not** reimplement or modify them. Each is
 described concisely below with what it contributes to the next stages.
 
 | # | Task | Status | Provides to later stages |
@@ -158,7 +173,15 @@ described concisely below with what it contributes to the next stages.
 | 13 | Documentation / AGENTS.md / Project Instructions | ✅ COMPLETED | `AGENTS.md` authoritative rules, `docs/` system, this file. The contract every task must honor. |
 | 14 | AI CLI Connection | ✅ COMPLETED | `@atlas/agents` behind `AgentPort` — adapters, executable detection, supervised process runs (`spawn(file, args[])`, no shell, timeout). The narrow boundary for Tasks 16–18. |
 | 15 | Agent Session Manager | ✅ COMPLETED | `SessionManager` behind `SessionPort`; `createSessionManager()` in the SDK; `atlas sessions list/info/stop`. Manages many independent live sessions; `SessionLaunchRequest.prompt` reserved for Task 16. |
-| 16 | Context → Agent Integration | ✅ COMPLETED | `context-integration` module in `@atlas/sdk` (ADR-008): `createContextIntegration()` assembles a budgeted, deny-filtered, provider-independent `ContextPackage` per task via the Context SDK (ranked files/symbols/summaries/dependencies + overview + repo instructions, each scored with a reason), enforces item/token budgets, drops secrets (exclusion record), reports an honest staleness signal (`ContextSDK.hashes()` vs working tree), and delivers the package through `SessionPort` (`launch` seeds a new session's prompt; `attach` starts a `CREATED` session, typed `ContextAttachUnsupportedError` for live ones). `buildPackage`/`explain`/`launch`/`attach` + render helpers. No CLI wiring yet (follow-up). |
+| 16 | Context → Agent Integration | ✅ COMPLETED | `context-integration` module in `@atlas/sdk` (ADR-008): `createContextIntegration()` assembles a budgeted, deny-filtered, provider-independent `ContextPackage` per task via the Context SDK (ranked files/symbols/summaries/dependencies + overview + repo instructions, each scored with a reason), enforces item/token budgets, drops secrets (exclusion record), reports an honest staleness signal (`ContextSDK.hashes()` vs working tree), and delivers the package through `SessionPort` (`launch` seeds a new session's prompt; `attach` starts a `CREATED` session, typed `ContextAttachUnsupportedError` for live ones). `buildPackage`/`explain`/`launch`/`attach` + render helpers. No CLI wiring yet (Task 26). |
+| 17 | Multi-Agent Orchestration | ✅ COMPLETED | `createOrchestrator()` in `@atlas/sdk` (Direction B): a `TaskPlan` decomposes the user task into bounded, explicit agent roles; the executor runs roles in parallel or sequential through `SessionPort` (never reimplementing process/session management), collects typed results, combines them with attribution, and surfaces conflicts. Timeout (kill via `stopSession`, honest partial output), cancellation (stop remaining roles, `shutdown()` cleanup), bounded retry (launch failures only). See `docs/AGENT_ORCHESTRATOR.md`. |
+| 18 | Usage / Credits | ✅ COMPLETED | `@atlas/usage` behind `UsagePort`, composed as `createUsageService()` (ADR-009). Tri-state actual/estimated/unknown tokens & cost (never guessed), `PricingSource` abstraction (no hardcoded prices in logic), dedicated `.codeatlas/usage.db` store, `withUsageTracking`/`trackAgentRun` collection seams, soft budgets + fail-safe hard limits, `atlas usage` (summary/list/budgets). See `docs/USAGE.md`. |
+| 19 | Tool Registry | ✅ COMPLETED | `@atlas/toolkit` behind `ToolRegistryPort` in `core`, composed as `createToolRegistry()`: a curated, schema-validated, provenance-auditable catalog (`catalog.json`) merged with a local overlay, extensible categories. Registry only — no installer/compat/security (Tasks 21–24). See `docs/TOOL_REGISTRY.md`. |
+| 20 | Tool Manifest | ✅ COMPLETED | Versioned (`TOOL_MANIFEST_SCHEMA_VERSION = 1`), validated, extensible manifest recording **one installed tool's** state (compatibility/installation/configuration/security declarations + applied state + trust at install). Persisted per tool in `.codeatlas/tools/<name>.json`, mirroring the Scanner manifest pattern; loaded as untrusted input (never executed, prototype-pollution safe, size-bounded, path-safe names). See `docs/TOOL_MANIFEST.md`. |
+
+The remaining tasks — **21 Compatibility Engine, 22 Tool Installer, 23 Tool
+Configurator, 24 Security/Trust, 25 Toolkit CLI, 26 Context CLI** — are
+**[PLANNED]**. Each is a full spec in the sections below.
 
 ---
 
@@ -350,8 +373,10 @@ changing this layer's callers.
 
 # Task 17 — Multi-Agent Orchestration
 
-> **Status:** [PLANNED] — no code exists. Roadmap Phase 4 (Direction B).
-> Depends on Task 16 (Context → Agent Integration) and Task 15 (Session Manager).
+> **Status:** [IMPLEMENTED] — completed 2026-08-11. See the Completed Tasks
+> table; this section is kept as the historical spec. Do **not** reimplement.
+> Verify against `docs/AGENT_ORCHESTRATOR.md` / `docs/CURRENT_STATE.md` before
+> making any change to the `@atlas/sdk` `orchestrator` module.
 
 ## Goal
 
@@ -490,9 +515,10 @@ CodeAtlas (combine results)
 
 # Task 18 — Usage / Credits
 
-> **Status:** [PLANNED] — no code exists. Roadmap Phase 4 (Direction B).
-> Can be built independently of Task 17 (design the collection seam so the
-> orchestrator can feed it later).
+> **Status:** [IMPLEMENTED] — completed 2026-08-11 (ADR-009). See the Completed
+> Tasks table; this section is kept as the historical spec. Do **not** reimplement.
+> Verify against `docs/USAGE.md` / `docs/CURRENT_STATE.md` before making any
+> change to the `@atlas/usage` package or the SDK's `createUsageService`.
 
 ## Goal
 
@@ -597,9 +623,13 @@ Output tokens · Total tokens · Request count · Latency · Estimated cost**.
 
 # Task 19 — Tool Registry
 
-> **Status:** [PLANNED] — no code exists. **This is the first Task of the Agent
-> Toolkit (Direction C).** It establishes the **registry foundation only** — no
-> installer, no compatibility engine, no security engine (those are Tasks 20–24).
+> **Status:** [IMPLEMENTED] — completed 2026-08-11. See the Completed Tasks
+> table; this section is kept as the historical spec. Do **not** reimplement.
+> Verify against `docs/TOOL_REGISTRY.md` / `docs/CURRENT_STATE.md` before making
+> any change to the `@atlas/toolkit` package or the SDK's `createToolRegistry`.
+> This was the first Task of the Agent Toolkit (Direction C): it established the
+> **registry foundation only** — no installer, no compatibility engine, no
+> security engine (those are Tasks 21–24).
 
 ## Goal
 
@@ -705,9 +735,12 @@ Registry Schema (versioned, validated, extensible)
 
 # Task 20 — Tool Manifest System
 
-> **Status:** [PLANNED] — no code exists. Roadmap Phase 6 (Direction C).
-> Depends on Task 19 (Registry) for the catalog; defines the per-installed-tool
-> state that Tasks 21–24 read and write.
+> **Status:** [IMPLEMENTED] — completed 2026-08-12. See the Completed Tasks
+> table; this section is kept as the historical spec. Do **not** reimplement.
+> Verify against `docs/TOOL_MANIFEST.md` / `docs/CURRENT_STATE.md` before making
+> any change to the `@atlas/toolkit` manifest module. Depends on Task 19
+> (Registry) for the catalog; defines the per-installed-tool state that
+> Tasks 21–24 read and write.
 
 ## Goal
 
@@ -1376,7 +1409,7 @@ Context SDK → Context Package → SessionPort → AI CLI
 
 ## Global Development Rules
 
-Rules that apply to **every future task** (Tasks 17–26). They are mandatory; they
+Rules that apply to **every future task** (Tasks 21–26). They are mandatory; they
 mirror and extend `AGENTS.md`.
 
 ### Rule 1 — Inspect Before Coding
@@ -1466,31 +1499,22 @@ Workflow for future Claude Code sessions implementing a task from this file:
 15. Provide the final implementation report per `docs/DEVELOPMENT_WORKFLOW.md`:
     files changed, what changed, tests run/passed, known limitations, remaining work
 
-> **One task at a time.** Do **not** automatically implement Tasks 16–26 when a
-> developer asks for one task. "Implement Task 19" means implement **only
-> Task 19** — do not start Task 20 automatically.
+> **One task at a time.** Do **not** automatically implement Tasks 21–26 when a
+> developer asks for one task. "Implement Task 21" means implement **only
+> Task 21** — do not start Task 22 automatically.
 
 ---
 
 ## Task Dependency Map
 
 ```
-1–15 (complete)
+1–20 (complete)
  │
- ├── 16 Context → Agent
- │       │
- │       ├── 17 Multi-Agent Orchestration
- │       └── 26 Context CLI (`atlas context`) — follow-up wiring
- │
- ├── 18 Usage / Credits
+ ├── 26 Context CLI (`atlas context`) — follow-up wiring to 16 (done)
  │
  └── Agent Toolkit
          │
-         ├── 19 Tool Registry
-         │       ↓
-         ├── 20 Tool Manifest
-         │       ↓
-         ├── 21 Compatibility Engine
+         ├── 21 Compatibility Engine   ← depends on 19, 20 (both done)
          │       ↓
          ├── 22 Tool Installer
          │       ↓
@@ -1503,15 +1527,12 @@ Workflow for future Claude Code sessions implementing a task from this file:
 
 ### Documented overlaps
 
-- **16 → 17**: Multi-Agent Orchestration consumes Context → Agent Integration
-  (per-agent Context Packages). Build 16 first, or stub the input seam.
 - **16 → 26**: the `atlas context` CLI is a thin SDK delegator on top of
-  Task 16's `createContextIntegration()`; Task 26 depends on 16 and can be built
-  independently of 17.
-- **18 ↔ 16/17**: Usage/Credits can be built independently, but must expose a
-  collector seam that Tasks 16/17 can feed. Keep the seam now; wire later.
-- **19 → 20 → 21 → 22 → 23 → 24 → 25** is strictly sequential within the Toolkit
-  (each builds the metadata/state the next consumes).
+  Task 16's `createContextIntegration()` (implemented); Task 26 depends on 16 and
+  can be built independently of 17 (also done).
+- **21 → 22 → 23 → 24 → 25** is strictly sequential within the remaining Toolkit
+  work (each builds the metadata/state the next consumes; 19 Registry and
+  20 Manifest already exist as their input).
 - **24** gates **22** (security check before install) and **25** (trust shown in
   `atlas tools`), and writes to the **20** Tool Manifest.
 - **25** consumes **19–24** through the SDK and **never** duplicates their logic.
