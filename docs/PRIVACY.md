@@ -12,8 +12,8 @@ principle ([PRINCIPLES.md](./PRINCIPLES.md)).
         │                       │                       │
         ├── scan ──────────────▶│                       │
         ├── parse ─────────────▶│  (no network)  ─────▶│ manifest.json
-        ├── hash ──────────────▶│                       │ context.db (planned)
-        └── graph / symbols ───▶│                       │ summaries/ (planned)
+        ├── hash ──────────────▶│                       │ context.db (library/SDK)
+        └── graph / symbols ───▶│                       │ context.db / summaries
                                └───────────────────────┘
 ```
 

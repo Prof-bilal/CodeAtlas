@@ -5,9 +5,10 @@
 > foundation, the Tool Manifest System, the Compatibility Engine, the Tool
 > Installer, and the Tool Configurator are implemented** (see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md),
 > [TOOL_MANIFEST.md](./TOOL_MANIFEST.md), and [CURRENT_STATE.md](./CURRENT_STATE.md)):
-> `@atlas/toolkit` behind `ToolRegistryPort`, `CompatibilityPort`, and
-> `InstallerPort` in `core`, composed by the SDK as `createToolRegistry()`,
-> `createCompatibilityEngine()`, and `createInstaller()`.
+> `@atlas/toolkit` behind `ToolRegistryPort`, `CompatibilityPort`,
+> `InstallerPort`, and `ConfiguratorPort` in `core`, composed by the SDK as
+> `createToolRegistry()`, `createCompatibilityEngine()`, `createInstaller()`,
+> and `createConfigurator()`.
 > **Security/Trust evaluation remains [PLANNED]**. The Tool Configurator and
 > `atlas tools configure` CLI surface are implemented for Task 23. The Toolkit also builds on `@atlas/agents`
 > (the AI CLI connection layer, `AgentPort`) — see
@@ -81,7 +82,7 @@ flowchart TB
                 AR1[Agent Router]
                 SM1[Session Manager]
             end
-            subgraph TK[Agent Toolkit - planned]
+            subgraph TK[Agent Toolkit - partial]
                 R1[Registry]
                 I1[Installer]
                 C1[Configurator]

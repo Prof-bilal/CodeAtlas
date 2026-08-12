@@ -18,7 +18,7 @@ Quick links:
 - [DEPENDENCIES.md](./DEPENDENCIES.md) — import rules + dependency policy
 - [AI_PROVIDERS.md](./AI_PROVIDERS.md) — provider adapters
 - [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md) — planned unified AI CLI
-- [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) — planned Agent Toolkit (curated tool registry/install/config/security)
+- [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) — Agent Toolkit design and current implementation (Registry, Manifest, Compatibility, Installer, Configurator; Security/Trust remains planned)
 - [CLI.md](./CLI.md) — the `atlas` CLI contract
 - [CONTEXT_STORAGE.md](./CONTEXT_STORAGE.md) — the `.codeatlas/` directory
 - [DEVELOPMENT.md](./DEVELOPMENT.md) — developer setup & commands

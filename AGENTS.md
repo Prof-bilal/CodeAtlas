@@ -11,7 +11,7 @@
 
 **CodeAtlas** is an open-source **AI Context Engine** (Direction A — implemented),
 a **Unified AI CLI Orchestrator** (Direction B — mostly planned), and an
-**Agent Toolkit** (Direction C — planned). It scans, parses, and indexes a
+**Agent Toolkit** (Direction C — partially implemented). It scans, parses, and indexes a
 source tree into a queryable, persistent context database, exposes that context
 to developer tools and AI agents, and can later route work to installed AI
 coding CLIs (`/claude`, `/gemini`, `/codex`, `/opencode`, …) and curated
@@ -244,4 +244,4 @@ secrets.
   `docs/CODE_QUALITY.md`, `docs/CHANGE_POLICY.md`.
 - Development setup: `docs/DEVELOPMENT.md`. Contributing: `docs/CONTRIBUTING.md`.
 - Implemented analysis agents: `docs/AGENT_CATALOG.md`.
-- Agent Toolkit design (planned): `docs/AGENT_TOOLKIT.md`.
+- Agent Toolkit design/current state: `docs/AGENT_TOOLKIT.md`.

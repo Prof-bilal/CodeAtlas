@@ -24,14 +24,16 @@ rules and instruction. Read `AGENTS.md` first; everything there applies here.
 - **The CLI is partly wired.** `atlas search` opens `.codeatlas/context.db`
   (root from `ATLAS_ROOT` or cwd) and prints ranked hits via `createContextSDK`;
   `atlas mcp` starts the MCP server (`@atlas/mcp`). `init`/`build`/`update`/
-  `explain`/`doctor` still print "Coming Soon" and call nothing.
+  `explain`/`doctor` still print "Coming Soon" and call nothing. `atlas tools
+  configure <tool>` is wired through `createConfigurator()` and supports
+  installed-target detection plus `--dry-run`.
 - **Context is read through `createContextSDK` (`@atlas/sdk`)** — by `atlas
   search`, the MCP tools, and the VS Code extension (`@atlas/extension`). Do not
   open `.codeatlas/context.db` or use `@atlas/search`/`@atlas/storage` directly
   in consumers (see `docs/CONTEXT_SDK.md`).
 - **MCP (`@atlas/mcp`) and the VS Code extension (`@atlas/extension`) are
   implemented** thin SDK consumers. **Direction B's Agent Orchestrator**
-  (`/claude`, `/gemini`, agent router, session manager) is mostly planned — the
+  (`/claude`, `/gemini`, agent router) is mostly planned — the
   narrow AI CLI connection layer (`@atlas/agents`, behind `AgentPort`) and the
   **Agent Session Manager** (`atlas sessions`, via `createSessionManager()`
   from `@atlas/sdk`) are implemented; the **router, slash commands, and

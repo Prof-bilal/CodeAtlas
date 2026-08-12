@@ -362,12 +362,12 @@ changing this layer's callers.
 
 ## Acceptance criteria
 
-- [ ] A task string produces a ranked, budgeted, normalized `ContextPackage`.
-- [ ] The package is delivered to a live agent session through `SessionPort`.
-- [ ] Secrets are filtered; the exclusion record is available.
-- [ ] Stale context is detected and surfaced honestly.
-- [ ] Provider-specific injection lives only in adapters.
-- [ ] `pnpm check` passes; unit + integration tests cover the above.
+- [x] A task string produces a ranked, budgeted, normalized `ContextPackage`.
+- [x] The package is delivered to a live agent session through `SessionPort`.
+- [x] Secrets are filtered; the exclusion record is available.
+- [x] Stale context is detected and surfaced honestly.
+- [x] Provider-specific injection lives only in adapters.
+- [x] `pnpm check` passes; unit + integration tests cover the above.
 
 ---
 
@@ -504,12 +504,12 @@ CodeAtlas (combine results)
 
 ## Acceptance criteria
 
-- [ ] A user task becomes a bounded plan of explicit agent roles.
-- [ ] Parallel and sequential execution both work through `SessionPort`.
-- [ ] Results are collected, combined, and attributed; conflicts surfaced.
-- [ ] Timeout/cancellation/retry behave per spec; no orphan processes.
-- [ ] Provider logic stays in adapters; no autonomous swarm behavior.
-- [ ] `pnpm check` passes with the tests above.
+- [x] A user task becomes a bounded plan of explicit agent roles.
+- [x] Parallel and sequential execution both work through `SessionPort`.
+- [x] Results are collected, combined, and attributed; conflicts surfaced.
+- [x] Timeout/cancellation/retry behave per spec; no orphan processes.
+- [x] Provider logic stays in adapters; no autonomous swarm behavior.
+- [x] `pnpm check` passes with the tests above.
 
 ---
 
@@ -611,13 +611,13 @@ Output tokens · Total tokens · Request count · Latency · Estimated cost**.
 
 ## Acceptance criteria
 
-- [ ] Usage is recorded for agent runs and provider calls with the tri-state
+- [x] Usage is recorded for agent runs and provider calls with the tri-state
       token/cost model.
-- [ ] Pricing lives behind an abstraction; no hardcoded prices in logic.
-- [ ] Budgets and limits work; limits fail safe.
-- [ ] Data is local; no secrets or task content leak.
-- [ ] `atlas usage` (or the agreed CLI surface) renders usage via the SDK.
-- [ ] `pnpm check` passes with the tests above.
+- [x] Pricing lives behind an abstraction; no hardcoded prices in logic.
+- [x] Budgets and limits work; limits fail safe.
+- [x] Data is local; no secrets or task content leak.
+- [x] `atlas usage` (or the agreed CLI surface) renders usage via the SDK.
+- [x] `pnpm check` passes with the tests above.
 
 ---
 
@@ -725,11 +725,11 @@ Registry Schema (versioned, validated, extensible)
 
 ## Acceptance criteria
 
-- [ ] `@atlas/toolkit` exists with `ToolRegistryPort` in `core`, composed by the SDK.
-- [ ] Curated catalog + local overlay both load and validate.
-- [ ] Metadata covers the fields above; categories are extensible.
-- [ ] Provenance is recorded; external metadata is never trusted blindly.
-- [ ] `pnpm check` passes with the tests above.
+- [x] `@atlas/toolkit` exists with `ToolRegistryPort` in `core`, composed by the SDK.
+- [x] Curated catalog + local overlay both load and validate.
+- [x] Metadata covers the fields above; categories are extensible.
+- [x] Provenance is recorded; external metadata is never trusted blindly.
+- [x] `pnpm check` passes with the tests above.
 
 ---
 
@@ -823,11 +823,11 @@ Compatibility (21) · Installer (22) · Configurator (23) · Security/Trust (24)
 
 ## Acceptance criteria
 
-- [ ] A versioned, validated, extensible manifest schema exists and is documented.
-- [ ] The schema can describe all listed installation ecosystems without executing any.
-- [ ] Installed-tool state is persisted in `.codeatlas/` following the Scanner manifest pattern.
-- [ ] Manifests are loaded as untrusted input and validated.
-- [ ] `pnpm check` passes with the tests above.
+- [x] A versioned, validated, extensible manifest schema exists and is documented.
+- [x] The schema can describe all listed installation ecosystems without executing any.
+- [x] Installed-tool state is persisted in `.codeatlas/` following the Scanner manifest pattern.
+- [x] Manifests are loaded as untrusted input and validated.
+- [x] `pnpm check` passes with the tests above.
 
 ---
 
@@ -902,10 +902,10 @@ Compatibility Result
 
 ## Acceptance criteria
 
-- [ ] The engine checks the listed dimensions and returns one of the four states.
-- [ ] AI-CLI availability/version is detected through `AgentPort`, not duplicated.
-- [ ] `Incompatible` tools are reported as not installable (no silent skip).
-- [ ] `pnpm check` passes with unit + integration tests.
+- [x] The engine checks the listed dimensions and returns one of the four states.
+- [x] AI-CLI availability/version is detected through `AgentPort`, not duplicated.
+- [x] `Incompatible` tools are reported as not installable (no silent skip).
+- [x] `pnpm check` passes with unit + integration tests.
 
 ---
 
@@ -1004,11 +1004,11 @@ Verification
 
 ## Acceptance criteria
 
-- [ ] `InstallerPort` + per-ecosystem adapters exist; a safe MVP subset is implemented.
-- [ ] Approval is required before any install; the user is shown what will run.
-- [ ] All commands are argument-array spawns (no shell strings, no injection).
-- [ ] Provenance + logs are captured; rollback works for the implemented cases.
-- [ ] `pnpm check` passes including the adversarial security tests.
+- [x] `InstallerPort` + per-ecosystem adapters exist; a safe MVP subset is implemented.
+- [x] Approval is required before any install; the user is shown what will run.
+- [x] All commands are argument-array spawns (no shell strings, no injection).
+- [x] Provenance + logs are captured; rollback works for the implemented cases.
+- [x] `pnpm check` passes including the adversarial security tests.
 
 ---
 
@@ -1086,11 +1086,11 @@ Claude / Gemini / Codex / OpenCode
 
 ## Acceptance criteria
 
-- [ ] `ConfiguratorPort` + per-target adapters exist; no giant config function.
-- [ ] Configuration targets only installed, supported agents (via `AgentPort`).
-- [ ] Backup/merge/rollback protect existing user config.
-- [ ] `--dry-run` works and is tested.
-- [ ] `pnpm check` passes with the tests above.
+- [x] `ConfiguratorPort` + per-target adapters exist; no giant config function.
+- [x] Configuration targets only installed, supported agents (via `AgentPort`).
+- [x] Backup/merge/rollback protect existing user config.
+- [x] `--dry-run` works and is tested.
+- [x] `pnpm check` passes with the tests above.
 
 ---
 
@@ -1536,9 +1536,10 @@ Workflow for future Claude Code sessions implementing a task from this file:
 - **16 → 26**: the `atlas context` CLI is a thin SDK delegator on top of
   Task 16's `createContextIntegration()` (implemented); Task 26 depends on 16 and
   can be built independently of 17 (also done).
-- **21 → 22 → 23 → 24 → 25** is strictly sequential within the remaining Toolkit
-  work (each builds the metadata/state the next consumes; 19 Registry and
-  20 Manifest already exist as their input).
+- **19 → 20 → 21 → 22 → 23** is the completed Toolkit foundation chain.
+  **24 → 25** is the remaining Toolkit work; Security/Trust will formalize the
+  security gate already consumed by the Installer, and the CLI will consume
+  Tasks 19–24 through the SDK.
 - **24** gates **22** (security check before install) and **25** (trust shown in
   `atlas tools`), and writes to the **20** Tool Manifest.
 - **25** consumes **19–24** through the SDK and **never** duplicates their logic.

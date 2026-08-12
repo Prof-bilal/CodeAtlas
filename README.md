@@ -73,6 +73,7 @@ atlas search <query...>  → wired — ranked search over .codeatlas/context.db
 atlas mcp                → wired — starts the MCP server over stdio
 atlas sessions           → wired — list/info/stop AI agent sessions
 atlas usage              → wired — usage summary, list, budgets
+atlas tools configure    → wired — configure supported installed tool targets
 atlas init / build / update / explain / doctor  → still "Coming Soon" placeholders
 ```
 
@@ -134,7 +135,10 @@ linting, formatting, typing, and commit conventions on every change.
 - ✅ Context → Agent Integration built (`createContextIntegration` — budgeted, deny-filtered ContextPackages; ADR-008)
 - ✅ Tool Registry foundation built (`@atlas/toolkit`, `createToolRegistry` — curated catalog + local overlay)
 - ✅ Tool Manifest System built (versioned, validated, extensible per-installed-tool manifests)
-- ➖ CLI `atlas search` + `atlas mcp` + `atlas sessions` + `atlas usage` wired through the SDK; `init`/`build`/`update`/`explain`/`doctor` still stubs
+- ✅ Compatibility Engine built (`createCompatibilityEngine`, fail-closed environment checks)
+- ✅ Tool Installer built (`createInstaller`, approval-gated safe MVP ecosystems, verification/rollback)
+- ✅ Tool Configurator built (`createConfigurator`, per-target adapters, merge/backup/rollback, dry-run)
+- ➖ CLI `atlas search` + `atlas mcp` + `atlas sessions` + `atlas usage` + `atlas tools configure` wired through SDK seams; `init`/`build`/`update`/`explain`/`doctor` still stubs
 
 ## AI Agent Instructions
 - [AGENTS.md](AGENTS.md) — authoritative rules for every coding agent (Claude Code, OpenCode, Codex, Gemini CLI, …).
@@ -142,11 +146,10 @@ linting, formatting, typing, and commit conventions on every change.
 - [Documentation map](docs/DOCUMENTATION_MAP.md) — how to navigate `docs/`.
 
 ## Next Steps
-- Incremental updates powered by hashing
-- AI context engine integration
-- Agent Toolkit: Compatibility Engine (Task 21), Installer (22), Configurator
-  (23, including `atlas tools configure`), Security/Trust (24), and the
-  remaining `atlas tools` CLI (25) — see
+- Wire the scan → hash → parse → graph → storage pipeline into `atlas build` and
+  `atlas update`.
+- Implement the intentional `@atlas/context` ranking/assembly service when the
+  product decision changes (currently preserved as a stub by ADR-001).
+- Agent Toolkit: Security/Trust (Task 24), the remaining `atlas tools` CLI
+  (Task 25), and the `atlas context` CLI (Task 26) — see
   `docs/AGENT_TOOLKIT.md`
-- Context CLI: `atlas context` wiring for Context → Agent integration (Task 26,
-  follow-up to ADR-008)

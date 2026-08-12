@@ -31,7 +31,7 @@ How CodeAtlas persists project context, and the on-disk `.codeatlas/` layout.
 ├── tools/              # per-installed-tool manifests          [IMPLEMENTED]
 ├── graph.json          # exported dependency graph (optional)   [PLANNED]
 ├── symbols.json        # exported symbol index (optional)       [PLANNED]
-├── summaries/          # per-file cache of AI summaries         [PLANNED]
+├── usage.db            # local AI usage store                   [IMPLEMENTED]
 └── metadata/           # run logs, migration versions, etc.     [PLANNED]
 ```
 

@@ -12,6 +12,9 @@ This is a thin, dumb layer: it parses arguments and delegates to the
 atlas search <query...>  → wired — ranked search over .codeatlas/context.db
                            (via @atlas/sdk createContextSDK)
 atlas mcp                → wired — starts the MCP server over stdio (@atlas/mcp)
+atlas sessions           → wired — lists/inspects/stops agent sessions
+atlas usage              → wired — reports usage, budgets, and limits
+atlas tools configure    → wired — configures supported installed tool targets
 atlas init               → "Coming Soon"
 atlas build              → "Coming Soon"
 atlas update             → "Coming Soon"
