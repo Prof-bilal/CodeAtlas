@@ -3,7 +3,7 @@
 > **Status: [IMPLEMENTED]** (Task 19 — registry foundation only). This is the
 > first piece of the Agent Toolkit (Direction C). It builds the **authoritative
 > catalog of what exists** — the data foundation for the Manifest, Compatibility,
-> Installer, Configurator, and Security/Trust tasks that follow. See
+> Installer, Configurator, and Security/Trust tasks. See
 > [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) for the full design contract.
 
 ---
@@ -75,8 +75,8 @@ Every record covers (at least):
 | `supportedAgents` | `string[]` | e.g. `claude`, `gemini`, `codex`, `opencode`; empty = not declared |
 | `installMethods` | `InstallMethod[]` | `npm` \| `pip` \| `cargo` \| `go` \| `binary` \| `github-release` \| `mcp` — **declared now, executed by Task 22** |
 | `dependencies` | `ToolDependency[]` | `{ name, version? }` |
-| `security` | `ToolSecurityStatus` | `verified` \| `reviewed` \| `community` \| `unverified` \| `blocked` + `lastReview` — **declared now, evaluated by Task 24** |
-| `trust` | `ToolTrustLevel` | `official` \| `reviewed` \| `community` \| `unverified` \| `blocked` — **declared now, evaluated by Task 24** |
+| `security` | `ToolSecurityStatus` | `verified` \| `reviewed` \| `community` \| `unverified` \| `blocked` + `lastReview` — assessed by Task 24 |
+| `trust` | `ToolTrustLevel` | `verified` \| `reviewed` \| `community` \| `unverified` \| `blocked` — assessed by Task 24 |
 | `maintainer` | `string \| null` | |
 | `lastUpdate` | `string \| null` | ISO date — a **maintenance signal** |
 | `stars` | `number \| null` | Weak popularity signal only — **never a trust basis** |
@@ -146,10 +146,9 @@ mismatch **throws** (re-exported errors: `RegistryError`,
 
 ## 7. Boundaries — what this task does NOT do
 
-- No **installation** (Task 22), **compatibility evaluation** (Task 21 — now
-  implemented separately, see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §6), or
-  **security evaluation** (Task 24) — those fields are declared and validated
-  only.
+- Registry validation remains metadata-only; installation, compatibility, and
+  security are separate services. The SecurityAssessor is offline and never
+  executes registry content.
 - No network access at runtime, no auto-approval of external metadata, no
   downloading or fetching.
 - `atlas tools configure` is implemented; the remaining discovery/install/

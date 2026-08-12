@@ -341,7 +341,7 @@ Responsible for editor integration.
 | What a symbol *is*       | Parser (`Symbol`) + Core entity |
 | Where data lives         | `@atlas/storage` (+ scanner manifest file, + `@atlas/usage`'s own `usage.db`, + `.codeatlas/tools/` tool manifests by `@atlas/toolkit`) |
 | How context gets picked  | `@atlas/context` (stub) |
-| What tools a user may install | Agent Toolkit Registry (implemented) + Security/Trust (planned) |
+| What tools a user may install | Agent Toolkit Registry + Security/Trust assessor (implemented) |
 | How tools get installed/configured | Agent Toolkit Installer + Configurator (implemented, Tasks 22–23) |
 | External AI CLI detection | `@atlas/agents` (`AgentPort`, implemented) |
 | Tool install safety       | Agent Toolkit Security model — see [SECURITY.md](./SECURITY.md) |

@@ -56,7 +56,7 @@ export const SECURITY_STATUSES: readonly ToolSecurityStatusValue[] = [
 
 /** Closed set of trust levels (evaluated by Task 24). */
 export const TRUST_LEVELS: readonly ToolTrustLevel[] = [
-  "official",
+  "verified",
   "reviewed",
   "community",
   "unverified",

@@ -1,11 +1,17 @@
-import type { CompatibilityPort, InstallerPort } from "@atlas/core";
-import { type EcosystemAdapter, type InstallerProcess, InstallerService } from "@atlas/toolkit";
+import type { CompatibilityPort, InstallerPort, SecurityPort } from "@atlas/core";
+import {
+  type EcosystemAdapter,
+  type InstallerProcess,
+  InstallerService,
+  SecurityAssessor,
+} from "@atlas/toolkit";
 import { type CreateCompatibilityEngineOptions, createCompatibilityEngine } from "./compatibility";
 
 /** Options for {@link createInstaller}. */
 export interface CreateInstallerOptions extends CreateCompatibilityEngineOptions {
   /** The Compatibility Engine to gate against; defaults to a real one. */
   readonly compatibility?: CompatibilityPort;
+  readonly security?: SecurityPort;
   /**
    * Ecosystem install adapters; defaults to the MVP safe subset (`npm`, `pip`,
    * `cargo`, `go`). Provide a custom set to add an ecosystem as a new adapter.
@@ -37,6 +43,7 @@ export function createInstaller(options: CreateInstallerOptions = {}): Installer
     options.compatibility ?? createCompatibilityEngine(options);
   const service = new InstallerService({
     compatibility,
+    security: options.security ?? new SecurityAssessor(options.now),
     ...(options.ecosystemAdapters !== undefined ? { adapters: options.ecosystemAdapters } : {}),
     ...(options.resolveBinary !== undefined ? { resolveBinary: options.resolveBinary } : {}),
     ...(options.readVersion !== undefined ? { readVersion: options.readVersion } : {}),

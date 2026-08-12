@@ -16,8 +16,9 @@ can reason about large codebases accurately and efficiently.
 > Context → Agent integration (`createContextIntegration`, ADR-008), and the
 > **Agent Toolkit** registry + tool-manifest foundation (Tasks 19–20), its
 > Compatibility Engine and Installer (Tasks 21–22), and the Tool Configurator
-> with `atlas tools configure` (Task 23). Still planned: the CLI's indexing
-> commands (`init`/`build`/`update`/`explain`/`doctor`), Toolkit Security/Trust,
+> with `atlas tools configure` (Task 23), and the Security/Trust assessor (Task
+> 24). Still planned: the CLI's indexing
+> commands (`init`/`build`/`update`/`explain`/`doctor`),
 > the remaining `atlas tools` CLI, and the `atlas context` CLI (Task 26).
 > The context rank/assembler (`@atlas/context`) remains a structural stub behind
 > its port by design (ADR-001).
@@ -150,6 +151,6 @@ linting, formatting, typing, and commit conventions on every change.
   `atlas update`.
 - Implement the intentional `@atlas/context` ranking/assembly service when the
   product decision changes (currently preserved as a stub by ADR-001).
-- Agent Toolkit: Security/Trust (Task 24), the remaining `atlas tools` CLI
+- Agent Toolkit: the remaining `atlas tools` CLI
   (Task 25), and the `atlas context` CLI (Task 26) — see
   `docs/AGENT_TOOLKIT.md`

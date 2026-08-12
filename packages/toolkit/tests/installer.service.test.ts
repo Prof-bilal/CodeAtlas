@@ -304,7 +304,7 @@ describe("InstallerService.plan (build gates, nothing executes)", () => {
     try {
       const result = await svc.plan(c.req());
       expect(result.ok).toBe(false);
-      expect(failureOf(result)).toBeInstanceOf(InstallInvalidRequestError);
+      expect(failureOf(result)).toBeInstanceOf(InstallBlockedError);
     } finally {
       c.temp.cleanup();
     }
@@ -479,7 +479,7 @@ describe("InstallerService.install — rollback & adversarial", () => {
     }
   });
 
-  it("delivers a hostile token as a single inert argv element (adversarial, service level)", async () => {
+  it("rejects a hostile token before spawning (adversarial, service level)", async () => {
     const calls: SpawnCall[] = [];
     const svc = service({ calls });
     const c = ctx({
@@ -487,11 +487,11 @@ describe("InstallerService.install — rollback & adversarial", () => {
     });
     try {
       const result = await svc.install(c.req(), { granted: true });
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(false);
       if (!result.ok) {
         return;
       }
-      expect(calls.length).toBe(1);
+      expect(calls.length).toBe(0);
       // The whole hostile token is ONE element of the array — never spliced
       // into a shell string — and the child is spawned with shell:false.
       expect(calls[0].args).toEqual(["install", "--global", "evil;rm"]);

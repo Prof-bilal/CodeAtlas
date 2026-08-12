@@ -7,6 +7,8 @@ import type {
   InstallRollbackStatus,
   InstallVerificationStatus,
   InstallerPort,
+  SecurityAssessment,
+  SecurityPort,
   ToolInstallMethodType,
   ToolInstallRequest,
 } from "@atlas/core";
@@ -26,6 +28,7 @@ import {
 import { InstallerProcess } from "./installer-process";
 import { createToolManifest, isValidToolName, saveToolManifest } from "./manifest";
 import type { ToolManifest } from "./manifest-schema";
+import { SecurityAssessor } from "./security.service";
 import { extractVersion, satisfiesVersionRange } from "./version-range";
 
 /** Options for constructing an {@link InstallerService}. */
@@ -35,6 +38,7 @@ export interface InstallerServiceOptions {
    * the installer never skips the compatibility gate.
    */
   readonly compatibility: CompatibilityPort;
+  readonly security?: SecurityPort;
   /**
    * Ecosystem adapters; defaults to the MVP safe subset (`npm`, `pip`,
    * `cargo`, `go`). Replacing this set is how a new ecosystem is added — a new
@@ -86,6 +90,7 @@ export class InstallerService implements InstallerPort {
   public readonly implementedTypes: readonly ToolInstallMethodType[];
 
   private readonly compatibility: CompatibilityPort;
+  private readonly security: SecurityPort;
   private readonly adapters: ReadonlyMap<ToolInstallMethodType, EcosystemAdapter>;
   private readonly process: InstallerProcess;
   private readonly resolveBinary: (binary: string) => string | null;
@@ -98,6 +103,7 @@ export class InstallerService implements InstallerPort {
       throw new InstallerError("InstallerService requires a CompatibilityPort");
     }
     this.compatibility = options.compatibility;
+    this.security = options.security ?? new SecurityAssessor(options.now);
     this.adapters = new Map<ToolInstallMethodType, EcosystemAdapter>(
       (options.adapters ?? DEFAULT_ADAPTERS).map((adapter) => [adapter.method, adapter]),
     );
@@ -134,6 +140,7 @@ export class InstallerService implements InstallerPort {
       effect: `${built.value.effect} Compatibility: ${gates.value.overall}.`,
       dangerous: built.value.dangerous,
       verifyBinary: built.value.verifyBinary,
+      security: gates.value.security,
     };
     return ok(plan);
   }
@@ -148,12 +155,18 @@ export class InstallerService implements InstallerPort {
     }
     const plan = planned.value;
 
+    // Approval is the explicit user override for an unverified assessment. A
+    // separate securityOverride can add an auditable note, but cannot bypass
+    // the mandatory approval or a blocked assessment.
     if (approval.granted !== true) {
       return fail(new InstallApprovalDeniedError());
     }
 
     const recordedAt = this.now().toISOString();
     const log: string[] = [`plan: install "${request.name}" via ${request.installation.type}`];
+    if (plan.security.overrideRequired) {
+      log.push(`security: ${plan.security.trust}; explicit user override recorded`);
+    }
     log.push(`command: ${JSON.stringify([plan.command.binary, ...plan.command.args])}`);
     if (plan.command.cwd !== null) {
       log.push(`cwd: ${plan.command.cwd}`);
@@ -251,10 +264,9 @@ export class InstallerService implements InstallerPort {
   }
 
   /** Compatibility (fail-closed) + security (blocked → refuse) gates. */
-  private async runGates(request: ToolInstallRequest): Promise<Result<{ overall: string }>> {
-    if (request.security.status === "blocked" || request.security.trust === "blocked") {
-      return fail(new InstallBlockedError(request.name));
-    }
+  private async runGates(
+    request: ToolInstallRequest,
+  ): Promise<Result<{ overall: string; security: SecurityAssessment }>> {
     // The declared install method is the effective compatibility method for the
     // package-manager availability check (the caller's input may omit it).
     const input =
@@ -268,7 +280,29 @@ export class InstallerService implements InstallerPort {
     if (report.value.notInstallable) {
       return fail(new InstallNotCompatibleError(`OVERALL: ${report.value.overall}`));
     }
-    return ok({ overall: report.value.overall });
+    const decision = await this.security.decide({
+      toolName: request.name,
+      ...(request.license !== undefined ? { license: request.license } : {}),
+      ...(request.repository !== undefined ? { repository: request.repository } : {}),
+      packageSource: request.installation.source === null ? "official-registry" : "unknown",
+      packageName: request.installation.package,
+      dependenciesDeclared: true,
+      installCommand: {
+        binary: request.installation.type,
+        args: request.installation.package === null ? [] : [request.installation.package],
+      },
+      permissions: ["network", "process"],
+      maintainer: null,
+      ...(request.installation.checksum !== null
+        ? { releaseProvenance: request.installation.checksum }
+        : {}),
+      declaredStatus: request.security.status,
+      declaredTrust: request.security.trust,
+    });
+    if (!decision.ok) return fail(decision.error);
+    if (decision.value.assessment.status === "blocked")
+      return fail(new InstallBlockedError(request.name));
+    return ok({ overall: report.value.overall, security: decision.value.assessment });
   }
 
   private verifyTool(request: ToolInstallRequest, plan: InstallPlan): InstallVerificationDetails {
@@ -343,10 +377,12 @@ export class InstallerService implements InstallerPort {
         supportedAgents: request.supportedAgents ?? [],
         installation: request.installation,
         security: {
-          status: request.security.status,
-          trust: request.security.trust,
-          lastReview: null,
-          note: request.security.note ?? null,
+          status: plan.security.status,
+          trust: plan.security.trust,
+          lastReview: plan.security.assessedAt,
+          note:
+            `${request.security.note ?? ""}${plan.security.overrideRequired ? " Explicit user override recorded." : ""}`.trim() ||
+            null,
         },
         provenance: {
           source: request.installation.type,

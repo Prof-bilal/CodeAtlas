@@ -131,7 +131,7 @@ export interface ToolSecurityStatus {
 }
 
 /** User-facing trust hierarchy (§8 of the design contract). */
-export type ToolTrustLevel = "official" | "reviewed" | "community" | "unverified" | "blocked";
+export type ToolTrustLevel = "verified" | "reviewed" | "community" | "unverified" | "blocked";
 
 /**
  * One curated registry record — the metadata shape for a tool. The

@@ -243,6 +243,16 @@ export type {
   ToolSecurityStatusValue,
   ToolTrustLevel,
 } from "@atlas/core";
+export type {
+  SecurityAssessment,
+  SecurityAssessmentInput,
+  SecurityCheck,
+  SecurityCheckVerdict,
+  SecurityDecision,
+  SecurityOverride,
+  SecurityPort,
+  SecurityRiskLevel,
+} from "@atlas/core";
 export {
   InvalidRepositoryPathError,
   SessionError,

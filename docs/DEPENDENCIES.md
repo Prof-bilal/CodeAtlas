@@ -51,7 +51,7 @@ Rules that follow:
    See [USAGE.md](./USAGE.md) + ADR-009.
 6. **`@atlas/toolkit`** (Agent Toolkit) is a feature package: it imports
    **only** `core` + `shared` (the Registry, Manifest, Compatibility Engine,
-   Installer, and Configurator are implemented; Security/Trust remains planned),
+  Installer, Configurator, and Security/Trust are implemented),
    reads CodeAtlas context through the **Context
    SDK**/port seams, and is composed behind its ports by `@atlas/sdk`
    (`createToolRegistry`).

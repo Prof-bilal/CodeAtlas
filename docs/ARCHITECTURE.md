@@ -58,7 +58,7 @@ System** (versioned/validated/extensible per-installed-tool manifests in
 `CompatibilityPort`, composed via `createCompatibilityEngine()`), and the
 **Tool Installer** (behind `InstallerPort`, composed via `createInstaller()`).
 The Configurator is **[IMPLEMENTED]** (Task 23); Security/Trust remains
-**[PLANNED]** (Task 24).
+**[IMPLEMENTED]** (Task 24): offline SecurityAssessor behind `SecurityPort`.
 See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md),
 [TOOL_REGISTRY.md](./TOOL_REGISTRY.md), and
 [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
@@ -198,7 +198,7 @@ CodeAtlas Context ──── scan → hash → parse → graph → store → s
    ├──▶ Agent Sessions (Direction B — connection + sessions implemented) ── atlas /claude · /gemini · …
    │        agents spawn & supervise external AI CLIs (router/slash commands planned)
    │
-   └──▶ Agent Toolkit (Direction C — Tasks 19–23 implemented) ── install → configure → verify
+   └──▶ Agent Toolkit (Direction C — Tasks 19–24 implemented) ── assess → install → configure → verify
             tools improve context, tokens, quality for the agents above
 ```
 
@@ -238,7 +238,7 @@ Planned additions (not yet in the repo):
   curated tool registry, installer, configurator, compatibility, security/trust.
   The **Tool Registry**, **Tool Manifest**, **Compatibility Engine**, **Tool
   Installer**, and **Tool Configurator** are implemented (Tasks 19–23);
-  Security/Trust and the broader CLI surface remain planned.
+  The broader CLI surface remains planned; Security/Trust is implemented.
   See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
 - **SDK consumers** and a working CLI wired end-to-end. MCP (`@atlas/mcp`) is
   an implemented SDK consumer — see [MCP.md](./MCP.md).
@@ -275,7 +275,7 @@ const container = Container.create({ provider: new CustomProvider() });
 | New language support                | New parser in `parser` implementing `LanguageParser`, registered in `ParserRegistry` |
 | Alternate storage                   | New adapter in `storage` behind `StoragePort` / `ContextDatabasePort` |
 | Agent routing / `/claude` etc.      | Build on the existing `@atlas/agents` connection layer (`AgentPort`); the **Agent Session Manager** (`SessionPort`) is implemented behind the SDK; add the **router** behind the SDK (planned) |
-| Agent Toolkit (`atlas tools`)       | `@atlas/toolkit`: Registry, Manifest, Compatibility, Installer, and Configurator are implemented behind `core` ports and composed by the SDK; `atlas tools configure` is wired, while the broader CLI and Security/Trust remain planned |
+| Agent Toolkit (`atlas tools`)       | `@atlas/toolkit`: Registry, Manifest, Compatibility, Installer, Configurator, and Security/Trust are implemented behind `core` ports and composed by the SDK; `atlas tools configure` is wired, while the broader CLI remains planned |
 | New tool ecosystem (npm/pip/cargo/…) | New `InstallerPort` adapter per ecosystem; never blind `install.sh` execution (planned) |
 | MCP server                          | `@atlas/mcp` consumes the Context SDK (implemented); run it via `atlas mcp`; add MCP resources/prompts |
 | Editors / agents read context       | `createContextSDK` is the stable read interface — that is what they consume, never the DB |
@@ -306,8 +306,8 @@ These divergences from a "perfect" target are intentional and documented:
    [VSCODE.md](./VSCODE.md) and [ROADMAP.md](./ROADMAP.md).
 5. **Direction C (Agent Toolkit) foundations are implemented** — the **Tool
    Registry**, **Tool Manifest System**, **Compatibility Engine**, **Installer**,
-   and **Configurator** exist in `@atlas/toolkit` behind ports and are composed
-   through the SDK; Security/Trust remains a design contract
+   **Configurator**, and **Security/Trust assessor** exist in `@atlas/toolkit`
+   behind ports and are composed through the SDK
    ([AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)). New toolkit work must keep the
    "orchestrate, don't bundle" and "opt-in install" principles — never blind
    execution of third-party install scripts.

@@ -82,6 +82,7 @@ export {
   InstallerService,
   type InstallerServiceOptions,
 } from "./installer.service";
+export { SecurityAssessor } from "./security.service";
 export { ConfiguratorService, type ConfiguratorServiceOptions } from "./configurator.service";
 export {
   ClaudeAdapter,

@@ -131,12 +131,13 @@ Launch and supervise existing AI coding CLIs. See
 Curated, verified ecosystem of open-source developer / AI-agent tools:
 discover, install, configure, verify. The Tool Registry (**Task 19**), Tool
 Manifest System (**Task 20**), **Compatibility Engine (Task 21)**, **Tool
-Installer (Task 22)**, and **Tool Configurator (Task 23)** are
+Installer (Task 22)**, **Tool Configurator (Task 23)**, and **Security/Trust
+(Task 24)** are
 **[IMPLEMENTED]** — see
 [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) for the design contract,
 [TOOL_REGISTRY.md](./TOOL_REGISTRY.md), and [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
 
-Security/Trust and the broader CLI/slash-command surface remain **[PLANNED]**;
+The broader CLI/slash-command surface remains **[PLANNED]**;
 the implemented items below are marked explicitly.
 
 1. **Tool Registry** — **[IMPLEMENTED]** authoritative catalog (metadata,

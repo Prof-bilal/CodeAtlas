@@ -60,6 +60,16 @@ export type {
   ToolInstallRequest,
 } from "./ports/installer.port";
 export type {
+  SecurityAssessment,
+  SecurityAssessmentInput,
+  SecurityCheck,
+  SecurityCheckVerdict,
+  SecurityDecision,
+  SecurityOverride,
+  SecurityPort,
+  SecurityRiskLevel,
+} from "./ports/security.port";
+export type {
   ConfiguratorPort,
   ConfiguratorRequest,
   ConfigurationChange,

@@ -1,7 +1,7 @@
 # Agent Toolkit
 
 > **Status: [PARTIAL]** — this document is the **design contract** for a new
-> first-class CodeAtlas subsystem. As of Tasks 19–23 the **Tool Registry
+> first-class CodeAtlas subsystem. As of Tasks 19–24 the **Tool Registry
 > foundation, the Tool Manifest System, the Compatibility Engine, the Tool
 > Installer, and the Tool Configurator are implemented** (see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md),
 > [TOOL_MANIFEST.md](./TOOL_MANIFEST.md), and [CURRENT_STATE.md](./CURRENT_STATE.md)):
@@ -9,7 +9,7 @@
 > `InstallerPort`, and `ConfiguratorPort` in `core`, composed by the SDK as
 > `createToolRegistry()`, `createCompatibilityEngine()`, `createInstaller()`,
 > and `createConfigurator()`.
-> **Security/Trust evaluation remains [PLANNED]**. The Tool Configurator and
+> **Security/Trust evaluation is implemented [IMPLEMENTED]**. The Tool Configurator and
 > `atlas tools configure` CLI surface are implemented for Task 23. The Toolkit also builds on `@atlas/agents`
 > (the AI CLI connection layer, `AgentPort`) — see
 > [CURRENT_STATE.md](./CURRENT_STATE.md) and [MODULES.md](./MODULES.md).
@@ -115,12 +115,11 @@ flowchart TB
 ### Where the Toolkit lives
 
 Consistent with [DEPENDENCIES.md](./DEPENDENCIES.md) (the package and toolkit
-ports exist; Security/Trust remains planned):
+ports exist; Security/Trust is implemented):
 
 - A new feature package `@atlas/toolkit` (imports **only** `core` + `shared`),
   hosting the Registry, Tool Manifest, Compatibility, Installer, and
-  Configurator (**implemented**) plus Security/Trust behind a new port in
-  `core` (planned).
+  Configurator and Security/Trust behind ports in `core` (**implemented**).
 - A thin Toolkit **CLI surface** (`atlas tools ...`) added in `apps/cli`,
   which delegates to the SDK — never to feature packages directly.
 - SDK wiring (`@atlas/sdk`) composes the Toolkit behind its ports, exactly as
@@ -357,7 +356,7 @@ environment** (`OVERALL: incompatible — not installable in this environment`)
 
 ## 7. Security Model
 
-**Status: mandatory.** CodeAtlas must **never** blindly execute arbitrary
+**Status: implemented (Task 24).** CodeAtlas must **never** blindly execute arbitrary
 installation scripts from GitHub.
 
 ### Security inputs
@@ -398,7 +397,7 @@ A user-facing **trust hierarchy** so a user understands, *before* installing,
 where a tool sits:
 
 ```
-Official / Verified
+Verified
         ↓
 Reviewed
         ↓
@@ -409,16 +408,19 @@ Unverified
 Blocked
 ```
 
-- **Official / Verified** — owned by or verified by CodeAtlas / the tool's
-  publisher with a documented audit.
+- **Verified** — CodeAtlas completed a documented high-bar checklist; this is
+  rare and never inferred from popularity or an official registry.
 - **Reviewed** — passed a CodeAtlas review pass.
 - **Community** — used in the wild, not individually audited here.
 - **Unverified** — not yet reviewed; requires explicit user opt-in.
 - **Blocked** — disallowed (malware, abuse, broken provenance).
 
-The trust level is shown in every list/install UI and recorded in the Tool
-Manifest at install time. Users can always **override with explicit consent**,
-but the override is visible and recorded.
+The exact trust states are `verified`, `reviewed`, `community`, `unverified`,
+and `blocked`; `official` is a distribution/source concept, not a trust state.
+The SecurityAssessor records the state in the install plan and Tool Manifest.
+`unverified` requires explicit consent; `blocked` is a hard gate. The broader
+list/install CLI rendering remains planned, while the SDK/installer surfaces
+the assessment and records an override in the bounded install log.
 
 ---
 
@@ -609,7 +611,7 @@ outputs, high churn) feed the **future** Recommendation Engine — see
 | Compatibility | `@atlas/toolkit` Compatibility Engine — **implemented** (Task 21) |
 | Installers | `InstallerPort` + per-ecosystem adapters — **implemented** (Task 22, MVP subset `npm`/`pip`/`cargo`/`go`) |
 | Configuration | `ConfiguratorPort` + per-target adapters — **implemented** (Task 23) |
-| Security / trust | `@atlas/toolkit` Security & Trust (planned) |
+| Security / trust | `SecurityPort` + offline `SecurityAssessor` — **implemented** (Task 24); hard installer gate |
 | AI-CLI detection | `@atlas/agents` (`AgentPort`) — **implemented** |
 | CLI surface | `atlas tools configure` — **implemented**; remaining `atlas tools` commands and `atlas setup` planned |
 | Recommendation | separate future module (planned) |

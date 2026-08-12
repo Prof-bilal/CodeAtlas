@@ -92,7 +92,10 @@ Non-obvious facts (verified as of 2026-08-11):
   (Task 23) is implemented** behind `ConfiguratorPort`, with per-target
   adapters, AgentPort-backed detection, safe user-config merge/backup/rollback,
   verification, dry-run, SDK composition, and `atlas tools configure`.
-  Security/Trust evaluation remains **[PLANNED]**. Design contract:
+  **Security/Trust evaluation (Task 24) is implemented** behind `SecurityPort`:
+  offline per-check risk assessment, exact five trust states, hostile-input
+  rejection, fail-closed installer gating, and explicit unverified override
+  recording. Design contract:
   `docs/AGENT_TOOLKIT.md`; registry details:
   `docs/TOOL_REGISTRY.md`.
 - Pipelines that are implemented and tested: scanner, hashing, manifest,

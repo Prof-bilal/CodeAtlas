@@ -1,5 +1,6 @@
 import type { Result } from "@atlas/shared";
 import type { CompatibilityEvaluationInput } from "./compatibility.port";
+import type { SecurityAssessment } from "./security.port";
 import type {
   ToolInstallMethodType,
   ToolSecurityStatusValue,
@@ -125,6 +126,7 @@ export interface InstallPlan {
   readonly dangerous: readonly string[];
   /** The tool binary name the post-install verification looks for on PATH. */
   readonly verifyBinary: string;
+  readonly security: SecurityAssessment;
 }
 
 /** The user's consent. Approval is mandatory unless an explicit automation
@@ -133,6 +135,7 @@ export interface InstallApproval {
   readonly granted: boolean;
   /** Optional human note (why it was granted/denied); never required. */
   readonly note?: string;
+  readonly securityOverride?: { readonly granted: boolean; readonly note: string };
 }
 
 /** What the installer did on failure to restore the pre-install state. */

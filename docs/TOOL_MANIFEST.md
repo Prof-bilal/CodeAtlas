@@ -91,7 +91,7 @@ are `null`, never `undefined`.
 | `compatibility` | `object` | **Declared** requirements — **evaluated by Task 21**: `os`, `runtimes: {name, versionRange}[]`, `agents`, `mcp: boolean`, `architecture`, `permissions`, `note`. |
 | `installation` | `object` | **Declared** how-to — **executed by Task 22** (see §5): `type`, `package`, `source`, `checksum`, `versionRange`, `note`. |
 | `configuration` | `object` | Declared + applied config — **Task 23**: `type` (`automatic`/`manual`/`none`), `applied[]`, `agents[]`, `note`. |
-| `security` | `object` | **Snapshot evaluated by Task 24**: `status` (`verified`/`reviewed`/`community`/`unverified`/`blocked`), `trust` (`official`/`reviewed`/`community`/`unverified`/`blocked`), `lastReview`, `note`. |
+| `security` | `object` | **Snapshot evaluated by Task 24**: `status` and `trust` (`verified`/`reviewed`/`community`/`unverified`/`blocked`), `lastReview`, `note`. `unverified` overrides are recorded in install output/manifest provenance. |
 | `provenance` | `object` | Install audit trail: `source` (`registry`/`npm`/`pip`/`cargo`/`go`/`binary`/`github-release`/`mcp`/`manual`), `sourceRef`, `method`, `command` (**argv array, never a shell string**), `recordedAt`. |
 | `verification` | `object` | Verification result: `status` (`verified`/`unverified`/`failed`), `checksum`, `note`. |
 | `integrationState` | `object` | Doctor-able state: `status` (`expected`/`installed`/`missing`/`broken`/`unknown`), `expectedPath`, `foundPath`, `checkedAt`, `note`. |
@@ -170,10 +170,9 @@ Per [SECURITY.md](./SECURITY.md) and the Task 24 threat list:
 
 ## 8. Boundaries — what this task does NOT do
 
-- **No installation** (Task 22), **no compatibility evaluation** (Task 21 — now
-  implemented separately, see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §6), and
-  **no security evaluation** (Task 24) — only declares/records the fields those
-  tasks evaluate.
+- **No installation or evaluation is triggered by loading a manifest.** The
+  installer and SecurityAssessor consume validated metadata separately; no
+  manifest field is ever executed.
 - **No context database** access — installed-tool state is plain JSON in
   `.codeatlas/tools/`.
 - `createToolManifest`/`saveToolManifest`/`loadToolManifest`/

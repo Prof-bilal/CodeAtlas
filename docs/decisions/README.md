@@ -44,6 +44,7 @@ ADR-002.md       ...
 | [ADR-007](./ADR-007.md) | Agent Session Manager: `SessionPort` in `core`, implemented in `@atlas/agents` (`SessionManager`), composed by the SDK (`createSessionManager`); in-memory, terminal sessions pruned | Accepted | 2026-08-10 |
 | [ADR-008](./ADR-008.md) | Context → Agent integration lives inside `@atlas/sdk` as a `context-integration` module (`createContextIntegration`, context packages delivered through `SessionPort`) | Accepted | 2026-08-11 |
 | [ADR-009](./ADR-009.md) | Usage & Credits as a dedicated `@atlas/usage` feature package behind `UsagePort` (tri-state actual/estimated/unknown provenance, `PricingSource` abstraction, budgets/limits, `atlas usage`) | Accepted | 2026-08-11 |
+| [ADR-010](./ADR-010-security-trust-assessment.md) | Offline security assessment and trust-gated installation | Accepted | 2026-08-12 |
 
 ---
 

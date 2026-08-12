@@ -36,7 +36,7 @@ README.md
 | `docs/USAGE.md` | AI Usage & Credits: tri-state actual/estimated/unknown provenance, pricing abstraction, budgets/limits, collection seams, `atlas usage`. |
 | `docs/AGENT_ORCHESTRATOR.md` | Unified AI CLI orchestrator (implemented, Task 17): bounded agent roles, execution, result combination. |
 | `docs/AGENT_SESSIONS.md` | Agent Session Manager (implemented): session lifecycle, states, CLI commands, failure/shutdown behavior. |
-| `docs/AGENT_TOOLKIT.md` | Agent Toolkit design/current state; Tasks 19–23 implemented (Registry, Manifest, Compatibility, Installer, Configurator), Security/Trust and broader CLI planned. |
+| `docs/AGENT_TOOLKIT.md` | Agent Toolkit design/current state; Tasks 19–24 implemented (Registry, Manifest, Compatibility, Installer, Configurator, Security/Trust), broader CLI planned. |
 | `docs/TOOL_REGISTRY.md` | Tool Registry (implemented, Task 19): record schema, per-field provenance, shipped catalog + local overlay, SDK surface. |
 | `docs/TOOL_MANIFEST.md` | Tool Manifest (implemented, Task 20): per-installed-tool state schema, `.codeatlas/tools/` layout, untrusted-input validation; consumed by toolkit services. |
 | `docs/CLI.md` | The `atlas` CLI contract. |

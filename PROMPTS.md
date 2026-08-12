@@ -26,7 +26,7 @@ CodeAtlas is an open-source AI toolchain with three product directions:
 | --------- | ------------ | -------------- |
 | **A. Context Engine** | Scan → parse → graph → store → search → feed relevant context to AI | ~90% implemented |
 | **B. Unified AI CLI Orchestrator** | Launch & supervise installed AI coding CLIs (Claude / Gemini / Codex / OpenCode), coordinate sessions, later coordinate multiple agents | Connection layer, session manager, **multi-agent orchestrator**, and usage/credits implemented; router/slash commands planned |
-| **C. Agent Toolkit** | Curated, security-gated discovery/install/config of open-source developer & AI-agent tools | Tasks 19–23 implemented (Registry, Manifest, Compatibility, Installer, Configurator); Security/Trust and the broader CLI remain planned (Tasks 24–25) |
+| **C. Agent Toolkit** | Curated, security-gated discovery/install/config of open-source developer & AI-agent tools | Tasks 19–24 implemented (Registry, Manifest, Compatibility, Installer, Configurator, Security/Trust); broader CLI remains planned (Task 25) |
 
 ### Conceptual system
 
@@ -179,8 +179,8 @@ described concisely below with what it contributes to the next stages.
 | 19 | Tool Registry | ✅ COMPLETED | `@atlas/toolkit` behind `ToolRegistryPort` in `core`, composed as `createToolRegistry()`: a curated, schema-validated, provenance-auditable catalog (`catalog.json`) merged with a local overlay, extensible categories. See `docs/TOOL_REGISTRY.md`. |
 | 20 | Tool Manifest | ✅ COMPLETED | Versioned (`TOOL_MANIFEST_SCHEMA_VERSION = 1`), validated, extensible manifest recording **one installed tool's** state (compatibility/installation/configuration/security declarations + applied state + trust at install). Persisted per tool in `.codeatlas/tools/<name>.json`, mirroring the Scanner manifest pattern; loaded as untrusted input (never executed, prototype-pollution safe, size-bounded, path-safe names). See `docs/TOOL_MANIFEST.md`. |
 
-The remaining tasks — **24 Security/Trust, 25 Toolkit CLI, 26 Context CLI** — are
-**[PLANNED]**. Tasks 21–23 are implemented; each task remains fully specified
+The remaining tasks — **25 Toolkit CLI, 26 Context CLI** — are
+**[PLANNED]**. Tasks 21–24 are implemented; each task remains fully specified
 in the sections below for auditability.
 
 ---
@@ -1096,7 +1096,9 @@ Claude / Gemini / Codex / OpenCode
 
 # Task 24 — Security / Trust System
 
-> **Status:** [PLANNED] — no code exists. Roadmap Phase 6 (Direction C).
+> **Status:** [IMPLEMENTED] — completed 2026-08-12. This section is retained as
+> the original acceptance contract; implementation lives in `SecurityPort` and
+> `SecurityAssessor`.
 > **Critical task.** Depends on Tasks 19–20. Treat third-party repositories and
 > manifests as **untrusted input** (see `docs/SECURITY.md`).
 

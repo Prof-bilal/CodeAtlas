@@ -438,8 +438,17 @@ examples/        # README placeholder only (no runnable examples)
 - **The Configurator (Task 23) is implemented**: `ConfiguratorPort` with
   Claude/Gemini/Codex/OpenCode/MCP/VS Code adapters, AgentPort-backed target
   detection, merge/backup/rollback/read-back verification, dry-run support,
-  SDK composition, and `atlas tools configure`. Security/Trust evaluation and
-  the remaining `atlas tools`/`/tools` surface remain [PLANNED]. See
+  SDK composition, and `atlas tools configure`.
+- **Security/Trust (Task 24) is implemented**: `SecurityPort` and the pure,
+  offline `SecurityAssessor` run license, source, dependency, install-command,
+  permission, maintainer, release-provenance, and repository checks. Each check
+  has a verdict; the assessor produces risk plus exactly
+  `verified`/`reviewed`/`community`/`unverified`/`blocked`. Missing evidence
+  defaults to `unverified`, documented human review is required for promotion,
+  hostile metadata is rejected, and the Installer uses the result as a hard
+  gate. `unverified` requires explicit installation consent; `blocked` cannot
+  be overridden. See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §7–§8.
+- The remaining `atlas tools`/`/tools` surface remains [PLANNED]. See
   [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
 
 ### Tool Manifest System — **[IMPLEMENTED]**
@@ -556,7 +565,7 @@ examples/        # README placeholder only (no runnable examples)
 | ------------------------------------- | -------------- |
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking intentionally stubbed; `search` + `mcp` are CLI-wired |
 | **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`) and the session manager (`SessionManager`, `atlas sessions`) are implemented and SDK-wired, and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) is implemented and tested; router/slash commands **0%** |
-| **C. Agent Toolkit** (curated tool registry → install → configure → verify) | ~45% — Tasks 19–23 implemented: Registry, Manifest, Compatibility Engine, Installer, and Configurator with SDK composition, per-target adapters, AgentPort detection, safe user-config merge, backup/rollback, verification, dry-run, and `atlas tools configure`; Security/Trust and the broader `atlas tools` surface remain planned |
+| **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~55% — Tasks 19–24 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, and Security/Trust with SDK composition, per-target adapters, AgentPort detection, safe user-config merge, backup/rollback, verification, dry-run, offline risk checks, hostile-input rejection, and hard trust gating; the broader `atlas tools` surface remains planned |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
 at: (1) the other CLI commands (build/update/init/explain/doctor are stubs),
