@@ -1,7 +1,7 @@
-import { mkdtempSync, writeFileSync, rmSync, chmodSync } from "node:fs";
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { describe, expect, it, afterEach } from "vitest";
+import { delimiter, join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
 import { findExecutable } from "../src/executable";
 
 const dirs: string[] = [];
@@ -52,7 +52,7 @@ describe("findExecutable", () => {
   it("resolves a binary present in PATH", () => {
     const dir = makeDir();
     const file = makeBin(dir, "faketool");
-    const pathEnv = [dir].join(";");
+    const pathEnv = [dir].join(delimiter);
     const resolved = findExecutable("faketool", { pathEnv });
     expect(resolved).toBe(file);
   });
@@ -68,7 +68,7 @@ describe("findExecutable", () => {
     const second = makeDir();
     makeBin(first, "duptool");
     const secondFile = makeBin(second, "duptool");
-    const pathEnv = [first, second].join(";");
+    const pathEnv = [first, second].join(delimiter);
     const resolved = findExecutable("duptool", { pathEnv });
     // Order matters: the earlier PATH entry wins.
     expect(resolved).toBe(join(first, `duptool${extForPlatform()}`));
@@ -78,7 +78,7 @@ describe("findExecutable", () => {
   it("skips empty PATH segments", () => {
     const dir = makeDir();
     const file = makeBin(dir, "emptytool");
-    const pathEnv = `;${dir};`;
+    const pathEnv = `${delimiter}${dir}${delimiter}`;
     expect(findExecutable("emptytool", { pathEnv })).toBe(file);
   });
 });
