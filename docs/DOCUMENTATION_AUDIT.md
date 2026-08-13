@@ -81,8 +81,8 @@ Self-audit of the AI-agent documentation system created/adjusted on **2026-08-08
   left as documented inconsistency, not fixed (out of scope, needs a decision).
 - **Provider default model ids** are placeholder values (`claude-sonnet-5`,
   `gemini-1.5-pro`); no decision made — flagged for a maintainer.
-- **No git repo** exists; all husky/commitlint config is inactive. Whether to
-  `git init` is a human decision.
+- Git metadata is present in the current workspace; preserve history and avoid
+  destructive operations. Hook activation remains environment-dependent.
 - **Prior ADR statuses** (ADR-002 `Proposed`) — a human should accept/reject.
 - **`atlas config` / `atlas agents` commands** are documented as [planned] but
   not yet registered; implementation order is a roadmap decision.

@@ -4,6 +4,8 @@ import { join, resolve } from "node:path";
 import type {
   Budget,
   BudgetStatus,
+  InstallOutcome,
+  InstallPlan,
   Symbol as CoreSymbol,
   Session,
   SourceFile,
@@ -255,6 +257,61 @@ describe("atlas CLI", () => {
       expect(log.mock.calls.join(" ")).toContain('"fixture"');
     } finally {
       log.mockRestore();
+    }
+  });
+
+  it("keeps --yes --json installation output to one JSON document", async () => {
+    const plan: InstallPlan = {
+      toolName: "fixture",
+      method: "npm",
+      command: { binary: "npm", args: ["install", "--global", "fixture"], cwd: null },
+      uninstallCommand: null,
+      effect: "install fixture",
+      dangerous: [],
+      verifyBinary: "fixture",
+      security: {
+        toolName: "fixture",
+        checks: [],
+        risk: "medium",
+        status: "unverified",
+        trust: "unverified",
+        note: "fixture",
+        assessedAt: "2026-08-13T00:00:00.000Z",
+        overrideRequired: true,
+      },
+    };
+    const outcome: InstallOutcome = {
+      plan,
+      verification: "unverified",
+      verificationNote: "fixture",
+      exitCode: 0,
+      rollback: "none",
+      recordedAt: "2026-08-13T00:00:00.000Z",
+      log: [],
+      manifestPath: null,
+    };
+    const install = vi.fn(async () => ({
+      ok: true as const,
+      value: outcome,
+    }));
+    const toolkit = fakeToolkit({
+      planInstall: vi.fn(async () => ({ ok: true as const, value: plan })),
+      install,
+    });
+    const program = createCli({ toolkit });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const previousExitCode = process.exitCode;
+    try {
+      await program.parseAsync(["node", "atlas", "tools", "install", "fixture", "--yes", "--json"]);
+      expect(install).toHaveBeenCalledOnce();
+      expect(log).toHaveBeenCalledOnce();
+      expect(() => JSON.parse(log.mock.calls[0]?.[0] as string)).not.toThrow();
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      process.exitCode = previousExitCode;
+      log.mockRestore();
+      error.mockRestore();
     }
   });
 

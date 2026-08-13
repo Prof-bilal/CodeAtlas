@@ -14,7 +14,8 @@ atlas search <query...>  → wired — ranked search over .codeatlas/context.db
 atlas mcp                → wired — starts the MCP server over stdio (@atlas/mcp)
 atlas sessions           → wired — lists/inspects/stops agent sessions
 atlas usage              → wired — reports usage, budgets, and limits
-atlas tools configure    → wired — configures supported installed tool targets
+atlas tools              → wired — overview/search/info/install/remove/update/configure/doctor
+atlas context <task>     → wired — builds/launches a safe context package
 atlas init               → "Coming Soon"
 atlas build              → "Coming Soon"
 atlas update             → "Coming Soon"

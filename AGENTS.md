@@ -35,8 +35,9 @@ Non-obvious facts (verified as of 2026-08-11):
 
 - `@atlas/context` (context ranking/assembly) is **intentionally a stub** — its
   methods throw `ComingSoonError` by design (ADR-001). Do **not** "fix" it.
-- The CLI has **ten** subcommands. `atlas search`, `atlas mcp`,
-  `atlas sessions`, `atlas usage`, and the full SDK-backed `atlas tools`
+- The CLI has **eleven** top-level subcommands. `atlas search`, `atlas mcp`,
+  `atlas sessions`, `atlas usage`, the full SDK-backed `atlas tools`, and
+  `atlas context`
   command surface are wired
   (through the **Context SDK**,
   `@atlas/mcp`, `createSessionManager()`, and `createUsageService()`
@@ -107,8 +108,8 @@ Non-obvious facts (verified as of 2026-08-11):
   `export default <expr>` do not resolve cross-file.
 - Storage uses `node:sqlite` (needs Node `>=22.5.0`); every other package
   targets `>=20.19.0`.
-- This is **not a git repository** (no `.git`). Husky/commitlint are configured
-  but inactive.
+- Git metadata is present in the workspace. Husky/commitlint are configured but
+  may be inactive in environments that do not install hooks.
 
 ## 3. Architecture & consumers
 

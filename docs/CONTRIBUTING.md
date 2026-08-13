@@ -56,7 +56,8 @@ Follow [TESTING.md](./TESTING.md):
 
 ## 5. Committing & PRs
 
-- **No git repo yet** (see note above). When it is initialized:
+- **Git metadata is present in the current workspace.** Preserve history and
+  avoid destructive operations:
   - Use [Conventional Commits](https://www.conventionalcommits.org/)
     (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, …). Hooks enforce this.
   - One purpose per commit/PR.

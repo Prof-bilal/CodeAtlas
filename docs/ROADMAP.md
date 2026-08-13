@@ -40,12 +40,13 @@ new phases (Agent Toolkit, Quality & Production) extend it.
 | 23 | Tool Configurator | 6 |
 | 24 | Tool Security / Trust System | 6 |
 | 25 | Tool CLI / Slash Commands | 6 |
-| 26 | Tool Benchmarking | 7 |
-| 27 | Security Audit | 7 |
-| 28 | Full Testing | 7 |
-| 29 | Performance Audit | 7 |
-| 30 | Final Engineering Audit | 7 |
-| 31 | Open Source Release | 7 |
+| 26 | Context CLI | 6 |
+| 27 | Tool Benchmarking | 7 |
+| 28 | Security Audit | 7 |
+| 29 | Full Testing | 7 |
+| 30 | Performance Audit | 7 |
+| 31 | Final Engineering Audit | 7 |
+| 32 | Open Source Release | 7 |
 
 ---
 
@@ -164,6 +165,9 @@ surfaces remain **[PLANNED]**.
    overview/search/info/install/remove/update/configure/doctor with text/JSON
    output and explicit install approval. `/tools` and `atlas setup` remain
    planned.
+8. **Context CLI** — **[IMPLEMENTED]** `atlas context` delegates to the Task 16
+   Context Integration for build/explain/JSON/launch/attach. The future slash
+   router remains planned.
 
 **MVP scope for the Toolkit** (what ships in Phase 6's first increment): Tool
 Registry, Tool Manifest, Tool Discovery, Tool Compatibility, Basic Tool

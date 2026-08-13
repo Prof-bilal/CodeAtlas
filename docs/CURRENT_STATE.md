@@ -312,9 +312,9 @@ examples/        # README placeholder only (no runnable examples)
   Context SDK** (`createContextSDK`): Activity Bar + five tree views
   (project/symbols/modules/summaries/dependencies), `codeatlas.*` palette
   commands, and a status-bar indicator.
-- `atlas build`/`update` are invoked by shelling out to the built CLI (the
+- `atlas build`/`update` are invoked by shelling out to the built CLI; the
   indexing pipeline is not yet an SDK method, so those still report "Coming
-  Soon").
+  Soon".
 - The extension is anonymous at the database: it never opens `.codeatlas`
   itself (see `docs/VSCODE.md`), and is tested headlessly.
 - JetBrains / other editor integrations are still **[PLANNED]**.

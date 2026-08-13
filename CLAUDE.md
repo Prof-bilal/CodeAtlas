@@ -45,7 +45,8 @@ rules and instruction. Read `AGENTS.md` first; everything there applies here.
   `mcp`; `mcp` and `apps/extension` import only `sdk`. See `docs/DEPENDENCIES.md`.
 - **Storage uses `node:sqlite`** (Node built-in, needs Node `>=22.5.0`); other
   packages target `>=20.19.0`.
-- **No git repo** — don't run git commands expecting history.
+- Git metadata is present in the workspace; preserve history and avoid
+  destructive git operations.
 
 ## How to work here
 

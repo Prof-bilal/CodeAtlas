@@ -6,7 +6,7 @@ CodeAtlas scans, parses, and indexes source code into a queryable graph, then
 assembles the most relevant context to feed into LLM prompts — so AI assistants
 can reason about large codebases accurately and efficiently.
 
-> **Status: Core pipeline implemented.** The scanner, hashing, parser (TypeScript),
+> **Status: Core pipeline modules implemented.** The scanner, hashing, parser (TypeScript),
 > graph, summary, providers, cache, and SQLite storage modules are implemented
 > and tested; the search engine, MCP server, and Context API/SDK are implemented
 > and consumed by `atlas search`, the MCP tools, and the VS Code extension. The
@@ -17,7 +17,7 @@ can reason about large codebases accurately and efficiently.
 > **Agent Toolkit** registry + tool-manifest foundation (Tasks 19–20), its
 > Compatibility Engine and Installer (Tasks 21–22), and the Tool Configurator
 > with the Security/Trust assessor (Task 24), and the SDK-backed Toolkit CLI
-> (Task 25). Still planned: the CLI's
+> (Task 25), and the `atlas context` CLI (Task 26). Still planned: the CLI's
 > indexing commands (`init`/`build`/`explain`/`doctor`), the `/tools` slash
 > surface, `atlas setup`, and the future `/context` slash router.
 > The context rank/assembler (`@atlas/context`) remains a structural stub behind
@@ -75,14 +75,15 @@ atlas mcp                → wired — starts the MCP server over stdio
 atlas sessions           → wired — list/info/stop AI agent sessions
 atlas usage              → wired — usage summary, list, budgets
 atlas tools              → wired — SDK-backed overview/search/info/install/remove/update/configure/doctor
+atlas context <task>     → wired — budgeted, deny-filtered context package / agent launch
 atlas init / build / update / explain / doctor  → still "Coming Soon" placeholders
 ```
 
 `atlas search`, `atlas sessions`, `atlas usage`, and the MCP tools read indexed
 context through the **Context SDK** (`createContextSDK`, in `@atlas/sdk`) — they
 never touch the database directly. The indexing pipeline that *produces* that
-database is not yet wired into the CLI; that is the remaining Phase 1–2 work (see
-`docs/ROADMAP.md`).
+database is not yet wired into the CLI; the SDK write edge remains the current
+programmatic indexing seam (see `docs/ROADMAP.md`).
 
 ## Contributing
 

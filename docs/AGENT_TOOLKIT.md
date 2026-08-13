@@ -1,7 +1,7 @@
 # Agent Toolkit
 
 > **Status: [PARTIAL]** — this document is the **design contract** for a new
-> first-class CodeAtlas subsystem. As of Tasks 19–24 the **Tool Registry
+> first-class CodeAtlas subsystem. As of Tasks 19–25 the **Tool Registry
 > foundation, the Tool Manifest System, the Compatibility Engine, the Tool
 > Installer, and the Tool Configurator are implemented** (see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md),
 > [TOOL_MANIFEST.md](./TOOL_MANIFEST.md), and [CURRENT_STATE.md](./CURRENT_STATE.md)):

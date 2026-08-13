@@ -62,7 +62,10 @@ export function registerTools(program: Command, options: ToolsCommandOptions = {
     .action(async (name: string, commandOptions: InstallOptions) => {
       const plan = await toolkit.planInstall(name);
       if (!plan.ok) return fail(plan.error);
-      if (commandOptions.json === true || commandOptions.yes !== true) {
+      // JSON mode must produce one machine-readable document. The successful
+      // outcome already contains the exact plan, so defer emission until the
+      // install completes when both --json and --yes are supplied.
+      if (commandOptions.json !== true || commandOptions.yes !== true) {
         emit(plan.value, commandOptions, (value) => renderInstallPlan(value));
       }
       if (commandOptions.yes !== true) {
@@ -74,6 +77,14 @@ export function registerTools(program: Command, options: ToolsCommandOptions = {
         granted: true,
         ...(commandOptions.note !== undefined ? { note: commandOptions.note } : {}),
       };
+      if (commandOptions.json === true) {
+        const outcome = await toolkit.install(name, approval);
+        if (!outcome.ok) return fail(outcome.error);
+        emit({ plan: plan.value, outcome: outcome.value }, commandOptions, (value) =>
+          JSON.stringify(value, null, 2),
+        );
+        return;
+      }
       await run(toolkit.install(name, approval), commandOptions, renderInstallOutcome);
     });
 

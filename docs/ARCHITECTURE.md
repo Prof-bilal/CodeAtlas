@@ -275,7 +275,7 @@ const container = Container.create({ provider: new CustomProvider() });
 | New language support                | New parser in `parser` implementing `LanguageParser`, registered in `ParserRegistry` |
 | Alternate storage                   | New adapter in `storage` behind `StoragePort` / `ContextDatabasePort` |
 | Agent routing / `/claude` etc.      | Build on the existing `@atlas/agents` connection layer (`AgentPort`); the **Agent Session Manager** (`SessionPort`) is implemented behind the SDK; add the **router** behind the SDK (planned) |
-| Agent Toolkit (`atlas tools`)       | `@atlas/toolkit`: Registry, Manifest, Compatibility, Installer, Configurator, and Security/Trust are implemented behind `core` ports and composed by the SDK; `atlas tools configure` is wired, while the broader CLI remains planned |
+| Agent Toolkit (`atlas tools`)       | `@atlas/toolkit`: Registry, Manifest, Compatibility, Installer, Configurator, and Security/Trust are implemented behind `core` ports and composed by the SDK; the full `atlas tools` CLI is wired, while slash/setup surfaces remain planned |
 | New tool ecosystem (npm/pip/cargo/…) | New `InstallerPort` adapter per ecosystem; never blind `install.sh` execution (planned) |
 | MCP server                          | `@atlas/mcp` consumes the Context SDK (implemented); run it via `atlas mcp`; add MCP resources/prompts |
 | Editors / agents read context       | `createContextSDK` is the stable read interface — that is what they consume, never the DB |

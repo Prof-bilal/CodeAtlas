@@ -4,9 +4,9 @@ The command-line contract for the `atlas` binary.
 
 > **Status:** the command *surface* exists. **`atlas search` is wired to the
 > Context SDK**, **`atlas mcp` starts the MCP server**, **`atlas sessions`
-> manages AI agent sessions**, and **`atlas usage` reports AI usage &
-> credits**, and **`atlas tools` configures installed, supported tool
-> targets**; the other five commands still print
+> manages AI agent sessions**, **`atlas usage` reports AI usage &
+> credits**, **`atlas tools` is SDK-backed**, and **`atlas context` is wired**;
+> `init`/`build`/`update`/`explain`/`doctor` still print
 > `[atlas <cmd>] Coming Soon` and do not call any service. The detailed
 > behavior below is the **contract** — flagged **[implemented]** / **[stubbed]**
 > / **[planned]** per command.
@@ -117,7 +117,7 @@ atlas context  → createContextIntegration() → Context SDK / Context Package 
                  SessionPort
 atlas tools          → createToolkitSDK() → Registry / Manifest / Compatibility /
                          Security / Installer / Configurator façade
-atlas init/build/explain/doctor → "Coming Soon" (future: Scanner → Hashing
+atlas init/build/update/explain/doctor → "Coming Soon" (future: Scanner → Hashing
                                           → Parser → Graph → ContextStore)
 ```
 

@@ -89,12 +89,19 @@ export function createToolkitSDK(options: CreateToolkitSDKOptions = {}): Toolkit
     return ok(loaded);
   }
 
-  function request(record: ToolRegistryRecord): ToolInstallRequest {
+  function request(record: ToolRegistryRecord): Result<ToolInstallRequest> {
     const method = record.installMethods.find((candidate) =>
       installer.implementedTypes.includes(candidate.type),
     );
-    const type = method?.type ?? "npm";
-    return {
+    if (method === undefined) {
+      return fail(
+        new Error(
+          `No supported installer is available for ${record.name}; declared methods: ${record.installMethods.map((item) => item.type).join(", ") || "none"}.`,
+        ),
+      );
+    }
+    const type = method.type;
+    return ok({
       name: record.name,
       description: record.description,
       toolVersion: record.version,
@@ -129,7 +136,7 @@ export function createToolkitSDK(options: CreateToolkitSDKOptions = {}): Toolkit
       documentation: record.documentation,
       categories: record.categories,
       supportedAgents: record.supportedAgents,
-    };
+    });
   }
 
   return {
@@ -152,17 +159,23 @@ export function createToolkitSDK(options: CreateToolkitSDKOptions = {}): Toolkit
     async planInstall(name) {
       const tool = registry.getTool(name);
       if (tool === undefined) return fail(new Error(`Tool not found: ${name}`));
-      return installer.plan(request(tool));
+      const prepared = request(tool);
+      if (!prepared.ok) return prepared;
+      return installer.plan(prepared.value);
     },
     async install(name, approval) {
       const tool = registry.getTool(name);
       if (tool === undefined) return fail(new Error(`Tool not found: ${name}`));
-      return installer.install(request(tool), approval);
+      const prepared = request(tool);
+      if (!prepared.ok) return prepared;
+      return installer.install(prepared.value, approval);
     },
     async remove(name) {
       const tool = registry.getTool(name);
       if (tool === undefined) return fail(new Error(`Tool not found: ${name}`));
-      const removed = await installer.remove(request(tool));
+      const prepared = request(tool);
+      if (!prepared.ok) return prepared;
+      const removed = await installer.remove(prepared.value);
       if (!removed.ok) return fail(removed.error);
       const path = toolManifestPath(root, name);
       if (existsSync(path)) await rm(path, { force: true });
@@ -196,20 +209,27 @@ export function createToolkitSDK(options: CreateToolkitSDKOptions = {}): Toolkit
     configure(name, configureOptions = {}) {
       const tool = registry.getTool(name);
       if (tool === undefined) return Promise.resolve(fail(new Error(`Tool not found: ${name}`)));
-      return configurator.configure(
-        {
-          toolName: name,
-          toolVersion: tool.version,
-          supportedAgents: tool.supportedAgents,
-          mcp: tool.installMethods.some((candidate) => candidate.type === "mcp"),
-          ...(configureOptions.configHome !== undefined
-            ? { configHome: configureOptions.configHome }
-            : options.configHome !== undefined
-              ? { configHome: options.configHome }
-              : {}),
-        },
-        { dryRun: configureOptions.dryRun === true },
-      );
+      return loadToolManifest(toolManifestPath(root, name)).then((loaded) => {
+        if (!loaded.ok) return fail(loaded.error);
+        if (loaded.value === null) {
+          return fail(new Error(`Tool is not installed: ${name}`));
+        }
+        const manifest = loaded.value;
+        return configurator.configure(
+          {
+            toolName: name,
+            toolVersion: manifest.toolVersion,
+            supportedAgents: manifest.supportedAgents,
+            mcp: manifest.compatibility.mcp || manifest.installation.type === "mcp",
+            ...(configureOptions.configHome !== undefined
+              ? { configHome: configureOptions.configHome }
+              : options.configHome !== undefined
+                ? { configHome: options.configHome }
+                : {}),
+          },
+          { dryRun: configureOptions.dryRun === true },
+        );
+      });
     },
   };
 }

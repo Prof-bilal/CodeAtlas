@@ -1,12 +1,13 @@
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Options } from "tsup";
 
 /**
- * Repository root, computed from wherever tsup is invoked.
- * Every package and app below `packages/` / `apps/` is exactly two
- * directories deep, so `../ ..` always resolves to the workspace root.
+ * Repository root, computed from this config file rather than the caller's
+ * working directory. pnpm may invoke filtered scripts from the workspace
+ * root, while direct package invocation uses the package directory.
  */
-const ROOT = resolve(process.cwd(), "..", "..");
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
 
 /**
  * Map `@atlas/*` package names to their source entry points so that bundled
@@ -44,6 +45,11 @@ export function atlasConfig(overrides: Partial<Options> = {}): Options {
     outDir: "dist",
     external: ["commander"],
     alias: workspaceAliases,
+    // Workspace packages are source-linked by the aliases above. Explicitly
+    // opt them out of tsup's dependency externalization so standalone apps
+    // (especially the CLI) do not require unpublished workspace packages at
+    // runtime.
+    noExternal: Object.keys(workspaceAliases),
     ...overrides,
   };
 }

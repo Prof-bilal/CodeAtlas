@@ -27,9 +27,6 @@ interface LaunchOptions extends CommonOptions {
   readonly provider: string;
   readonly repo?: string;
 }
-interface AttachOptions extends CommonOptions {
-  readonly repo?: string;
-}
 
 export function registerContext(program: Command, options: ContextCommandOptions = {}): void {
   const context = program
@@ -64,14 +61,13 @@ export function registerContext(program: Command, options: ContextCommandOptions
   context
     .command("attach <sessionId> <task>")
     .description("Attach safe repository context to a CREATED session")
-    .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
     .option("--json", "print the attached session as JSON")
     .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
     .option("--include-instructions", "include project instruction files")
     .option("--no-instructions", "exclude project instruction files")
     .option("--include-overview", "include the project overview")
     .option("--no-overview", "exclude the project overview")
-    .action(async (sessionId: string, task: string, commandOptions: AttachOptions) =>
+    .action(async (sessionId: string, task: string, commandOptions: CommonOptions) =>
       runAttach(sessionId, task, commandOptions, options.integration),
     );
 }
@@ -124,7 +120,7 @@ async function runLaunch(
 async function runAttach(
   sessionId: string,
   task: string,
-  options: AttachOptions,
+  options: CommonOptions,
   injected?: ContextIntegration,
 ): Promise<void> {
   await withIntegration(injected, async (integration) => {
