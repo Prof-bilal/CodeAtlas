@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/cli",
+  "name": "codeatlas-cli",
   "version": "0.1.0",
   "description": "Command-line interface for CodeAtlas.",
   "type": "module",

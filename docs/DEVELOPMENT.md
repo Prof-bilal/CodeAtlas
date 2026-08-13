@@ -45,7 +45,7 @@ by every workspace package.
 Single-package variants (any package):
 
 ```bash
-pnpm --filter @atlas/cli build
+pnpm --filter codeatlas-cli build
 pnpm --filter @atlas/parser test
 pnpm --filter @atlas/sdk typecheck
 ```

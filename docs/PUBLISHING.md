@@ -1,14 +1,18 @@
 # Publishing CodeAtlas
 
-The end-user CLI is published as `@atlas/cli`. Its build bundles the internal
-`@atlas/*` workspace packages, so normal users do not need the monorepo or
-separately published implementation packages.
+The end-user CLI is published as **`codeatlas-cli`** (package name in
+`apps/cli/package.json`), exposing the `atlas` binary. Its build bundles the
+internal `@atlas/*` workspace packages, so normal users do not need the monorepo
+or separately published implementation packages.
+
+The original `@atlas/cli` name is not available: the `@atlas` npm scope is
+already owned by another user, so the CLI is published under the unscoped name
+`codeatlas-cli`. Keep this name unless the scope situation changes.
 
 ## Prerequisites
 
-- An npm account with permission to publish the `@atlas` scope. If the scope is
-  not owned by the project, rename the package to an available name such as
-  `codeatlas-cli` before releasing.
+- An npm account that can publish unscoped packages (any account) and is logged
+  in (`npm login`).
 - Node.js 22.5 or newer.
 - pnpm 9.15.0, enabled through Corepack.
 - A clean, reviewed working tree and npm authentication.
@@ -22,24 +26,26 @@ corepack enable
 pnpm install --frozen-lockfile
 pnpm check
 pnpm build
-pnpm --filter @atlas/cli pack --pack-destination .release
+pnpm --filter codeatlas-cli exec pnpm pack --pack-destination .release
 ```
 
-Inspect the generated tarball in `.release`. It should contain the CLI `dist`
-output and package metadata, and must not contain the repository, `.env` files,
-credentials, `.codeatlas` data, or source databases.
+`pnpm pack` does not accept `--filter` directly, so the pack is run inside the
+package directory via `exec`. Inspect the generated tarball in `.release`. It
+should contain the CLI `dist` output and package metadata, and must not contain
+the repository, `.env` files, credentials, `.codeatlas` data, or source
+databases.
 
 Log in to npm and verify the package name/version:
 
 ```bash
 npm login
-npm view @atlas/cli version
+npm view codeatlas-cli version
 ```
 
 Publish the package:
 
 ```bash
-pnpm --filter @atlas/cli publish --access public
+pnpm --filter codeatlas-cli publish --access public
 ```
 
 The root shortcut builds and publishes the CLI:
@@ -53,7 +59,7 @@ After publication, test it from a separate directory, not from the monorepo:
 ```bash
 mkdir codeatlas-smoke-test
 cd codeatlas-smoke-test
-npm install --global @atlas/cli
+npm install --global codeatlas-cli
 atlas --help
 atlas init --repo C:\path\to\a\real\repository
 atlas search authentication --repo C:\path\to\a\real\repository

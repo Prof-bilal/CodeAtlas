@@ -1,4 +1,4 @@
-# @atlas/cli
+# codeatlas-cli
 
 The end-user **command-line interface** for CodeAtlas, built with
 [Commander.js](https://github.com/tj/commander.js).
@@ -33,6 +33,6 @@ what is wired vs. stubbed.
 ## Development
 
 ```bash
-pnpm --filter @atlas/cli build
+pnpm --filter codeatlas-cli build
 node apps/cli/dist/index.js --help
 ```

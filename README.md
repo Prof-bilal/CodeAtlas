@@ -65,7 +65,7 @@ pnpm check
 ## CLI
 
 ```bash
-pnpm --filter @atlas/cli build
+pnpm --filter codeatlas-cli build
 node apps/cli/dist/index.js --help
 ```
 
@@ -78,7 +78,7 @@ git clone <codeatlas-repository-url> CodeAtlas
 cd CodeAtlas
 corepack enable
 pnpm install
-pnpm --filter @atlas/cli build
+pnpm --filter codeatlas-cli build
 
 # Index the repository you want to understand.
 node apps/cli/dist/index.js init --repo /absolute/path/to/your-project
@@ -94,7 +94,7 @@ After the CLI package is published, users can install it globally and run it
 from any directory:
 
 ```bash
-npm install --global @atlas/cli
+npm install --global codeatlas-cli
 atlas init --repo /absolute/path/to/your-project
 atlas search authentication --repo /absolute/path/to/your-project
 ```

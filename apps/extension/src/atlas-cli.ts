@@ -63,7 +63,7 @@ export function runAtlas(args: {
     if (cli === null) {
       reject(
         new Error(
-          "CodeAtlas CLI not found. Build it first (`pnpm --filter @atlas/cli build`) or set ATLAS_CLI_JS to its dist/index.js.",
+          "CodeAtlas CLI not found. Build it first (`pnpm --filter codeatlas-cli build`) or set ATLAS_CLI_JS to its dist/index.js.",
         ),
       );
       return;
