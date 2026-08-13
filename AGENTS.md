@@ -36,7 +36,8 @@ Non-obvious facts (verified as of 2026-08-11):
 - `@atlas/context` (context ranking/assembly) is **intentionally a stub** — its
   methods throw `ComingSoonError` by design (ADR-001). Do **not** "fix" it.
 - The CLI has **ten** subcommands. `atlas search`, `atlas mcp`,
-  `atlas sessions`, `atlas usage`, and `atlas tools configure` are wired
+  `atlas sessions`, `atlas usage`, and the full SDK-backed `atlas tools`
+  command surface are wired
   (through the **Context SDK**,
   `@atlas/mcp`, `createSessionManager()`, and `createUsageService()`
   respectively); `init`/`build`/`update`/`explain`/`doctor` still print
@@ -91,7 +92,8 @@ Non-obvious facts (verified as of 2026-08-11):
   Tool Manifest provenance + best-effort rollback. **The Tool Configurator
   (Task 23) is implemented** behind `ConfiguratorPort`, with per-target
   adapters, AgentPort-backed detection, safe user-config merge/backup/rollback,
-  verification, dry-run, SDK composition, and `atlas tools configure`.
+  verification, dry-run, SDK composition, and the full `atlas tools`
+  overview/search/info/install/remove/update/configure/doctor surface.
   **Security/Trust evaluation (Task 24) is implemented** behind `SecurityPort`:
   offline per-check risk assessment, exact five trust states, hostile-input
   rejection, fail-closed installer gating, and explicit unverified override

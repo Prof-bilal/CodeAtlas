@@ -82,6 +82,14 @@ export {
 } from "./toolkit/index";
 export { createInstaller, type CreateInstallerOptions } from "./toolkit/index";
 export { createConfigurator, type CreateConfiguratorOptions } from "./toolkit/index";
+export {
+  createToolkitSDK,
+  type CreateToolkitSDKOptions,
+  type ToolkitDoctorEntry,
+  type ToolkitRemoveOutcome,
+  type ToolkitSDK,
+  type ToolkitUpdateOutcome,
+} from "./toolkit/index";
 export { withUsageTracking, trackAgentRun, StaticPricingSource } from "@atlas/usage";
 export type { TrackingContext, WithUsageTrackingOptions } from "@atlas/usage";
 export {

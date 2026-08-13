@@ -16,10 +16,10 @@ can reason about large codebases accurately and efficiently.
 > Context → Agent integration (`createContextIntegration`, ADR-008), and the
 > **Agent Toolkit** registry + tool-manifest foundation (Tasks 19–20), its
 > Compatibility Engine and Installer (Tasks 21–22), and the Tool Configurator
-> with `atlas tools configure` (Task 23), and the Security/Trust assessor (Task
-> 24). Still planned: the CLI's indexing
-> commands (`init`/`build`/`update`/`explain`/`doctor`),
-> the remaining `atlas tools` CLI, and the `atlas context` CLI (Task 26).
+> with the Security/Trust assessor (Task 24), and the SDK-backed Toolkit CLI
+> (Task 25). Still planned: the CLI's
+> indexing commands (`init`/`build`/`explain`/`doctor`), the `/tools` slash
+> surface, `atlas setup`, and the `atlas context` CLI (Task 26).
 > The context rank/assembler (`@atlas/context`) remains a structural stub behind
 > its port by design (ADR-001).
 
@@ -74,7 +74,7 @@ atlas search <query...>  → wired — ranked search over .codeatlas/context.db
 atlas mcp                → wired — starts the MCP server over stdio
 atlas sessions           → wired — list/info/stop AI agent sessions
 atlas usage              → wired — usage summary, list, budgets
-atlas tools configure    → wired — configure supported installed tool targets
+atlas tools              → wired — SDK-backed overview/search/info/install/remove/update/configure/doctor
 atlas init / build / update / explain / doctor  → still "Coming Soon" placeholders
 ```
 
@@ -139,7 +139,7 @@ linting, formatting, typing, and commit conventions on every change.
 - ✅ Compatibility Engine built (`createCompatibilityEngine`, fail-closed environment checks)
 - ✅ Tool Installer built (`createInstaller`, approval-gated safe MVP ecosystems, verification/rollback)
 - ✅ Tool Configurator built (`createConfigurator`, per-target adapters, merge/backup/rollback, dry-run)
-- ➖ CLI `atlas search` + `atlas mcp` + `atlas sessions` + `atlas usage` + `atlas tools configure` wired through SDK seams; `init`/`build`/`update`/`explain`/`doctor` still stubs
+- ➖ CLI `atlas search` + `atlas mcp` + `atlas sessions` + `atlas usage` + `atlas tools` wired through SDK seams; `init`/`build`/`explain`/`doctor` still stubs
 
 ## AI Agent Instructions
 - [AGENTS.md](AGENTS.md) — authoritative rules for every coding agent (Claude Code, OpenCode, Codex, Gemini CLI, …).
@@ -151,6 +151,6 @@ linting, formatting, typing, and commit conventions on every change.
   `atlas update`.
 - Implement the intentional `@atlas/context` ranking/assembly service when the
   product decision changes (currently preserved as a stub by ADR-001).
-- Agent Toolkit: the remaining `atlas tools` CLI
-  (Task 25), and the `atlas context` CLI (Task 26) — see
+- Agent Toolkit: `/tools` slash integration, `atlas setup`, and the
+  `atlas context` CLI (Task 26) — see
   `docs/AGENT_TOOLKIT.md`

@@ -356,7 +356,7 @@ Responsible for editor integration.
   (including `@atlas/toolkit` — registry implemented — and `@atlas/agents`).
 - **`sdk`** is what `cli`, `mcp`, and the VS Code extension (`apps/extension`)
   consume for context; `cli` may additionally import `@atlas/mcp` to start the
-  server. `atlas tools configure` and planned `atlas tools`/`atlas setup` follow the same rule: delegate to
+  server. `atlas tools` and planned `atlas setup` follow the same rule: delegate to
   the SDK, never import `@atlas/toolkit` directly.
 - The **Context SDK** (`createContextSDK`) is the read façade exported by
   `sdk`; it is what those consumers should call — not `getSearch()`/

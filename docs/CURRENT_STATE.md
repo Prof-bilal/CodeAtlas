@@ -36,7 +36,7 @@ every package's source and tests.
 
 ```
 apps/
-  cli/          # Commander.js CLI — `search`+`mcp`+`sessions`+`usage`+`tools configure` wired, 5 stubbed  [PARTIAL]
+  cli/          # Commander.js CLI — context, sessions, usage, MCP, and Toolkit commands wired [PARTIAL]
   extension/    # VS Code extension (@atlas/extension) — SDK consumer         [IMPLEMENTED]
 packages/
   shared/       # Base types, Result, branded IDs, VERSION, ComingSoonError  [EXISTING]
@@ -256,8 +256,9 @@ examples/        # README placeholder only (no runnable examples)
 
 ### CLI (`apps/cli`) — **[PARTIAL]**
 
-- Commander.js program `atlas`, ten subcommands — `init`, `build`, `update`,
-  `search`, `sessions`, `usage`, `explain`, `doctor`, `mcp`, and `tools configure`.
+- Commander.js program `atlas`, ten top-level commands — `init`, `build`,
+  `update`, `search`, `sessions`, `usage`, `explain`, `doctor`, `mcp`, and
+  `tools`.
   **`search` is wired
   to the Context SDK**: it opens `.codeatlas/context.db` (via `ATLAS_ROOT` or
   cwd) with `createContextSDK`, runs `context.search.search(...)`, and prints
@@ -266,8 +267,11 @@ examples/        # README placeholder only (no runnable examples)
   (`list`/`info`/`stop`) via `createSessionManager()` from the SDK. **`usage`
   reports AI usage & credits** (`summary`/`list`/`budgets`, bare `atlas usage`
   = summary, `--json` per subcommand) through `createUsageService()` from the
-  SDK against `.codeatlas/usage.db`. **`tools configure`** delegates to
-  `createConfigurator()` and supports dry-run. The other five commands still print
+  SDK against `.codeatlas/usage.db`. **`tools`** delegates to
+  `createToolkitSDK()` for overview, registry search, info, install, remove,
+  update, configure, and doctor. Install displays the exact command plus
+  trust/risk before execution and requires `--yes` consent; all data commands
+  support `--json`. The other five commands still print
   `[atlas <command>] Coming Soon`. No `/agent`-style slash commands (the agent
   router is planned).
 - Dependency note: the CLI may import `@atlas/sdk` **and** `@atlas/mcp` (so it
@@ -565,7 +569,7 @@ examples/        # README placeholder only (no runnable examples)
 | ------------------------------------- | -------------- |
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking intentionally stubbed; `search` + `mcp` are CLI-wired |
 | **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`) and the session manager (`SessionManager`, `atlas sessions`) are implemented and SDK-wired, and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) is implemented and tested; router/slash commands **0%** |
-| **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~55% — Tasks 19–24 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, and Security/Trust with SDK composition, per-target adapters, AgentPort detection, safe user-config merge, backup/rollback, verification, dry-run, offline risk checks, hostile-input rejection, and hard trust gating; the broader `atlas tools` surface remains planned |
+| **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~65% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, and the thin SDK-backed Toolkit CLI; `/tools` slash integration and `atlas setup` remain planned |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
 at: (1) the other CLI commands (build/update/init/explain/doctor are stubs),

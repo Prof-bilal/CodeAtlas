@@ -40,6 +40,16 @@ export class RegistryStore {
     return this.records.get(name);
   }
 
+  public search(query: string): readonly ToolRegistryRecord[] {
+    const normalized = query.trim().toLowerCase();
+    if (normalized.length === 0) return this.list();
+    return this.list().filter((record) =>
+      [record.name, record.description, ...record.categories].some((field) =>
+        field.toLowerCase().includes(normalized),
+      ),
+    );
+  }
+
   /** Which layer a record came from, or `undefined` when unknown. */
   public sourceOf(name: string): ToolRegistrySource | undefined {
     return this.sources.get(name);

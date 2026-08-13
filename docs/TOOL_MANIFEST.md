@@ -177,6 +177,6 @@ Per [SECURITY.md](./SECURITY.md) and the Task 24 threat list:
   `.codeatlas/tools/`.
 - `createToolManifest`/`saveToolManifest`/`loadToolManifest`/
   `listInstalledTools` are exported from `@atlas/toolkit` and consumed by
-  Toolkit tasks; `atlas tools configure` is available through the SDK/CLI,
-  while the remaining Task 25 command surface is planned.
+  Toolkit tasks; the full Task 25 `atlas tools` command surface is available
+  through the SDK/CLI.
 - **No execution of anything in a manifest** (§6).

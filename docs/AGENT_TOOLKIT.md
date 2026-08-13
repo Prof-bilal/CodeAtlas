@@ -10,7 +10,7 @@
 > `createToolRegistry()`, `createCompatibilityEngine()`, `createInstaller()`,
 > and `createConfigurator()`.
 > **Security/Trust evaluation is implemented [IMPLEMENTED]**. The Tool Configurator and
-> `atlas tools configure` CLI surface are implemented for Task 23. The Toolkit also builds on `@atlas/agents`
+> The `atlas tools` CLI surface is implemented for Task 25. The Toolkit also builds on `@atlas/agents`
 > (the AI CLI connection layer, `AgentPort`) — see
 > [CURRENT_STATE.md](./CURRENT_STATE.md) and [MODULES.md](./MODULES.md).
 
@@ -613,7 +613,7 @@ outputs, high churn) feed the **future** Recommendation Engine — see
 | Configuration | `ConfiguratorPort` + per-target adapters — **implemented** (Task 23) |
 | Security / trust | `SecurityPort` + offline `SecurityAssessor` — **implemented** (Task 24); hard installer gate |
 | AI-CLI detection | `@atlas/agents` (`AgentPort`) — **implemented** |
-| CLI surface | `atlas tools configure` — **implemented**; remaining `atlas tools` commands and `atlas setup` planned |
+| CLI surface | `atlas tools` overview/search/info/install/remove/update/configure/doctor — **implemented**; `/tools` slash command and `atlas setup` remain planned |
 | Recommendation | separate future module (planned) |
 | Benchmarking | separate future subsystem (planned) |
 

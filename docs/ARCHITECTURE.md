@@ -198,7 +198,7 @@ CodeAtlas Context ──── scan → hash → parse → graph → store → s
    ├──▶ Agent Sessions (Direction B — connection + sessions implemented) ── atlas /claude · /gemini · …
    │        agents spawn & supervise external AI CLIs (router/slash commands planned)
    │
-   └──▶ Agent Toolkit (Direction C — Tasks 19–24 implemented) ── assess → install → configure → verify
+   └──▶ Agent Toolkit (Direction C — Tasks 19–25 implemented) ── assess → install → configure → verify
             tools improve context, tokens, quality for the agents above
 ```
 

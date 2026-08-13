@@ -151,5 +151,6 @@ mismatch **throws** (re-exported errors: `RegistryError`,
   executes registry content.
 - No network access at runtime, no auto-approval of external metadata, no
   downloading or fetching.
-- `atlas tools configure` is implemented; the remaining discovery/install/
-  remove/update/doctor CLI and slash-command surface is planned.
+- The full `atlas tools` discovery/install/remove/update/configure/doctor CLI is
+  implemented through the SDK; the future slash-command surface remains
+  planned.

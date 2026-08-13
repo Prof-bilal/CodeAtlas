@@ -3,6 +3,7 @@ import type {
   CompatibilityPort,
   InstallApproval,
   InstallOutcome,
+  InstallRemovalOutcome,
   InstallPlan,
   InstallRollbackStatus,
   InstallVerificationStatus,
@@ -245,6 +246,44 @@ export class InstallerService implements InstallerPort {
         log,
       }),
     );
+  }
+
+  public async remove(request: ToolInstallRequest): Promise<Result<InstallRemovalOutcome>> {
+    const validation = this.validateRequest(request);
+    if (!validation.ok) return fail(validation.error);
+    const adapter = this.adapters.get(request.installation.type);
+    if (adapter === undefined)
+      return fail(new InstallUnsupportedMethodError(request.installation.type));
+    const built = adapter.build(request);
+    if (!built.ok) return fail(built.error);
+    if (built.value.uninstallCommand === null) {
+      return fail(new InstallUnsupportedMethodError(`remove:${request.installation.type}`));
+    }
+    const result = await this.process.run({
+      command: built.value.uninstallCommand.binary,
+      args: built.value.uninstallCommand.args,
+      ...(built.value.uninstallCommand.cwd !== null
+        ? { cwd: built.value.uninstallCommand.cwd }
+        : {}),
+    });
+    if (!result.ok) return fail(result.error);
+    if (result.value.exitCode !== 0) {
+      return fail(
+        new InstallFailedError({
+          toolName: request.name,
+          exitCode: result.value.exitCode,
+          signal: result.value.signal,
+          rollback: "none",
+          recordedAt: this.now().toISOString(),
+          log: [`remove: exit ${result.value.exitCode}`],
+        }),
+      );
+    }
+    return ok({
+      toolName: request.name,
+      removed: true,
+      note: "Tool removed through its ecosystem adapter.",
+    });
   }
 
   private validateRequest(request: ToolInstallRequest): Result<true> {

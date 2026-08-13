@@ -29,6 +29,9 @@ export interface ToolRegistryPort {
    *  `undefined`. */
   getTool(name: string): ToolRegistryRecord | undefined;
 
+  /** Search validated registry metadata; matching policy belongs to the registry. */
+  searchTools(query: string): readonly ToolRegistryRecord[];
+
   /** The distinct, extensible category set across all records. */
   listCategories(): readonly string[];
 

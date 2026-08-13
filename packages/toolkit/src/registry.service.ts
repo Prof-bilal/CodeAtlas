@@ -32,6 +32,10 @@ export class ToolRegistryService implements ToolRegistryPort {
     return this.store.get(name);
   }
 
+  public searchTools(query: string): readonly ToolRegistryRecord[] {
+    return this.store.search(query);
+  }
+
   public listCategories(): readonly string[] {
     return this.store.categories();
   }

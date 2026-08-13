@@ -52,6 +52,7 @@ export type {
   InstallApproval,
   InstallerPort,
   InstallOutcome,
+  InstallRemovalOutcome,
   InstallPlan,
   InstallPlanCommand,
   InstallRollbackStatus,

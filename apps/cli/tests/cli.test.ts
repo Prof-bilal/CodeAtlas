@@ -10,7 +10,7 @@ import type {
   UsageRecord,
   UsageStatistics,
 } from "@atlas/core";
-import { createUsageService } from "@atlas/sdk";
+import { createUsageService, type ToolkitSDK } from "@atlas/sdk";
 import type { FilePath, SymbolId } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { describe, expect, it, vi } from "vitest";
@@ -63,6 +63,25 @@ function session(overrides: Partial<Session> = {}): Session {
   };
 }
 
+function fakeToolkit(overrides: Partial<ToolkitSDK> = {}): ToolkitSDK {
+  return {
+    registry: {} as ToolkitSDK["registry"],
+    overview: async () => ({ ok: true, value: { recommended: [], installed: [] } }),
+    search: () => [],
+    info: async () => ({ ok: false, error: new Error("fixture not found") }),
+    planInstall: async () => ({ ok: false, error: new Error("fixture not found") }),
+    install: async () => ({ ok: false, error: new Error("fixture not found") }),
+    remove: async () => ({ ok: false, error: new Error("fixture not found") }),
+    update: async () => ({
+      ok: true,
+      value: { registryTools: 0, installedTools: 0, note: "fixture" },
+    }),
+    doctor: async () => ({ ok: true, value: [] }),
+    configure: async () => ({ ok: false, error: new Error("fixture not found") }),
+    ...overrides,
+  } as ToolkitSDK;
+}
+
 /** Create a temp project root with a `.codeatlas/context.db`, run `fn`, clean up. */
 async function withProject(fn: (root: string) => Promise<void>): Promise<void> {
   const root = mkdtempSync(join(tmpdir(), "atlas-cli-"));
@@ -104,6 +123,75 @@ describe("atlas CLI", () => {
       "update",
       "usage",
     ]);
+  });
+
+  it("registers the complete thin Toolkit command surface", () => {
+    const tools = createCli().commands.find((command) => command.name() === "tools");
+    expect(tools?.commands.map((command) => command.name()).sort()).toEqual([
+      "configure",
+      "doctor",
+      "info",
+      "install",
+      "remove",
+      "search",
+      "update",
+    ]);
+  });
+
+  it("delegates Toolkit search and renders JSON without touching Toolkit internals", async () => {
+    const search = vi.fn(() => [
+      { name: "fixture", description: "fixture tool", trust: "unverified" },
+    ]) as unknown as ToolkitSDK["search"];
+    const toolkit = fakeToolkit({ search });
+    const program = createCli({ toolkit });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync(["node", "atlas", "tools", "search", "fixture", "--json"]);
+      expect(search).toHaveBeenCalledWith("fixture");
+      expect(log.mock.calls.join(" ")).toContain('"fixture"');
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("delegates configure and doctor through an injected SDK façade", async () => {
+    const configure = vi.fn(async () => ({
+      ok: true as const,
+      value: {
+        toolName: "fixture",
+        configHome: "/tmp",
+        dryRun: true,
+        appliedTargets: [],
+        verifiedTargets: [],
+        skippedTargets: [],
+        failedTargets: [],
+        targetChecks: [],
+        changes: [],
+      },
+    }));
+    const doctor = vi.fn(async () => ({
+      ok: true as const,
+      value: [
+        {
+          name: "fixture",
+          manifest: "present" as const,
+          integration: "installed",
+          trust: "unverified",
+        },
+      ],
+    }));
+    const toolkit = fakeToolkit({ configure, doctor });
+    const program = createCli({ toolkit });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync(["node", "atlas", "tools", "configure", "fixture", "--dry-run"]);
+      await program.parseAsync(["node", "atlas", "tools", "doctor", "--json"]);
+      expect(configure).toHaveBeenCalledWith("fixture", { dryRun: true });
+      expect(doctor).toHaveBeenCalledOnce();
+      expect(log.mock.calls.join(" ")).toContain('"manifest"');
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it("exposes the mcp command with its help text", () => {

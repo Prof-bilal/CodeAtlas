@@ -137,8 +137,8 @@ Installer (Task 22)**, **Tool Configurator (Task 23)**, and **Security/Trust
 [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) for the design contract,
 [TOOL_REGISTRY.md](./TOOL_REGISTRY.md), and [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
 
-The broader CLI/slash-command surface remains **[PLANNED]**;
-the implemented items below are marked explicitly.
+The Toolkit CLI is **[IMPLEMENTED]**; the future slash-command and setup
+surfaces remain **[PLANNED]**.
 
 1. **Tool Registry** — **[IMPLEMENTED]** authoritative catalog (metadata,
    categories, versions, licenses, repos, install methods, compatibility,
@@ -160,8 +160,10 @@ the implemented items below are marked explicitly.
 6. **Tool Security / Trust System** — security status + trust hierarchy
    (`verified`/`reviewed`/`community`/`unverified`/`blocked`) and the approval
    gate.
-7. **Tool CLI / Slash Commands** — `atlas tools` (`search`/`install`/`remove`/
-   `update`/`doctor`), `/tools` in the CLI, and `atlas setup`.
+7. **Tool CLI / Slash Commands** — **[IMPLEMENTED]** SDK-backed `atlas tools`
+   overview/search/info/install/remove/update/configure/doctor with text/JSON
+   output and explicit install approval. `/tools` and `atlas setup` remain
+   planned.
 
 **MVP scope for the Toolkit** (what ships in Phase 6's first increment): Tool
 Registry, Tool Manifest, Tool Discovery, Tool Compatibility, Basic Tool

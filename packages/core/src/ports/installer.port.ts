@@ -53,6 +53,9 @@ export interface InstallerPort {
    * rollback (uninstall) is attempted.
    */
   install(request: ToolInstallRequest, approval: InstallApproval): Promise<Result<InstallOutcome>>;
+
+  /** Remove an installed tool through its ecosystem adapter. */
+  remove(request: ToolInstallRequest): Promise<Result<InstallRemovalOutcome>>;
 }
 
 /** The declared install instruction the Installer executes (structural twin of
@@ -167,4 +170,10 @@ export interface InstallOutcome {
   /** Path of the recorded Tool Manifest (`<root>/.codeatlas/tools/<name>.json`),
    *  or `null` when persistence was skipped/failed. */
   readonly manifestPath: string | null;
+}
+
+export interface InstallRemovalOutcome {
+  readonly toolName: string;
+  readonly removed: boolean;
+  readonly note: string;
 }

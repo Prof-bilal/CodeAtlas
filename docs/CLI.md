@@ -5,7 +5,7 @@ The command-line contract for the `atlas` binary.
 > **Status:** the command *surface* exists. **`atlas search` is wired to the
 > Context SDK**, **`atlas mcp` starts the MCP server**, **`atlas sessions`
 > manages AI agent sessions**, and **`atlas usage` reports AI usage &
-> credits**, and **`atlas tools configure` configures installed, supported tool
+> credits**, and **`atlas tools` configures installed, supported tool
 > targets**; the other five commands still print
 > `[atlas <cmd>] Coming Soon` and do not call any service. The detailed
 > behavior below is the **contract** — flagged **[implemented]** / **[stubbed]**
@@ -49,11 +49,12 @@ Options take precedence over environment/config where they overlap.
 | `atlas agents` | **[planned]** — not registered | List discovered agent CLIs for the orchestrator (Direction B). The connection layer (`@atlas/agents` behind `AgentPort`) is implemented; the CLI command is not. |
 | `atlas agents <name>` | **[planned]** — not registered | Launch/inspect a specific agent session. |
 | `atlas tools` | **[implemented]** parent command | Agent Toolkit commands (Direction C — see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)). |
-| `atlas tools search <query>` | **[planned]** — not registered | Search the curated tool registry. |
-| `atlas tools install <tool>` | **[planned]** — not registered | Install a tool through the user-approval/security flow. |
-| `atlas tools remove <tool>` | **[planned]** — not registered | Uninstall a tool + remove its configuration. |
-| `atlas tools update` | **[planned]** — not registered | Update installed tools / the local registry. |
-| `atlas tools doctor` | **[planned]** — not registered | Reconcile installed tools vs manifest vs environment. |
+| `atlas tools search <query>` | **[implemented]** | Search the curated tool registry; `--json` supported. |
+| `atlas tools info <tool>` | **[implemented]** | Show registry, trust/security, and installed manifest state; `--json` supported. |
+| `atlas tools install <tool>` | **[implemented]** | Show exact plan/trust/risk first; `--yes` provides explicit approval; `--json` supported. |
+| `atlas tools remove <tool>` | **[implemented]** | Delegate ecosystem removal and remove the local manifest; `--json` supported. |
+| `atlas tools update` | **[implemented]** | Report local registry and installed-tool state; `--json` supported. |
+| `atlas tools doctor` | **[implemented]** | Reconcile installed manifests, integration state, and trust; `--json` supported. |
 | `atlas tools configure <tool>` | **[implemented]** | Configure only installed agents/hosts declared by the tool; `--dry-run` renders exact changes, `--json` emits machine-readable output, and `--config-home` supports managed/test user-config roots. |
 | `atlas setup` | **[planned]** — not registered | Guided environment → agent → tool recommendation → install → configure → verify (no auto-install without consent). |
 
@@ -109,8 +110,9 @@ atlas search   → createContextSDK({ dbPath }) → context.search.search(...)
 atlas mcp      → @atlas/mcp startStdioServer({ root })
 atlas sessions → createSessionManager() → SessionPort (list/get/stop)
 atlas usage    → createUsageService({ filePath }) → UsagePort (summary/list/budgets)
-atlas tools configure → createConfigurator() → ConfiguratorPort → target adapters
-atlas init/build/update/explain/doctor → "Coming Soon" (future: Scanner → Hashing
+atlas tools          → createToolkitSDK() → Registry / Manifest / Compatibility /
+                         Security / Installer / Configurator façade
+atlas init/build/explain/doctor → "Coming Soon" (future: Scanner → Hashing
                                           → Parser → Graph → ContextStore)
 ```
 
@@ -127,6 +129,9 @@ ran is a regression.
 - Never execute anything from the repository implicitly (that is the
   orchestrator's domain, with explicit consent).
 - `--help` and error messages must not reveal environment secrets.
+- Toolkit commands show trust/security and install details before execution;
+  `tools install` requires `--yes` as explicit consent. The CLI delegates all
+  Toolkit behavior to `createToolkitSDK()`.
 
 ---
 
