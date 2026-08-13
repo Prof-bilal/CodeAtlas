@@ -76,7 +76,8 @@ Make the index persistent and queryable.
   in-memory search over symbols/files/modules/dependencies/summaries with fuzzy
   matching; vector search planned behind the `RelevanceScorer` seam
 - **Context ranking & assembly** (`@atlas/context`) — **[STUB] — implement**
-- Hash-backed incremental updates wired into a `build`/`update` pipeline — **[PLANNED]**
+- Hash-backed incremental updates wired into the SDK-owned `build`/`update`
+  pipeline — **[IMPLEMENTED]**
 - AI summaries — **[IMPLEMENTED]** (fold into persistence)
 
 ---
@@ -122,8 +123,8 @@ Launch and supervise existing AI coding CLIs. See
 - **[IMPLEMENTED]** VS Code extension (`@atlas/extension`, consumes the SDK)
 - **[PLANNED]** JetBrains plugin
 - Additional editor/agent integrations
-- VS Code follow-ups: publish vsix + marketplace; make `atlas build`/`update`
-  work once the CLI pipeline is implemented
+- VS Code follow-ups: publish vsix + marketplace; improve indexing progress and
+  language coverage
 
 ---
 

@@ -41,8 +41,8 @@ Non-obvious facts (verified as of 2026-08-11):
   command surface are wired
   (through the **Context SDK**,
   `@atlas/mcp`, `createSessionManager()`, and `createUsageService()`
-  respectively); `init`/`build`/`update`/`explain`/`doctor` still print
-  "Coming Soon".
+  respectively); `init`/`build`/`update` now run the SDK-owned indexer;
+  `explain`/`doctor` remain planned.
 - **`createContextSDK` (`@atlas/sdk`)** is the single read interface consumers
   (CLI, MCP, VS Code extension, agents) use to read indexed context. Consumers
   must **not** reach for the SQLite database, `@atlas/search`,

@@ -1,10 +1,10 @@
 import {
-  createContextIntegration,
-  createContextSDK,
-  createSessionManager,
   type AssembleOptions,
   type ContextIntegration,
   type Session,
+  createContextIntegration,
+  createContextSDK,
+  createSessionManager,
   renderContextExplanation,
   renderContextPackage,
 } from "@atlas/sdk";
@@ -22,6 +22,7 @@ interface CommonOptions {
 }
 interface ContextOptions extends CommonOptions {
   readonly explain?: boolean;
+  readonly repo?: string;
 }
 interface LaunchOptions extends CommonOptions {
   readonly provider: string;
@@ -32,6 +33,7 @@ export function registerContext(program: Command, options: ContextCommandOptions
   const context = program
     .command("context <task>")
     .description("Build safe, budgeted repository context for an AI agent")
+    .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
     .option("--explain", "show content-free item sources, scores, and reasons")
     .option("--json", "print the package or explanation as JSON")
     .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
@@ -77,19 +79,23 @@ async function runBuild(
   options: ContextOptions,
   injected?: ContextIntegration,
 ): Promise<void> {
-  await withIntegration(injected, async (integration) => {
-    try {
-      if (options.explain === true) {
-        const value = await integration.explain({ task, ...assembleOptions(options) });
-        emit(value, options.json === true, renderContextExplanation);
-      } else {
-        const value = await integration.buildPackage({ task, ...assembleOptions(options) });
-        emit(value, options.json === true, renderContextPackage);
+  await withIntegration(
+    injected,
+    async (integration) => {
+      try {
+        if (options.explain === true) {
+          const value = await integration.explain({ task, ...assembleOptions(options) });
+          emit(value, options.json === true, renderContextExplanation);
+        } else {
+          const value = await integration.buildPackage({ task, ...assembleOptions(options) });
+          emit(value, options.json === true, renderContextPackage);
+        }
+      } catch (error) {
+        reportContextError(error);
       }
-    } catch (error) {
-      reportContextError(error);
-    }
-  });
+    },
+    options.repo,
+  );
 }
 
 async function runLaunch(
@@ -97,24 +103,28 @@ async function runLaunch(
   options: LaunchOptions,
   injected?: ContextIntegration,
 ): Promise<void> {
-  await withIntegration(injected, async (integration) => {
-    try {
-      const root = options.repo ?? resolveProjectRoot();
-      const result = await integration.launch({
-        task,
-        provider: options.provider,
-        repositoryPath: root,
-        ...assembleOptions(options),
-      });
-      if (!result.ok) {
-        reportContextError(result.error);
-        return;
+  await withIntegration(
+    injected,
+    async (integration) => {
+      try {
+        const root = options.repo ?? resolveProjectRoot();
+        const result = await integration.launch({
+          task,
+          provider: options.provider,
+          repositoryPath: root,
+          ...assembleOptions(options),
+        });
+        if (!result.ok) {
+          reportContextError(result.error);
+          return;
+        }
+        emit(result.value, options.json === true, renderSession);
+      } catch (error) {
+        reportContextError(error);
       }
-      emit(result.value, options.json === true, renderSession);
-    } catch (error) {
-      reportContextError(error);
-    }
-  });
+    },
+    options.repo,
+  );
 }
 
 async function runAttach(
@@ -140,12 +150,13 @@ async function runAttach(
 async function withIntegration(
   injected: ContextIntegration | undefined,
   action: (integration: ContextIntegration) => Promise<void>,
+  repositoryPath?: string,
 ): Promise<void> {
   if (injected !== undefined) {
     await action(injected);
     return;
   }
-  const root = resolveProjectRoot();
+  const root = repositoryPath ?? resolveProjectRoot();
   const context = createContextSDK({ dbPath: contextDbPath(root), repositoryPath: root });
   try {
     await action(createContextIntegration({ context, sessions: createSessionManager() }));

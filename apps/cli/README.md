@@ -16,13 +16,15 @@ atlas sessions           → wired — lists/inspects/stops agent sessions
 atlas usage              → wired — reports usage, budgets, and limits
 atlas tools              → wired — overview/search/info/install/remove/update/configure/doctor
 atlas context <task>     → wired — builds/launches a safe context package
-atlas init               → "Coming Soon"
-atlas build              → "Coming Soon"
-atlas update             → "Coming Soon"
+atlas init               → wired — initialize and index a repository
+atlas build              → wired — build an index
+atlas update             → wired — refresh an index and report changes
 atlas explain [target]   → "Coming Soon"
 atlas doctor             → "Coming Soon"
 ```
 
+`atlas init`, `atlas build`, and `atlas update` accept `--repo` (or use
+`ATLAS_ROOT`/cwd) and write `.codeatlas/manifest.json` plus `context.db`.
 `atlas search` reads `<root>/.codeatlas/context.db` (root from `ATLAS_ROOT` or
 the current directory). See [`docs/CLI.md`](../../docs/CLI.md) for the full
 command contract and [`docs/CURRENT_STATE.md`](../../docs/CURRENT_STATE.md) for

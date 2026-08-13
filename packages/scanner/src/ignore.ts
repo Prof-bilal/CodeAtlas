@@ -10,6 +10,7 @@ export const DEFAULT_IGNORED_DIRECTORIES: readonly string[] = [
   ".next",
   "coverage",
   "vendor",
+  ".codeatlas",
 ];
 
 /**

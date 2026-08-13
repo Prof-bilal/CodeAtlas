@@ -5,8 +5,8 @@ The command-line contract for the `atlas` binary.
 > **Status:** the command *surface* exists. **`atlas search` is wired to the
 > Context SDK**, **`atlas mcp` starts the MCP server**, **`atlas sessions`
 > manages AI agent sessions**, **`atlas usage` reports AI usage &
-> credits**, **`atlas tools` is SDK-backed**, and **`atlas context` is wired**;
-> `init`/`build`/`update`/`explain`/`doctor` still print
+> credits**, **`atlas tools` is SDK-backed**, **`atlas context` is wired**, and
+> **`init`/`build`/`update` run the SDK indexer**; `explain`/`doctor` still print
 > `[atlas <cmd>] Coming Soon` and do not call any service. The detailed
 > behavior below is the **contract** — flagged **[implemented]** / **[stubbed]**
 > / **[planned]** per command.
@@ -31,7 +31,7 @@ Options take precedence over environment/config where they overlap.
 
 | Command | Current behavior | Target contract |
 | ------- | ---------------- | --------------- |
-| `atlas init` | **[stubbed]** `Coming Soon` | Initialize CodeAtlas in the current project: write `.codeatlas/manifest.json` (via Scanner manifest), create the `.codeatlas/` layout. Idempotent. |
+| `atlas init` | **[implemented]** | Initialize and index the current project; supports `--repo` and `--json`. |
 | `atlas build` | **[stubbed]** `Coming Soon` | Build/resolve the context index: scan → hash → parse changed files → build graph → persist to the context DB. Reports files/symbols/summaries counts. |
 | `atlas update` | **[stubbed]** `Coming Soon` | Incrementally update an existing index: reuse hashes, reprocess only `changed`/`added` files. No-op when nothing changed. |
 | `atlas search <query...>` | **[implemented]** | Search the index (symbols, files, modules, dependencies, summaries) with ranked, fuzzy-aware results. Options: `--limit <n>`, `--type <kind>` (repeatable), `--no-fuzzy`, `--json`. Reads `.codeatlas/context.db` via the **Context SDK** (`createContextSDK` — see [CONTEXT_SDK.md](./CONTEXT_SDK.md)); errors with exit code `1` when no index exists. |

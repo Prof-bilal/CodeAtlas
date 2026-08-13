@@ -20,6 +20,7 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
+    "release:cli": "pnpm --filter @atlas/cli build && pnpm --filter @atlas/cli publish --access public",
     "prepare": "husky"
   },
   "devDependencies": {

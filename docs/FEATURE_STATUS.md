@@ -33,7 +33,7 @@ Single source of truth for what each feature is — **verified against the code*
 | Context ranking & assembly (`@atlas/context`) | **[STUB]** | Both methods throw `ComingSoonError` — intentional |
 | Context API / SDK (`createContextSDK`) | **[IMPLEMENTED]** | Read-first façade in `@atlas/sdk`: files/symbols/dependencies/modules/summaries/search/project sub-APIs, typed errors, `status()`, deterministic `getRelevantContext()`, split read/write edge; DB hidden behind repositories (see `docs/CONTEXT_SDK.md`, ADR-005) |
 | Usage & Credits (`@atlas/usage`, `UsagePort`) | **[IMPLEMENTED]** | Tri-state actual/estimated/unknown provenance for tokens/cost/latency/price (never guessed); `PricingSource` abstraction (built-in estimated `StaticPricingSource`); `UsageStore` on `.codeatlas/usage.db` (`node:sqlite`, separate from the context DB); `withUsageTracking`/`trackAgentRun` collection seams with opt-in token estimation; soft budgets + fail-safe hard limits; SDK `createUsageService`; CLI `atlas usage` (summary/list/budgets). ADR-009. See docs/USAGE.md |
-| CLI | **[PARTIAL]** | `search`, `mcp`, `sessions`, `usage`, all `tools` commands, and `context` are wired through SDK seams; `init`/`build`/`update`/`explain`/`doctor` still print "Coming Soon" |
+| CLI | **[PARTIAL]** | `init`/`build`/`update`, `search`, `mcp`, `sessions`, `usage`, all `tools` commands, and `context` are wired through SDK seams; `explain`/`doctor` remain placeholders |
 | Unified AI CLI (`/claude`, `/gemini`, `/codex`, `/opencode`, `/deepseek`) | **[PLANNED]** | No router/slash commands — see AGENT_ORCHESTRATOR.md |
 | AI CLI Connection layer (`@atlas/agents`, `AgentPort`) | **[IMPLEMENTED]** | Per-CLI adapters, executable detection, supervised one-shot runs + `ProcessRunner.launch()` for supervised long-running processes — behind `AgentPort`/`SessionPort` in `core`; composed by the SDK for sessions (`createSessionManager`), not yet wired for the router/slash commands |
 | Agent Session Manager (`SessionPort`) | **[IMPLEMENTED]** | In-memory manager in `@atlas/agents` (`SessionManager`); `createSessionManager()` from the SDK; `atlas sessions list/info/stop`; independent concurrent sessions, graceful stop/terminate, shutdown, terminal-session pruning (no DB). Sessions launched with `captureOutput: true` have their bounded stdout/stderr captured and readable via `getSessionOutput` even after exit. See docs/AGENT_SESSIONS.md |
@@ -42,7 +42,7 @@ Single source of truth for what each feature is — **verified against the code*
 | Agent sessions / interactive terminal handling | **[PLANNED]** | Session *lifecycle* ships (see Agent Session Manager); interactive TTY attachment/output streaming for sessions does not; part of the Orchestrator (Direction B) |
 | CLI Agents (`atlas agents`, `/agent` commands) | **[PLANNED]** | No code — see AGENT_ORCHESTRATOR.md + docs/CLI.md |
 | MCP | **[IMPLEMENTED]** | `@atlas/mcp`: stdio server (official `@modelcontextprotocol/sdk`) exposing 6 tools that read through the **Context SDK** (`createContextSDK` sub-APIs) — deterministic search/deps/explain/overview, opt-in AI summary generation; `codeatlas-mcp` binary **and** `atlas mcp` CLI command; tools only (no resources/prompts) |
-| VS Code integration | **[IMPLEMENTED]** | `@atlas/extension` (in `apps/extension`): Activity Bar + 5 tree views (project/symbols/modules/summaries/dependencies), `codeatlas.*` palette commands, status-bar indicator; reads only through the Context SDK (`createContextSDK`); `atlas build`/`update` shell out to the CLI, which remain intentionally unavailable |
+| VS Code integration | **[IMPLEMENTED]** | `@atlas/extension` (in `apps/extension`): Activity Bar + 5 tree views (project/symbols/modules/summaries/dependencies), `codeatlas.*` palette commands, status-bar indicator; reads only through the Context SDK (`createContextSDK`); `atlas build`/`update` shell out to the working CLI indexer |
 | JetBrains / other editor integrations | **[PLANNED]** | No code |
 | Agent Toolkit subsystem (`@atlas/toolkit`) | **[PARTIAL]** | Tasks 19–25 implemented: Registry, Tool Manifest, Compatibility Engine, Tool Installer, Tool Configurator, Security/Trust, and the thin SDK-backed Toolkit CLI; `/tools` slash integration and `atlas setup` remain planned |
 | Tool Registry | **[IMPLEMENTED]** | `@atlas/toolkit` behind `ToolRegistryPort` in `core`, composed via `createToolRegistry()` in `@atlas/sdk`: curated, schema-validated, provenance-auditable catalog (`packages/toolkit/src/catalog.json`) + local overlay merged by name (user wins, catalog never mutated); per-field provenance (curated/external/user/unknown — external never trusted blindly); extensible categories; fail-loud validation; install/compat/config/security fields declared and evaluated by Tasks 21–24. See docs/TOOL_REGISTRY.md |
@@ -68,8 +68,8 @@ Single source of truth for what each feature is — **verified against the code*
 - Providers: placeholder default model ids; no streaming.
 - Storage: engine `>=22.5.0` vs monorepo `>=20.19.0` (node:sqlite).
 - CLI: `atlas search`, `atlas mcp`, `atlas sessions`, `atlas usage`, all
-  `atlas tools` commands, and `atlas context` are wired; `init`/`build`/`update`/
-  `explain`/`doctor` remain stubs.
+  `atlas tools` commands, `atlas context`, and `atlas init/build/update` are
+  wired; `explain`/`doctor` remain stubs.
 - `@atlas/agents`: implements `AgentPort` (+`SessionPort` session manager with
   `captureOutput`/`getSessionOutput`); the SDK composes it for sessions
   (`createSessionManager`) and for the multi-agent orchestrator
@@ -91,5 +91,5 @@ Single source of truth for what each feature is — **verified against the code*
   changing.
 - `@atlas/context`: ranking/assembly intentionally unimplemented.
 - Context SDK consumers: `atlas search` and the MCP handlers use
-  `createContextSDK`; the indexing pipeline (`build`/`update`) still drives the
-  `Container` directly and should migrate to the SDK write APIs.
+  `createContextSDK`; the indexing pipeline is now exposed as `indexProject()`
+  from the SDK and the CLI delegates to that service.

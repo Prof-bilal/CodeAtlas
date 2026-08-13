@@ -18,7 +18,7 @@ can reason about large codebases accurately and efficiently.
 > Compatibility Engine and Installer (Tasks 21–22), and the Tool Configurator
 > with the Security/Trust assessor (Task 24), and the SDK-backed Toolkit CLI
 > (Task 25), and the `atlas context` CLI (Task 26). Still planned: the CLI's
-> indexing commands (`init`/`build`/`explain`/`doctor`), the `/tools` slash
+> top-level `explain`/`doctor` commands, the `/tools` slash
 > surface, `atlas setup`, and the future `/context` slash router.
 > The context rank/assembler (`@atlas/context`) remains a structural stub behind
 > its port by design (ADR-001).
@@ -69,6 +69,45 @@ pnpm --filter @atlas/cli build
 node apps/cli/dist/index.js --help
 ```
 
+## Using CodeAtlas on another repository
+
+For a local checkout, a new developer can use it like this:
+
+```bash
+git clone <codeatlas-repository-url> CodeAtlas
+cd CodeAtlas
+corepack enable
+pnpm install
+pnpm --filter @atlas/cli build
+
+# Index the repository you want to understand.
+node apps/cli/dist/index.js init --repo /absolute/path/to/your-project
+
+# Search the generated context database.
+node apps/cli/dist/index.js search authentication --repo /absolute/path/to/your-project
+
+# Generate safe, budgeted context for an AI task.
+node apps/cli/dist/index.js context "fix the authentication tests" --repo /absolute/path/to/your-project
+```
+
+After the CLI package is published, users can install it globally and run it
+from any directory:
+
+```bash
+npm install --global @atlas/cli
+atlas init --repo /absolute/path/to/your-project
+atlas search authentication --repo /absolute/path/to/your-project
+```
+
+The published CLI requires Node.js `>=22.5.0` because the storage layer uses
+Node's built-in SQLite implementation. See [docs/PUBLISHING.md](./docs/PUBLISHING.md)
+for the maintainer release process.
+
+The target repository is not modified except for its gitignored `.codeatlas/`
+directory, which contains `manifest.json` and `context.db`. Node.js `>=22.5.0`
+is required because the storage layer uses `node:sqlite`. Use `--json` on
+indexing, search, and context commands for machine-readable output.
+
 ```text
 atlas search <query...>  → wired — ranked search over .codeatlas/context.db
 atlas mcp                → wired — starts the MCP server over stdio
@@ -76,14 +115,14 @@ atlas sessions           → wired — list/info/stop AI agent sessions
 atlas usage              → wired — usage summary, list, budgets
 atlas tools              → wired — SDK-backed overview/search/info/install/remove/update/configure/doctor
 atlas context <task>     → wired — budgeted, deny-filtered context package / agent launch
-atlas init / build / update / explain / doctor  → still "Coming Soon" placeholders
+atlas init / build / update → wired — SDK-owned real-repository indexing
+atlas explain / doctor      → still "Coming Soon" placeholders
 ```
 
 `atlas search`, `atlas sessions`, `atlas usage`, and the MCP tools read indexed
 context through the **Context SDK** (`createContextSDK`, in `@atlas/sdk`) — they
-never touch the database directly. The indexing pipeline that *produces* that
-database is not yet wired into the CLI; the SDK write edge remains the current
-programmatic indexing seam (see `docs/ROADMAP.md`).
+never touch the database directly. `atlas init`/`build`/`update` now produce the
+database through the SDK-owned indexing service (see `docs/CLI.md`).
 
 ## Contributing
 
@@ -140,7 +179,7 @@ linting, formatting, typing, and commit conventions on every change.
 - ✅ Compatibility Engine built (`createCompatibilityEngine`, fail-closed environment checks)
 - ✅ Tool Installer built (`createInstaller`, approval-gated safe MVP ecosystems, verification/rollback)
 - ✅ Tool Configurator built (`createConfigurator`, per-target adapters, merge/backup/rollback, dry-run)
-- ➖ CLI `atlas search` + `atlas mcp` + `atlas sessions` + `atlas usage` + `atlas tools` wired through SDK seams; `init`/`build`/`explain`/`doctor` still stubs
+- ➖ CLI `atlas search` + `atlas mcp` + `atlas sessions` + `atlas usage` + `atlas tools` + `atlas context` + `atlas init/build/update` wired through SDK seams; `explain`/`doctor` remain stubs
 
 ## AI Agent Instructions
 - [AGENTS.md](AGENTS.md) — authoritative rules for every coding agent (Claude Code, OpenCode, Codex, Gemini CLI, …).

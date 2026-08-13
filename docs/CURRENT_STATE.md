@@ -312,9 +312,9 @@ examples/        # README placeholder only (no runnable examples)
   Context SDK** (`createContextSDK`): Activity Bar + five tree views
   (project/symbols/modules/summaries/dependencies), `codeatlas.*` palette
   commands, and a status-bar indicator.
-- `atlas build`/`update` are invoked by shelling out to the built CLI; the
-  indexing pipeline is not yet an SDK method, so those still report "Coming
-  Soon".
+- `atlas init`/`build`/`update` delegate to the SDK-owned `indexProject()` flow,
+  which creates the manifest/database and reports hash changes. `explain` and
+  top-level `doctor` remain placeholders.
 - The extension is anonymous at the database: it never opens `.codeatlas`
   itself (see `docs/VSCODE.md`), and is tested headlessly.
 - JetBrains / other editor integrations are still **[PLANNED]**.
@@ -577,7 +577,7 @@ examples/        # README placeholder only (no runnable examples)
 | **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~65% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, and the thin SDK-backed Toolkit CLI; `/tools` slash integration and `atlas setup` remain planned |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
-at: (1) the other CLI commands (build/update/init/explain/doctor are stubs),
+at: (1) top-level `explain`/`doctor` remain stubs,
 (2) context ranking/assembly (stub), and (3) the **router/slash commands** of
 the orchestrator (the plan-executing orchestrator itself exists in
 `@atlas/sdk`). MCP (`@atlas/mcp`) and the VS Code extension (`@atlas/extension`)

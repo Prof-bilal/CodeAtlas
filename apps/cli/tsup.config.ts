@@ -5,4 +5,5 @@ import { atlasConfig } from "../../tsup.config.base";
 export default atlasConfig({
   format: ["esm"],
   dts: false,
+  external: ["commander", "ts-morph"],
 });

@@ -1,15 +1,13 @@
 import type { Command } from "commander";
-import { registerBuild } from "./build";
-import { registerContext, type ContextCommandOptions } from "./context";
+import { type ContextCommandOptions, registerContext } from "./context";
 import { registerDoctor } from "./doctor";
 import { registerExplain } from "./explain";
-import { registerInit } from "./init";
+import { registerIndexingCommands } from "./indexing";
 import { registerMcp } from "./mcp";
 import { registerSearch } from "./search";
 import { registerSessions } from "./sessions";
 import { registerTools } from "./tools";
 import type { ToolsCommandOptions } from "./tools";
-import { registerUpdate } from "./update";
 import { registerUsage } from "./usage";
 
 /** Register every CLI command on the given program. */
@@ -17,9 +15,7 @@ export function registerCommands(
   program: Command,
   options: Pick<ToolsCommandOptions, "toolkit"> & ContextCommandOptions = {},
 ): void {
-  registerInit(program);
-  registerBuild(program);
-  registerUpdate(program);
+  registerIndexingCommands(program);
   registerSearch(program);
   registerSessions(program);
   registerUsage(program);

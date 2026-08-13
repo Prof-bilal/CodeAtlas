@@ -30,6 +30,8 @@ export {
   type ContainerOptions,
   type ContainerServices,
 } from "./container";
+export { indexProject } from "./indexing/indexer";
+export type { IndexRequest, IndexResult } from "./indexing/indexer";
 export {
   createContextSDK,
   resolveContextConfig,

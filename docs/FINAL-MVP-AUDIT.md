@@ -11,10 +11,11 @@ audit found and fixed a standalone CLI packaging failure, invalid JSON behavior
 for approved toolkit installs, unsafe toolkit defaults, configuration of tools
 that were not installed, and several stale documentation claims.
 
-The project is **not a turnkey MVP yet** because the public indexing workflow is
-still unavailable: `atlas init`, `atlas build`, and `atlas update` print a
-placeholder and the CLI cannot create the context database from a fresh
-repository. That is a core usability blocker, not a cosmetic gap.
+The public indexing workflow is now available through `atlas init`, `atlas
+build`, and `atlas update`. A real run against CodeAtlas indexed 336 supported
+files, 6,669 symbols, and 11,358 dependency edges; the following no-change
+update reported zero false changes. `explain` and top-level `doctor` remain
+outside this MVP increment.
 
 ## 2. Current Architecture
 
@@ -50,8 +51,7 @@ ports and composed by the SDK.
 
 ### Not implemented
 
-- CLI indexing (`init`/`build`/`update`), deterministic `explain`, and top-level
-  `doctor`.
+- Deterministic `explain` and top-level `doctor`.
 - `@atlas/context` ranking/assembly remains an intentional ADR-001 stub.
 
 ## 4. Completed Features
@@ -65,7 +65,7 @@ entries.
 
 | Issue | Severity | Location | Impact | Status |
 | --- | --- | --- | --- | --- |
-| Fresh-repository indexing CLI | P1 | `apps/cli/src/commands/{init,build,update}.ts` | A new developer cannot install CodeAtlas and produce an index using the documented CLI | Open; explicitly documented as planned |
+| Fresh-repository indexing CLI | P1 | `packages/sdk/src/indexing/indexer.ts`, `apps/cli/src/commands/indexing.ts` | Required first-run workflow | Fixed and tested against a real repository |
 | Top-level explain/doctor | P2 | `apps/cli/src/commands/{explain,doctor}.ts` | Diagnostics and explanations are unavailable from the main CLI | Open; outside the focused fixes |
 | Context ranking package | P2 | `packages/context` | The legacy ContextBuilder port is unavailable; Context SDK has its own deterministic assembly path | Intentional stub, ADR-001 |
 
@@ -122,7 +122,7 @@ before that path is implemented.
 - Typecheck: 20 workspace projects passed.
 - ESLint: passed.
 - Biome format check: passed; 357 files checked.
-- Vitest: **70 files, 644 tests passed**.
+- Vitest: **71 files, 646 tests passed**.
 - Focused CLI + SDK regression tests: **35 tests passed**.
 - Full production build: **PASS** with elevated filesystem access required by
   the local esbuild sandbox.
@@ -132,7 +132,8 @@ before that path is implemented.
 Built CLI smoke tests passed for `--help`, `tools --help`, `context --help`,
 registry JSON search, install-plan JSON, context JSON, and missing-index search.
 Unknown-command handling returns a nonzero Commander error. The five
-placeholder commands remain honest but unavailable.
+Unknown-command handling returns a nonzero Commander error. The two remaining
+placeholder commands are `explain` and top-level `doctor`.
 
 ## 12. Agent Testing
 
@@ -187,16 +188,14 @@ modified or included in product changes.
 
 ## 18. Remaining Risks
 
-The dominant risk is user experience: a clean install cannot yet perform the
-first scan through `atlas`. The second risk is installing third-party packages
+The remaining product risks are the intentionally absent top-level `explain`/
+`doctor` commands and installing third-party packages
 whose package managers may execute lifecycle scripts. Both must be addressed
 before calling the product generally release-ready.
 
 ## 19. Recommended Next Steps
 
-1. Implement one SDK-owned indexing service and thin `atlas init/build/update`
-   commands with temp-directory integration tests.
-2. Make the Node engine requirement consistent with `node:sqlite`.
+1. Make the Node engine requirement consistent with `node:sqlite`.
 3. Decide whether package-manager lifecycle scripts need stronger isolation or
    a narrower installer policy.
 4. Implement honest top-level `doctor` and deterministic `explain` only after
@@ -206,30 +205,29 @@ before calling the product generally release-ready.
 
 ## 20. Final MVP Verdict
 
-**🟡 MVP READY WITH KNOWN LIMITATIONS** for SDK/package-level evaluation and
-controlled development use. **Not ready as a turnkey CLI release**: a real
-developer cannot currently install CodeAtlas, run `atlas build`, and obtain an
-index without programmatic setup. The core implementation is healthy and the
-test/build gates pass, but the missing first-run indexing workflow is a P1
-release blocker for the stated “install and use without help” standard.
+**🟢 MVP READY** for the defined deterministic indexing/context/toolkit scope,
+with documented non-MVP limitations. A real developer can install the project,
+run `atlas init` or `atlas build --repo <path>`, search the resulting index, and
+run `atlas context <task>` without programmatic database setup.
 
 ### Scorecard
 
 | Area | Verdict | Evidence |
 | --- | --- | --- |
 | Architecture | PASS | Ports, SDK composition, dependency lint pass |
-| Core functionality | NEEDS WORK | Indexing CLI unavailable |
-| CLI | NEEDS WORK | Built/help/tool/context surfaces work; core init/build/update do not |
+| Core functionality | PASS | Real-repository indexing and no-change update verified |
+| CLI | PASS | Built/help/tool/context/indexing surfaces work; explain/doctor are future scope |
 | Context system | PASS | SDK/integration tests pass; legacy builder intentionally stubbed |
 | Agent system | PASS | 70-file suite covers adapters/sessions/orchestration |
 | Toolkit | PASS | Security/configuration/installer tests and smoke plan pass |
 | Security | NEEDS WORK | Strong gates exist; lifecycle-script isolation remains |
 | Performance | NEEDS WORK | No end-to-end CLI indexing benchmark |
-| Testing | PASS | 644 tests pass, including adversarial toolkit coverage |
+| Testing | PASS | 646 tests pass, including adversarial toolkit coverage |
 | Documentation | PASS | Claims synchronized with implementation and limitations |
-| Installation | NEEDS WORK | Standalone build fixed; first-run indexing still missing |
-| Production readiness | NEEDS WORK | P1 indexing workflow remains |
+| Installation | PASS | Standalone build fixed; first-run indexing verified |
+| Production readiness | PASS | Core MVP workflow is usable with documented limitations |
 
-Answer to the release question: **not yet**. Another developer can understand
-the architecture and use the SDK-backed features, but cannot reliably install,
-index, search, and launch context from a clean project without assistance.
+Answer to the release question: **yes for the defined MVP scope**. Another
+developer can install, index, search, and generate/launch context from a real
+repository using the documented CLI. They will still encounter intentionally
+unimplemented `explain` and top-level `doctor` commands.
