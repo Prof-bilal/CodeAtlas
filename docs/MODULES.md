@@ -200,8 +200,9 @@ and never bypasses the Context SDK.
   free-form autonomous delegation (plans are explicit role lists), or reach for
   the context database (reads via `createContextSDK` → `ContextIntegration`).
 - Current state: implemented and tested
-  (`packages/sdk/tests/orchestrator.test.ts`); **no CLI/router wiring yet** —
-  slash commands and interactive TTY handling remain planned. See
+  (`packages/sdk/tests/orchestrator.test.ts`); **no standalone CLI/router wiring
+  yet** — the `atlas tui` slash surface exists (see Unified AI CLI below), but
+  the plan-executing router as a CLI/editor surface remains planned. See
   [CURRENT_STATE.md](./CURRENT_STATE.md).
 
 ### Agent Toolkit — « `@atlas/toolkit` » — **[PARTIAL]**
@@ -299,12 +300,15 @@ Responsible for launching and managing external AI CLI processes.
 - Will own: agent discovery, agent adapters, process spawning/lifecycle,
   terminal/session handling, timeouts, exit codes, environment config.
 - **Implemented today:** the connection layer (`@atlas/agents` behind
-  `AgentPort`) — adapters, executable detection, supervised process runs; and
-  the **Agent Session Manager** (`SessionManager` behind `SessionPort`) — in
+  `AgentPort`) — adapters, executable detection, supervised process runs; the
+  **Agent Session Manager** (`SessionManager` behind `SessionPort`) — in
   `@atlas/agents`, composed by the SDK (`createSessionManager`) and exposed by
-  `atlas sessions`. See [AGENT_SESSIONS.md](./AGENT_SESSIONS.md).
-- **Planned still:** the agent router, `/agent` slash commands, and interactive
-  terminal/TTY handling for sessions.
+  `atlas sessions`; interactive `stdio: "inherit"` launches
+  (`SessionLaunchRequest.interactive`); and the **interactive TUI**
+  (`atlas tui`) slash surface (`/claude`–`/opencode` launch/install, `/cursor`
+  `/grok` guidance, `/agents`). See [AGENT_SESSIONS.md](./AGENT_SESSIONS.md).
+- **Planned still:** the standalone agent router and `/agent` CLI slash
+  commands (Direction B).
 - Must **NOT**: reimplement the agent's internal reasoning. See
   [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md).
 

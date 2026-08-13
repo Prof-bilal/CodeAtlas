@@ -6,8 +6,12 @@ The command-line contract for the `atlas` binary.
 > Context SDK**, **`atlas mcp` starts the MCP server**, **`atlas sessions`
 > manages AI agent sessions**, **`atlas usage` reports AI usage &
 > credits**, **`atlas tools` is SDK-backed**, **`atlas context` is wired**, and
-> **`init`/`build`/`update` run the SDK indexer**; `explain`/`doctor` still print
-> `[atlas <cmd>] Coming Soon` and do not call any service. The detailed
+> **`init`/`build`/`update` run the SDK indexer**. The interactive **`atlas tui`**
+> (also opened by bare `atlas` on a TTY) provides the slash-command surface:
+> `/scan`, `/search`, `/context`, `/agents`, `/toolkit`, `/tools-install`, and
+> `/claude` `/gemini` `/codex` `/opencode` (detect → launch interactively →
+> install) plus `/cursor` `/grok` (install guidance). `explain`/`doctor` still
+> print `[atlas <cmd>] Coming Soon` and do not call any service. The detailed
 > behavior below is the **contract** — flagged **[implemented]** / **[stubbed]**
 > / **[planned]** per command.
 
@@ -59,23 +63,27 @@ Options take precedence over environment/config where they overlap.
 | `atlas context <task>` | **[implemented]** | Build and render a deny-filtered, budgeted Context Package; `--explain` renders content-free selection reasons, `--json` emits package/explanation data, and budget/instruction/overview flags tune SDK assembly. |
 | `atlas context launch <task>` | **[implemented]** | Launch a provider session seeded with the rendered Context Package via `SessionPort`; requires `--provider`, supports `--repo`, `--json`, and tuning flags. |
 | `atlas context attach <session-id> <task>` | **[implemented]** | Attach context to a `CREATED` session; live/terminal sessions return a clean exit-1 typed error. |
+| `atlas tui` | **[implemented]** | Interactive terminal UI (requires a TTY). Header shows repository + context state; slash commands: `/scan` (SDK indexer), `/search <query>`, `/context <task>`, `/agents` (detected AI CLIs), `/toolkit` (installed + recommended tools sidebar), `/tools-install <tool>` (plan → confirm → install through the Toolkit), `/claude` `/gemini` `/codex` `/opencode` (detect → launch **interactively** with a terminal handoff → install via npm when missing), `/cursor` `/grok` (vendor install guidance), `/status`, `/help`, `/exit`. Bare `atlas` opens it when stdin is a TTY (help otherwise). |
 | `atlas setup` | **[planned]** — not registered | Guided environment → agent → tool recommendation → install → configure → verify (no auto-install without consent). |
 
-### Agent slash commands (Direction B — **[planned]**, see AGENT_ORCHESTRATOR.md)
+### Agent slash commands (Direction B)
 
 ```text
-atlas /gemini <prompt...>
+atlas /gemini <prompt...>   # [planned] standalone router (not yet registered)
 atlas /claude <prompt...>
 atlas /codex <prompt...>
 atlas /opencode <prompt...>
-atlas /deepseek <prompt...>
 ```
 
-Implemented **only** once the orchestrator router lands (Phase 4 of the
-roadmap). The connection layer they depend on (`@atlas/agents` behind
+A working slash surface **already exists inside `atlas tui`** (`/claude`,
+`/gemini`, `/codex`, `/opencode`, `/cursor`, `/grok`), backed by `@atlas/agents`
++ the session manager + the Toolkit installer. The **standalone**
+`atlas /<agent> <prompt>` router is **[planned]** and will land once the
+orchestrator router ships (Phase 4 of the roadmap). The connection layer the
+slash commands depend on (`@atlas/agents` behind
 `AgentPort`) and the **Agent Session Manager** (`atlas sessions`) exist; the
-router and slash commands do not. The planned `/tools` interface (Directory C)
-is documented in [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
+standalone router does not. The planned `/tools` interface (Directory C) is
+documented in [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
 
 ---
 

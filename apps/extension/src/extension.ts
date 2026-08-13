@@ -7,9 +7,12 @@ import type {
   VscodeApi,
   VscodeDisposable,
   VscodeStatusBarItem,
+  VscodeTerminal,
   VscodeTreeDataProvider,
   VscodeTreeItemBase,
   VscodeViewRegistrar,
+  VscodeWebviewView,
+  VscodeWebviewViewProvider,
   VscodeWindow,
   VscodeWorkspace,
 } from "./vscode-host";
@@ -127,6 +130,13 @@ function buildWorkspace(): VscodeWorkspace {
   return {
     ...(folders !== undefined ? { workspaceFolders: folders } : {}),
     ...(rootPath !== undefined ? { rootPath } : {}),
+    getConfiguration: (section) => {
+      const configuration = vscode.workspace.getConfiguration(section);
+      return { get: (key, defaultValue) => configuration.get(key, defaultValue) };
+    },
+    updateConfiguration: async (section, key, value) => {
+      await vscode.workspace.getConfiguration(section).update(key, value);
+    },
   };
 }
 
@@ -143,12 +153,89 @@ function buildViews(): VscodeViewRegistrar {
   };
 }
 
+/** Wrap a real `vscode.Terminal` behind the injectable terminal interface. */
+function toRealTerminal(terminal: vscode.Terminal): VscodeTerminal {
+  return {
+    name: terminal.name,
+    sendText: (text, addNewLine) => terminal.sendText(text, addNewLine),
+    show: (preserveFocus) => terminal.show(preserveFocus),
+    dispose: () => terminal.dispose(),
+    // `Terminal.onDidWriteData` is a real but newer API; the stable types for
+    // the 1.92 engine do not declare it. Probe for it at runtime and degrade
+    // to a no-op subscription when unavailable (the terminal panel itself
+    // still shows the agent's output natively).
+    onDidWriteData: (listener) => {
+      const terminalWithEvent = terminal as unknown as {
+        readonly onDidWriteData?: (listener: (data: string) => void) => vscode.Disposable;
+      };
+      return terminalWithEvent.onDidWriteData !== undefined
+        ? terminalWithEvent.onDidWriteData(listener)
+        : { dispose: () => undefined };
+    },
+    onDidClose: (listener) =>
+      vscode.window.onDidCloseTerminal((closed) => {
+        if (closed === terminal) {
+          listener();
+        }
+      }),
+  };
+}
+
+/** Wrap a real `vscode.WebviewView` behind the injectable webview interface. */
+function toRealWebviewView(webviewView: vscode.WebviewView): VscodeWebviewView {
+  return {
+    webview: {
+      get cspSource() {
+        return webviewView.webview.cspSource;
+      },
+      get html() {
+        return webviewView.webview.html;
+      },
+      set html(value) {
+        webviewView.webview.html = value;
+      },
+      postMessage: async (message) => await webviewView.webview.postMessage(message),
+      onDidReceiveMessage: (listener) => webviewView.webview.onDidReceiveMessage(listener),
+    },
+    onDidDispose: (listener) => webviewView.onDidDispose(listener),
+    show: (preserveFocus) => webviewView.show(preserveFocus),
+  };
+}
+
+/** The terminal surface of the `vscode` API, narrowed to what we use. */
+function buildTerminals(): VscodeApi["terminals"] {
+  return {
+    createTerminal: (options) =>
+      toRealTerminal(
+        vscode.window.createTerminal({
+          name: options.name,
+          ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
+        }),
+      ),
+  };
+}
+
+/** The webview-view registration surface of the `vscode` API. */
+function buildWebview(): VscodeApi["webview"] {
+  return {
+    registerWebviewViewProvider: (viewType, provider) =>
+      vscode.window.registerWebviewViewProvider(viewType, {
+        resolveWebviewView: (webviewView) =>
+          (provider as VscodeWebviewViewProvider).resolveWebviewView(
+            toRealWebviewView(webviewView),
+          ),
+      }),
+  };
+}
+
 /** Assemble the real `vscode` API behind the injectable interface. */
 function realHost(): VscodeApi {
   return {
     window: buildWindow(),
     workspace: buildWorkspace(),
     views: buildViews(),
+    terminals: buildTerminals(),
+    webview: buildWebview(),
     commands: {
       executeCommand: async (command, ...rest) => {
         await vscode.commands.executeCommand(command, ...rest);

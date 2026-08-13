@@ -613,7 +613,8 @@ outputs, high churn) feed the **future** Recommendation Engine — see
 | Configuration | `ConfiguratorPort` + per-target adapters — **implemented** (Task 23) |
 | Security / trust | `SecurityPort` + offline `SecurityAssessor` — **implemented** (Task 24); hard installer gate |
 | AI-CLI detection | `@atlas/agents` (`AgentPort`) — **implemented** |
-| CLI surface | `atlas tools` overview/search/info/install/remove/update/configure/doctor — **implemented**; `/tools` slash command and `atlas setup` remain planned |
+| CLI surface | `atlas tools` overview/search/info/install/remove/update/configure/doctor — **implemented**; the `atlas tui` slash surface adds `/toolkit` (installed + recommended sidebar) and `/tools-install <tool>` (plan → confirm → install); `atlas setup` and a standalone `/tools` slash command remain planned |
+| AI-CLI catalog | the four npm-installable AI CLIs (`claude`, `gemini`, `codex`, `opencode`) ship as curated Registry entries with official npm install methods, so `atlas tui` can install a missing agent through the same approval-gated installer |
 | Recommendation | separate future module (planned) |
 | Benchmarking | separate future subsystem (planned) |
 

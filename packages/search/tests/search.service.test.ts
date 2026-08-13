@@ -2,13 +2,13 @@ import type {
   ContextSnapshot,
   PersistedDependency,
   PersistedModule,
+  Symbol as PersistedSymbol,
   SourceFile,
   Summary,
-  Symbol,
 } from "@atlas/core";
 import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
-import { describe, expect, it } from "vitest";
 import { ContextStore } from "@atlas/storage";
+import { describe, expect, it } from "vitest";
 import { LexicalScorer, type RelevanceScorer } from "../src/scoring";
 import { SearchService } from "../src/search.service";
 
@@ -20,8 +20,8 @@ function symbol(
   id: string,
   name: string,
   filePath: string,
-  overrides: Partial<Symbol> = {},
-): Symbol {
+  overrides: Partial<PersistedSymbol> = {},
+): PersistedSymbol {
   return {
     id: id as SymbolId,
     name,
@@ -120,7 +120,7 @@ describe("SearchService", () => {
     const hits = service.search("math", { types: ["summary"] });
     expect(hits.length).toBeGreaterThan(0);
     expect(hits[0]).toMatchObject({ kind: "summary" });
-    expect(hits[0]!.snippet).toContain("math");
+    expect(hits[0]?.snippet).toContain("math");
   });
 
   it("finds dependencies through resolved node labels", () => {
@@ -129,7 +129,7 @@ describe("SearchService", () => {
     const hits = service.search("math", { types: ["dependency"] });
     expect(hits.length).toBeGreaterThan(0);
     expect(hits[0]).toMatchObject({ kind: "dependency", relation: "imports" });
-    expect(hits[0]!.title).toContain("/src/math.ts");
+    expect(hits[0]?.title).toContain("/src/math.ts");
   });
 
   it("matches typos via fuzzy search", () => {
@@ -225,5 +225,33 @@ describe("SearchService", () => {
         true,
       ),
     ).toBe(100);
+  });
+
+  it("matches multi-word queries by their best meaningful term", () => {
+    const service = new SearchService();
+    service.indexSnapshot(snapshot());
+
+    // "authenticate" (from the UserService documentation) and "login" (from
+    // auth.ts content) each match through the best-term rule.
+    const hits = service.search("authenticate users please", {
+      types: ["symbol", "file"],
+    });
+    expect(hits.some((h) => h.kind === "symbol" && h.title === "UserService")).toBe(true);
+
+    const fileHits = service.search("login handler where?", { types: ["file"] });
+    expect(fileHits.some((h) => h.kind === "file" && h.title === "/src/auth.ts")).toBe(true);
+  });
+
+  it("ignores stopwords so a task sentence never matches unrelated symbols", () => {
+    const service = new SearchService();
+    service.indexSnapshot(
+      snapshot({
+        symbols: [symbol("s1", "isActive", "/src/ui.ts"), symbol("s2", "double", "/src/math.ts")],
+      }),
+    );
+    // "is" (stopword) must not prefix-match isActive.
+    const hits = service.search("where is the double function", { types: ["symbol"] });
+    expect(hits.some((h) => h.title === "isActive")).toBe(false);
+    expect(hits.some((h) => h.title === "double")).toBe(true);
   });
 });

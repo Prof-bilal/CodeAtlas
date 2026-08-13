@@ -45,7 +45,8 @@ ports and composed by the SDK.
 
 ### Optional/future
 
-- Slash-command router, interactive TTY orchestration, embeddings, extra
+- Standalone slash-command router (`atlas /<agent>`; the **`atlas tui`**
+  slash surface and interactive TTY handoff are implemented), embeddings, extra
   language parsers, benchmarking, recommendations, setup wizard, and advanced
   marketplace behavior.
 

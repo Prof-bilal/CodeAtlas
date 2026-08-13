@@ -37,3 +37,9 @@ Thumbs.db
 .codeatlas/
 ui/
 docs/Design.md
+
+# Real-repository integration test output
+tests/integration/results/
+
+# External test fixture (a full copy of an external repo with its own .git)
+test-repo/

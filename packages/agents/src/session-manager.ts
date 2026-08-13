@@ -10,7 +10,7 @@ import type {
   SessionPort,
   SessionStatus,
 } from "@atlas/core";
-import { fail, ok, type Result } from "@atlas/shared";
+import { type Result, fail, ok } from "@atlas/shared";
 import type { AgentAdapter } from "./adapter";
 import { AgentService, type ExecutableResolver } from "./agent.service";
 import { AgentCliNotFoundError, UnknownAgentError } from "./errors";
@@ -157,9 +157,11 @@ export class SessionManager implements SessionPort {
       return fail(notFound);
     }
 
+    const interactive = launch?.interactive === true;
     const argsResult = this.agentService.buildArgsFor(session.provider, {
       prompt: launch?.prompt ?? "",
       ...(launch?.args !== undefined ? { args: launch.args } : {}),
+      ...(interactive ? { interactive: true } : {}),
     });
     if (!argsResult.ok) {
       this.failSession(sessionId, argsResult.error.message);
@@ -167,12 +169,19 @@ export class SessionManager implements SessionPort {
     }
 
     // Delegate process execution to the process layer (never spawn here).
+    // Interactive handoff inherits stdio; captured sessions pipe; otherwise the
+    // child's stdio are ignored (sessions do not capture output by default).
+    const stdio: "pipe" | "ignore" | "inherit" = interactive
+      ? "inherit"
+      : launch?.captureOutput === true
+        ? "pipe"
+        : "ignore";
     const outcome = await this.runner.launch({
       command: binary.value,
       args: argsResult.value,
       cwd: session.repositoryPath,
       ...(launch?.env !== undefined ? { env: launch.env } : {}),
-      stdio: launch?.captureOutput === true ? "pipe" : "ignore",
+      stdio,
     });
     if (!outcome.ok) {
       this.failSession(sessionId, outcome.error.message);

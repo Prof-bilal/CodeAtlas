@@ -1,4 +1,12 @@
-export { editDistance, fuzzyThreshold, isFuzzyMatch, similarity } from "./fuzzy";
+export {
+  editDistance,
+  fuzzyThreshold,
+  isFuzzyMatch,
+  isTokenMatch,
+  queryTerms,
+  similarity,
+  STOPWORDS,
+} from "./fuzzy";
 export { LexicalScorer, type RelevanceScorer } from "./scoring";
 export {
   buildIndex,

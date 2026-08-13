@@ -162,11 +162,15 @@ create → scan → hash → parse → graph → (summaries?) → store → quer
   **cache of the repository, not an authoritative store** — it can be deleted
   and rebuilt from source. `.codeatlas/` is gitignored.
 - **Incremental updates.** Hash snapshots + `updateContext` (merge, not full
-  replace) are the building blocks of an incremental `atlas update`. Only
-  `changed`/`added` files are re-parsed. Deleted files are removed from the
-  store on update. Today, `saveContext`/`updateContext` are called through
-  `ContextStore`/the SDK write surface; the CLI `build`/`update` commands that
-  drive this flow are still "Coming Soon".
+  replace) are the building blocks of an incremental `atlas update`. The
+  hash diff classifies every path as `changed`/`added`/`deleted`/`unchanged`
+  and drives the reported counters; deleted files are removed from the store.
+  **Observed cost model (verified 2026-08-13):** the current SDK indexer
+  (`@atlas/sdk` `indexProject`) still reads and re-parses every TypeScript
+  file on each run — the diff is used for the counters but not yet to select
+  which files the parser receives. `atlas build`/`update` now run through
+  that SDK-owned indexer (`CURRENT_STATE.md`); the parser packages themselves
+  only parse what they are given.
 - **Trouble/fresh index.** When `.codeatlas/context.db` is missing,
   `atlas search`, the MCP server tools, and the Context SDK return a clean
   "no index" state; the SDK opens lazily so server code can wait for the index

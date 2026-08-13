@@ -99,8 +99,10 @@ examples/       # Placeholder (no runnable examples yet)
 > detection, supervised non-interactive process runs behind `AgentPort`, a
 > `ProcessRunner.launch()` for long-running children, and the **Agent Session
 > Manager** behind `SessionPort`. It is **composed** into the SDK for sessions
-> (`createSessionManager`) and wired to the CLI (`atlas sessions`); the **router
-> and slash commands** remain planned. See [AGENT_SESSIONS.md](./AGENT_SESSIONS.md)
+> (`createSessionManager`) and wired to the CLI (`atlas sessions`); interactive
+> `stdio: "inherit"` launches (`SessionLaunchRequest.interactive`) and the
+> **`atlas tui`** slash surface ship, while the standalone **router** remains
+> planned. See [AGENT_SESSIONS.md](./AGENT_SESSIONS.md)
 > and [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md).
 
 ---

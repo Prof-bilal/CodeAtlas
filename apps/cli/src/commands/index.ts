@@ -8,6 +8,7 @@ import { registerSearch } from "./search";
 import { registerSessions } from "./sessions";
 import { registerTools } from "./tools";
 import type { ToolsCommandOptions } from "./tools";
+import { registerTui } from "./tui";
 import { registerUsage } from "./usage";
 
 /** Register every CLI command on the given program. */
@@ -27,4 +28,5 @@ export function registerCommands(
   registerExplain(program);
   registerDoctor(program);
   registerMcp(program);
+  registerTui(program);
 }

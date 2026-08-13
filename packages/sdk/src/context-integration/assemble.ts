@@ -1,13 +1,16 @@
 import type { Summary } from "@atlas/core";
+import { queryTerms } from "@atlas/search";
+import { InvalidQueryError } from "../context/errors";
 import type {
   DependencyContext,
   FileContentContext,
   ProjectOverview,
   SymbolContext,
 } from "../context/models";
-import { estimateTokens, applyBudget, DEFAULT_CONTEXT_BUDGET } from "./budget";
-import { denyFilter, type DenyFilterResult } from "./deny";
-import { collectInstructions, type ProjectInstruction } from "./instructions";
+import type { ContextSDK } from "../context/sdk";
+import { DEFAULT_CONTEXT_BUDGET, applyBudget, estimateTokens } from "./budget";
+import { type DenyFilterResult, denyFilter } from "./deny";
+import { type ProjectInstruction, collectInstructions } from "./instructions";
 import type {
   ContextBudget,
   ContextItemKind,
@@ -16,8 +19,6 @@ import type {
   ContextPackageItem,
   StaleContextSignal,
 } from "./models";
-import { InvalidQueryError } from "../context/errors";
-import type { ContextSDK } from "../context/sdk";
 
 /** Options for assembling a context package. */
 export interface AssembleOptions {
@@ -263,10 +264,10 @@ function collectSelections(
 /** Resolve symbols/files explicitly named by the task (deterministic, bounded). */
 function explicitSelections(context: ContextSDK, task: string): readonly Selection[] {
   const selections: Selection[] = [];
-  const words = task
-    .split(/\s+/)
-    .map((word) => word.replace(/^[^\w./\\-]+|[^\w./\\-]+$/g, ""))
-    .filter((word) => word.length >= 2);
+  // Meaningful query terms only: stopwords and one-character words are dropped,
+  // so a task like "where is the login implemented" never resolves "is" or
+  // "the" to unrelated `is*`/`the*` symbols.
+  const words = queryTerms(task);
 
   for (const word of words) {
     const looksLikePath =

@@ -1,21 +1,27 @@
 # Agent Orchestrator (Unified AI CLI)
 
-> **Status: [PARTIAL]** — the *router* described below does not exist yet: no
-> agent router, no slash commands. But the **Agent Session Manager is
-> implemented** (Task 15): `SessionManager` behind `SessionPort`, composed by
+> **Status: [PARTIAL]** — the standalone *router* (`atlas /claude`, …) described
+> below does not exist yet. But the **Agent Session Manager is implemented**
+> (Task 15): `SessionManager` behind `SessionPort`, composed by
 > `createSessionManager()` in `@atlas/sdk`, exposed as `atlas sessions` — see
 > [AGENT_SESSIONS.md](./AGENT_SESSIONS.md). Separately, the **multi-agent plan
 > orchestrator** (Task 17) is implemented in `@atlas/sdk`
 > (`createOrchestrator`: explicit role plans via `buildPlan`/`reviewPlan`,
 > execution through `SessionPort` with timeouts/retries/cancellation, and
 > deterministic result combining with conflict detection) — see
-> [CURRENT_STATE.md](./CURRENT_STATE.md). This document is the design contract
-> for the remaining Direction B surface: a unified CLI that launches and
-> manages existing AI coding CLIs. Do **not** claim the router or slash
-> commands are implemented. Prerequisites that are real: the **AI CLI
-> connection layer (`@atlas/agents`, behind `AgentPort`)** (adapters,
-> executable detection, supervised process runs) and the session manager.
-> (See [CURRENT_STATE.md](./CURRENT_STATE.md).)
+> [CURRENT_STATE.md](./CURRENT_STATE.md). And the **interactive TUI**
+> (`atlas tui`, opened by bare `atlas` on a TTY) now provides a slash-command
+> surface: `/claude`, `/gemini`, `/codex`, `/opencode` detect the installed CLI,
+> launch it **interactively** (`SessionLaunchRequest.interactive`, `stdio:
+> "inherit"`, no `-p` run-mode flags), and fall back to an approval-gated Toolkit
+> install; `/cursor` and `/grok` show vendor install guidance; `/agents` and
+> `/toolkit` cover discovery. This document remains the design contract for the
+> **remaining** Direction B surface — the plan-executing router as a CLI/editor
+> surface. Do **not** claim the standalone router or `atlas /claude` commands
+> are implemented. Prerequisites that are real: the **AI CLI connection layer
+> (`@atlas/agents`, behind `AgentPort`)** (adapters, executable detection,
+> supervised process runs), the session manager, and the TUI. (See
+> [CURRENT_STATE.md](./CURRENT_STATE.md).)
 
 ---
 

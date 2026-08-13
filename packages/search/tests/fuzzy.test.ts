@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { editDistance, fuzzyThreshold, isFuzzyMatch, isTokenMatch, similarity } from "../src/fuzzy";
+import {
+  editDistance,
+  fuzzyThreshold,
+  isFuzzyMatch,
+  isTokenMatch,
+  queryTerms,
+  similarity,
+} from "../src/fuzzy";
 
 describe("editDistance", () => {
   it("computes classic edit distances", () => {
@@ -55,5 +62,27 @@ describe("isTokenMatch", () => {
   it("does not match inside a longer identifier", () => {
     expect(isTokenMatch("User", "UserService")).toBe(false);
     expect(isTokenMatch("auth", "authenticate")).toBe(false);
+  });
+});
+
+describe("queryTerms", () => {
+  it("splits a natural-language query into meaningful terms", () => {
+    expect(queryTerms("Where is authentication implemented?")).toEqual([
+      "authentication",
+      "implemented",
+    ]);
+  });
+
+  it("drops stopwords and one-character tokens", () => {
+    expect(queryTerms("is the login a feature")).toEqual(["login", "feature"]);
+    expect(queryTerms("a b c")).toEqual([]);
+  });
+
+  it("preserves dots in file-like terms and strips surrounding punctuation", () => {
+    expect(queryTerms("see src/pages/auth/Login.tsx, please")).toContain(
+      "src/pages/auth/login.tsx",
+    );
+    expect(queryTerms("")).toEqual([]);
+    expect(queryTerms("   ")).toEqual([]);
   });
 });

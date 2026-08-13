@@ -23,6 +23,9 @@ pipeline is not yet an SDK method).
 When a workspace has no `.codeatlas/context.db` yet, the trees show a friendly
 empty state and the status bar points at `Run atlas build`.
 
+> **Interactive agent launching** lives in the **TUI** (`atlas tui`), not the
+> VS Code extension. The extension is a read-only context viewer.
+
 ## How it talks to CodeAtlas
 
 | Concern                    | Mechanism                                             |

@@ -1,7 +1,8 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
-  createContextSDK,
+  type Symbol as AtlasSymbol,
+  type ContextIntegration,
   type ContextSDK,
   type ContextSDKOptions,
   type ContextStatus,
@@ -9,8 +10,10 @@ import {
   type ModuleContext,
   type ProjectOverview,
   type SearchResult,
+  type SessionPort,
   type Summary,
-  type Symbol as AtlasSymbol,
+  createContextIntegration,
+  createContextSDK,
 } from "@atlas/sdk";
 
 /** A serializable snapshot of a code symbol for the editor tree. */
@@ -173,6 +176,15 @@ export class ContextClient {
   public close(): void {
     this.sdk?.close();
     this.sdk = null;
+  }
+
+  /**
+   * Build the Context → Agent integration façade over this client's SDK
+   * session. The client remains the single gateway to the context database —
+   * the integration only ever sees the SDK read API.
+   */
+  public createIntegration(sessions: SessionPort): ContextIntegration {
+    return createContextIntegration({ context: this.sdkOrThrow(), sessions });
   }
 
   /**

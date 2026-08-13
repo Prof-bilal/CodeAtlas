@@ -151,14 +151,23 @@ see the root [AGENTS.md](../AGENTS.md).
   honesty).
 - Status: **[IMPLEMENTED]** — composed through the SDK for sessions
   (`createSessionManager`) and multi-agent orchestration (`createOrchestrator`).
+  Interactive launches (`stdio: "inherit"`, no run-mode flags) are supported via
+  `SessionLaunchRequest.interactive`. The **catalog ships the four npm
+  installable CLIs** in `packages/toolkit/src/catalog.json` (`claude`
+  `@anthropic-ai/claude-code`, `gemini` `@google/gemini-cli`, `codex`
+  `@openai/codex`, `opencode` `opencode-ai`) so `atlas tui` can install a
+  missing agent through the Toolkit's approval-gated npm channel.
   A connection layer, not an analysis agent of the context pipeline.
 - See [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md) for the planned router on
   top of it.
 
 > **Direction B (Unified AI CLI) is partial.** The `@atlas/agents` connection
-> layer, the session manager, and the plan-executing orchestrator
-> (`createOrchestrator` in `@atlas/sdk`) are implemented; the **router and
-> `/claude`–`/gemini`-style slash commands** (plus interactive TTY handling) are
+> layer, the session manager, the plan-executing orchestrator
+> (`createOrchestrator` in `@atlas/sdk`), and the **interactive TUI**
+> (`atlas tui`) slash surface (`/claude`–`/opencode` detect → launch
+> interactively → install; `/cursor` `/grok` guidance; `/agents`) are
+> implemented; the **standalone router** (`atlas /claude` …) remains
 > **[PLANNED]** — see [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md). The
 > **Agent Toolkit** (Direction C — curated tool registry/install/config/
-> security) is also **[PLANNED]** — see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
+> security) is implemented behind `@atlas/toolkit` with a shipped catalog —
+> see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).

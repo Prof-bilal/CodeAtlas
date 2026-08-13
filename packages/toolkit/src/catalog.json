@@ -247,6 +247,166 @@
           "note": "Community trust; not individually audited by CodeAtlas"
         }
       }
+    },
+    {
+      "name": "claude",
+      "description": "Anthropic's Claude Code — an agentic coding assistant that lives in your terminal: explain, edit, test, and ship inside a repository through natural language.",
+      "repository": "https://github.com/anthropics/claude-code",
+      "website": "https://claude.com/product/claude-code",
+      "documentation": "https://code.claude.com/docs/en/overview",
+      "license": "SEE LICENSE IN README.md",
+      "version": "latest",
+      "categories": ["Agent Tools", "AI Coding", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": ["claude"],
+      "installMethods": [{ "type": "npm", "packageId": "@anthropic-ai/claude-code" }],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "anthropics",
+      "lastUpdate": "2026-08-13",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "npm registry as of 2026-08-13, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "npm registry activity — a weak maintenance signal"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "gemini",
+      "description": "Google's Gemini CLI — an open-source, terminal-first coding agent with 1M-token context, MCP support, and built-in tools for search, files, and shell commands.",
+      "repository": "https://github.com/google-gemini/gemini-cli",
+      "website": "https://geminicli.com",
+      "documentation": "https://geminicli.com/docs/get-started/installation",
+      "license": "Apache-2.0",
+      "version": "latest",
+      "categories": ["Agent Tools", "AI Coding", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": ["gemini"],
+      "installMethods": [{ "type": "npm", "packageId": "@google/gemini-cli" }],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "google-gemini",
+      "lastUpdate": "2026-08-13",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "npm registry as of 2026-08-13, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "npm registry activity — a weak maintenance signal"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "codex",
+      "description": "OpenAI's Codex CLI — a lightweight coding agent that runs locally in your terminal, inspects files, runs shell commands, and completes tasks end-to-end.",
+      "repository": "https://github.com/openai/codex",
+      "website": "https://developers.openai.com/codex",
+      "documentation": "https://developers.openai.com/codex/cli",
+      "license": "Apache-2.0",
+      "version": "latest",
+      "categories": ["Agent Tools", "AI Coding", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": ["codex"],
+      "installMethods": [{ "type": "npm", "packageId": "@openai/codex" }],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "openai",
+      "lastUpdate": "2026-08-13",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "npm registry as of 2026-08-13, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "npm registry activity — a weak maintenance signal"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "opencode",
+      "description": "OpenCode — an open-source, provider-independent AI coding agent that runs in the terminal with agents, skills, plugins, and Model Context Protocol support.",
+      "repository": "https://github.com/anomalyco/opencode",
+      "website": "https://opencode.ai",
+      "documentation": "https://opencode.ai/docs",
+      "license": "MIT",
+      "version": "latest",
+      "categories": ["Agent Tools", "AI Coding", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": ["opencode"],
+      "installMethods": [{ "type": "npm", "packageId": "opencode-ai" }],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "anomalyco",
+      "lastUpdate": "2026-08-13",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "npm registry as of 2026-08-13, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "npm registry activity — a weak maintenance signal"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
     }
   ]
 }

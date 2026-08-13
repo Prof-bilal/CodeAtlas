@@ -1,4 +1,4 @@
-import { isFuzzyMatch, isTokenMatch, similarity } from "./fuzzy";
+import { isFuzzyMatch, isTokenMatch, queryTerms, similarity } from "./fuzzy";
 import type { DependencyEntry, FileEntry, IndexedEntity, SummaryEntry } from "./search-index";
 
 /** Field-priority ceilings for the lexical scorer (higher = more important). */
@@ -92,25 +92,55 @@ export class LexicalScorer implements RelevanceScorer {
 
   /** Score one text field against the query; `0` when there is no match. */
   private scoreField(query: string, text: string, fuzzy: boolean): number {
-    const q = query.trim().toLowerCase();
-    const t = text.toLowerCase();
+    // Normalize path separators so forward-slash path queries match the
+    // platform-native (Windows backslash) paths stored in the index.
+    const q = query.trim().toLowerCase().replaceAll("\\", "/");
+    const t = text.toLowerCase().replaceAll("\\", "/");
     if (q.length === 0 || t.length === 0) {
       return 0;
     }
-    if (t === q) {
+    // Multi-term queries (natural-language tasks, word lists) score as the
+    // best matching term, so a sentence like "where is authentication
+    // implemented" retrieves entities that contain any meaningful term instead
+    // of requiring the whole phrase as a substring. Single-term queries keep
+    // the exact original semantics (exact → prefix → token → substring →
+    // fuzzy), and stopwords are dropped from scoring.
+    const terms = queryTerms(q);
+    if (terms.length === 0) {
+      // No meaningful terms (e.g. a content query like "x * 2" or a bare
+      // stopword): fall back to matching the whole normalized query so
+      // phrase-style content searches keep working.
+      return this.scoreTerm(q, t, fuzzy);
+    }
+    let best = 0;
+    for (const term of terms) {
+      const score = this.scoreTerm(term, t, fuzzy);
+      if (score > best) {
+        best = score;
+      }
+      if (best === SCORE.EXACT) {
+        break;
+      }
+    }
+    return best;
+  }
+
+  /** Score one query term against a lowercased text field. */
+  private scoreTerm(term: string, text: string, fuzzy: boolean): number {
+    if (text === term) {
       return SCORE.EXACT;
     }
-    if (t.startsWith(q)) {
+    if (text.startsWith(term)) {
       return SCORE.PREFIX;
     }
-    if (isTokenMatch(q, t)) {
+    if (isTokenMatch(term, text)) {
       return SCORE.TOKEN;
     }
-    if (t.includes(q)) {
+    if (text.includes(term)) {
       return SCORE.SUBSTRING;
     }
-    if (fuzzy && isFuzzyMatch(q, t)) {
-      return Math.round(40 + similarity(q, t) * 15);
+    if (fuzzy && isFuzzyMatch(term, text)) {
+      return Math.round(40 + similarity(term, text) * 15);
     }
     return 0;
   }

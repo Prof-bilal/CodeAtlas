@@ -61,6 +61,17 @@ export interface SessionLaunchRequest {
    * default). Captured output is bounded and is never echoed to logs.
    */
   readonly captureOutput?: boolean;
+  /**
+   * Launch the CLI **interactively** as a real terminal handoff: the child
+   * inherits the parent's stdin/stdout/stderr (`stdio: "inherit"`) and runs
+   * **without** the adapter's non-interactive run-mode flags (e.g. no
+   * `claude -p`), so the user talks to the agent CLI directly. Callers must
+   * pause their own stdin handling while the session runs and observe the
+   * session's terminal state to know when control returns. Mutually exclusive
+   * with `captureOutput` — interactive wins (output cannot be captured while it
+   * is inherited).
+   */
+  readonly interactive?: boolean;
 }
 
 /** The captured stdout/stderr of a session launched with `captureOutput`. */

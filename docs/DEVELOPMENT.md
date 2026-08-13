@@ -61,8 +61,9 @@ node apps/cli/dist/index.js search hello --json
 `atlas search` prints ranked hits from `<root>/.codeatlas/context.db`, using
 `ATLAS_ROOT` (or the current directory) as the root. `atlas mcp` starts the MCP
 server over stdio. `atlas sessions` lists/stops AI agent sessions via the SDK's
-`createSessionManager()`. The remaining commands (`init`, `build`, `update`,
-`explain`, `doctor`) are still "Coming Soon" placeholders — see
+`createSessionManager()`. `atlas init`/`build`/`update` run the SDK-owned
+indexer, and `atlas tui` (or bare `atlas` on a TTY) opens the interactive
+terminal UI. `explain`/`doctor` are still "Coming Soon" placeholders — see
 [CURRENT_STATE.md](./CURRENT_STATE.md).
 
 ## 5. Environment variables

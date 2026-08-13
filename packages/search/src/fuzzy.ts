@@ -66,6 +66,85 @@ export function similarity(left: string, right: string): number {
   return 1 - editDistance(left, right) / maxLength;
 }
 
+/**
+ * Small, pragmatic English stopword set. These words carry almost no lexical
+ * signal, so they are excluded from query-term scoring and from explicit
+ * context resolution (a query like "where is the login" must not resolve the
+ * word "is" to an `is*` symbol).
+ */
+export const STOPWORDS: ReadonlySet<string> = new Set([
+  "a",
+  "an",
+  "and",
+  "are",
+  "as",
+  "at",
+  "be",
+  "been",
+  "being",
+  "by",
+  "can",
+  "could",
+  "do",
+  "does",
+  "did",
+  "for",
+  "from",
+  "had",
+  "has",
+  "have",
+  "how",
+  "i",
+  "in",
+  "into",
+  "is",
+  "it",
+  "its",
+  "of",
+  "on",
+  "or",
+  "should",
+  "that",
+  "the",
+  "their",
+  "them",
+  "this",
+  "to",
+  "was",
+  "we",
+  "what",
+  "when",
+  "where",
+  "which",
+  "who",
+  "why",
+  "will",
+  "with",
+  "would",
+  "you",
+]);
+
+/**
+ * Split a query into meaningful search terms: lowercase, whitespace-split,
+ * leading/trailing punctuation stripped (keeping dots so `auth.ts` survives),
+ * and stopwords / one-character tokens dropped. Returns `[]` when there is no
+ * meaningful term.
+ */
+export function queryTerms(query: string): readonly string[] {
+  const terms: string[] = [];
+  for (const raw of query.trim().toLowerCase().split(/\s+/)) {
+    const term = raw.replace(/^[^\w.]+|[^\w.]+$/g, "");
+    if (term.length < 2) {
+      continue;
+    }
+    if (STOPWORDS.has(term)) {
+      continue;
+    }
+    terms.push(term);
+  }
+  return terms;
+}
+
 /** True when `candidate` is close enough to `query` to count as a fuzzy match. */
 export function isFuzzyMatch(query: string, candidate: string): boolean {
   const q = query.trim().toLowerCase();

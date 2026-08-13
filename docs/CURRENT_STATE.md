@@ -317,6 +317,8 @@ examples/        # README placeholder only (no runnable examples)
   top-level `doctor` remain placeholders.
 - The extension is anonymous at the database: it never opens `.codeatlas`
   itself (see `docs/VSCODE.md`), and is tested headlessly.
+- Interactive agent launching lives in the **TUI** (`atlas tui`), not the
+  VS Code extension. The extension is a read-only context viewer.
 - JetBrains / other editor integrations are still **[PLANNED]**.
 
 ### AI CLI connection layer (`packages/agents`) — **[EXISTING]**
@@ -415,16 +417,19 @@ examples/        # README placeholder only (no runnable examples)
   sequential execution, timeouts, retries, cancellation, abort-on-failure,
   isolated scopes, orphan cleanup, live view, conflict detection).
 
-### Unified AI CLI Orchestrator (`/gemini`, `/claude`, `/codex`, `/opencode`, ...) — **[PLANNED]**
+### Unified AI CLI Orchestrator (`/gemini`, `/claude`, `/codex`, `/opencode`, ...) — **[PARTIAL]**
 
-- **The connection layer and the session manager exist (`@atlas/agents`,
-  above), and the plan-executing orchestrator exists in `@atlas/sdk`; the
-  routing surface does not.** Agent sessions are implemented (`SessionManager`
-  behind `SessionPort`, `atlas sessions list/info/stop`); the **router, slash
-  commands, and interactive terminal handling remain planned** — no agent
-  router, no `/agents`-style commands. The narrow spawn/detect boundary, the
-  session manager, and the multi-agent plan executor are real; the router on
-  top of them is the planned orchestrator.
+- **The connection layer, the session manager (`@atlas/agents`), the
+  plan-executing orchestrator (`@atlas/sdk`), and the interactive TUI surface
+  (`atlas tui`) exist; the standalone orchestrator router/CLI does not.** Agent
+  sessions are implemented (`SessionManager` behind `SessionPort`, `atlas
+  sessions list/info/stop`, interactive `stdio: "inherit"` launches).
+  `atlas tui` provides the **slash-command surface**: `/claude`, `/gemini`,
+  `/codex`, `/opencode` detect → launch interactively → install via the Toolkit
+  when missing; `/cursor` and `/grok` print vendor install guidance; `/agents`
+  lists detected CLIs; `/toolkit` and `/tools-install <tool>` drive the Agent
+  Toolkit sidebar. There is still **no agent router** for the plan-executing
+  orchestrator (Direction B) and no standalone `atlas agents` CLI command.
 
 ### Agent Toolkit (Direction C) — **[PARTIAL]**
 
@@ -573,14 +578,15 @@ examples/        # README placeholder only (no runnable examples)
 | Intended direction                    | Status in repo |
 | ------------------------------------- | -------------- |
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking intentionally stubbed; `search` + `mcp` are CLI-wired |
-| **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`) and the session manager (`SessionManager`, `atlas sessions`) are implemented and SDK-wired, and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) is implemented and tested; router/slash commands **0%** |
+| **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`), and the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) are implemented; the standalone router / `atlas agents` CLI remains planned |
 | **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~65% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, and the thin SDK-backed Toolkit CLI; `/tools` slash integration and `atlas setup` remain planned |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
 at: (1) top-level `explain`/`doctor` remain stubs,
-(2) context ranking/assembly (stub), and (3) the **router/slash commands** of
-the orchestrator (the plan-executing orchestrator itself exists in
-`@atlas/sdk`). MCP (`@atlas/mcp`) and the VS Code extension (`@atlas/extension`)
+(2) context ranking/assembly (stub), and (3) the **standalone router** of the
+orchestrator (the plan-executing orchestrator itself exists in
+`@atlas/sdk`, and the `atlas tui` slash surface covers agent launch/install).
+MCP (`@atlas/mcp`) and the VS Code extension (`@atlas/extension`)
 are thin consumers of the SDK; JetBrains/other editor integrations are still
 absent.
 
@@ -618,3 +624,12 @@ Full test files exist in every package (`packages/*/tests/*.test.ts`) and in
 `apps/cli`. Coverage is genuine (unit-level, behavior-focused). See
 [TESTING.md](./TESTING.md) and `pnpm test` for the runnable suite. At the time
 of writing the suite is expected to pass.
+
+**Real-repository integration suite (added 2026-08-13):** `pnpm test:integration`
+runs 36 tests against the external fixture `test-repo/AIbuilder` — scan,
+search, context retrieval, incremental updates, SDK reads, agents/sessions,
+toolkit, errors/security, and token efficiency. It surfaced and fixed three P1
+search-relevance defects (`@atlas/search` per-term scoring + Windows path
+normalization, `@atlas/sdk` stopword pollution in context assembly) and
+corrected a stale incremental-cost claim in `docs/CONTEXT.md`. Full results:
+`docs/AI-BUILDER-INTEGRATION-TEST.md`.

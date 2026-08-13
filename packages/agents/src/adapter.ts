@@ -40,6 +40,13 @@ export interface AgentAdapter {
   readonly env: Readonly<Record<string, string>>;
   /** Build the argument array (no shell string) for one non-interactive run. */
   buildArgs(request: AgentRunRequest): readonly string[];
+  /**
+   * Build the argument array for an **interactive** launch: no non-interactive
+   * run-mode flags and no prompt, so the CLI opens its own terminal UI. Extra
+   * provider-specific args (e.g. `--model`) are still forwarded. When an
+   * adapter omits this, the default forwards only `request.args`.
+   */
+  buildInteractiveArgs?(request: { prompt?: string; args?: readonly string[] }): readonly string[];
   /** Extract a stable version string from `--version` output. */
   parseVersion(stdout: string): string | undefined;
 }
@@ -54,6 +61,9 @@ export function createAgentAdapter(config: AgentAdapterConfig): AgentAdapter {
     env: config.env ?? {},
     buildArgs(request) {
       return [...runMode, request.prompt, ...(request.args ?? [])];
+    },
+    buildInteractiveArgs(request) {
+      return [...(request.args ?? [])];
     },
     parseVersion(stdout) {
       const line = firstNonEmptyLine(stdout);

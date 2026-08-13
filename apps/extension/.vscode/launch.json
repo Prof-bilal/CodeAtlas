@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=C:\\Users\\Abdullah\\Desktop\\CodeAtlas\\apps\\extension"
+      ],
+      "outFiles": ["C:\\Users\\Abdullah\\Desktop\\CodeAtlas\\apps\\extension\\dist\\**\\*.js"],
+      "preLaunchTask": "build"
+    }
+  ]
+}

@@ -4,9 +4,9 @@ import { join, resolve } from "node:path";
 import type {
   Budget,
   BudgetStatus,
+  Symbol as CoreSymbol,
   InstallOutcome,
   InstallPlan,
-  Symbol as CoreSymbol,
   Session,
   SourceFile,
   UsageRecord,
@@ -14,11 +14,11 @@ import type {
 } from "@atlas/core";
 import {
   ContextAttachUnsupportedError,
-  createUsageService,
   type ContextExplanation,
   type ContextIntegration,
   type ContextPackage,
   type ToolkitSDK,
+  createUsageService,
 } from "@atlas/sdk";
 import type { FilePath, SymbolId } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
@@ -170,6 +170,7 @@ describe("atlas CLI", () => {
       "search",
       "sessions",
       "tools",
+      "tui",
       "update",
       "usage",
     ]);

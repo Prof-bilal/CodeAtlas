@@ -1,6 +1,6 @@
 import { spawn as nodeSpawn } from "node:child_process";
 import { statSync } from "node:fs";
-import { ok, fail, type Result } from "@atlas/shared";
+import { type Result, fail, ok } from "@atlas/shared";
 import { InvalidWorkingDirectoryError, ProcessSpawnError } from "./errors";
 
 /**
@@ -31,8 +31,12 @@ export type SpawnFn = (
     cwd?: string;
     env?: NodeJS.ProcessEnv;
     shell: boolean;
-    /** Whether the child's stdio are piped (captured) or ignored (detached). */
-    stdio?: "pipe" | "ignore";
+    /**
+     * How the child's stdio are wired: `"pipe"` (captured), `"ignore"`
+     * (detached), or `"inherit"` (interactive terminal handoff — the child
+     * shares the parent's stdin/stdout/stderr).
+     */
+    stdio?: "pipe" | "ignore" | "inherit";
   },
 ) => SpawnedProcess;
 
@@ -57,9 +61,10 @@ export interface ProcessSpec {
   /**
    * Stream wiring for ~long-running~ launches (`launch()`). Defaults to
    * `"ignore"` there so a chatty child can never block on a full pipe; the
-   * one-shot `run()` keeps piping and capturing.
+   * one-shot `run()` keeps piping and capturing. `"inherit"` hands the child
+   * the parent's stdio for an interactive terminal session.
    */
-  readonly stdio?: "pipe" | "ignore";
+  readonly stdio?: "pipe" | "ignore" | "inherit";
 }
 
 /** The supervised outcome of a single external invocation. */

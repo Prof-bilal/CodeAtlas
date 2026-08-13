@@ -4,12 +4,12 @@ import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { AgentCliNotFoundError, UnknownAgentError } from "../src/errors";
 import { ProcessRunner } from "../src/process";
-import { SessionManager } from "../src/session-manager";
 import {
   InvalidRepositoryPathError,
   SessionStateError,
   UnknownSessionError,
 } from "../src/session-errors";
+import { SessionManager } from "../src/session-manager";
 import { createFakeSpawn, flushStreams } from "./helpers";
 
 /** Stub resolver that reports a fixed "installed" path for every binary. */
@@ -155,6 +155,60 @@ describe("SessionManager", () => {
 
       expect(result.ok).toBe(true);
       expect(fake.records[0]?.args).toEqual(["-p", "explain AuthService", "--model", "x"]);
+    });
+
+    it("launches interactively: inherited stdio and no run-mode flags or prompt", async () => {
+      const { manager, fake } = makeManager();
+      const session = expectOk(
+        manager.createSession({ provider: "claude", repositoryPath: makeRepo() }),
+      );
+
+      const result = await manager.startSession(session.id, {
+        prompt: "ignored in interactive mode",
+        args: ["--model", "sonnet"],
+        interactive: true,
+      });
+
+      expect(result.ok).toBe(true);
+      expect(fake.records[0]?.args).toEqual(["--model", "sonnet"]);
+      expect(fake.records[0]?.options.stdio).toBe("inherit");
+      expect(manager.getSessionOutput(session.id)).toBeUndefined();
+    });
+
+    it("interactive launch wins over captureOutput and drops output capture", async () => {
+      const { manager, fake } = makeManager();
+      const session = expectOk(
+        manager.createSession({ provider: "codex", repositoryPath: makeRepo() }),
+      );
+
+      const result = await manager.startSession(session.id, {
+        prompt: "one-shot text",
+        interactive: true,
+        captureOutput: true,
+      });
+
+      expect(result.ok).toBe(true);
+      expect(fake.records[0]?.args).toEqual([]);
+      expect(fake.records[0]?.options.stdio).toBe("inherit");
+    });
+
+    it("interactive launch stops and reports exit like any session", async () => {
+      const { manager, fake } = makeManager();
+      const session = expectOk(
+        manager.createSession({ provider: "opencode", repositoryPath: makeRepo() }),
+      );
+      await manager.startSession(session.id, { interactive: true });
+
+      const pending = manager.stopSession(session.id);
+      fake.processes[0]?.close(0);
+      const result = await pending;
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) {
+        return;
+      }
+      expect(result.value.status).toBe("STOPPED");
+      expect(result.value.exitCode).toBe(0);
     });
 
     it("fails with AgentCliNotFoundError and marks the session FAILED when the CLI is missing", async () => {

@@ -1,5 +1,5 @@
 import type { ContextClient } from "./client";
-import { registerCommands, type AtlasRunner } from "./commands";
+import { type AtlasRunner, registerCommands } from "./commands";
 import { TREE_VIEWS, ViewTreeProvider } from "./providers";
 import { StatusBarController } from "./status-bar";
 import type { VscodeApi, VscodeDisposable } from "./vscode-host";
@@ -12,9 +12,9 @@ export interface ExtensionDeps {
 }
 
 /**
- * Binds the whole extension: tree views, commands, and the status bar. Only
- * talks to VS Code through the injectable {@link VscodeApi}, so it runs headless
- * in tests behind a fake host.
+ * Binds the whole extension: tree views, commands, and the status bar.
+ * Only talks to VS Code through the injectable {@link VscodeApi}, so it
+ * runs headless in tests behind a fake host.
  */
 export class CodeAtlasExtension {
   private readonly disposables: VscodeDisposable[] = [];

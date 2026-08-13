@@ -1,15 +1,16 @@
 import type { AgentInfo, AgentPort, AgentRunRequest, AgentRunResult } from "@atlas/core";
-import { fail, ok, type Result } from "@atlas/shared";
-import { builtinAdapters } from "./adapters";
+import { type Result, fail, ok } from "@atlas/shared";
 import type { AgentAdapter } from "./adapter";
+import { builtinAdapters } from "./adapters";
 import { AgentCliNotFoundError, AgentConfigError, UnknownAgentError } from "./errors";
 import { findExecutable } from "./executable";
 import { ProcessRunner } from "./process";
 
 /** How the service locates a CLI binary; injectable for offline tests. */
-export interface ExecutableResolver {
-  (binary: string, options?: { pathEnv?: string; pathext?: string }): string | null;
-}
+export type ExecutableResolver = (
+  binary: string,
+  options?: { pathEnv?: string; pathext?: string },
+) => string | null;
 
 /** Options for constructing an {@link AgentService}. */
 export interface AgentServiceOptions {
@@ -74,11 +75,24 @@ export class AgentService implements AgentPort {
   /** Build the provider-specific argument array for one invocation. */
   public buildArgsFor(
     provider: string,
-    request: { prompt: string; args?: readonly string[] },
+    request: { prompt: string; args?: readonly string[]; interactive?: boolean },
   ): Result<readonly string[]> {
     const adapter = this.adapters.get(provider);
     if (adapter === undefined) {
       return fail(new UnknownAgentError(provider));
+    }
+    if (request.interactive === true) {
+      // Interactive handoff: no run-mode flags and no prompt — the CLI opens
+      // its own terminal UI and forwards only explicit extra args.
+      const buildInteractive =
+        adapter.buildInteractiveArgs ??
+        ((input: { args?: readonly string[] }) => [...(input.args ?? [])]);
+      return ok(
+        buildInteractive({
+          prompt: request.prompt,
+          ...(request.args ? { args: request.args } : {}),
+        }),
+      );
     }
     return ok(adapter.buildArgs(request));
   }

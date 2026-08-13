@@ -46,6 +46,7 @@ README.md
 | `docs/SECURITY.md` | Security rules. |
 | `docs/PRIVACY.md` | Privacy rules (local-first). |
 | `docs/TESTING.md` | Testing policy. |
+| `docs/AI-BUILDER-INTEGRATION-TEST.md` | Real-repository integration test against `test-repo/AIbuilder`: scan/search/context/incremental/agents/toolkit/security/token-efficiency results + findings (`pnpm test:integration`). |
 | `docs/CODE_QUALITY.md` | Coding standards. |
 | `docs/CHANGE_POLICY.md` | How changes happen. |
 | `docs/FEATURE_STATUS.md` | Status tags across features. |

@@ -142,14 +142,20 @@ spawn-time error that surfaces before the child ever ran.
 | `terminateSession(id)` | Force stop. |
 | `shutdown()` | Stop every active session (CodeAtlas shutdown). |
 
-`startSession` takes an optional `{ prompt?, args?, env?, captureOutput? }`.
-**This is not context/prompt construction** — Task 16 owns that. Without a
-prompt the CLI is launched in its configured non-interactive mode
-(`claude -p ""`, …), a known limitation until Task 16 supplies real prompts.
-`captureOutput: true` pipes the child's stdout/stderr through a **bounded**
-buffer (128 KiB per stream, tail dropped) that stays readable via
+`startSession` takes an optional `{ prompt?, args?, env?, captureOutput?,
+interactive? }`. **This is not context/prompt construction** — Task 16 owns
+that. Without a prompt the CLI is launched in its configured non-interactive
+mode (`claude -p ""`, …), a known limitation until Task 16 supplies real
+prompts. `captureOutput: true` pipes the child's stdout/stderr through a
+**bounded** buffer (128 KiB per stream, tail dropped) that stays readable via
 `getSessionOutput` after the session exits — used by the orchestrator (Task 17)
 to report partial output honestly. Captured output is never echoed to logs.
+`interactive: true` launches the CLI with `stdio: "inherit"` and **without**
+the non-interactive run-mode flags (no `-p`), so the user talks to the agent
+CLI directly in their terminal; it is mutually exclusive with `captureOutput`
+(interactive wins). Callers must suspend their own stdin handling while the
+session runs and watch for the session's terminal state (`STOPPED`/`FAILED`) to
+know when control returns — `atlas tui` does exactly this.
 
 ## 6. CLI commands
 

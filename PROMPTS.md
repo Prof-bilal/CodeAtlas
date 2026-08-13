@@ -2,7 +2,7 @@
 
 > **Purpose.** This file is the **canonical implementation prompt library** for
 > CodeAtlas. A fresh Claude Code (or any coding agent) session can open this file
-> and execute **any single Task 21–26** without needing the original design
+> and execute **any single Task 21–29** without needing the original design
 > conversation: each task below is a complete, self-contained implementation
 > prompt that says what to build, what already exists to reuse, the required
 > architecture, the security rules, the tests, and the acceptance criteria.
@@ -153,7 +153,7 @@ docs/           # Design & contributor documentation
 
 ## Completed Tasks
 
-Tasks **1–20 are complete**. Do **not** reimplement or modify them. Each is
+Tasks **1–26 are complete**. Do **not** reimplement or modify them. Each is
 described concisely below with what it contributes to the next stages.
 
 | # | Task | Status | Provides to later stages |
@@ -178,10 +178,15 @@ described concisely below with what it contributes to the next stages.
 | 18 | Usage / Credits | ✅ COMPLETED | `@atlas/usage` behind `UsagePort`, composed as `createUsageService()` (ADR-009). Tri-state actual/estimated/unknown tokens & cost (never guessed), `PricingSource` abstraction (no hardcoded prices in logic), dedicated `.codeatlas/usage.db` store, `withUsageTracking`/`trackAgentRun` collection seams, soft budgets + fail-safe hard limits, `atlas usage` (summary/list/budgets). See `docs/USAGE.md`. |
 | 19 | Tool Registry | ✅ COMPLETED | `@atlas/toolkit` behind `ToolRegistryPort` in `core`, composed as `createToolRegistry()`: a curated, schema-validated, provenance-auditable catalog (`catalog.json`) merged with a local overlay, extensible categories. See `docs/TOOL_REGISTRY.md`. |
 | 20 | Tool Manifest | ✅ COMPLETED | Versioned (`TOOL_MANIFEST_SCHEMA_VERSION = 1`), validated, extensible manifest recording **one installed tool's** state (compatibility/installation/configuration/security declarations + applied state + trust at install). Persisted per tool in `.codeatlas/tools/<name>.json`, mirroring the Scanner manifest pattern; loaded as untrusted input (never executed, prototype-pollution safe, size-bounded, path-safe names). See `docs/TOOL_MANIFEST.md`. |
+| 21 | Compatibility Engine | ✅ COMPLETED | `@atlas/toolkit` behind `CompatibilityPort` in `core`, composed via `createCompatibilityEngine()`: evaluates tool requirements (OS/arch/runtimes/package manager/AI CLIs via `AgentPort`/MCP/permissions) against detected environment; never installs; never fails open. See `docs/AGENT_TOOLKIT.md` §6. |
+| 22 | Tool Installer | ✅ COMPLETED | `@atlas/toolkit` behind `InstallerPort` in `core`, composed via `createInstaller()`: safe MVP subset (npm/pip/cargo/go), argument-array spawns (`shell:false`), approval always required, compatibility + security gates, post-install verification + Tool Manifest provenance + best-effort rollback. |
+| 23 | Tool Configurator | ✅ COMPLETED | `@atlas/toolkit` behind `ConfiguratorPort`, per-target adapters (Claude/Gemini/Codex/OpenCode/MCP/VSCode), AgentPort-backed detection, safe user-config merge/backup/rollback, verification, dry-run, SDK composition. See `docs/AGENT_TOOLKIT.md` §9. |
+| 24 | Security / Trust | ✅ COMPLETED | `@atlas/toolkit` behind `SecurityPort`: offline per-check risk assessment, exact five trust states (`verified`/`reviewed`/`community`/`unverified`/`blocked`), hostile-input rejection, fail-closed installer gating, explicit unverified override recording. |
+| 25 | Toolkit CLI | ✅ COMPLETED | `atlas tools` overview/search/info/install/remove/update/configure/doctor — delegates to SDK `createToolkitSDK()`, follows CLI conventions (`docs/CLI.md`). |
+| 26 | Context CLI | ✅ COMPLETED | `atlas context` / `--explain` / `--json` / `launch` / `attach` — thin SDK delegator over `createContextIntegration()`. Follow-up wiring to Task 16 (ADR-008). |
 
-The remaining task in this prompt library — **26 Context CLI** — is
-**[IMPLEMENTED]**. Tasks 21–26 are implemented; each task remains fully specified
-in the sections below for auditability.
+Tasks 21–26 are implemented; each task remains fully specified in the sections
+below for auditability. **New tasks 27–29** follow for the Agent Chat UI.
 
 ---
 
@@ -1414,9 +1419,618 @@ Context SDK → Context Package → SessionPort → AI CLI
 
 ---
 
+# Task 27 — VS Code Agent Chat Webview Panel
+
+> **Status:** [PLANNED] — no code exists. This is the first UI-facing task for
+> the agent chat experience. Depends on Tasks 15 (Session Manager), 16 (Context
+> Integration), and the existing `@atlas/extension` infrastructure.
+
+## Goal
+
+Add an **interactive webview panel** to the VS Code extension that lets users
+launch AI coding agents (Claude / Gemini / Codex / OpenCode) with automatic
+context injection, view agent output in real time, and manage sessions — all
+from a unified chat-style interface inside the editor.
+
+```
+┌─ CodeAtlas Agent Chat ──────────────────────────────────────┐
+│  AGENTS          │  Terminal Output                          │
+│  ──────────      │                                           │
+│  ● claude (run)  │  > Launching claude...                    │
+│    gemini        │  > Context: 12 items, 8.4k tokens        │
+│    codex         │  [real-time stdout from agent process]    │
+│    opencode      │                                           │
+│                  │                                           │
+│  SESSIONS        │                                           │
+│  ──────────      │                                           │
+│  #a3f2 Running   │                                           │
+│  #b1c9 Stopped   │                                           │
+│                  │                                           │
+├──────────────────┴───────────────────────────────────────────┤
+│ [🤖 auto] [Type a message or /command...]          [Send]    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Depends on (all implemented — reuse, do not rebuild)
+
+- **Task 15** — `SessionManager` behind `SessionPort` (`createSessionManager()`).
+  Sessions are created and tracked through the existing session manager.
+- **Task 16** — `ContextIntegration` (`createContextIntegration()`). Context is
+  assembled, budgeted, deny-filtered, and rendered through the existing module.
+- **Task 14** — `@atlas/agents` adapters. Provider-specific binary names, run
+  flags, and interactive args stay in adapters — no `if (provider === …)` in
+  the webview.
+- **Task 12** — `@atlas/extension` infrastructure. The existing `ContextClient`,
+  `VscodeApi` facade, `AtlasRunner`, and tree view providers provide the
+  foundation to build on.
+- **`renderContextPackage()`** (`@atlas/sdk`) — renders the context package as a
+  provider-independent prompt for injection.
+
+## Required architecture
+
+```
+VS Code Extension
+    │
+    ├── AgentChatPanel (new — WebviewViewProvider)
+    │       │
+    │       ├── Webview HTML/CSS/JS (media/chat-panel.*)
+    │       │       └── message protocol (postMessage / onDidReceiveMessage)
+    │       │
+    │       ├── SessionManager (reuse — createSessionManager())
+    │       │       └── @atlas/agents → AI CLI processes
+    │       │
+    │       ├── ContextIntegration (reuse — createContextIntegration())
+    │       │       └── Context SDK → Context Package
+    │       │
+    │       └── VS Code Terminal (vscode.window.createTerminal)
+    │               └── interactive AI CLI with inherited stdio
+    │
+    ├── AgentCommands (new — command handlers)
+    │       └── codeatlas.chat.open, codeatlas.agent.launch,
+    │           codeatlas.agent.stop, codeatlas.agent.selectDefault
+    │
+    └── VscodeApi facade (extend — add terminals, webview providers)
+```
+
+## Requirements
+
+1. **Inspect before coding.** Read `AGENTS.md`, `docs/CURRENT_STATE.md`,
+   `docs/VSCODE.md`, `docs/AGENT_SESSIONS.md`, `docs/AGENT_TOOLKIT.md`,
+   `docs/DEPENDENCIES.md`, `docs/SECURITY.md`, and the full `@atlas/extension`
+   source (`src/extension.ts`, `src/extension-core.ts`, `src/commands.ts`,
+   `src/client.ts`, `src/vscode-host.ts`) plus tests. Also read the TUI
+   implementation (`apps/cli/src/tui/shell.ts`, `router.ts`, `render.ts`,
+   `io.ts`) — the webview should mirror the TUI's agent launch pattern
+   (detect → create session → launch interactively → track status).
+
+2. **Webview panel as a `WebviewViewProvider`.** Register a webview view in the
+   CodeAtlas activity bar container (`codeatlas-chat` view ID). The webview is a
+   standard `WebviewViewProvider` that creates an HTML panel with CSP-safe
+   resource loading.
+
+3. **Split layout.** The webview renders three zones:
+   - **Left sidebar** — agent list (installed status), active sessions list,
+     default agent indicator.
+   - **Right main area** — terminal output (agent stdout/stderr, context info,
+     status messages, scrollable buffer).
+   - **Bottom input bar** — text input with send button, slash-command
+     hint (`/claude`, `/gemini`, `/auto`, or bare text for default agent).
+
+4. **Message protocol.** Webview ↔ extension communication via
+   `postMessage` / `onDidReceiveMessage`:
+
+   | Direction | Type | Payload |
+   |-----------|------|---------|
+   | webview→ext | `launchAgent` | `{ provider?: string, task: string }` |
+   | webview→ext | `stopAgent` | `{ sessionId: string }` |
+   | webview→ext | `listAgents` | `{}` |
+   | webview→ext | `listSessions` | `{}` |
+   | ext→webview | `agentOutput` | `{ sessionId, stream: "stdout"\|"stderr", data }` |
+   | ext→webview | `agentStatus` | `{ sessionId, status, provider }` |
+   | ext→webview | `contextInfo` | `{ sessionId, items, tokens, staleness }` |
+   | ext→webview | `agentsList` | `{ agents: AgentInfo[] }` |
+   | ext→webview | `sessionsList` | `{ sessions: Session[] }` |
+   | ext→webview | `error` | `{ message }` |
+
+5. **Slash-command parsing in the webview.** The input bar accepts:
+   - `/claude fix the login bug` — explicit provider + task.
+   - `/gemini refactor auth` — explicit provider + task.
+   - `/auto fix bug` — auto-select provider (future Task 29 classifier).
+   - `fix the login bug` (no slash) — use the configured default agent.
+   The parser runs in the extension host (not the webview) for security.
+
+6. **Automatic context injection.** When launching an agent, the panel
+   automatically:
+   - Calls `createContextIntegration().buildPackage({ task })` to assemble a
+     budgeted, deny-filtered `ContextPackage`.
+   - Renders it via `renderContextPackage(pkg)`.
+   - Shows context metadata in the output area (item count, token estimate,
+     staleness signal).
+   - Injects the rendered context as the initial prompt to the agent CLI.
+
+7. **Terminal integration.** For interactive mode (the primary use case):
+   - Create a VS Code integrated terminal via `vscode.window.createTerminal()`.
+   - Use the `@atlas/agents` adapter's `buildInteractiveArgs()` to get the
+     correct binary and flags (no `-p` for interactive mode).
+   - Send the context-augmented prompt to the terminal.
+   - Show the terminal alongside the webview panel.
+   - Pipe terminal output back to the webview via `postMessage`.
+
+8. **Default agent setting.** Add VS Code configuration:
+   ```json
+   "codeatlas.defaultAgent": {
+     "type": "string",
+     "default": "claude",
+     "enum": ["claude", "gemini", "codex", "opencode"],
+     "description": "Default AI agent when no slash command specifies one."
+   }
+   ```
+
+9. **Context auto-inject toggle.** Add VS Code configuration:
+   ```json
+   "codeatlas.contextAutoInject": {
+     "type": "boolean",
+     "default": true,
+     "description": "Automatically inject CodeAtlas context when launching an agent."
+   }
+   ```
+
+10. **Context budget setting.** Add VS Code configuration:
+    ```json
+    "codeatlas.contextBudget": {
+      "type": "number",
+      "default": 12000,
+      "description": "Maximum total tokens for the context package injected into agents."
+    }
+    ```
+
+11. **Session tracking.** The sidebar shows active sessions with status badges
+    (Running/Stopped/Failed). Clicking a session shows its details in the output
+    area. The "stop" action sends `stopAgent` to the extension host.
+
+12. **Expand the `VscodeApi` facade.** Add terminal and webview provider
+    registration to the injectable interface so the panel is testable headlessly:
+    ```typescript
+    interface VscodeApi {
+      // ... existing
+      readonly terminals: {
+        createTerminal(options: { name: string; cwd?: string }): VscodeTerminal;
+      };
+      readonly webview: {
+        registerWebviewViewProvider(viewType: string, provider: unknown): VscodeDisposable;
+      };
+    }
+    ```
+
+13. **Fix the broken `ui/nodes.ts` first.** The existing `@atlas/extension`
+    cannot compile because `src/ui/nodes.ts` is missing (imported by
+    `providers.ts` and `tests/nodes.test.ts`). Create this file to match the
+    test contract in `tests/nodes.test.ts` before implementing the webview. This
+    is a prerequisite.
+
+14. **Security.** The webview uses a strict CSP (no `eval`, no inline scripts
+    from untrusted sources). Context packages pass through the deny filter
+    (Task 16). The webview never directly accesses the context database, the
+    filesystem, or any `@atlas/*` package — all communication goes through the
+    extension host's message handler.
+
+15. **New commands.** Register in `package.json`:
+    - `codeatlas.chat.open` — "Atlas: Open Agent Chat"
+    - `codeatlas.agent.launch` — "Atlas: Launch Agent"
+    - `codeatlas.agent.stop` — "Atlas: Stop Agent"
+    - `codeatlas.agent.selectDefault` — "Atlas: Select Default Agent"
+
+## Tests
+
+- Unit: webview message handling (launch, stop, list), slash-command parsing
+  (explicit provider, bare text, auto mode), context assembly integration
+  (mock `ContextIntegration` + `SessionManager`), panel lifecycle (create,
+  dispose, refresh).
+- Integration: full launch flow against stubbed `SessionManager` and
+  `ContextIntegration` — verify context reaches `buildPackage()`, session is
+  created, terminal is spawned. Use a fake `VscodeTerminal` in the injectable
+  host.
+- No real AI CLIs, no network, no real terminal in tests. Follow
+  `docs/TESTING.md` and the existing `apps/extension/tests/` patterns.
+
+## Boundaries — do not
+
+- Do **not** import `@atlas/search`, `@atlas/storage`, `@atlas/summary`, or
+  open `.codeatlas/context.db` from the webview panel — go through the SDK.
+- Do **not** implement provider-specific logic outside `@atlas/agents` adapters.
+- Do **not** build a slash-command router (that is a separate future task for
+  the orchestrator TTY).
+- Do **not** add AI provider calls, embeddings, or semantic ranking — that is
+  the `@atlas/context` stub's future scope.
+- Do **not** modify the context database schema or usage database.
+
+## Acceptance criteria
+
+- [ ] `src/ui/nodes.ts` exists and `@atlas/extension` compiles.
+- [ ] Webview panel renders with split layout (sidebar + output + input bar).
+- [ ] Slash commands (`/claude`, `/gemini`, `/codex`, `/opencode`) launch
+      interactive terminals with context injected.
+- [ ] Bare text input uses the configured default agent.
+- [ ] Context is assembled and rendered automatically before agent launch.
+- [ ] Agent stdout/stderr is visible in the output area.
+- [ ] Session list with status badges is shown in the sidebar.
+- [ ] Default agent, context auto-inject, and budget settings are configurable.
+- [ ] `VscodeApi` facade extended; panel is testable headlessly.
+- [ ] `pnpm check` passes with the tests above.
+
+---
+
+# Task 28 — Terminal TUI Upgrade (Agent Chat Layout)
+
+> **Status:** [PLANNED] — the existing TUI (`apps/cli/src/tui/`) is functional
+> but uses a plain readline loop. This task upgrades it to match the VS Code
+> webview's split-panel layout (sidebar + terminal output + input bar) using the
+> same rendering approach (no new dependencies).
+
+## Goal
+
+Upgrade the existing `atlas tui` to display a **split-panel layout** that
+mirrors the VS Code webview: agent sidebar on the left, terminal output on the
+right, input bar at the bottom. Add `/auto` smart-routing support. The TUI
+remains a `node:readline` + Unicode box-drawing implementation — no TUI
+framework dependencies.
+
+```
+┌─ CodeAtlas Agent Chat ──────────────────────────────────────────┐
+│  AGENTS          │  Terminal Output                              │
+│  ──────────      │                                               │
+│  ● claude (run)  │  [agent stdout/stderr appears here]           │
+│    gemini        │                                               │
+│    codex         │                                               │
+│    opencode      │                                               │
+│                  │                                               │
+│  SESSIONS        │                                               │
+│  ──────────      │                                               │
+│  #a3f2 Running   │                                               │
+│  #b1c9 Stopped   │                                               │
+│                  │                                               │
+├──────────────────┴───────────────────────────────────────────────┤
+│ atlas>                                                           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Depends on (all implemented — modify existing TUI, do not rebuild)
+
+- **Task 15** — `SessionManager` / `SessionPort` (already injected into the
+  TUI as `deps.sessions`).
+- **Task 16** — `ContextIntegration` (already injected as `deps.integration`).
+- **Task 14** — `@atlas/agents` / `AgentPort` (already injected as
+  `deps.agents`).
+- **Existing TUI** — `apps/cli/src/tui/shell.ts`, `router.ts`, `render.ts`,
+  `io.ts`. Modify and extend; do not rewrite from scratch.
+
+## Requirements
+
+1. **Inspect before coding.** Read `AGENTS.md`, `docs/CURRENT_STATE.md`,
+   `docs/CLI.md`, `docs/AGENT_SESSIONS.md`, `docs/AGENT_TOOLKIT.md`,
+   `docs/DEPENDENCIES.md`, and the full TUI source (`apps/cli/src/tui/*.ts`)
+   plus `apps/cli/tests/tui.test.ts`. Also read the VS Code webview plan
+   (Task 27) to understand the shared layout pattern.
+
+2. **Upgrade `render.ts` with split-panel renderers.** Add new pure functions
+   that render the two-column layout:
+   - `renderSplitLayout(sidebar, terminal, inputPrompt)` — the outer frame with
+     Unicode box drawing (`┌─┐│└─┘`).
+   - `renderAgentSidebar(agents, activeSessions)` — left column showing agent
+     status (installed/running) and session list.
+   - `renderTerminalContent(lines)` — right column showing agent output buffer
+     (scrollable, capped to terminal height).
+   - The existing `renderHeader()`, `renderHelp()`, `renderAgents()`,
+     `renderToolkitSidebar()` functions stay — they are used by existing
+     commands.
+
+3. **Extend `router.ts` with `/auto` command.** Add to the `TuiCommand`
+   discriminated union:
+   ```typescript
+   | { readonly kind: "auto"; readonly task: string }
+   ```
+   In `parseCommandLine()`:
+   - `/auto <task>` → `{ kind: "auto", task }`.
+   - Bare text (no `/` prefix) → `{ kind: "auto", task: trimmed }` (auto-select
+     mode by default when no slash command is given).
+
+4. **Add `renderAutoResult()` to `render.ts`.** Show the classification result
+   before launching:
+   ```
+   Task classified as: simple → using gemini
+   Reason: medium word count, "fix" keyword
+   Context: 8 items, 4.2k tokens, fresh
+   ```
+
+5. **Wire `/auto` into `shell.ts` dispatch.** Add a case for `kind === "auto"`
+   that:
+   - Calls the task classifier (new module — see Task 29) to determine the
+     provider.
+   - Assembles context via `deps.integration.buildPackage({ task })`.
+   - Shows the classification + context info.
+   - Launches the agent interactively via the existing `launchAgentInteractive()`.
+
+6. **Show agent sidebar on every prompt.** After each command completes (or on
+   `/status`), render a compact agent sidebar showing:
+   - Which agents are installed (checkmark) vs not (cross).
+   - Which agents have active sessions (running indicator).
+   - The configured default agent.
+
+7. **Add `/auto` to help text.** Update `renderHelp()` to include:
+   ```
+   /auto <task>          Auto-select the best AI agent for the task
+   ```
+   Also note that bare text (without `/`) is treated as `/auto`.
+
+8. **Default agent setting.** Support a `--default-agent <provider>` CLI flag
+   and a `CODEATLAS_DEFAULT_AGENT` environment variable. The TUI shows the
+   current default in the header. The user can change it interactively with
+   `/default <provider>`.
+
+9. **Add `/default` command to router.** `{ kind: "default"; readonly provider: string }`.
+   Changes the in-memory default agent for the current TUI session.
+
+10. **Output buffer.** The right column maintains a scrollable buffer of the
+    last N lines (configurable, default 50) of agent output. When an agent is
+    launched, its stdout/stderr lines are appended to the buffer. When no agent
+    is running, the buffer shows the last command's output.
+
+11. **No new dependencies.** The TUI stays `node:readline` + Unicode box-drawing
+    + plain string rendering. No chalk, ora, ink, blessed, or similar.
+
+12. **Terminal handoff preserved.** The existing `io.suspend()` / `io.resume()`
+    pattern for interactive AI CLI launches stays unchanged. The split layout is
+    shown before and after the handoff; during the handoff the AI CLI owns the
+    terminal.
+
+## Tests
+
+- Unit: new render functions (`renderSplitLayout`, `renderAgentSidebar`,
+  `renderAutoResult`, `renderTerminalContent`), `/auto` and `/default` command
+  parsing, bare-text-as-auto routing.
+- Integration: `/auto` dispatch against stubbed dependencies — verify the
+  classifier is called, context is assembled, agent is launched. `/default`
+  changes the default provider.
+- Layout: verify the split-panel renders correctly with various agent/session
+  states (all installed, none installed, mixed, active sessions).
+- Modify existing `apps/cli/tests/tui.test.ts` — add new test cases, do not
+  delete existing ones.
+
+## Boundaries — do not
+
+- Do **not** add a TUI framework dependency (ink, blessed, terminal-kit).
+- Do **not** reimplement the session manager, context integration, or agent
+  detection — reuse existing injected dependencies.
+- Do **not** implement the task classifier in this task (Task 29 owns that);
+  for now, `/auto` can default to the configured default agent and show a
+  "classifier not yet implemented" message.
+- Do **not** modify the VS Code extension (that is Task 27's scope).
+- Do **not** break existing TUI commands (`/help`, `/status`, `/scan`, `/search`,
+  `/context`, `/agents`, `/toolkit`, `/tools-install`, `/claude`, etc.).
+
+## Acceptance criteria
+
+- [ ] TUI renders a split-panel layout (sidebar + terminal output + input bar).
+- [ ] `/auto <task>` command works (even if classifier defaults to default agent).
+- [ ] Bare text input is treated as `/auto`.
+- [ ] `/default <provider>` changes the session default agent.
+- [ ] Agent sidebar shows installed status and active sessions.
+- [ ] Output buffer displays agent output after launch.
+- [ ] Existing TUI commands still work unchanged.
+- [ ] Help text includes `/auto` and `/default`.
+- [ ] `pnpm check` passes with the tests above.
+
+---
+
+# Task 29 — Smart Model Routing (TaskClassifier)
+
+> **Status:** [PLANNED] — no code exists. This task creates the deterministic
+> task classifier that Tasks 27 (VS Code webview) and 28 (TUI) consume for
+> automatic provider selection. It is a pure SDK module with no UI.
+
+## Goal
+
+Create a **rule-based task classifier** that analyzes a user's task description
+and recommends the most cost-effective AI provider (Claude / Gemini / Codex /
+OpenCode) based on task complexity. Simple tasks route to cheap/fast models;
+complex tasks route to powerful/expensive models. The classifier is deterministic,
+free, and never calls an LLM.
+
+```
+User Task ("fix the login bug")
+       ↓
+TaskClassifier (pure function)
+       ↓
+Classification { tier: "simple", recommended: "gemini", reason: "..." }
+       ↓
+SessionManager.startSession({ provider: "gemini", ... })
+```
+
+## Depends on (all implemented — reuse, do not rebuild)
+
+- **Task 14** — `@atlas/agents` adapters. The classifier needs to know which
+  providers are available (via `AgentPort.listAgents()` or a static list). It
+  does **not** detect installed CLIs — that is the caller's responsibility.
+- **Task 18** — Usage/Pricing (`BUILTIN_PRICING`). The classifier uses pricing
+  data to rank providers by cost within a tier. It does **not** call the usage
+  service.
+- **`@atlas/shared`** — `Result` type for error handling.
+
+## Required architecture
+
+```
+TaskClassifier (new — @atlas/sdk/agents/task-classifier.ts)
+    │
+    ├── classifyTask(task, availableProviders, options?)
+    │       ↓
+    ├── TaskComplexityTier (trivial | simple | complex)
+    │       ↓
+    ├── ProviderTier (budget | mid | premium)
+    │       ↓
+    └── TaskClassification { tier, recommended, alternatives, reason }
+```
+
+## Requirements
+
+1. **Inspect before coding.** Read `AGENTS.md`, `docs/CURRENT_STATE.md`,
+   `docs/AGENT_SESSIONS.md`, `docs/USAGE.md`, `docs/DEPENDENCIES.md`, and the
+   source of `@atlas/agents` adapters (`adapters.ts`, `adapter.ts`), the
+   pricing table (`packages/usage/src/pricing.ts`), and the SDK's agent
+   composition (`packages/sdk/src/agents/index.ts`).
+
+2. **Create `packages/sdk/src/agents/task-classifier.ts`.** A pure module with
+   no side effects. Exports:
+
+   ```typescript
+   interface TaskClassification {
+     readonly tier: "trivial" | "simple" | "complex";
+     readonly recommended: string;     // provider id
+     readonly alternatives: string[];  // other valid providers, cheapest first
+     readonly reason: string;          // human-readable explanation
+   }
+
+   function classifyTask(
+     task: string,
+     availableProviders: readonly string[],
+     options?: ClassifyOptions,
+   ): TaskClassification;
+
+   interface ClassifyOptions {
+     readonly contextTokens?: number;  // estimated context size
+     readonly fileCount?: number;      // number of files involved
+     readonly defaultProvider?: string; // fallback if no match
+   }
+   ```
+
+3. **Complexity tiers.** Classify tasks into three tiers:
+
+   | Tier | Description | Examples |
+   |------|-------------|----------|
+   | `trivial` | Formatting, renaming, single-line, typo fixes, comments | "add semicolon", "rename foo to bar", "fix typo", "add comment" |
+   | `simple` | Bug fixes, small feature, file-level changes, validation | "fix login bug", "add input validation", "update README" |
+   | `complex` | Architecture, multi-file, security, system design, migration | "refactor auth system", "security audit", "migrate to new API", "redesign database layer" |
+
+4. **Classification heuristics (rule-based).** Use these signals:
+
+   | Signal | Trivial | Simple | Complex |
+   |--------|---------|--------|---------|
+   | Word count | 1–5 words | 5–15 words | 15+ words |
+   | Trivial keywords | rename, format, lint, typo, comment, capitalize, whitespace | — | — |
+   | Simple keywords | — | fix, add, update, create, implement, refactor (single), write, remove (single) | — |
+   | Complex keywords | — | — | architecture, security, audit, refactor (system), migrate, redesign, multi, entire, database, schema, auth, performance, optimize, scale |
+   | File scope mentions | 1 file | 1–3 files | many files, "all", "entire" |
+   | Context size (if provided) | <1k tokens | 1k–5k tokens | 5k+ tokens |
+
+   The classifier evaluates each signal, scores the task, and picks the tier
+   with the highest aggregate score. Tiebreak: default to `simple`.
+
+5. **Provider tier mapping.** Map providers to cost tiers using a static table
+   (derived from `BUILTIN_PRICING`):
+
+   ```typescript
+   const PROVIDER_COST_TIERS: Record<string, number> = {
+     "deepseek":  0.27,   // budget — cheapest
+     "gemini":    1.25,   // mid
+     "codex":     2.50,   // mid
+     "openai":    2.50,   // mid
+     "claude":    3.00,   // premium — most expensive
+   };
+   ```
+
+   The table is static and matches the adapters in `@atlas/agents`. It is
+   **not** the full `BUILTIN_PRICING` (which has per-model detail); it is a
+   simplified cost-per-1M-input-tokens lookup for ranking.
+
+6. **Selection algorithm.**
+   - Step 1: Classify the task → get target tier.
+   - Step 2: Filter `availableProviders` to those installed.
+   - Step 3: Map each available provider to its cost tier.
+   - Step 4: Pick the cheapest provider in the target tier. If no provider in
+     the exact tier, pick the cheapest provider in the next higher tier.
+   - Step 5: If no provider matches, fall back to `options.defaultProvider` or
+     `"claude"`.
+   - Step 6: Return the classification with `alternatives` (other valid
+     providers, cheapest first, excluding the recommended one).
+
+7. **Tier-to-provider mapping:**
+
+   | Task Tier | Target Provider Tier | Rationale |
+   |-----------|---------------------|-----------|
+   | `trivial` | `budget` (deepseek) | Cheap model handles simple renames/formatting |
+   | `simple` | `mid` (gemini, codex) | Mid-tier handles bug fixes and small features |
+   | `complex` | `premium` (claude) | Best model for architecture and security |
+
+8. **Deterministic output.** Same input always produces the same classification.
+   No randomness, no network calls, no LLM calls. The function is pure —
+   same arguments → same result.
+
+9. **Export from SDK.** Add `classifyTask` to `packages/sdk/src/agents/index.ts`
+   and re-export from `packages/sdk/src/index.ts`. Consumers (CLI TUI, VS Code
+   extension) import from `@atlas/sdk`.
+
+10. **Reason string.** The `reason` field explains the classification in plain
+    English, e.g.:
+    - `"trivial: short task (3 words), 'rename' keyword detected"`
+    - `"simple: moderate length, 'fix' keyword, 1 file referenced"`
+    - `"complex: long task (18 words), 'architecture' and 'refactor' keywords"`
+
+11. **Do not detect installed CLIs.** The classifier takes
+    `availableProviders: readonly string[]` as input. The caller (TUI, VS Code
+    extension) is responsible for detecting installed providers via
+    `AgentPort.detectAll()` and passing the available list. The classifier does
+    not import `@atlas/agents`.
+
+12. **Do not call an LLM.** The classifier is rule-based. Using an LLM to decide
+    which LLM to use is circular, costly, and non-deterministic. Simple
+    heuristics are sufficient for this tier of routing.
+
+## Tests
+
+- Unit: pure function tests for `classifyTask()`:
+  - Trivial tasks: "rename foo to bar", "add semicolon", "fix typo" → `trivial`.
+  - Simple tasks: "fix the login bug", "add input validation", "update the
+    README" → `simple`.
+  - Complex tasks: "refactor the authentication system to use JWT",
+    "security audit of the API layer", "migrate the database schema" → `complex`.
+  - Edge cases: empty task (→ `simple` default), very long task (→ `complex`),
+    task with no keywords (→ `simple` default), task naming a specific provider
+    (still classified, but that info is used by the caller).
+  - Provider availability: only deepseek available → uses deepseek even for
+    complex tasks (graceful degradation).
+  - Alternatives: when claude is recommended, alternatives include gemini and
+    codex (mid-tier options).
+  - Default fallback: no providers match → uses default provider.
+- Integration: none needed (pure function). The TUI and VS Code tests in
+  Tasks 27/28 cover end-to-end wiring.
+
+## Boundaries — do not
+
+- Do **not** detect installed CLIs (that is `AgentPort`'s job).
+- Do **not** call an LLM for classification (rule-based only).
+- Do **not** import `@atlas/agents`, `@atlas/providers`, or `@atlas/usage` — the
+  classifier lives in `@atlas/sdk` and takes its inputs as arguments.
+- Do **not** modify the session manager, context integration, or agent
+  detection — this is a pure function only.
+- Do **not** build UI (that is Tasks 27 and 28).
+
+## Acceptance criteria
+
+- [ ] `classifyTask()` exists in `packages/sdk/src/agents/task-classifier.ts`.
+- [ ] Tasks are classified into `trivial`/`simple`/`complex` tiers.
+- [ ] Trivial tasks → cheapest provider, simple → mid-tier, complex → premium.
+- [ ] Provider availability is respected (never recommend an unavailable provider).
+- [ ] Alternatives are provided, cheapest first.
+- [ ] Reason strings are human-readable and explain the classification.
+- [ ] Same input always produces the same output (deterministic).
+- [ ] No LLM calls, no network, no side effects.
+- [ ] Exported from `@atlas/sdk`.
+- [ ] `pnpm check` passes with the unit tests above.
+
+---
+
 ## Global Development Rules
 
-Rules that apply to **every future task** (Tasks 21–26). They are mandatory; they
+Rules that apply to **every future task** (Tasks 27–29). They are mandatory; they
 mirror and extend `AGENTS.md`.
 
 ### Rule 1 — Inspect Before Coding
@@ -1489,7 +2103,7 @@ Workflow for future Claude Code sessions implementing a task from this file:
 2. Read `README.md` and `docs/` (start with `docs/CURRENT_STATE.md` +
    `docs/DOCUMENTATION_MAP.md`); read `CODEATLAS_VISION.md` **if it exists**
 3. Read `PROMPTS.md` (this file) — locate the requested task
-4. **Identify the requested task** (only one; "implement Task 19" = Task 19 only)
+4. **Identify the requested task** (only one; "implement Task 27" = Task 27 only)
 5. Inspect the existing implementation (source **and** tests) of the modules you
    will touch
 6. Inspect dependencies (`docs/DEPENDENCIES.md`, `docs/MODULES.md`) and confirm
@@ -1506,9 +2120,9 @@ Workflow for future Claude Code sessions implementing a task from this file:
 15. Provide the final implementation report per `docs/DEVELOPMENT_WORKFLOW.md`:
     files changed, what changed, tests run/passed, known limitations, remaining work
 
-> **One task at a time.** Do **not** automatically implement Tasks 21–26 when a
-> developer asks for one task. "Implement Task 21" means implement **only
-> Task 21** — do not start Task 22 automatically.
+> **One task at a time.** Do **not** automatically implement Tasks 27–29 when a
+> developer asks for one task. "Implement Task 27" means implement **only
+> Task 27** — do not start Task 28 automatically.
 
 ---
 
@@ -1519,28 +2133,40 @@ Workflow for future Claude Code sessions implementing a task from this file:
  │
  ├── 26 Context CLI (`atlas context`) — follow-up wiring to 16 (done)
  │
- └── Agent Toolkit
-         │
-         ├── 21 Compatibility Engine   ← depends on 19, 20 (both done)
-         │       ↓
-         ├── 22 Tool Installer
-         │       ↓
-         ├── 23 Tool Configurator
-         │       ↓
-         ├── 24 Security / Trust
-         │       ↓
-         └── 25 Toolkit CLI
+ ├── Agent Toolkit (complete)
+ │       ├── 21 Compatibility Engine   ← depends on 19, 20 (done)
+ │       ├── 22 Tool Installer         ← depends on 19–21 (done)
+ │       ├── 23 Tool Configurator      ← depends on 19–22 (done)
+ │       ├── 24 Security / Trust       ← depends on 19–20 (done)
+ │       └── 25 Toolkit CLI            ← depends on 19–24 (done)
+ │
+ └── Agent Chat UI (new)
+         ├── 29 TaskClassifier         ← depends on 14, 18 (done — pure function, no UI)
+         ├── 28 TUI Upgrade            ← depends on 15, 16, 27's classifier
+         └── 27 VS Code Chat Panel     ← depends on 15, 16, fixes ui/nodes.ts
 ```
+
+### Dependency details for Tasks 27–29
+
+- **29 (TaskClassifier)** is a pure SDK function with no UI dependencies. It can
+  be implemented independently. It depends on the pricing data concept from
+  Task 18 and the provider list from Task 14, but only as static data — no
+  runtime imports.
+- **28 (TUI Upgrade)** modifies the existing TUI in `apps/cli/src/tui/`. It
+  depends on Tasks 15 and 16 (already injected into the TUI). It consumes the
+  classifier from Task 29 for `/auto` routing.
+- **27 (VS Code Chat Panel)** extends `@atlas/extension` with a webview panel.
+  It depends on Tasks 15 and 16 (session manager + context integration). It
+  requires `src/ui/nodes.ts` to be created first (prerequisite to fix the broken
+  build). It consumes the classifier from Task 29 for auto-routing.
 
 ### Documented overlaps
 
-- **16 → 26**: the `atlas context` CLI is a thin SDK delegator on top of
-  Task 16's `createContextIntegration()` (implemented); Task 26 depends on 16 and
-  can be built independently of 17 (also done).
-- **19 → 20 → 21 → 22 → 23** is the completed Toolkit foundation chain.
-  **24 → 25** is the remaining Toolkit work; Security/Trust will formalize the
-  security gate already consumed by the Installer, and the CLI will consume
-  Tasks 19–24 through the SDK.
-- **24** gates **22** (security check before install) and **25** (trust shown in
-  `atlas tools`), and writes to the **20** Tool Manifest.
-- **25** consumes **19–24** through the SDK and **never** duplicates their logic.
+- **27 ↔ 28**: Both implement the same UI pattern (sidebar + output + input bar)
+  and the same slash-command semantics. The webview (27) uses HTML/CSS/JS; the
+  TUI (28) uses Unicode box-drawing. They share no code but follow the same
+  message protocol and layout structure.
+- **29 → 27, 28**: Both the webview and the TUI consume the classifier for
+  `/auto` routing. The classifier is agnostic to the UI layer.
+- **27 prerequisite**: `src/ui/nodes.ts` must exist for the extension to compile.
+  This is a small fix that should be done before or as part of Task 27.

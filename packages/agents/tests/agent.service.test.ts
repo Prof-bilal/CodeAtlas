@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import type { AgentRunRequest } from "@atlas/core";
+import { describe, expect, it } from "vitest";
 import type { AgentAdapter } from "../src/adapter";
 import { AgentService } from "../src/agent.service";
 import { AgentCliNotFoundError, AgentConfigError, UnknownAgentError } from "../src/errors";
@@ -85,6 +85,68 @@ describe("AgentService", () => {
       expect(result.value).toHaveLength(4);
       expect(result.value.every((info) => info.available)).toBe(true);
       expect(fake.records).toHaveLength(4);
+    });
+  });
+
+  describe("buildArgsFor", () => {
+    it("builds non-interactive args with the run-mode flags and prompt", () => {
+      const service = new AgentService({ resolveExecutable: installedResolver() });
+      const result = service.buildArgsFor("claude", {
+        prompt: "review this",
+        args: ["--model", "sonnet"],
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) {
+        return;
+      }
+      expect(result.value).toEqual(["-p", "review this", "--model", "sonnet"]);
+    });
+
+    it("builds interactive args without run-mode flags or the prompt", () => {
+      const service = new AgentService({ resolveExecutable: installedResolver() });
+      const result = service.buildArgsFor("claude", {
+        prompt: "review this",
+        args: ["--model", "sonnet"],
+        interactive: true,
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) {
+        return;
+      }
+      expect(result.value).toEqual(["--model", "sonnet"]);
+    });
+
+    it("falls back to forwarding only args for adapters without buildInteractiveArgs", () => {
+      const service = new AgentService({ resolveExecutable: installedResolver() });
+      const custom: AgentAdapter = {
+        name: "custom",
+        binary: "custom",
+        versionArgs: ["--version"],
+        env: {},
+        buildArgs: (request) => [request.prompt],
+        parseVersion: (stdout) => stdout.trim() || undefined,
+      };
+      service.register(custom);
+      const result = service.buildArgsFor("custom", {
+        prompt: "ignored",
+        args: ["--flag"],
+        interactive: true,
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) {
+        return;
+      }
+      expect(result.value).toEqual(["--flag"]);
+    });
+
+    it("fails with UnknownAgentError for an unknown provider", () => {
+      const service = new AgentService({ resolveExecutable: installedResolver() });
+      const result = service.buildArgsFor("nope", { prompt: "", interactive: true });
+      expect(result.ok).toBe(false);
+      if (result.ok) {
+        return;
+      }
+      expect(result.error).toBeInstanceOf(UnknownAgentError);
     });
   });
 

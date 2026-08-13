@@ -9,7 +9,7 @@ export interface SpawnRecord {
     cwd?: string;
     env?: NodeJS.ProcessEnv;
     shell: boolean;
-    stdio?: "pipe" | "ignore";
+    stdio?: "pipe" | "ignore" | "inherit";
   };
 }
 
