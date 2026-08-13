@@ -10,7 +10,14 @@ import type {
   UsageRecord,
   UsageStatistics,
 } from "@atlas/core";
-import { createUsageService, type ToolkitSDK } from "@atlas/sdk";
+import {
+  ContextAttachUnsupportedError,
+  createUsageService,
+  type ContextExplanation,
+  type ContextIntegration,
+  type ContextPackage,
+  type ToolkitSDK,
+} from "@atlas/sdk";
 import type { FilePath, SymbolId } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { describe, expect, it, vi } from "vitest";
@@ -82,6 +89,46 @@ function fakeToolkit(overrides: Partial<ToolkitSDK> = {}): ToolkitSDK {
   } as ToolkitSDK;
 }
 
+function fakeContextIntegration(overrides: Partial<ContextIntegration> = {}): ContextIntegration {
+  const pkg = {
+    task: "fix auth",
+    items: [],
+    staleness: {
+      state: "fresh",
+      available: true,
+      lastUpdated: "",
+      changed: [],
+      added: [],
+      deleted: [],
+    },
+    budget: {
+      budget: { maxItems: 20, maxTokensPerItem: 2000, maxTokensTotal: 12000 },
+      itemsRequested: 0,
+      itemsIncluded: 0,
+      tokensEstimated: 0,
+      itemsDroppedByCount: [],
+      itemsTruncated: [],
+      droppedByTokens: [],
+      budgetExceeded: false,
+    },
+    exclusions: { droppedPaths: [], droppedPatterns: [] },
+  } as ContextPackage;
+  const explanation = { ...pkg, items: [] } as ContextExplanation;
+  return {
+    buildPackage: vi.fn(async () => pkg),
+    explain: vi.fn(async () => explanation),
+    launch: vi.fn(async () => ({
+      ok: true as const,
+      value: session({ id: "s1", status: "RUNNING" }),
+    })),
+    attach: vi.fn(async () => ({
+      ok: true as const,
+      value: session({ id: "s1", status: "RUNNING" }),
+    })),
+    ...overrides,
+  };
+}
+
 /** Create a temp project root with a `.codeatlas/context.db`, run `fn`, clean up. */
 async function withProject(fn: (root: string) => Promise<void>): Promise<void> {
   const root = mkdtempSync(join(tmpdir(), "atlas-cli-"));
@@ -113,6 +160,7 @@ describe("atlas CLI", () => {
     const names = program.commands.map((command) => command.name()).sort();
     expect(names).toEqual([
       "build",
+      "context",
       "doctor",
       "explain",
       "init",
@@ -123,6 +171,62 @@ describe("atlas CLI", () => {
       "update",
       "usage",
     ]);
+  });
+
+  it("delegates context build, explain, launch, and attach through the SDK integration", async () => {
+    const integration = fakeContextIntegration();
+    const program = createCli({ integration });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync(["node", "atlas", "context", "fix auth", "--json"]);
+      await program.parseAsync(["node", "atlas", "context", "fix auth", "--explain"]);
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "launch",
+        "fix auth",
+        "--provider",
+        "claude",
+        "--json",
+      ]);
+      await program.parseAsync(["node", "atlas", "context", "attach", "s1", "fix auth", "--json"]);
+      expect(integration.buildPackage).toHaveBeenCalledWith(
+        expect.objectContaining({ task: "fix auth" }),
+      );
+      expect(integration.explain).toHaveBeenCalledWith(
+        expect.objectContaining({ task: "fix auth" }),
+      );
+      expect(integration.launch).toHaveBeenCalledWith(
+        expect.objectContaining({ task: "fix auth", provider: "claude" }),
+      );
+      expect(integration.attach).toHaveBeenCalledWith(
+        expect.objectContaining({ task: "fix auth", sessionId: "s1" }),
+      );
+      expect(log.mock.calls.join(" ")).toContain("fresh");
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("maps unsupported context attach errors to exit code 1 without crashing", async () => {
+    const integration = fakeContextIntegration({
+      attach: vi.fn(async () => ({
+        ok: false as const,
+        error: new ContextAttachUnsupportedError("s1", "RUNNING"),
+      })),
+    });
+    const program = createCli({ integration });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const previousExitCode = process.exitCode;
+    try {
+      await program.parseAsync(["node", "atlas", "context", "attach", "s1", "fix auth"]);
+      expect(error.mock.calls.join(" ").toLowerCase()).toContain("cannot attach");
+      expect(process.exitCode).toBe(1);
+    } finally {
+      process.exitCode = previousExitCode;
+      error.mockRestore();
+    }
   });
 
   it("registers the complete thin Toolkit command surface", () => {

@@ -56,6 +56,9 @@ Options take precedence over environment/config where they overlap.
 | `atlas tools update` | **[implemented]** | Report local registry and installed-tool state; `--json` supported. |
 | `atlas tools doctor` | **[implemented]** | Reconcile installed manifests, integration state, and trust; `--json` supported. |
 | `atlas tools configure <tool>` | **[implemented]** | Configure only installed agents/hosts declared by the tool; `--dry-run` renders exact changes, `--json` emits machine-readable output, and `--config-home` supports managed/test user-config roots. |
+| `atlas context <task>` | **[implemented]** | Build and render a deny-filtered, budgeted Context Package; `--explain` renders content-free selection reasons, `--json` emits package/explanation data, and budget/instruction/overview flags tune SDK assembly. |
+| `atlas context launch <task>` | **[implemented]** | Launch a provider session seeded with the rendered Context Package via `SessionPort`; requires `--provider`, supports `--repo`, `--json`, and tuning flags. |
+| `atlas context attach <session-id> <task>` | **[implemented]** | Attach context to a `CREATED` session; live/terminal sessions return a clean exit-1 typed error. |
 | `atlas setup` | **[planned]** — not registered | Guided environment → agent → tool recommendation → install → configure → verify (no auto-install without consent). |
 
 ### Agent slash commands (Direction B — **[planned]**, see AGENT_ORCHESTRATOR.md)
@@ -110,6 +113,8 @@ atlas search   → createContextSDK({ dbPath }) → context.search.search(...)
 atlas mcp      → @atlas/mcp startStdioServer({ root })
 atlas sessions → createSessionManager() → SessionPort (list/get/stop)
 atlas usage    → createUsageService({ filePath }) → UsagePort (summary/list/budgets)
+atlas context  → createContextIntegration() → Context SDK / Context Package /
+                 SessionPort
 atlas tools          → createToolkitSDK() → Registry / Manifest / Compatibility /
                          Security / Installer / Configurator façade
 atlas init/build/explain/doctor → "Coming Soon" (future: Scanner → Hashing

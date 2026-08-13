@@ -19,7 +19,7 @@ can reason about large codebases accurately and efficiently.
 > with the Security/Trust assessor (Task 24), and the SDK-backed Toolkit CLI
 > (Task 25). Still planned: the CLI's
 > indexing commands (`init`/`build`/`explain`/`doctor`), the `/tools` slash
-> surface, `atlas setup`, and the `atlas context` CLI (Task 26).
+> surface, `atlas setup`, and the future `/context` slash router.
 > The context rank/assembler (`@atlas/context`) remains a structural stub behind
 > its port by design (ADR-001).
 
@@ -151,6 +151,6 @@ linting, formatting, typing, and commit conventions on every change.
   `atlas update`.
 - Implement the intentional `@atlas/context` ranking/assembly service when the
   product decision changes (currently preserved as a stub by ADR-001).
-- Agent Toolkit: `/tools` slash integration, `atlas setup`, and the
-  `atlas context` CLI (Task 26) — see
+- Agent Toolkit: `/tools` slash integration and `atlas setup`; Context CLI
+  slash routing remains future work — see
   `docs/AGENT_TOOLKIT.md`

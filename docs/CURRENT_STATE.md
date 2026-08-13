@@ -370,8 +370,13 @@ examples/        # README placeholder only (no runnable examples)
   sessions (the adapters run non-interactively, so context is injectable only at
   launch). `explain()` projects a package to a content-free explanation; render
   helpers produce a plain prompt and a `--explain`-style listing.
-- **No CLI wiring yet** — a future `atlas context` / slash-command is the
-  follow-up. Tests: `packages/sdk/tests/context-integration.test.ts`.
+- **CLI wiring (Task 26) is implemented**: `atlas context <task>` builds and
+  renders the package, `--explain` renders content-free reasons, `--json`
+  emits machine-readable package/explanation data, and `launch`/`attach`
+  deliver through the existing `SessionPort`. Budget, instruction, overview,
+  and repository/provider flags are forwarded to the SDK. The future slash
+  router remains separate. Tests: `packages/sdk/tests/context-integration.test.ts`
+  and `apps/cli/tests/cli.test.ts`.
   See ADR-008.
 
 ### Multi-Agent Orchestrator (Task 17) — **[IMPLEMENTED]**
@@ -513,7 +518,7 @@ examples/        # README placeholder only (no runnable examples)
   real `AgentService` + `EnvironmentDetector`; both injectable for offline
   tests). `renderCompatibilityReport()` turns a report into the design
   contract's per-check `✓ / ~ / ✗ / ?` output. `atlas tools configure` is now
-  wired through the Configurator; the remaining tools surface is planned. See
+  wired through the Toolkit SDK; the future slash surface is planned. See
   [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §6.
 
 ### Tool Installer — **[IMPLEMENTED]**

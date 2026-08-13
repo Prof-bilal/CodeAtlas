@@ -62,8 +62,9 @@ Non-obvious facts (verified as of 2026-08-11):
   `createContextIntegration()`, ADR-008) is implemented**: it assembles a
   budgeted, deny-filtered, provider-independent `ContextPackage` per task (from
   `createContextSDK`, never the DB directly) and delivers it through the session
-  manager (`launch`/`attach` via `SessionPort`). No CLI `atlas context` command
-  is wired yet — the follow-up.
+  manager (`launch`/`attach` via `SessionPort`). The CLI `atlas context`
+  build/explain/json/launch/attach surface is wired; the future slash router
+  remains a follow-up.
 - **Direction C — the Agent Toolkit (`@atlas/toolkit`, `atlas tools`)**: the
   **Tool Registry foundation (Task 19) is implemented** — `@atlas/toolkit`
   behind `ToolRegistryPort` in `core`, composed via `createToolRegistry()` in
