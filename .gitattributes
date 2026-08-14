@@ -1,0 +1,20 @@
+# Normalize every text file to LF in the working tree on every platform,
+# regardless of `core.autocrlf`. The index already stores LF; this makes
+# checkouts consistent (matches .editorconfig `end_of_line = lf`).
+* text=auto eol=lf
+
+# Explicit binary (never touch line endings).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.node binary
