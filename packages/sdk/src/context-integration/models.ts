@@ -13,6 +13,17 @@
  * - **serializable** — plain data, no functions, no AI-CLI-specific formatting.
  */
 
+import type { FreshnessSignal, FreshnessState } from "../context/models";
+
+/**
+ * The honesty signal about the index vs the working tree — shared shape with
+ * the Context SDK's {@link FreshnessSignal}.
+ */
+export type StaleContextSignal = FreshnessSignal;
+
+/** The staleness state (`fresh` / `stale` / `unknown` / `unavailable`). */
+export type StalenessState = FreshnessState;
+
 /** The kind of one item in a context package. */
 export type ContextItemKind =
   | "file"
@@ -81,24 +92,6 @@ export interface BudgetRecord {
   readonly droppedByTokens: readonly string[];
   /** True when the total token cap could not be met (essential items alone exceed it). */
   readonly budgetExceeded: boolean;
-}
-
-/** The honesty signal about the index vs the working tree. */
-export type StalenessState = "fresh" | "stale" | "unknown" | "unavailable";
-
-/** Result of the stale-context check. */
-export interface StaleContextSignal {
-  readonly state: StalenessState;
-  /** Whether a context index exists at all. */
-  readonly available: boolean;
-  /** ISO timestamp of the last index write (`""` when unavailable). */
-  readonly lastUpdated: string;
-  /** Files whose on-disk content differs from the persisted hash. */
-  readonly changed: readonly string[];
-  /** Files on disk that are not in the persisted hashes. */
-  readonly added: readonly string[];
-  /** Persisted files that are no longer on disk. */
-  readonly deleted: readonly string[];
 }
 
 /** What was deliberately NOT sent, and why. */

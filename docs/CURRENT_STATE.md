@@ -24,7 +24,7 @@
 | **Runtime** | Node.js `>=20.19.0` (one exception, see §5) |
 | **Language** | TypeScript, strict mode, ESM (`"type": "module"`) |
 | **Package manager** | pnpm |
-| **Git** | **Not a git repository.** No `.git` directory exists anywhere in the tree. `.gitignore`, `.husky`, and `commitlint` are present but were never activated against a repo. |
+| **Git** | **Is a git repository** (branch `main`, remote `github.com/Prof-bilal/CodeAtlas.git`). `.gitignore`, `.husky`, and `commitlint` are configured. |
 | **Published version** | `0.0.0` everywhere (package.json, `@atlas/shared` `VERSION`) |
 
 Verified by full-tree inspection (`packages/*`, `apps/*`, configs) and by reading
@@ -256,9 +256,9 @@ examples/        # README placeholder only (no runnable examples)
 
 ### CLI (`apps/cli`) — **[PARTIAL]**
 
-- Commander.js program `atlas`, ten top-level commands — `init`, `build`,
-  `update`, `search`, `sessions`, `usage`, `explain`, `doctor`, `mcp`, and
-  `tools`.
+- Commander.js program `atlas`, eleven top-level commands — `init`, `build`,
+  `update`, `scan`, `search`, `sessions`, `usage`, `explain`, `doctor`, `mcp`,
+  and `tools`.
   **`search` is wired
   to the Context SDK**: it opens `.codeatlas/context.db` (via `ATLAS_ROOT` or
   cwd) with `createContextSDK`, runs `context.search.search(...)`, and prints
@@ -271,14 +271,17 @@ examples/        # README placeholder only (no runnable examples)
   `createToolkitSDK()` for overview, registry search, info, install, remove,
   update, configure, and doctor. Install displays the exact command plus
   trust/risk before execution and requires `--yes` consent; all data commands
-  support `--json`. The other five commands still print
+  support `--json`. **`init`/`build`/`update` run the SDK-owned indexer**
+  (`indexProject`; `update` is incremental) and **`scan` prints a metadata-only
+  project overview** (`scanProjectOverview`). The two remaining commands
+  (`explain`, `doctor`) still print
   `[atlas <command>] Coming Soon`. No `/agent`-style slash commands (the agent
   router is planned).
 - Dependency note: the CLI may import `@atlas/sdk` **and** `@atlas/mcp` (so it
   can start the server); enforced by ESLint. See `docs/DEPENDENCIES.md`.
-- `atlas search` accepts positional query words plus `--limit`, `--type`,
-  `--no-fuzzy`, and `--json`; it reports a friendly error and exit code `1`
-  when no context database exists.
+- `atlas search` accepts positional query words plus `--repo`, `--limit`,
+  `--type`, `--no-fuzzy`, and `--json`; it reports a friendly error and exit
+  code `1` when no context database exists.
 - Tests assert the command list, version, placeholder text, `atlas search`
   end-to-end against a fixture database (including the missing-index error),
   and the `usage` rendering/CLI (`usageDbPath`, `formatMeasured`,
@@ -294,11 +297,13 @@ examples/        # README placeholder only (no runnable examples)
   provider-independent: dialogue reads are deterministic; AI summary
   generation is opt-in per call (`get_summary ... generate: true`) and fails
   cleanly when no provider is configured.
-- Exposes six tools: `search_symbols`, `search_files`, `get_summary`,
-  `get_dependencies`, `explain_module`, `project_overview`. Each has a zod
+- Exposes seven tools: `search_symbols`, `search_files`, `get_summary`,
+  `get_dependencies`, `explain_module`, `project_overview`,
+  `read_file_range`. Each has a zod
   input schema (validated by the SDK, surfaced as `-32602` on failure) and
   returns `structuredContent` + a JSON text block; domain errors return
-  `isError: true`.
+  `isError: true`. `read_file_range` is a version-aware working-tree read with
+  freshness metadata (mirrors the Context SDK `files.readRange`).
 - Ships a `codeatlas-mcp` binary (`src/bin.ts`) **and** the `atlas mcp` CLI
   command, plus a library API (`createMcpServer` / `startStdioServer`). The
   Context SDK opens lazily, so the server can start before an index exists.
@@ -599,16 +604,14 @@ absent.
    root engine is `>=20.19.0`. Running on Node <22.5 breaks `storage`.
 2. **Provider default model ids are placeholder values** (not verified against
    vendor catalogs).
-3. **No git history.** `.husky`, `commitlint`, `.gitignore`, `pre-commit` hooks
-   are all configured but have never run against a commit.
-4. **CI/CD**: no `.github/`, no `.gitlab-ci.yml`, no CI config at all.
-5. **`.codeatlas/`**: currently `manifest.json` (by the Scanner manifest),
-   `usage.db` (by `@atlas/usage` / `atlas usage`), and `tools/` (one Tool
-   Manifest per installed tool, by `@atlas/toolkit` / Task 20) are written
-   there. The rest of the target layout (`.codeatlas/context.db`, `graph.json`,
-   `symbols.json`, `summaries/`) does not exist yet — it is a **target**
-   architecture (context.db is produced only when an indexing run happens, e.g.
-   via the SDK write edge or a future `atlas build`).
+3. **Git history exists.** The repository is a git repo (branch `main`) with a
+   full Conventional-Commits history; `.husky`/`commitlint`/`.gitignore` are
+   configured and active.
+4. **CI/CD**: `.github/workflows/ci.yml` runs `pnpm check`-style gates (Node 22,
+   pnpm 9.15.0) on push/PR to `main`.
+5. **`.codeatlas/`**: `atlas init`/`build`/`update` (SDK-owned `indexProject`)
+   write `manifest.json` and `context.db`; `@atlas/usage` writes `usage.db`; the
+   Toolkit writes `tools/<name>.json`. See [CONTEXT_STORAGE.md](./CONTEXT_STORAGE.md).
 6. **Existing docs at the time of writing this audit:** root `ARCHITECTURE.md`,
    root `agents.md` (agent catalog), `README.md`, `docs/README.md`,
    `examples/README.md`. No `CLAUDE.md`. These docs predate/replace with the

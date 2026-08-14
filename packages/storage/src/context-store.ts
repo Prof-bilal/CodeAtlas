@@ -1,26 +1,26 @@
+import type { DatabaseSync } from "node:sqlite";
 import type {
-  ContextDatabasePort,
   ContextData,
+  ContextDatabasePort,
   ContextDeleteTarget,
   ContextSearchKind,
   ContextSnapshot,
   SearchOptions,
   SearchResult,
 } from "@atlas/core";
-import type { DatabaseSync } from "node:sqlite";
 import type { FilePath, SymbolId } from "@atlas/shared";
 import { openDatabase } from "./db";
-import { lastAppliedVersion, runMigrations, type Migration } from "./migrations";
-import { colString, type Row } from "./repository/row";
-import { inTransaction } from "./transaction";
+import { type Migration, lastAppliedVersion, runMigrations } from "./migrations";
 import { DependencyRepository } from "./repository/dependency.repository";
 import { FileRepository } from "./repository/file.repository";
 import { HashRepository } from "./repository/hash.repository";
 import { MetadataRepository } from "./repository/metadata.repository";
 import { ModuleRepository } from "./repository/module.repository";
 import { RelationshipRepository } from "./repository/relationship.repository";
+import { type Row, colString } from "./repository/row";
 import { SummaryRepository } from "./repository/summary.repository";
 import { SymbolRepository } from "./repository/symbol.repository";
+import { inTransaction } from "./transaction";
 
 export interface ContextStoreOptions {
   /** Database file path, or `":memory:"` for a throwaway store. */
@@ -94,6 +94,18 @@ export class ContextStore implements ContextDatabasePort {
       count = this.upsertContext(data);
       this.metadata.set(SAVED_AT_KEY, new Date().toISOString());
     });
+    return count;
+  }
+
+  /** Remove persisted modules whose path is not in the given set. */
+  public pruneModules(paths: readonly string[]): number {
+    const keep = new Set(paths);
+    let count = 0;
+    for (const module of this.modules.all()) {
+      if (!keep.has(module.path)) {
+        count += this.modules.deleteByPath(module.path);
+      }
+    }
     return count;
   }
 

@@ -1,13 +1,13 @@
-import { InvalidArgumentError } from "commander";
-import type { Command } from "commander";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
-  createContextSDK,
   type SearchHitKind,
   type SearchRequest,
   type SearchResult,
+  createContextSDK,
 } from "@atlas/sdk";
+import { InvalidArgumentError } from "commander";
+import type { Command } from "commander";
 
 /** The result kinds `atlas search --type` accepts. */
 const SEARCH_KINDS: readonly SearchHitKind[] = [
@@ -20,6 +20,7 @@ const SEARCH_KINDS: readonly SearchHitKind[] = [
 
 /** Parsed `atlas search` CLI options (Commander's camel-cased values). */
 export interface SearchCliOptions {
+  readonly repo?: string;
   readonly limit?: number;
   readonly type?: string[];
   readonly fuzzy: boolean;
@@ -59,6 +60,7 @@ export function registerSearch(program: Command): void {
     .command("search")
     .description("Search the CodeAtlas index (symbols, files, modules, dependencies, summaries)")
     .argument("<query...>", "search query (multiple words are joined)")
+    .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
     .option("-l, --limit <number>", "maximum number of results to show", parseLimit, 20)
     .option(
       "-t, --type <kind>",
@@ -74,7 +76,7 @@ export function registerSearch(program: Command): void {
 }
 
 async function runSearch(query: string, options: SearchCliOptions): Promise<void> {
-  const root = resolveProjectRoot();
+  const root = options.repo === undefined ? resolveProjectRoot() : resolve(options.repo);
   const dbPath = contextDbPath(root);
   if (!existsSync(dbPath)) {
     console.error(`No context index found at ${dbPath}.`);

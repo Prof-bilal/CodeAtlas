@@ -1,9 +1,9 @@
-import { z } from "zod";
 import { describe, expect, it } from "vitest";
-import { TOOL_NAMES, TOOLS } from "../src/tools";
+import { z } from "zod";
+import { TOOLS, TOOL_NAMES } from "../src/tools";
 
 describe("tool registry", () => {
-  it("exposes exactly the six expected tools", () => {
+  it("exposes exactly the seven expected tools", () => {
     const names = TOOLS.map((tool) => tool.name).sort();
     expect(names).toEqual([...TOOL_NAMES].sort());
     expect(names).toEqual([
@@ -11,6 +11,7 @@ describe("tool registry", () => {
       "get_dependencies",
       "get_summary",
       "project_overview",
+      "read_file_range",
       "search_files",
       "search_symbols",
     ]);

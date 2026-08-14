@@ -69,6 +69,6 @@ The manifest (`apps/extension/package.json`) declares activation, views,
 commands, and the activity-bar container. `vscode` is external (supplied by the
 extension host); the rest is bundled by `tsup`.
 
-> **Note:** `atlas build`/`update` shell out to a CLI that currently prints
-> "Coming Soon" for those commands — once the indexing pipeline is wired (SDK
-> write edge), the extension's build flow will work end-to-end.
+> **Note:** `atlas build`/`update` run the SDK-owned incremental indexer, so the
+> extension's build flow works end-to-end (`.codeatlas/context.db` is written,
+> then read through `createContextSDK`).

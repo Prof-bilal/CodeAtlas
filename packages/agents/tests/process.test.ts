@@ -1,7 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { InvalidWorkingDirectoryError, ProcessSpawnError } from "../src/errors";
 import { ProcessRunner } from "../src/process";
+import type { FakeProcess } from "./helpers";
 import { createFakeSpawn, flushStreams } from "./helpers";
+
+/**
+ * Wait until the runner escalates to `signal` (polling, so the test is
+ * insensitive to event-loop scheduling under parallel load). Asserts on
+ * failure so a real regression still fails the test.
+ */
+async function waitForKill(proc: FakeProcess, signal: string, waitMs: number): Promise<void> {
+  const deadline = Date.now() + waitMs;
+  while (!proc.killCalls.includes(signal as NodeJS.Signals)) {
+    if (Date.now() >= deadline) {
+      expect(proc.killCalls).toContain(signal);
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+}
 
 describe("ProcessRunner", () => {
   it("spawns with an argument array, never a shell string", async () => {
@@ -75,8 +92,7 @@ describe("ProcessRunner", () => {
     const pending = runner.run({ command: "stubborn", args: [], timeoutMs: 10 });
     const proc = fake.processes[0];
     expect(proc).toBeDefined();
-    await new Promise((resolve) => setTimeout(resolve, 40));
-    expect(proc?.killCalls).toContain("SIGKILL");
+    await waitForKill(proc, "SIGKILL", 2000);
     proc?.close(null, "SIGKILL");
     const result = await pending;
     expect(result.ok).toBe(true);

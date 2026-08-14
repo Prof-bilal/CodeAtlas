@@ -1,11 +1,13 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { hashContent } from "@atlas/hashing";
+import { createProjectContainer } from "@atlas/sdk";
 import { describe, expect, it } from "vitest";
 import { CodeAtlasContext } from "../src/context";
 import { HANDLERS, type HandlerContext } from "../src/handlers";
 import { ToolDomainError, ToolInputError } from "../src/validation";
-import { createFixture, silentLogger, type Fixture } from "./fixture";
+import { type Fixture, createFixture, silentLogger } from "./fixture";
 
 function handlerContext(fx: Fixture): HandlerContext {
   return { ctx: new CodeAtlasContext({ root: fx.root }), logger: silentLogger() };
@@ -29,6 +31,41 @@ async function withEmptyRoot(fn: (ctx: HandlerContext) => Promise<void>): Promis
   const ctx: HandlerContext = { ctx: new CodeAtlasContext({ root }), logger: silentLogger() };
   try {
     await fn(ctx);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Run `fn` against a repo root that has a real file on disk (at `root/<relPath>`)
+ * and an index entry for it (same content + matching hash), so version-aware
+ * reads have a working tree to compare against.
+ */
+async function withOnDiskFile(
+  relPath: string,
+  content: string,
+  fn: (ctx: HandlerContext) => Promise<void>,
+): Promise<void> {
+  const root = mkdtempSync(join(tmpdir(), "atlas-mcp-range-"));
+  try {
+    mkdirSync(join(root, ".codeatlas"), { recursive: true });
+    const absolute = join(root, relPath);
+    writeFileSync(absolute, content, "utf8");
+    const container = createProjectContainer(join(root, ".codeatlas", "context.db"));
+    try {
+      container.getContextDb().saveContext({
+        files: [{ path: absolute as never, language: "typescript", content }],
+        hashes: { [absolute]: hashContent(content) },
+      });
+    } finally {
+      container.getContextDb().close();
+    }
+    const ctx: HandlerContext = { ctx: new CodeAtlasContext({ root }), logger: silentLogger() };
+    try {
+      await fn(ctx);
+    } finally {
+      ctx.ctx.close();
+    }
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -325,6 +362,92 @@ describe("project_overview", () => {
         unknown
       >;
       expect(result["summary"]).toBeUndefined();
+    });
+  });
+});
+
+describe("read_file_range", () => {
+  it("rejects a missing path and missing line arguments", async () => {
+    await withFixture(async (ctx) => {
+      await expect(HANDLERS.read_file_range(ctx, {})).rejects.toThrow(/path/);
+      await expect(
+        HANDLERS.read_file_range(ctx, { path: "/src/auth.ts", startLine: 1 }),
+      ).rejects.toThrow(/endLine/);
+    });
+  });
+
+  it("rejects endLine before startLine", async () => {
+    await withFixture(async (ctx) => {
+      await expect(
+        HANDLERS.read_file_range(ctx, { path: "/src/auth.ts", startLine: 10, endLine: 2 }),
+      ).rejects.toThrow(/endLine/);
+    });
+  });
+
+  it("falls back to indexed content and reports stale when the file is not on disk", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.read_file_range(ctx, {
+        path: "/src/auth.ts",
+        startLine: 1,
+        endLine: 2,
+        padding: 0,
+      })) as { stale: boolean; content: string; versionMatch: boolean; padded: boolean };
+      expect(result.stale).toBe(true);
+      expect(result.versionMatch).toBe(true);
+      expect(result.padded).toBe(false);
+      expect(result.content).toContain("login");
+    });
+  });
+
+  it("reads a matching on-disk file and returns a fresh padded range", async () => {
+    const content = Array.from({ length: 20 }, (_, i) => `line ${i + 1}`).join("\n");
+    await withOnDiskFile("file-range.ts", content, async (ctx) => {
+      const result = (await HANDLERS.read_file_range(ctx, {
+        path: join(ctx.ctx.root, "file-range.ts"),
+        startLine: 8,
+        endLine: 10,
+        padding: 2,
+      })) as {
+        stale: boolean;
+        versionMatch: boolean;
+        startLine: number;
+        endLine: number;
+        content: string;
+      };
+      expect(result.stale).toBe(false);
+      expect(result.versionMatch).toBe(true);
+      expect(result.startLine).toBe(6);
+      expect(result.endLine).toBe(12);
+      expect(result.content).toContain("line 8");
+      expect(result.content).toContain("line 10");
+      expect(result.content).toContain("line 6");
+    });
+  });
+
+  it("reports a version mismatch when the file changed since expectedHash", async () => {
+    const before = "export const value = 1;\n";
+    const after = "export const value = 1;\nexport const extra = 2;\n";
+    await withOnDiskFile("version.ts", before, async (ctx) => {
+      const path = join(ctx.ctx.root, "version.ts");
+      const oldHash = (await HANDLERS.read_file_range(ctx, {
+        path,
+        startLine: 1,
+        endLine: 1,
+        padding: 0,
+      })) as { hash: string };
+      // The agent edited the file outside CodeAtlas.
+      writeFileSync(path, after, "utf8");
+      const result = (await HANDLERS.read_file_range(ctx, {
+        path,
+        startLine: 1,
+        endLine: 2,
+        padding: 0,
+        expectedHash: oldHash.hash,
+      })) as { stale: boolean; versionMatch: boolean; message?: string; content: string };
+      expect(result.stale).toBe(true);
+      expect(result.versionMatch).toBe(false);
+      expect(result.message).toContain("changed");
+      expect(result.content).toContain("extra");
     });
   });
 });

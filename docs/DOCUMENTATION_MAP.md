@@ -42,6 +42,11 @@ README.md
 | `docs/CLI.md` | The `atlas` CLI contract, including the implemented SDK-backed Toolkit commands. |
 | `docs/MCP.md` | The MCP server: configuration + full tool reference. |
 | `docs/VSCODE.md` | The VS Code extension (`@atlas/extension`): what it does and how it consumes the SDK. |
+| `docs/installation.md` | Installing CodeAtlas (from source or global CLI). |
+| `docs/getting-started.md` | 10-minute end-to-end walkthrough against a real repository. |
+| `docs/configuration.md` | Environment variables, `.codeatlas/` layout, per-command options. |
+| `docs/integrations.md` | Consumer surfaces: MCP, VS Code, AI CLIs, Agent Toolkit. |
+| `docs/troubleshooting.md` | Common problems and fixes. |
 | `docs/CONTEXT_STORAGE.md` | The `.codeatlas/` directory. |
 | `docs/SECURITY.md` | Security rules. |
 | `docs/PRIVACY.md` | Privacy rules (local-first). |
@@ -55,6 +60,7 @@ README.md
 | `docs/DEVELOPMENT.md` | Developer setup & commands (prerequisites, install, build/test, debugging, env variables). |
 | `docs/DEVELOPMENT_WORKFLOW.md` | The standard agent workflow + reporting format. |
 | `docs/CONTRIBUTING.md` | Practical contributor guide (setup, standards, PRs, security reporting). |
+| `docs/RELEASE_AUDIT.md` | Pre-release audit: secrets scan, repo hygiene, quality gates, changeset summary. |
 | `docs/DOCUMENTATION_AUDIT.md` | Self-audit of this docs system. |
 | `docs/decisions/README.md` | ADR index (format + which decisions are recorded). |
 

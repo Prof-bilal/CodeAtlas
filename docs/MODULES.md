@@ -286,11 +286,13 @@ Responsible for the **stable programmatic interface** through which consumers
 Responsible for the command-line interface.
 
 - Owns: `atlas` program, subcommands, and (planned) `/agent` router entry.
-- Current state: `search` runs through the Context SDK, `mcp` starts the MCP
-  server, `sessions` manages agent sessions (`createSessionManager`), and
-  `usage` reports AI usage & credits (`createUsageService`), and `tools configure`
-  delegates to `createConfigurator()`; the other five
-  (`init`/`build`/`update`/`explain`/`doctor`) print "Coming Soon".
+- Current state: `init`/`build`/`update` run the SDK-owned incremental
+  indexer, `scan` prints the `ProjectScan` overview, `search` runs through the
+  Context SDK, `mcp` starts the MCP server, `sessions` manages agent sessions
+  (`createSessionManager`), `usage` reports AI usage & credits
+  (`createUsageService`), `tools configure` delegates to
+  `createConfigurator()`, and `context` builds/launches/attaches safe context
+  packages; `explain`/`doctor` still print "Coming Soon".
 - Must **NOT**: contain business logic; it delegates to the SDK (and to
   `@atlas/mcp` to start the server).
 

@@ -4,11 +4,9 @@ Practical guide for humans (and agents) making changes. It intentionally
 **points** at the deeper policies instead of restating them — read the linked
 docs when you reach that step.
 
-> The repository is **not** a git repo today (no `.git`), so the usual
-> fork/branch/PR workflow does not exist yet. Until the maintainer runs
-> `git init` and adds a remote, treat this file as guidance for the workflow
-> that *will* apply; keep commits' intent clear and Conventional-Commit-shaped
-> for when history starts.
+> The repository **is** a git repository (branch `main`). Use the normal
+> fork/branch/PR workflow, keep commits' intent clear and
+> Conventional-Commit-shaped, and never force-push or rewrite history.
 
 ---
 

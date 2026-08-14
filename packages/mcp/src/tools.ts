@@ -12,7 +12,8 @@ export type ToolName =
   | "get_summary"
   | "get_dependencies"
   | "explain_module"
-  | "project_overview";
+  | "project_overview"
+  | "read_file_range";
 
 export const TOOL_NAMES: readonly ToolName[] = [
   "search_symbols",
@@ -21,6 +22,7 @@ export const TOOL_NAMES: readonly ToolName[] = [
   "get_dependencies",
   "explain_module",
   "project_overview",
+  "read_file_range",
 ];
 
 /** Symbol kinds the parser can emit (mirrors `@atlas/core` `SymbolKind`). */
@@ -184,6 +186,28 @@ export const TOOLS: readonly ToolDefinition[] = [
         .describe(
           '"summary" (default) returns counts + overview; "full" also lists modules, files, and symbols.',
         ),
+    },
+  },
+  {
+    name: "read_file_range",
+    title: "Read file range (version-aware)",
+    description:
+      "Read a line range of an indexed file from the current working tree, with optional version validation. " +
+      'Pass "expectedHash" (a file hash previously returned by CodeAtlas) so the read can detect whether the file ' +
+      'changed since that context was generated; on a mismatch it returns the fresh content and "versionMatch": false ' +
+      'instead of silently trusting stale line numbers. "padding" (default 5) includes context lines above and below ' +
+      "the requested range to protect against small line-number drift.",
+    inputSchema: {
+      path: z.string().describe("Path of the indexed file to read."),
+      startLine: intRange(1, 1_000_000).describe("First line to return (1-based)."),
+      endLine: intRange(1, 1_000_000).describe("Last line to return (1-based)."),
+      padding: intRange(0, 1000)
+        .optional()
+        .describe("Context lines above/below the requested range (default 5)."),
+      expectedHash: z
+        .string()
+        .optional()
+        .describe("File hash the caller's context was generated against; validates freshness."),
     },
   },
 ];

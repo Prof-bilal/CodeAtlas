@@ -1,13 +1,13 @@
+import { VERSION } from "@atlas/sdk";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { VERSION } from "@atlas/sdk";
 import { CodeAtlasContext, type CodeAtlasContextOptions } from "./context";
 import { HANDLERS, type HandlerContext } from "./handlers";
-import { createLogger, type LogLevel, type Logger } from "./log";
+import { type LogLevel, type Logger, createLogger } from "./log";
 import { TOOLS, type ToolDefinition } from "./tools";
-import { ToolDomainError, ToolInputError, type ToolArgs } from "./validation";
+import { type ToolArgs, ToolDomainError, ToolInputError } from "./validation";
 
 /** Options for creating or starting a CodeAtlas MCP server. */
 export interface McpServerOptions extends CodeAtlasContextOptions {
@@ -33,7 +33,7 @@ export interface CodeAtlasMcpServer {
   close(): Promise<void>;
 }
 
-/** Create a CodeAtlas MCP server with all six tools registered. */
+/** Create a CodeAtlas MCP server with all tools registered. */
 export function createMcpServer(options: McpServerOptions = {}): CodeAtlasMcpServer {
   const logger =
     options.logger ??

@@ -48,6 +48,20 @@ export function optionalString(args: ToolArgs, key: string): string | undefined 
   return value;
 }
 
+/** Require an integer argument within `[min, max]`. */
+export function requireInt(
+  args: ToolArgs,
+  key: string,
+  min = Number.MIN_SAFE_INTEGER,
+  max = Number.MAX_SAFE_INTEGER,
+): number {
+  const value = args[key];
+  if (typeof value !== "number" || !Number.isInteger(value) || value < min || value > max) {
+    throw new ToolInputError(`"${key}" must be an integer between ${min} and ${max}.`);
+  }
+  return value;
+}
+
 /** Read an optional integer argument within `[min, max]`. */
 export function optionalInt(
   args: ToolArgs,

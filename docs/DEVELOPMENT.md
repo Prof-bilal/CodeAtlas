@@ -15,7 +15,7 @@ reporting format) — this file is about **tooling and commands**.
 | ---- | ------- | ----- |
 | Node.js | `>=20.19.0` (root) · `>=22.5.0` for `@atlas/storage` | `node:sqlite` needs Node `>=22.5.0`; `.nvmrc` pins **22**. Use 22 for everyday work. |
 | pnpm | `9.15.0` | `packageManager` field / `pnpm-workspace.yaml`. Enable via Corepack. |
-| Git | any recent | optional — the repository is **not** a git repo today. |
+| Git | any recent | the repository is a git repo (branch `main`). |
 
 Platforms: **Windows**, macOS, and Linux are all expected to work (development
 has been exercised on Windows; the code uses no platform-specific shelling).

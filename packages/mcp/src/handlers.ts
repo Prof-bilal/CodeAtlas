@@ -3,14 +3,16 @@ import type { CodeAtlasContext } from "./context";
 import type { Logger } from "./log";
 import { SUMMARY_KINDS, SYMBOL_KINDS, type ToolName } from "./tools";
 import {
+  type ToolArgs,
+  ToolDomainError,
+  ToolInputError,
   optionalBoolean,
   optionalEnum,
   optionalInt,
   optionalNumber,
   optionalString,
+  requireInt,
   requireString,
-  ToolDomainError,
-  type ToolArgs,
 } from "./validation";
 
 /** The services every tool handler needs at call time. */
@@ -53,6 +55,7 @@ export const HANDLERS: Readonly<
   get_dependencies: getDependencies,
   explain_module: explainModule,
   project_overview: projectOverview,
+  read_file_range: readFileRange,
 };
 
 // ── search_symbols ───────────────────────────────────────────────────────────
@@ -297,6 +300,39 @@ async function projectOverview(h: HandlerContext, args: ToolArgs): Promise<unkno
     }));
   }
   return result;
+}
+
+// ── read_file_range ──────────────────────────────────────────────────────────
+
+async function readFileRange(h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const path = requireString(args, "path");
+  const startLine = requireInt(args, "startLine");
+  const endLine = requireInt(args, "endLine");
+  const padding = optionalInt(args, "padding", 0, 1000);
+  const expectedHash = optionalString(args, "expectedHash");
+
+  if (endLine < startLine) {
+    throw new ToolInputError(`"endLine" (${endLine}) must be >= "startLine" (${startLine}).`);
+  }
+
+  const sdk = h.ctx.requireSDK();
+  const range = sdk.files.readRange(path, {
+    startLine,
+    endLine,
+    ...(padding === undefined ? {} : { padding }),
+    ...(expectedHash === undefined ? {} : { expectedHash }),
+  });
+  return {
+    path: range.path,
+    startLine: range.startLine,
+    endLine: range.endLine,
+    content: range.content,
+    hash: range.hash,
+    versionMatch: range.versionMatch,
+    stale: range.stale,
+    padded: range.padded,
+    ...(range.message === undefined ? {} : { message: range.message }),
+  };
 }
 
 // ── shared shape mapping ─────────────────────────────────────────────────────

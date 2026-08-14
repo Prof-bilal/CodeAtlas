@@ -1,196 +1,249 @@
 # CodeAtlas
 
-> An open-source **AI Context Engine** that helps AI tools understand any codebase.
+> An open-source **AI Context Engine** that helps AI tools and agents understand
+> any codebase — accurately and efficiently.
 
-CodeAtlas scans, parses, and indexes source code into a queryable graph, then
-assembles the most relevant context to feed into LLM prompts — so AI assistants
-can reason about large codebases accurately and efficiently.
+CodeAtlas scans, parses, and indexes a source tree into a queryable, persistent
+context database, exposes that context to developer tools and AI agents over a
+stable SDK (CLI, MCP, VS Code), and can later route work to installed AI coding
+CLIs and curated open-source tools.
 
-> **Status: Core pipeline modules implemented.** The scanner, hashing, parser (TypeScript),
-> graph, summary, providers, cache, and SQLite storage modules are implemented
-> and tested; the search engine, MCP server, and Context API/SDK are implemented
-> and consumed by `atlas search`, the MCP tools, and the VS Code extension. The
-> **Agent infrastructure** is also implemented: the AI CLI connection layer
-> (`@atlas/agents`), the **Agent Session Manager** (`atlas sessions`), the
-> **multi-agent Orchestrator**, **Usage & Credits** (`atlas usage`, ADR-009),
-> Context → Agent integration (`createContextIntegration`, ADR-008), and the
-> **Agent Toolkit** registry + tool-manifest foundation (Tasks 19–20), its
-> Compatibility Engine and Installer (Tasks 21–22), and the Tool Configurator
-> with the Security/Trust assessor (Task 24), and the SDK-backed Toolkit CLI
-> (Task 25), and the `atlas context` CLI (Task 26). Still planned: the CLI's
-> top-level `explain`/`doctor` commands, the `/tools` slash
-> surface, `atlas setup`, and the future `/context` slash router.
-> The context rank/assembler (`@atlas/context`) remains a structural stub behind
-> its port by design (ADR-001).
+```text
+Repository → scan → hash → parse → graph → context.db → Context SDK → CLI · MCP · VS Code · agents
+```
 
-## Monorepo Layout
+## Why CodeAtlas
+
+LLMs work best with *relevant, fresh context*, not whole repositories:
+
+- **Bounded.** A budgeted, deny-filtered `ContextPackage` is assembled per task,
+  never a wholesale upload.
+- **Fresh.** The index is incremental and version-aware — agents get a
+  `versionMatch`/`stale` signal and always read the current working tree.
+- **Local-first.** Everything runs locally against `<repo>/.codeatlas/`; no
+  implicit network calls, no whole-repo uploads (see
+  [PRIVACY.md](docs/PRIVACY.md)).
+- **Deterministic before AI.** Facts (symbols, graph, search) are computed
+  statically; AI only *adds* summaries and explanations.
+
+## Features
+
+- **Context engine** — scanner, SHA-256 hashing/change detection, TypeScript
+  parser, dependency graph, AI-optional summaries, SQLite storage, ranked
+  fuzzy-aware search.
+- **Context SDK** (`@atlas/sdk`) — the single read/write façade
+  (`createContextSDK`) every consumer uses: files, symbols, dependencies,
+  modules, summaries, search, project stats, and freshness.
+- **Freshness & version-aware reads** — `freshness()` reports
+  `fresh`/`stale`/`unknown`/`unavailable`; `files.readRange(path, { expectedHash })`
+  reads the working tree and flags when context is out of date.
+- **Incremental indexing** — `atlas update` re-parses only changed/added files,
+  reuses persisted snapshots, and deletes removed entries.
+- **MCP server** (`@atlas/mcp`) — 7 read-only tools over stdio for Claude
+  Desktop, Cursor, VS Code, and any MCP client.
+- **VS Code extension** (`@atlas/extension`) — activity bar, tree views, and
+  palette commands.
+- **Agent infrastructure** — AI CLI connection layer (`@atlas/agents`),
+  agent sessions (`atlas sessions`), usage & credits (`atlas usage`), and
+  Context → Agent integration (`createContextIntegration`).
+- **Agent Toolkit** (`atlas tools`) — curated tool registry, per-tool
+  manifests, compatibility engine, approval-gated installer, configurator, and
+  a security/trust assessor.
+
+## Status
+
+[IMPLEMENTED] Core pipeline (scanner, hashing, manifest, parser, graph, storage,
+search, summaries, cache, providers), Context SDK, MCP, VS Code extension, agent
+connection layer + session manager, usage tracking, context integration, the
+Agent Toolkit (registry/manifest/compatibility/installer/configurator/security),
+and the SDK-backed CLI (`atlas search|scan|sessions|usage|tools|context|mcp`,
+`atlas init/build/update`).
+
+[PARTIAL] Parser handles TypeScript only (renamed imports and
+`export default <expr>` do not resolve cross-file).
+
+[STUB] `@atlas/context` (context ranking/assembly) throws `ComingSoonError` by
+design (ADR-001); the SDK's `getRelevantContext` is a deterministic assembly and
+does not use the stub.
+
+[PLANNED] CLI `atlas explain`/`atlas doctor`, the `/tools` and `/context` slash
+surfaces, `atlas setup`, the standalone agent router, and the Agent
+Orchestrator.
+
+Ground truth: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) and
+[docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md).
+
+## Installation
+
+Requirements: **Node.js `>=22.5.0`** (the storage layer uses the built-in
+`node:sqlite`; other packages target `>=20.19.0`), `pnpm` (or
+`npm install --global codeatlas-cli` once published).
+
+See [docs/installation.md](docs/installation.md) for details.
+
+```bash
+corepack enable
+pnpm install
+pnpm --filter codeatlas-cli build
+```
+
+## Quick start
+
+```bash
+# Index a repository you want to understand.
+atlas init --repo /absolute/path/to/your-project
+
+# See what was scanned (metadata only, no indexing).
+atlas scan --repo /absolute/path/to/your-project
+
+# Search the generated context database.
+atlas search authentication --repo /absolute/path/to/your-project
+
+# Get safe, budgeted context for an AI task.
+atlas context "fix the authentication tests" --repo /absolute/path/to/your-project
+
+# Check whether the index is up to date with the working tree.
+atlas update --repo /absolute/path/to/your-project
+```
+
+Before publishing, run the CLI from the repo:
+
+```bash
+node apps/cli/dist/index.js init --repo /absolute/path/to/your-project
+```
+
+Full walkthrough: [docs/getting-started.md](docs/getting-started.md).
+
+## CLI reference
+
+```text
+atlas init [--repo <path>] [--json]      Initialize and index a project
+atlas build [--repo <path>] [--json]     Full rebuild of the context index
+atlas update [--repo <path>] [--json]    Incremental index update
+atlas scan [--repo <path>] [--json]      Hierarchical project overview (no indexing)
+atlas search <query...> [-t <kind>] [-l <n>] [--json]
+atlas mcp [--root <path>]                Start the MCP server over stdio
+atlas sessions list|info|stop            Manage AI agent sessions
+atlas usage [summary|list|budgets]       Usage & credits
+atlas tools search|info|install|remove|update|configure|doctor
+atlas context <task> [--explain] [--json]
+atlas context launch|attach <task>       Launch/attach agent sessions with context
+atlas explain <target>                   [planned]
+atlas doctor                             [planned]
+atlas tui                                Interactive terminal UI
+```
+
+Every data-returning command supports `--json` for machine-readable output.
+The CLI imports only `@atlas/sdk` (+ `@atlas/mcp` for `atlas mcp`) — enforced by
+ESLint. See [docs/CLI.md](docs/CLI.md).
+
+## Integrations
+
+- **MCP** — `@atlas/mcp` exposes 7 read-only tools
+  (`search_symbols`, `search_files`, `get_summary`, `get_dependencies`,
+  `explain_module`, `project_overview`, `read_file_range`) over stdio. See
+  [docs/MCP.md](docs/MCP.md) and [docs/integrations.md](docs/integrations.md).
+- **VS Code** — `@atlas/extension` reads context through the SDK. See
+  [docs/VSCODE.md](docs/VSCODE.md).
+- **AI coding CLIs** — the connection layer detects Claude / Gemini / Codex /
+  OpenCode; `atlas tui` slash commands and `atlas context launch` deliver
+  context to sessions. See [docs/AGENT_SESSIONS.md](docs/AGENT_SESSIONS.md).
+- **Agent Toolkit** — `atlas tools` for registry, install, configure, and
+  doctor. See [docs/AGENT_TOOLKIT.md](docs/AGENT_TOOLKIT.md).
+
+## Context SDK
+
+The programmatic read (and indexing-write) API — what every consumer uses
+instead of the database:
+
+```ts
+import { createContextSDK } from "@atlas/sdk";
+
+const context = createContextSDK({ repositoryPath: "/path/to/repo" });
+const hits = context.search.search("authentication");
+const signal = await context.freshness(); // fresh | stale | unknown | unavailable
+context.close(); // releases the SQLite handle
+```
+
+See [docs/CONTEXT_SDK.md](docs/CONTEXT_SDK.md).
+
+## Configuration
+
+`ATLAS_ROOT` and `ATLAS_DB` environment variables control which index the CLI,
+MCP server, and SDK resolve (`ATLAS_DB` wins). Index data lives in
+`<repo>/.codeatlas/` (manifest, `context.db`, tool manifests, `usage.db`) and is
+gitignored. See [docs/configuration.md](docs/configuration.md) and
+[docs/CONTEXT_STORAGE.md](docs/CONTEXT_STORAGE.md).
+
+## Architecture
+
+Clean architecture in a pnpm + TypeScript monorepo: contracts in `packages/core`,
+implementations in feature packages, composition in `packages/sdk`. Dependencies
+point inward (`cli → sdk → feature packages → core → shared`) and are enforced by
+ESLint. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and
+[docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
 
 ```
 apps/
-  cli/          # End-user CLI built with Commander.js
-  extension/    # VS Code extension (@atlas/extension)
+  cli/          # End-user CLI (Commander.js)
+  extension/    # VS Code extension
 packages/
-  shared/       # Base types, Result, branded IDs, VERSION, ComingSoonError
-  core/         # Domain models, ports (interfaces), use-cases
-  scanner/      # File-system walking + ignore rules + manifest.ts
-  hashing/      # SHA-256 file hashing + change detection
-  parser/       # Language parsing -> normalized symbols/AST
-  storage/      # Persistence layer behind core ports
-  graph/        # Code-dependency graph build & query
-  context/      # Context rank & assembly for LLM prompts (intentional stub)
-  cache/        # Generic caching layer
-  providers/    # AI model provider adapters
-  summary/      # AI file/folder/module/project summaries
-  search/       # Ranked, fuzzy-aware project search
-  agents/       # AI CLI connection + session manager (detect & run external AI CLIs)
-  usage/        # AI usage & credits: tri-state tokens/cost, budgets, limits
-  toolkit/      # Agent Toolkit: Tool Registry + Tool Manifest foundation
-  mcp/          # MCP server exposing context to AI coding tools
-  sdk/          # Public programmatic API (wires everything) + createContextSDK
+  shared/       # Base types, Result, branded IDs, VERSION
+  core/         # Domain models + ports (interfaces)
+  scanner/      # File-system walking + ignore rules + manifest
+  hashing/      # SHA-256 hashing + change detection
+  parser/       # TypeScript parsing → normalized symbols
+  storage/      # SQLite persistence (node:sqlite)
+  graph/        # Code-dependency graph
+  context/      # Context rank/assembly (intentional stub — ADR-001)
+  cache/        # Generic caching
+  providers/    # AI provider adapters
+  summary/      # AI-optional summaries
+  search/       # Ranked, fuzzy-aware search
+  agents/       # AI CLI connection + session manager
+  usage/        # Usage & credits
+  toolkit/      # Agent Toolkit
+  mcp/          # MCP server
+  sdk/          # Public API + Context SDK
 docs/           # Design & contributor documentation
-examples/       # Usage examples (placeholder)
 ```
 
-## Getting Started
+## Development
 
 ```bash
-# Enable the pinned toolchain & install dependencies
-corepack enable
-pnpm install
-
-# Verify the whole monorepo (typecheck, lint, format, test)
-pnpm check
+pnpm check        # typecheck + lint + format + test (the gate)
+pnpm test         # unit tests
+npx vitest run packages/<pkg> apps/cli   # targeted tests
 ```
 
-## CLI
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) and
+[docs/TESTING.md](docs/TESTING.md).
 
-```bash
-pnpm --filter codeatlas-cli build
-node apps/cli/dist/index.js --help
-```
+## Documentation
 
-## Using CodeAtlas on another repository
-
-For a local checkout, a new developer can use it like this:
-
-```bash
-git clone <codeatlas-repository-url> CodeAtlas
-cd CodeAtlas
-corepack enable
-pnpm install
-pnpm --filter codeatlas-cli build
-
-# Index the repository you want to understand.
-node apps/cli/dist/index.js init --repo /absolute/path/to/your-project
-
-# Search the generated context database.
-node apps/cli/dist/index.js search authentication --repo /absolute/path/to/your-project
-
-# Generate safe, budgeted context for an AI task.
-node apps/cli/dist/index.js context "fix the authentication tests" --repo /absolute/path/to/your-project
-```
-
-After the CLI package is published, users can install it globally and run it
-from any directory:
-
-```bash
-npm install --global codeatlas-cli
-atlas init --repo /absolute/path/to/your-project
-atlas search authentication --repo /absolute/path/to/your-project
-```
-
-The published CLI requires Node.js `>=22.5.0` because the storage layer uses
-Node's built-in SQLite implementation. See [docs/PUBLISHING.md](./docs/PUBLISHING.md)
-for the maintainer release process.
-
-The target repository is not modified except for its gitignored `.codeatlas/`
-directory, which contains `manifest.json` and `context.db`. Node.js `>=22.5.0`
-is required because the storage layer uses `node:sqlite`. Use `--json` on
-indexing, search, and context commands for machine-readable output.
-
-```text
-atlas search <query...>  → wired — ranked search over .codeatlas/context.db
-atlas mcp                → wired — starts the MCP server over stdio
-atlas sessions           → wired — list/info/stop AI agent sessions
-atlas usage              → wired — usage summary, list, budgets
-atlas tools              → wired — SDK-backed overview/search/info/install/remove/update/configure/doctor
-atlas context <task>     → wired — budgeted, deny-filtered context package / agent launch
-atlas init / build / update → wired — SDK-owned real-repository indexing
-atlas explain / doctor      → still "Coming Soon" placeholders
-```
-
-`atlas search`, `atlas sessions`, `atlas usage`, and the MCP tools read indexed
-context through the **Context SDK** (`createContextSDK`, in `@atlas/sdk`) — they
-never touch the database directly. `atlas init`/`build`/`update` now produce the
-database through the SDK-owned indexing service (see `docs/CLI.md`).
+- Index & navigation: [docs/DOCUMENTATION_MAP.md](docs/DOCUMENTATION_MAP.md)
+- Current state: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) ·
+  [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md)
+- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
+  [docs/MODULES.md](docs/MODULES.md) · [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)
+- Security & privacy: [docs/SECURITY.md](docs/SECURITY.md) ·
+  [docs/PRIVACY.md](docs/PRIVACY.md)
+- How to run a real-repository integration test:
+  [docs/AI-BUILDER-INTEGRATION-TEST.md](docs/AI-BUILDER-INTEGRATION-TEST.md)
 
 ## Contributing
 
-Please read [ARCHITECTURE.md](./ARCHITECTURE.md) first. All commits must follow
+Please read [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) and
+[AGENTS.md](AGENTS.md) first. All commits must follow
 [Conventional Commits](https://www.conventionalcommits.org/); hooks enforce
-linting, formatting, typing, and commit conventions on every change.
+linting, formatting, typing, and commit conventions on every change. See
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Security
+
+Report vulnerabilities privately — see [SECURITY.md](SECURITY.md) and
+[docs/SECURITY.md](docs/SECURITY.md).
 
 ## License
 
 [MIT](./LICENSE)
-
-## Agents
-- **Scanner Agent**: Recursively scans projects for metadata (files, folders, languages, frameworks, package.json, tsconfig.json)
-- **Hashing Agent**: Manages SHA-256 hashing for files to detect changes, deletions, and new files
-- **Manifest Agent**: Generates project-specific manifest in `.codeatlas/manifest.json` with metadata
-- **Parser Agent**: Parses source into a language-agnostic IR — normalized symbols (kind, location, parent, visibility) for classes, interfaces, functions, methods, variables, imports, exports, enums, and type aliases
-- **Graph Agent**: Builds the dependency graph (imports, exports, calls, inheritance, implementations) and answers dependency, path, and cycle queries
-- **Provider Agent**: Unified adapter over Claude / OpenAI / Gemini / DeepSeek with an extensible registry
-- **Cache Agent**: Generic caching (get/set/delete, TTL, optional JSON persistence)
-- **AI Summary Agent**: Structured file/folder/module/project summaries, cached by content hash so only changed files reach the model
-- **Storage Agent**: SQLite context database (files, symbols, dependencies, modules, summaries, relationships, hashes, metadata) with repositories, migrations, transactions, and search
-- **Search Agent**: Ranked, fuzzy-aware search over the context snapshot (files, symbols, modules, dependencies, summaries) behind a vector-ready scorer seam
-- **MCP Server**: Exposes indexed context to AI coding tools over MCP/stdio (6 read tools) — an SDK consumer
-- **VS Code Extension**: Activity Bar + tree views + palette commands reading context through the SDK
-- **AI CLI Connection Layer**: Detects and runs external AI coding CLIs (Claude / Gemini / Codex / OpenCode) behind `AgentPort` in `@atlas/agents`
-- **Agent Session Manager**: Manages independent live AI-CLI sessions behind `SessionPort` (`createSessionManager`, `atlas sessions`)
-- **Multi-Agent Orchestrator**: Coordinates bounded agent roles (parallel/sequential) through `SessionPort`, collects and combines results (`createOrchestrator`)
-- **Usage & Credits Agent**: Tri-state actual/estimated/unknown tokens & cost, budgets/limits, pricing abstraction, `atlas usage` (`@atlas/usage`)
-- **Context → Agent Integration**: Assembles budgeted, deny-filtered `ContextPackage`s per task and delivers them to sessions (`createContextIntegration`, ADR-008)
-- **Tool Registry**: Curated, schema-validated, provenance-auditable catalog + local overlay (`createToolRegistry`, `@atlas/toolkit`)
-- **Tool Manifest System**: Versioned, validated manifest per installed tool (`.codeatlas/tools/<name>.json`, `TOOL_MANIFEST_SCHEMA_VERSION = 1`)
-
-## Progress
-- ✅ Scanner module implemented (recursive scan, ignored directories, structured output)
-- ✅ Hashing module built (_SHA-256_, change detection, JSON storage)
-- ✅ Manifest generation (project metadata in JSON)
-- ✅ Parser module built (TypeScript → normalized symbols via `ts-morph`, plugin-ready for more languages, parses only changed files)
-- ✅ Dependency graph built (imports, exports, calls, inheritance, interface implementations; `shortestPath` + cycle detection + JSON export)
-- ✅ Provider adapters built (Claude, OpenAI, Gemini, DeepSeek) + extensible registry
-- ✅ Caching built (TTL + persistence)
-- ✅ AI summary engine built (file/folder/module/project; content-hash caching; structured JSON; token usage)
-- ✅ SQLite context database built (8 tables, repositories, migrations, transactions, search)
-- ✅ Ranked project search built (in-memory index over files/symbols/modules/dependencies/summaries, fuzzy-aware, vector-ready scorer seam)
-- ✅ Context API / SDK built (`createContextSDK` — the read/write façade, provider-independent)
-- ✅ MCP server built (`@atlas/mcp` — stdio server, 6 read-only tools consuming the SDK)
-- ✅ VS Code extension built (`@atlas/extension` — tree views + palette commands) consuming the SDK
-- ✅ AI CLI connection layer built (`@atlas/agents` behind `AgentPort`)
-- ✅ Agent Session Manager built (`createSessionManager`, `atlas sessions list/info/stop`)
-- ✅ Multi-Agent Orchestrator built (`createOrchestrator` — bounded agent roles, parallel/sequential, result combination)
-- ✅ Usage & Credits built (`@atlas/usage`, `createUsageService`, `atlas usage` — tri-state tokens/cost, budgets, limits)
-- ✅ Context → Agent Integration built (`createContextIntegration` — budgeted, deny-filtered ContextPackages; ADR-008)
-- ✅ Tool Registry foundation built (`@atlas/toolkit`, `createToolRegistry` — curated catalog + local overlay)
-- ✅ Tool Manifest System built (versioned, validated, extensible per-installed-tool manifests)
-- ✅ Compatibility Engine built (`createCompatibilityEngine`, fail-closed environment checks)
-- ✅ Tool Installer built (`createInstaller`, approval-gated safe MVP ecosystems, verification/rollback)
-- ✅ Tool Configurator built (`createConfigurator`, per-target adapters, merge/backup/rollback, dry-run)
-- ➖ CLI `atlas search` + `atlas mcp` + `atlas sessions` + `atlas usage` + `atlas tools` + `atlas context` + `atlas init/build/update` wired through SDK seams; `explain`/`doctor` remain stubs
-
-## AI Agent Instructions
-- [AGENTS.md](AGENTS.md) — authoritative rules for every coding agent (Claude Code, OpenCode, Codex, Gemini CLI, …).
-- [Agent catalog](docs/AGENT_CATALOG.md) — the implemented analysis agents mapped to their `@atlas/*` packages.
-- [Documentation map](docs/DOCUMENTATION_MAP.md) — how to navigate `docs/`.
-
-## Next Steps
-- Wire the scan → hash → parse → graph → storage pipeline into `atlas build` and
-  `atlas update`.
-- Implement the intentional `@atlas/context` ranking/assembly service when the
-  product decision changes (currently preserved as a stub by ADR-001).
-- Agent Toolkit: `/tools` slash integration and `atlas setup`; Context CLI
-  slash routing remains future work — see
-  `docs/AGENT_TOOLKIT.md`

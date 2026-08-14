@@ -35,10 +35,11 @@ Options take precedence over environment/config where they overlap.
 
 | Command | Current behavior | Target contract |
 | ------- | ---------------- | --------------- |
-| `atlas init` | **[implemented]** | Initialize and index the current project; supports `--repo` and `--json`. |
-| `atlas build` | **[stubbed]** `Coming Soon` | Build/resolve the context index: scan → hash → parse changed files → build graph → persist to the context DB. Reports files/symbols/summaries counts. |
-| `atlas update` | **[stubbed]** `Coming Soon` | Incrementally update an existing index: reuse hashes, reprocess only `changed`/`added` files. No-op when nothing changed. |
-| `atlas search <query...>` | **[implemented]** | Search the index (symbols, files, modules, dependencies, summaries) with ranked, fuzzy-aware results. Options: `--limit <n>`, `--type <kind>` (repeatable), `--no-fuzzy`, `--json`. Reads `.codeatlas/context.db` via the **Context SDK** (`createContextSDK` — see [CONTEXT_SDK.md](./CONTEXT_SDK.md)); errors with exit code `1` when no index exists. |
+| `atlas init` | **[implemented]** | Initialize and index the current project; supports `--repo` and `--json`. Runs the SDK-owned indexer (`indexProject`, mode `build`). |
+| `atlas build` | **[implemented]** | Build/resolve the context index: scan → hash → parse changed files → build graph → persist to the context DB via the SDK indexer (`indexProject`, mode `build`). Reports files/symbols/summaries counts. |
+| `atlas update` | **[implemented]** | Incrementally update an existing index via the SDK indexer: reuse hashes, re-parse and merge only `changed`/`added` files, drop `deleted` files. No-op when nothing changed. |
+| `atlas scan` | **[implemented]** | Show a hierarchical overview of a project tree (files, folders, languages, framework) with **no indexing** — metadata only, via `scanProjectOverview()` from the SDK. Options: `--repo <path>`, `--json`. |
+| `atlas search <query...>` | **[implemented]** | Search the index (symbols, files, modules, dependencies, summaries) with ranked, fuzzy-aware results. Options: `--repo <path>`, `--limit <n>`, `--type <kind>` (repeatable), `--no-fuzzy`, `--json`. Reads `.codeatlas/context.db` via the **Context SDK** (`createContextSDK` — see [CONTEXT_SDK.md](./CONTEXT_SDK.md)); errors with exit code `1` when no index exists. |
 | `atlas mcp` | **[implemented]** | Start the **MCP server** over stdio for the current project (option `--root <path>` overrides `ATLAS_ROOT`/cwd). `@atlas/mcp` tools read context through the Context SDK. See [MCP.md](./MCP.md). |
 | `atlas sessions` / `atlas sessions list` | **[implemented]** | List tracked AI agent sessions (table). |
 | `atlas sessions info <id>` | **[implemented]** | Show details for one session (provider, status, repository, pid, started/ended, exit code). Never prints keys/env. |
@@ -106,8 +107,8 @@ documented in [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
   exits `1` when no index exists), `2` internal/engine error (reserved).
 - **Non-zero exit on failure** with a stderr message; no silent partial success.
 - **`--json`** output flag for machine-readable output on data-returning
-  commands — implemented on `search`, `usage summary`, `usage list`, and
-  `usage budgets`; proposed for the rest (build, status).
+  commands — implemented on `search`, `scan`, `usage summary`, `usage list`,
+  and `usage budgets`; proposed for the rest (build, status).
 - **No business logic in the CLI.** Commands parse args and delegate to the SDK.
   The CLI imports only `@atlas/sdk` (enforced by eslint).
 - **Help text** is the contract of record for users; update it when the contract changes.
@@ -118,6 +119,7 @@ documented in [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
 
 ```text
 atlas search   → createContextSDK({ dbPath }) → context.search.search(...)
+atlas scan     → scanProjectOverview() → @atlas/scanner (metadata only)
 atlas mcp      → @atlas/mcp startStdioServer({ root })
 atlas sessions → createSessionManager() → SessionPort (list/get/stop)
 atlas usage    → createUsageService({ filePath }) → UsagePort (summary/list/budgets)
@@ -125,8 +127,10 @@ atlas context  → createContextIntegration() → Context SDK / Context Package 
                  SessionPort
 atlas tools          → createToolkitSDK() → Registry / Manifest / Compatibility /
                          Security / Installer / Configurator façade
-atlas init/build/update/explain/doctor → "Coming Soon" (future: Scanner → Hashing
-                                          → Parser → Graph → ContextStore)
+atlas init/build/update → indexProject() → scanner → hashing → parser → graph →
+                          ContextStore
+atlas explain/doctor → "Coming Soon" (future: deterministic symbol explanation /
+                       environment diagnostics)
 ```
 
 Wired commands call exactly the SDK/`@atlas/mcp` surface they need and render

@@ -51,13 +51,11 @@ Consumers: atlas search · MCP tools · VS Code extension · agents
 
 Two important notes on what is wired **today**:
 
-- Each layer is implemented and tested as a package. The pieces can be composed
-  through the **SDK `Container`** or harnessed directly. But the end-to-end
-  indexing **CLI pipeline** (`atlas build`/`update`) is **not yet wired** — those
-  commands still print "Coming Soon". `createContextSDK` can *read* a database
-  that a caller produced via `ContextStore.saveContext`/`updateContext` (or the
-  SDK write edge), which is exactly how the CLI `atlas search` and the MCP tools
-  work today.
+- Each layer is implemented and tested as a package, and the end-to-end
+  indexing **CLI pipeline** is wired: `atlas init`/`build`/`update` run the
+  SDK-owned incremental indexer (see §3), and `atlas scan` prints the
+  `ProjectScan` overview. `createContextSDK` reads the resulting database,
+  which is exactly how the CLI `atlas search` and the MCP tools work.
 - `@atlas/context` (rank/assemble "the most relevant context for an LLM") is an
   **intentional stub** (ADR-001). The SDK's `getRelevantContext` is a
   *deterministic* assembly built from `@atlas/search` + stored data — it does
@@ -164,13 +162,14 @@ create → scan → hash → parse → graph → (summaries?) → store → quer
 - **Incremental updates.** Hash snapshots + `updateContext` (merge, not full
   replace) are the building blocks of an incremental `atlas update`. The
   hash diff classifies every path as `changed`/`added`/`deleted`/`unchanged`
-  and drives the reported counters; deleted files are removed from the store.
-  **Observed cost model (verified 2026-08-13):** the current SDK indexer
-  (`@atlas/sdk` `indexProject`) still reads and re-parses every TypeScript
-  file on each run — the diff is used for the counters but not yet to select
-  which files the parser receives. `atlas build`/`update` now run through
-  that SDK-owned indexer (`CURRENT_STATE.md`); the parser packages themselves
-  only parse what they are given.
+  and drives the reported counters. **Verified behavior:** the SDK-owned
+  indexer (`@atlas/sdk` `indexProject`, which `atlas init`/`build`/`update` run)
+  is **incremental** — on `update` it re-reads and re-parses only
+  `changed` + `added` TypeScript files, reuses the persisted snapshot
+  (files/symbols/hashes) for `unchanged` files, carries over usage edges from
+  untouched files, deletes `deleted` files via `deleteContext`, prunes removed
+  folder modules, and merges the new state with `updateContext`. A full `build`
+  still performs a complete replace (`saveContext`).
 - **Trouble/fresh index.** When `.codeatlas/context.db` is missing,
   `atlas search`, the MCP server tools, and the Context SDK return a clean
   "no index" state; the SDK opens lazily so server code can wait for the index

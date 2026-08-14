@@ -14,7 +14,8 @@ and any MCP-capable client.
 
 - **Consumes the Context SDK.** Every tool reads through
   `createContextSDK` sub-APIs (`symbols.searchSymbols`, `files.searchFiles`,
-  `dependencies.query`, `modules.explain`, `summaries.*`, `project.overview`)
+  `dependencies.query`, `modules.explain`, `summaries.*`, `project.overview`,
+  `files.readRange`)
   — never the database directly. See [CONTEXT_SDK.md](./CONTEXT_SDK.md).
 - **Provider-independent.** The server never hardcodes an AI provider. Search,
   dependencies, module explanation, and overview are deterministic reads of the
@@ -240,6 +241,37 @@ Returns:
   "dependencyCount": 2,
   "dependencies": [ /* same shape as get_dependencies */ ],
   "summary": { /* same shape as get_summary summaries[0] */ }  // or null
+}
+```
+
+### `read_file_range`
+
+Version-aware read of a line range from a file. The content is read from the
+**working tree** and compared against the persisted version, so an agent never
+acts on stale context. Returns the **current** on-disk text (or the indexed
+content as a fallback when the file is not on disk), plus freshness metadata.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `path` | string | ✅ | Absolute path, or a path relative to the project root. |
+| `startLine` | integer ≥ 1 | ✅ | First line of the requested range (1-based). |
+| `endLine` | integer ≥ `startLine` | ✅ | Last line of the requested range (inclusive). |
+| `padding` | integer ≥ 0 | – | Lines to include around the range (default 5; `0` disables). |
+| `expectedHash` | string | – | SHA-256 the caller believes the file should have; a mismatch sets `versionMatch: false`. |
+
+Returns:
+
+```jsonc
+{
+  "path": "/src/auth.ts",
+  "startLine": 1,
+  "endLine": 7,
+  "content": "import { double } from './math';\n...",
+  "hash": "a1b2c3…",
+  "versionMatch": true,          // false when expectedHash was given but the file changed
+  "stale": false,                // true when the file is not on disk or the hash drifted
+  "padded": true,                // false when padding: 0
+  "message": "File changed since this context was generated."  // only when versionMatch is false
 }
 ```
 

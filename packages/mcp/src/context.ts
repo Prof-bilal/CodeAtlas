@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { createContextSDK, type ContextSDK } from "@atlas/sdk";
+import { type ContextSDK, createContextSDK } from "@atlas/sdk";
 import { ToolDomainError } from "./validation";
 
 export interface CodeAtlasContextOptions {
@@ -63,7 +63,7 @@ export class CodeAtlasContext {
     if (!this.isReady) {
       return null;
     }
-    this.sdk ??= createContextSDK({ dbPath: this.dbPath });
+    this.sdk ??= createContextSDK({ dbPath: this.dbPath, repositoryPath: this.root });
     return this.sdk;
   }
 

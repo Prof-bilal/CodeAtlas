@@ -100,6 +100,7 @@ ContextDatabasePort (the only way data is read/written)
 | `getFile(path)` | `FileContentContext` | throws `FileNotFoundError` when missing |
 | `listFiles()` | `readonly FileContext[]` | metadata + size, no content |
 | `searchFiles(query, opts?)` | `readonly SearchResult[]` | ranked file hits |
+| `readRange(path, request)` | `ReadRangeResult` | version-aware line range read — see below |
 
 ### `context.symbols`
 
@@ -182,10 +183,26 @@ random component can corrupt the context database.
 | Method | Returns | Notes |
 | ------ | ------- | ----- |
 | `status()` | `ContextStatus` | version, `lastUpdated`, `available`, indexed counts |
+| `freshness()` | `Promise<FreshnessSignal>` | `fresh`/`stale`/`unknown`/`unavailable` vs the working tree, with `changed`/`added`/`deleted` file lists — compares persisted hashes against on-disk files |
 | `getRelevantContext(query)` | `RelevantContext` | deterministic assembly for an AI task |
 | `config` | `ContextSDKConfig` | resolved repository/db paths |
 | `isAvailable` | `boolean` | false when `.codeatlas/context.db` is missing |
 | `close()` | `void` | release the SQLite handle |
+
+#### Version-aware range reads
+
+`files.readRange(path, { startLine, endLine, padding?, expectedHash? })` reads a
+line range from the **working tree** and compares it against the persisted
+version, so an agent never acts on context that is no longer current:
+
+- `padding` (default `5`) widens the range to give the LLM surrounding lines;
+  `padded: false` when `padding: 0`.
+- `hash` is the SHA-256 of the current file; `versionMatch: false` (plus a
+  `message`) when `expectedHash` was supplied but the file changed since it was
+  generated — the content returned is the **current** on-disk text, never stale.
+- `stale: true` when the file is not on disk (the read falls back to indexed
+  content) or the persisted hash no longer matches.
+- `path` may be absolute or relative to `config.repositoryPath`.
 
 ---
 
@@ -277,6 +294,7 @@ MCP tool: get_dependencies   → context.dependencies.getDependencies(...)
 MCP tool: get_summary        → context.summaries.getFileSummary / getModuleSummary...
 MCP tool: explain_module     → context.modules.getModule + context.modules.listModules
 MCP tool: project_overview   → context.project.overview() + context.project.stats()
+MCP tool: read_file_range    → context.files.readRange(...)
 ```
 
 Consumers never learn the underlying package layout or SQLite schema.

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type {
@@ -25,6 +25,7 @@ import { ContextStore } from "@atlas/storage";
 import { describe, expect, it, vi } from "vitest";
 import { createCli } from "../src/cli";
 import { comingSoonMessage } from "../src/commands/coming-soon";
+import { renderOverview } from "../src/commands/scan";
 import { contextDbPath, renderSearchHits, resolveProjectRoot } from "../src/commands/search";
 import { agentLabel, formatSessionInfo, renderSessionsTable } from "../src/commands/sessions";
 import {
@@ -167,6 +168,7 @@ describe("atlas CLI", () => {
       "explain",
       "init",
       "mcp",
+      "scan",
       "search",
       "sessions",
       "tools",
@@ -426,6 +428,22 @@ describe("atlas CLI", () => {
     });
   });
 
+  it("resolves the index via `--repo` without ATLAS_ROOT", async () => {
+    await withProject(async (root) => {
+      process.env["ATLAS_ROOT"] = undefined;
+      const program = createCli();
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      let output = "";
+      try {
+        await program.parseAsync(["node", "atlas", "search", "double", "--repo", root]);
+        output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+      } finally {
+        log.mockRestore();
+      }
+      expect(output).toContain("double");
+    });
+  });
+
   it("fails cleanly when no index exists", async () => {
     const root = mkdtempSync(join(tmpdir(), "atlas-cli-empty-"));
     process.env["ATLAS_ROOT"] = root;
@@ -535,6 +553,84 @@ describe("atlas CLI", () => {
       error.mockRestore();
       log.mockRestore();
     }
+  });
+
+  describe("atlas scan", () => {
+    it("renders a hierarchical overview with totals and languages", async () => {
+      const root = mkdtempSync(join(tmpdir(), "atlas-scan-"));
+      try {
+        mkdirSync(join(root, "src"), { recursive: true });
+        writeFileSync(join(root, "src", "math.ts"), "export function double() {}\n");
+        writeFileSync(join(root, "src", "index.ts"), "export const answer = 42;\n");
+        writeFileSync(join(root, "README.md"), "# Demo\n");
+
+        const program = createCli();
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+          await program.parseAsync(["node", "atlas", "scan", "--repo", root]);
+          const output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+          expect(output).toContain("3 files in 1 folders");
+          expect(output).toContain("typescript (2)");
+          expect(output).toContain("[d] src/");
+          expect(output).toContain("math.ts");
+        } finally {
+          log.mockRestore();
+        }
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    });
+
+    it("emits JSON output with --json", async () => {
+      const root = mkdtempSync(join(tmpdir(), "atlas-scan-"));
+      try {
+        writeFileSync(join(root, "app.ts"), "export const value = 1;\n");
+        const program = createCli();
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+          await program.parseAsync(["node", "atlas", "scan", "--repo", root, "--json"]);
+          const output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+          expect(output).toContain('"totalFiles": 1');
+          expect(output).toContain('"app.ts"');
+        } finally {
+          log.mockRestore();
+        }
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    });
+
+    it("renderOverview summarizes the scan textually", () => {
+      const text = renderOverview({
+        name: "demo",
+        rootPath: "/demo" as never,
+        totalFiles: 2,
+        totalFolders: 1,
+        tree: [
+          {
+            name: "src",
+            path: "/demo/src" as never,
+            type: "directory",
+            children: [
+              { name: "math.ts", path: "/demo/src/math.ts" as never, type: "file", children: [] },
+            ],
+          },
+        ],
+        files: [],
+        fileTypes: [],
+        languages: [{ name: "typescript", fileCount: 2, extensions: ["ts"] }],
+        framework: "react",
+        hasPackageJson: true,
+        hasTsconfig: true,
+        hasReadme: true,
+        isGitRepository: true,
+      });
+      expect(text).toContain("demo — 2 files in 1 folders");
+      expect(text).toContain("typescript (2)");
+      expect(text).toContain("Framework: react");
+      expect(text).toContain("[d] src/");
+      expect(text).toContain("math.ts");
+    });
   });
 
   describe("usage rendering and CLI", () => {

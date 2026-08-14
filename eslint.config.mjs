@@ -91,7 +91,14 @@ function dependencyRestrictions() {
 
 export default tseslint.config(
   {
-    ignores: ["**/dist/**", "**/node_modules/**", "**/coverage/**", "ui/**"],
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/coverage/**",
+      "ui/**",
+      "test-repo/**",
+      "go-tui-app/**",
+    ],
   },
   {
     settings: {

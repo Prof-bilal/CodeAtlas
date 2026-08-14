@@ -7,11 +7,10 @@ How CodeAtlas persists project context, and the on-disk `.codeatlas/` layout.
 > **`tools/`** directory — one Tool Manifest per installed tool — is written by
 > `@atlas/toolkit`'s `saveToolManifest` ([IMPLEMENTED], Task 20). The
 > **`context.db`** file is *read* by `atlas search`, the MCP server, and the VS
-> Code extension (via `createContextSDK`), and can be produced by
-> `@atlas/storage`'s `ContextStore` / the SDK write surface when an indexing
-> pipeline runs — but **no shipped CLI command writes it yet**
-> (`atlas build`/`update` are still "Coming Soon"). The rest of the layout is
-> **target** ([PLANNED]). See [CURRENT_STATE.md](./CURRENT_STATE.md).
+> Code extension (via `createContextSDK`), and is **written by the SDK-owned
+> incremental indexer** that `atlas init`/`build`/`update` run ([IMPLEMENTED]).
+> The rest of the layout is **target** ([PLANNED]). See
+> [CURRENT_STATE.md](./CURRENT_STATE.md).
 
 ---
 

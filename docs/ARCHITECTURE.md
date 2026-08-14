@@ -72,7 +72,7 @@ See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md),
 
 ```
 apps/
-  cli/          # Commander.js CLI — thin UI; search + mcp wired, rest "Coming Soon"
+  cli/          # Commander.js CLI — thin UI; search/scan/mcp/indexing wired
   extension/    # VS Code extension (@atlas/extension) — SDK consumer
 packages/
   shared/       # Base types, Result, branded IDs, VERSION             (foundation)
@@ -163,9 +163,10 @@ examples/       # Placeholder (no runnable examples yet)
 ### Interface layer
 - **`apps/cli`** — Commander.js. Thin: parses commands and delegates to the SDK
   (and `@atlas/mcp`). **`atlas search` is wired** through the Context SDK;
-  **`atlas mcp` starts the MCP server**; `init`/`build`/`update`/`explain`/
-  `doctor` still print "Coming Soon".
-- **`packages/mcp` (`@atlas/mcp`)** — MCP server over stdio exposing six
+  **`atlas mcp` starts the MCP server**; **`atlas init`/`build`/`update` run the
+  SDK-owned indexer**; **`atlas scan`** shows a metadata-only project overview;
+  `explain`/`doctor` still print "Coming Soon".
+- **`packages/mcp` (`@atlas/mcp`)** — MCP server over stdio exposing seven
   read-only tools; consumes only the Context SDK ([MCP.md](./MCP.md)).
 - **`apps/extension` (`@atlas/extension`)** — VS Code extension (Activity Bar +
   tree views + palette commands), reads only through the Context SDK
@@ -186,8 +187,10 @@ search ◀── search ── SearchService builds an in-memory index from the 
 Today the pieces exist independently and are composed in the SDK container / by
 consumers. **`atlas search`** routes through `createContextSDK` (the Context
 API) rather than reaching for the database, and **`atlas mcp`** starts the MCP
-server (`@atlas/mcp`). The indexing pipeline that *produces* the database is not
-yet wired from the CLI (`init`/`build`/`update` are still "Coming Soon").
+server (`@atlas/mcp`). The indexing pipeline that *produces* the database is
+wired from the CLI: **`atlas init`/`build`/`update`** run the SDK-owned
+`indexProject()` (incremental on `update`), and **`atlas scan`** prints a
+metadata-only project overview via `scanProjectOverview()`.
 
 ### Planned end-to-end data flow (with Agent Platform + Agent Toolkit)
 

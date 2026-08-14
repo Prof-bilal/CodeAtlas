@@ -1,5 +1,6 @@
 import { spawn as nodeSpawn } from "node:child_process";
 import { statSync } from "node:fs";
+import { extname } from "node:path";
 import { type Result, fail, ok } from "@atlas/shared";
 import { InvalidWorkingDirectoryError, ProcessSpawnError } from "./errors";
 
@@ -40,9 +41,23 @@ export type SpawnFn = (
   },
 ) => SpawnedProcess;
 
-/** Default spawn: `spawn(command, argsArray, { shell: false })`. */
-export const nodeSpawnFn: SpawnFn = (command, args, options) =>
-  nodeSpawn(command, args, options) as unknown as SpawnedProcess;
+/**
+ * Default spawn: direct executables use `shell:false` and argument arrays.
+ * Windows npm CLIs are `.cmd` shims, which Windows cannot execute directly
+ * with Node's spawn. Those shims are launched through `cmd.exe` while still
+ * passing the command and user arguments as separate argv entries; no shell
+ * command string is constructed from repository or user input.
+ */
+export const nodeSpawnFn: SpawnFn = (command, args, options) => {
+  if (process.platform === "win32" && [".cmd", ".bat"].includes(extname(command).toLowerCase())) {
+    return nodeSpawn(
+      process.env["ComSpec"] ?? "cmd.exe",
+      ["/d", "/s", "/c", command, ...args],
+      options,
+    ) as unknown as SpawnedProcess;
+  }
+  return nodeSpawn(command, args, options) as unknown as SpawnedProcess;
+};
 
 /** What to launch and how to supervise it. */
 export interface ProcessSpec {

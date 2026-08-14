@@ -1,11 +1,13 @@
-import { existsSync } from "node:fs";
-import { join, resolve } from "node:path";
+﻿import { existsSync, readFileSync } from "node:fs";
+import { isAbsolute, join, resolve } from "node:path";
+import { CacheService } from "@atlas/cache";
 import type {
   ContextData,
   ContextDatabasePort,
   ContextDeleteTarget,
   ContextSnapshot,
   PersistedDependency,
+  Symbol as PersistedSymbol,
   SearchRequest,
   SearchResult,
   SourceFile,
@@ -13,14 +15,12 @@ import type {
   SummaryKind,
   SummaryOptions,
   SummaryPort,
-  Symbol,
 } from "@atlas/core";
-import { fail, type FilePath, type Result, type SymbolId } from "@atlas/shared";
-import { ContextStore } from "@atlas/storage";
-import { SearchService } from "@atlas/search";
-import { CacheService } from "@atlas/cache";
+import { HashService, hashContent } from "@atlas/hashing";
 import { ProviderService } from "@atlas/providers";
-import { HashService } from "@atlas/hashing";
+import { SearchService } from "@atlas/search";
+import { type FilePath, type Result, type SymbolId, fail } from "@atlas/shared";
+import { ContextStore } from "@atlas/storage";
 import { SummaryService } from "@atlas/summary";
 import {
   ContextUnavailableError,
@@ -35,17 +35,21 @@ import type {
   DependencyQueryResult,
   FileContentContext,
   FileContext,
+  FreshnessSignal,
   ModuleContext,
   ModuleExplanation,
   ProjectCounts,
   ProjectOverview,
   ProjectOverviewDetail,
+  ReadRangeRequest,
+  ReadRangeResult,
   RelevantContext,
   SymbolContext,
   SymbolReference,
 } from "./models";
 import { fileNodeId, isUnderOrEqual, symbolNodeId } from "./nodes";
 import { ReadRepositories, WriteRepositories } from "./repositories";
+import { type FreshnessInput, detectFreshness } from "./staleness";
 
 /** Options accepted by {@link createContextSDK}. */
 export interface ContextSDKOptions {
@@ -94,6 +98,13 @@ export interface FileContextAPI {
   listFiles(): readonly FileContext[];
   /** Search indexed files by a query. */
   searchFiles(query: string, options?: SearchRequest): readonly SearchResult[];
+  /**
+   * Version-aware line range read (see {@link ReadRangeResult}): returns a
+   * padded range of the file's current working-tree content and validates it
+   * against an optional expected hash so stale line numbers are never silently
+   * trusted. Throws `FileNotFoundError` when the file is not indexed.
+   */
+  readRange(path: string, request: ReadRangeRequest): ReadRangeResult;
 }
 
 /**
@@ -103,7 +114,7 @@ export interface SymbolContextAPI {
   /** A symbol by id; throws `SymbolNotFoundError` when missing. */
   getSymbol(symbolId: string): SymbolContext;
   /** All indexed symbols. */
-  listSymbols(): readonly Symbol[];
+  listSymbols(): readonly PersistedSymbol[];
   /** Search indexed symbols by a query, optionally filtering by symbol kind. */
   searchSymbols(
     query: string,
@@ -190,7 +201,7 @@ export interface ProjectContextAPI {
 }
 
 /**
- * The write edge of the SDK — read/write are deliberately separated. Consumers
+ * The write edge of the SDK â€” read/write are deliberately separated. Consumers
  * should normally use the read APIs; the indexing pipeline owns writes.
  */
 export interface ContextWriteAPI {
@@ -203,7 +214,7 @@ export interface ContextWriteAPI {
 }
 
 /**
- * The Context SDK façade returned by {@link createContextSDK}. Consumers use the
+ * The Context SDK faÃ§ade returned by {@link createContextSDK}. Consumers use the
  * sub-APIs and never touch the database port directly.
  */
 export interface ContextSDK {
@@ -214,11 +225,17 @@ export interface ContextSDK {
   readonly summaries: SummaryContextAPI;
   readonly search: SearchContextAPI;
   readonly project: ProjectContextAPI;
-  /** Write access — owned by the indexing pipeline. */
+  /** Write access â€” owned by the indexing pipeline. */
   readonly write: ContextWriteAPI;
   /** Status metadata so agents can detect stale context. */
   status(): ContextStatus;
-  /** Persisted per-file hashes (path → SHA-256), for working-tree staleness checks. */
+  /**
+   * Compare the persisted per-file hashes against the current working tree and
+   * report whether the index is fresh, stale, unknown, or unavailable. Callers
+   * must never treat stale context as fresh.
+   */
+  freshness(): Promise<FreshnessSignal>;
+  /** Persisted per-file hashes (path â†’ SHA-256), for working-tree staleness checks. */
   hashes(): Readonly<Record<string, string>>;
   /** Deterministic relevant-context assembly for a query. */
   getRelevantContext(query: string): RelevantContext;
@@ -270,7 +287,7 @@ class ContextSDKFacade implements ContextSDK {
     }
   }
 
-  /** Create the façade, wiring an on-disk store when one exists. */
+  /** Create the faÃ§ade, wiring an on-disk store when one exists. */
   public static open(options: ContextSDKOptions): ContextSDKFacade {
     const config = resolveContextConfig(options);
     const port = options.contextDb ?? openStore(config.dbPath);
@@ -281,7 +298,7 @@ class ContextSDKFacade implements ContextSDK {
     return this.port !== null && !this.closed;
   }
 
-  // ── internal ──────────────────────────────────────────────────────────────
+  // â”€â”€ internal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private requireAvailable(): void {
     if (!this.isAvailable) {
@@ -329,7 +346,7 @@ class ContextSDKFacade implements ContextSDK {
     if (kind === undefined) {
       return hits;
     }
-    const symbols = new Map<string, Symbol>();
+    const symbols = new Map<string, PersistedSymbol>();
     for (const symbol of this.reads.listSymbols()) {
       symbols.set(symbol.id, symbol);
     }
@@ -348,7 +365,7 @@ class ContextSDKFacade implements ContextSDK {
     return files.filter((file) => isUnderOrEqual(file.path, target));
   }
 
-  // ── files ─────────────────────────────────────────────────────────────────
+  // â”€â”€ files â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   public readonly files: FileContextAPI = {
     getFile: (path: string): FileContentContext => {
@@ -364,16 +381,43 @@ class ContextSDKFacade implements ContextSDK {
     searchFiles: (query: string, options?: SearchRequest): readonly SearchResult[] => {
       return this.searchHits(query, { ...options, types: ["file"] });
     },
+    readRange: (path, request: ReadRangeRequest): ReadRangeResult => {
+      this.requireAvailable();
+      const lookupPath = isAbsolute(path) ? path : join(this.config.repositoryPath, path);
+      const source = this.reads.getFile(lookupPath as FilePath);
+      const disk = readWorkingFile(source.path);
+      const persistedHash = this.hashes()[source.path];
+      const hash = disk.readable ? hashContent(disk.content) : (persistedHash ?? "");
+      const stale = !disk.readable || (persistedHash !== undefined && persistedHash !== hash);
+      const versionMatch = request.expectedHash === undefined || request.expectedHash === hash;
+      const padding = request.padding ?? DEFAULT_READ_RANGE_PADDING;
+      const lines = (disk.readable ? disk.content : source.content).split("\n");
+      const totalLines = lines.length;
+      const first = Math.max(1, request.startLine - padding);
+      const last = Math.min(totalLines, request.endLine + padding);
+      const content = lines.slice(first - 1, last).join("\n");
+      return {
+        path: source.path,
+        startLine: first,
+        endLine: last,
+        content,
+        hash,
+        versionMatch,
+        stale,
+        padded: padding > 0,
+        ...(versionMatch ? {} : { message: "File changed since this context was generated." }),
+      };
+    },
   };
 
-  // ── symbols ────────────────────────────────────────────────────────────────
+  // â”€â”€ symbols â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   public readonly symbols: SymbolContextAPI = {
     getSymbol: (symbolId: string): SymbolContext => {
       this.requireAvailable();
       return this.reads.getSymbol(symbolId as SymbolId);
     },
-    listSymbols: (): readonly Symbol[] => {
+    listSymbols: (): readonly PersistedSymbol[] => {
       this.requireAvailable();
       return this.reads.listSymbols();
     },
@@ -397,7 +441,7 @@ class ContextSDKFacade implements ContextSDK {
     },
   };
 
-  // ── dependencies ───────────────────────────────────────────────────────────
+  // â”€â”€ dependencies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   public readonly dependencies: DependencyContextAPI = {
     getDependencies: (target: string): readonly DependencyContext[] => {
@@ -469,7 +513,7 @@ class ContextSDKFacade implements ContextSDK {
     },
   };
 
-  // ── modules ────────────────────────────────────────────────────────────────
+  // â”€â”€ modules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   public readonly modules: ModuleContextAPI = {
     listModules: (): readonly ModuleContext[] => {
@@ -522,7 +566,7 @@ class ContextSDKFacade implements ContextSDK {
     },
   };
 
-  // ── summaries ──────────────────────────────────────────────────────────────
+  // â”€â”€ summaries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   public readonly summaries: SummaryContextAPI = {
     listSummaries: (): readonly Summary[] => {
@@ -574,7 +618,7 @@ class ContextSDKFacade implements ContextSDK {
     },
   };
 
-  // ── search / project ───────────────────────────────────────────────────────
+  // â”€â”€ search / project â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   public readonly search: SearchContextAPI = {
     search: (query: string, options?: SearchRequest): readonly SearchResult[] => {
@@ -620,7 +664,7 @@ class ContextSDKFacade implements ContextSDK {
     },
   };
 
-  // ── write (indexing pipeline) ──────────────────────────────────────────────
+  // â”€â”€ write (indexing pipeline) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   public readonly write: ContextWriteAPI = {
     save: (data: ContextData): number => {
@@ -643,7 +687,7 @@ class ContextSDKFacade implements ContextSDK {
     },
   };
 
-  // ── status / relevant context / close ──────────────────────────────────────
+  // â”€â”€ status / relevant context / close â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   public status(): ContextStatus {
     if (!this.isAvailable) {
@@ -673,6 +717,15 @@ class ContextSDKFacade implements ContextSDK {
       dependenciesIndexed: counts.dependencies,
       summariesIndexed: counts.summaries,
     };
+  }
+
+  public async freshness(): Promise<FreshnessSignal> {
+    const input: FreshnessInput = {
+      config: this.config,
+      status: () => this.status(),
+      hashes: () => this.hashes(),
+    };
+    return detectFreshness(input);
   }
 
   public hashes(): Readonly<Record<string, string>> {
@@ -712,7 +765,7 @@ class ContextSDKFacade implements ContextSDK {
       try {
         symbolContexts.push(this.reads.getSymbol(symbolId as SymbolId));
       } catch {
-        // Symbol removed from a concurrent index refresh — skip.
+        // PersistedSymbol removed from a concurrent index refresh â€” skip.
       }
     }
 
@@ -773,7 +826,7 @@ export function createContextSDK(options: ContextSDKOptions = {}): ContextSDK {
   return ContextSDKFacade.open(options);
 }
 
-// ── mapping helpers ──────────────────────────────────────────────────────────
+// â”€â”€ mapping helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function toFileContentContext(file: SourceFile, summary: Summary | undefined): FileContentContext {
   return {
@@ -809,6 +862,18 @@ function toDependencyContext(input: {
 
 function byteLength(content: string): number {
   return Buffer.byteLength(content, "utf8");
+}
+
+/** Default padding lines above/below a requested range (protects against drift). */
+const DEFAULT_READ_RANGE_PADDING = 5;
+
+/** Read a file from the working tree, reporting whether it is readable. */
+function readWorkingFile(path: string): { readonly content: string; readonly readable: boolean } {
+  try {
+    return { content: readFileSync(path, "utf8"), readable: true };
+  } catch {
+    return { content: "", readable: false };
+  }
 }
 
 /** Extract the symbol id from a `symbol:<id>` search-hit target. */

@@ -32,6 +32,8 @@ export {
 } from "./container";
 export { indexProject } from "./indexing/indexer";
 export type { IndexRequest, IndexResult } from "./indexing/indexer";
+export { scanProjectOverview } from "./indexing/scan";
+export type { FileTreeNode, ProjectScan } from "@atlas/core";
 export {
   createContextSDK,
   resolveContextConfig,
@@ -55,11 +57,15 @@ export type {
   DependencyQueryResult,
   FileContentContext,
   FileContext,
+  FreshnessSignal,
+  FreshnessState,
   ModuleContext,
   ModuleExplanation,
   ProjectCounts,
   ProjectOverview,
   ProjectOverviewDetail,
+  ReadRangeRequest,
+  ReadRangeResult,
   RelevantContext,
   SymbolContext,
   SymbolReference,
