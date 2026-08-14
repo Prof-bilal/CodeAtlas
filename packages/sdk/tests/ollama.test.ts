@@ -36,7 +36,10 @@ describe("createOllamaService", () => {
   it("reports an unconnected local default before any connect", () => {
     const dir = tempDir();
     try {
-      const service = createOllamaService({ configPath: join(dir, "providers.json") });
+      const service = createOllamaService({
+        configPath: join(dir, "providers.json"),
+        env: {},
+      });
       expect(service.status()).toEqual({
         connected: false,
         mode: "local",
@@ -57,7 +60,7 @@ describe("createOllamaService", () => {
       const { transport, calls } = fakeTransport([
         { status: 200, json: { models: [{ name: "llama3.2" }] } },
       ]);
-      const service = createOllamaService({ configPath, transport });
+      const service = createOllamaService({ configPath, transport, env: {} });
       const result = await service.connect();
       expect(result.ok).toBe(true);
       if (!result.ok) {

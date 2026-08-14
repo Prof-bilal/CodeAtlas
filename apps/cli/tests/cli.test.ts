@@ -991,7 +991,9 @@ describe("atlas CLI", () => {
       const program = createCli();
       const log = vi.spyOn(console, "log").mockImplementation(() => {});
       const env = process.env["ATLAS_PROVIDERS_CONFIG"];
+      const ollamaKey = process.env["OLLAMA_API_KEY"];
       process.env["ATLAS_PROVIDERS_CONFIG"] = configPath();
+      process.env["OLLAMA_API_KEY"] = "";
       try {
         await program.parseAsync(["node", "atlas", "ollama"]);
         const bare = log.mock.calls.map((call) => call.join(" ")).join("\n");
@@ -1003,6 +1005,7 @@ describe("atlas CLI", () => {
         expect(status).toContain("Mode: local");
       } finally {
         process.env["ATLAS_PROVIDERS_CONFIG"] = env;
+        process.env["OLLAMA_API_KEY"] = ollamaKey ?? "";
         log.mockRestore();
       }
     });
