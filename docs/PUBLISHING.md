@@ -54,7 +54,7 @@ The root shortcut builds and publishes the CLI:
 pnpm release:cli
 ```
 
-Notes from the 0.2.0/0.2.1 releases:
+Notes from the 0.2.1 release:
 
 - **Unclean working tree.** `pnpm publish` aborts with `ERR_PNPM_GIT_UNCLEAN`
   when the tree has uncommitted changes. If you are publishing an intentionally
@@ -109,5 +109,4 @@ credentials in the repository.
 
 | Version | Date | Highlights |
 | ------- | ---- | ---------- |
-| `0.2.1` | 2026-08-14 | Patch: `atlas --version` reports the CLI's own version. |
-| `0.2.0` | 2026-08-14 | Feature release: deterministic context ranking (`@atlas/context`, ADR-001), `atlas explain`, `atlas doctor`, `atlas sessions stop` token-impact reporting, TUI removed from the shipped artifact. |
+| `0.2.1` | 2026-08-14 | Deterministic context ranking (`@atlas/context`, ADR-001), `atlas explain`, `atlas doctor`, `atlas sessions stop` token-impact reporting, TUI removed from the shipped artifact. `atlas --version` reports the CLI's own version. |

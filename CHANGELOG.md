@@ -9,14 +9,6 @@ npm versions.
 
 ## [0.2.1] - 2026-08-14
 
-### Fixed
-
-- `atlas --version` now reports the CLI's own version (read from
-  `apps/cli/package.json` at build time) instead of the workspace placeholder
-  `0.0.0`.
-
-## [0.2.0] - 2026-08-14
-
 ### Added
 
 - **Deterministic context ranking** — `@atlas/context` (`ContextBuilderService`)
@@ -61,6 +53,14 @@ npm versions.
 - Hardened a flaky `ProcessRunner` SIGKILL-escalation test to poll for the
   escalated signal instead of a fixed sleep (assertions unchanged).
 
+### Fixed
+
+- `atlas --version` now reports the CLI's own version (read from
+  `apps/cli/package.json` at build time) instead of the workspace placeholder
+  `0.0.0`.
+- Windows: external AI CLI `.cmd`/`.bat` shims are now spawned correctly
+  (`@atlas/agents` process layer).
+
 ### Docs
 
 - Rewrote the top-level `README.md` (status claims now reflect the implemented
@@ -75,13 +75,6 @@ npm versions.
   count, git-repository status) in `docs/CONTEXT.md`, `docs/CONTEXT_STORAGE.md`,
   `docs/CLI.md`, `docs/CONTEXT_SDK.md`, `docs/MCP.md`, `docs/MODULES.md`,
   `docs/VSCODE.md`, `docs/DEVELOPMENT.md`, `docs/CONTRIBUTING.md`.
-- `docs/PUBLISHING.md` now documents the 0.2.0/0.2.1 release notes and the
-  published-versions table.
-
-### Fixed
-
-- Windows: external AI CLI `.cmd`/`.bat` shims are now spawned correctly
-  (`@atlas/agents` process layer).
 
 ### Security
 
