@@ -42,7 +42,7 @@ README.md
 | `docs/CLI.md` | The `atlas` CLI contract, including the implemented SDK-backed Toolkit commands. |
 | `docs/MCP.md` | The MCP server: configuration + full tool reference. |
 | `docs/VSCODE.md` | The VS Code extension (`@atlas/extension`): what it does and how it consumes the SDK. |
-| `docs/installation.md` | Installing CodeAtlas (from source or global CLI). |
+| `docs/installation.md` | Installing CodeAtlas (published global CLI or from source). |
 | `docs/getting-started.md` | 10-minute end-to-end walkthrough against a real repository. |
 | `docs/configuration.md` | Environment variables, `.codeatlas/` layout, per-command options. |
 | `docs/integrations.md` | Consumer surfaces: MCP, VS Code, AI CLIs, Agent Toolkit. |

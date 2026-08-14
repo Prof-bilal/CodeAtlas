@@ -56,10 +56,11 @@ Two important notes on what is wired **today**:
   SDK-owned incremental indexer (see §3), and `atlas scan` prints the
   `ProjectScan` overview. `createContextSDK` reads the resulting database,
   which is exactly how the CLI `atlas search` and the MCP tools work.
-- `@atlas/context` (rank/assemble "the most relevant context for an LLM") is an
-  **intentional stub** (ADR-001). The SDK's `getRelevantContext` is a
-  *deterministic* assembly built from `@atlas/search` + stored data — it does
-  not use the stub.
+- `@atlas/context` (rank/assemble "the most relevant context for an LLM") is a
+  deterministic rank-and-assemble step (ADR-001): `ContextBuilderService` ranks
+  search hits and resolves them to source-file `ContextItem`s. The SDK's
+  `getRelevantContext` is a *richer* deterministic assembly built from
+  `@atlas/search` + stored data.
 
 ## 2. Layer by layer
 

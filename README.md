@@ -62,13 +62,13 @@ and the SDK-backed CLI (`atlas search|scan|sessions|usage|tools|context|mcp`,
 [PARTIAL] Parser handles TypeScript only (renamed imports and
 `export default <expr>` do not resolve cross-file).
 
-[STUB] `@atlas/context` (context ranking/assembly) throws `ComingSoonError` by
-design (ADR-001); the SDK's `getRelevantContext` is a deterministic assembly and
-does not use the stub.
+[IMPLEMENTED] `@atlas/context` (context ranking/assembly) — a deterministic
+rank-and-assemble step (ADR-001) that ranks search hits and resolves them to
+source-file `ContextItem`s. The CLI `atlas explain`/`atlas doctor` and the
+`atlas sessions` token-impact reporting are wired.
 
-[PLANNED] CLI `atlas explain`/`atlas doctor`, the `/tools` and `/context` slash
-surfaces, `atlas setup`, the standalone agent router, and the Agent
-Orchestrator.
+[PLANNED] The `/tools` and `/context` slash surfaces, `atlas setup`, the
+standalone agent router, and the Agent Orchestrator.
 
 Ground truth: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) and
 [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md).
@@ -76,10 +76,16 @@ Ground truth: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) and
 ## Installation
 
 Requirements: **Node.js `>=22.5.0`** (the storage layer uses the built-in
-`node:sqlite`; other packages target `>=20.19.0`), `pnpm` (or
-`npm install --global codeatlas-cli` once published).
+`node:sqlite`; other packages target `>=20.19.0`). The quickest path is the
+published global CLI:
 
-See [docs/installation.md](docs/installation.md) for details.
+```bash
+npm install --global codeatlas-cli
+atlas --version
+```
+
+or build from source (see [docs/installation.md](docs/installation.md) for
+both):
 
 ```bash
 corepack enable
@@ -106,7 +112,7 @@ atlas context "fix the authentication tests" --repo /absolute/path/to/your-proje
 atlas update --repo /absolute/path/to/your-project
 ```
 
-Before publishing, run the CLI from the repo:
+Running from a source checkout uses the same `atlas` binary:
 
 ```bash
 node apps/cli/dist/index.js init --repo /absolute/path/to/your-project
@@ -128,9 +134,8 @@ atlas usage [summary|list|budgets]       Usage & credits
 atlas tools search|info|install|remove|update|configure|doctor
 atlas context <task> [--explain] [--json]
 atlas context launch|attach <task>       Launch/attach agent sessions with context
-atlas explain <target>                   [planned]
-atlas doctor                             [planned]
-atlas tui                                Interactive terminal UI
+atlas explain <target> [--ai]              Explain a symbol/file/module/concept
+atlas doctor [--json]                      Diagnose installation & project health
 ```
 
 Every data-returning command supports `--json` for machine-readable output.
@@ -146,7 +151,7 @@ ESLint. See [docs/CLI.md](docs/CLI.md).
 - **VS Code** — `@atlas/extension` reads context through the SDK. See
   [docs/VSCODE.md](docs/VSCODE.md).
 - **AI coding CLIs** — the connection layer detects Claude / Gemini / Codex /
-  OpenCode; `atlas tui` slash commands and `atlas context launch` deliver
+  OpenCode; `atlas context launch` (and the v2 TUI slash surface) deliver
   context to sessions. See [docs/AGENT_SESSIONS.md](docs/AGENT_SESSIONS.md).
 - **Agent Toolkit** — `atlas tools` for registry, install, configure, and
   doctor. See [docs/AGENT_TOOLKIT.md](docs/AGENT_TOOLKIT.md).

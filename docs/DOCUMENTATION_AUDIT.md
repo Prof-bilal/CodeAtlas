@@ -89,11 +89,11 @@ Self-audit of the AI-agent documentation system created/adjusted on **2026-08-08
 
 ## 5. Recommendations
 
-1. **Implement Phase 2's missing piece first: `@atlas/context` ranking** (or
-   explicitly keep it stubbed for another sprint). It is the only stubbed
-   *pipeline* service and is a precondition for wiring the CLI.
-2. **Wire the CLI to the SDK** (`atlas init`, `atlas build`) after context
-   ranking, replacing the "Coming Soon" surface with real incremental builds.
+1. ~~**Implement Phase 2's missing piece first: `@atlas/context` ranking**~~ —
+   **done**: `ContextBuilderService` implements `build`/`sourceFile`
+   deterministically (ADR-001) and is composed into the SDK container.
+2. ~~**Wire the CLI to the SDK**~~ — **done**: `atlas init`/`build`/`update`
+   run the SDK indexer; `explain` and `doctor` are implemented.
 3. **Resolve the Node engine mismatch** — either drop storage to `>=20.19.0`
    with an external SQLite (breaking the node:sqlite choice) or lift the root
    engine to `>=22.5.0`.

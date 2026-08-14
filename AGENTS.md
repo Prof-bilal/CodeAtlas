@@ -31,18 +31,25 @@ enforced by ESLint (`no-restricted-imports`) — see `docs/DEPENDENCIES.md`.
 before doing anything. Its companion `docs/FEATURE_STATUS.md` is the feature
 status table. Never assume planned features exist; verify against code.
 
-Non-obvious facts (verified as of 2026-08-11):
+Non-obvious facts (verified as of 2026-08-14):
 
-- `@atlas/context` (context ranking/assembly) is **intentionally a stub** — its
-  methods throw `ComingSoonError` by design (ADR-001). Do **not** "fix" it.
-- The CLI has **eleven** top-level subcommands. `atlas search`, `atlas mcp`,
-  `atlas sessions`, `atlas usage`, the full SDK-backed `atlas tools`, and
-  `atlas context`
+- `@atlas/context` (context ranking/assembly) is **implemented** as a
+  deterministic rank-and-assemble step (`ContextBuilderService` behind
+  `ContextBuilderPort`, ADR-001): it ranks search hits and resolves them to
+  source-file `ContextItem`s — no AI. Do not add AI gating or revert it to a
+  stub.
+- The CLI has **twelve** top-level subcommands. `atlas search`, `atlas mcp`,
+  `atlas sessions`, `atlas usage`, the full SDK-backed `atlas tools`,
+  `atlas context`, `atlas explain`, and `atlas doctor`
   command surface are wired
   (through the **Context SDK**,
   `@atlas/mcp`, `createSessionManager()`, and `createUsageService()`
-  respectively); `init`/`build`/`update` now run the SDK-owned indexer;
-  `explain`/`doctor` remain planned.
+  respectively); `init`/`build`/`update` now run the SDK-owned indexer.
+  `atlas explain` resolves deterministically (AI summary only via `--ai`);
+  `atlas doctor` runs a PASS/WARN/FAIL health checklist (exit 1 on FAIL).
+  The interactive **`atlas tui`** is **v2 / not shipped** — its source
+  (`apps/cli/src/tui/`, `apps/cli/src/commands/tui.ts`, `apps/cli/tests/tui.test.ts`)
+  is git-untracked so fresh clones build without it; bare `atlas` prints help.
 - **`createContextSDK` (`@atlas/sdk`)** is the single read interface consumers
   (CLI, MCP, VS Code extension, agents) use to read indexed context. Consumers
   must **not** reach for the SQLite database, `@atlas/search`,

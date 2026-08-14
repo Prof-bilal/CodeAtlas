@@ -10,17 +10,16 @@
 > execution through `SessionPort` with timeouts/retries/cancellation, and
 > deterministic result combining with conflict detection) — see
 > [CURRENT_STATE.md](./CURRENT_STATE.md). And the **interactive TUI**
-> (`atlas tui`, opened by bare `atlas` on a TTY) now provides a slash-command
-> surface: `/claude`, `/gemini`, `/codex`, `/opencode` detect the installed CLI,
-> launch it **interactively** (`SessionLaunchRequest.interactive`, `stdio:
-> "inherit"`, no `-p` run-mode flags), and fall back to an approval-gated Toolkit
-> install; `/cursor` and `/grok` show vendor install guidance; `/agents` and
-> `/toolkit` cover discovery. This document remains the design contract for the
+> (`atlas tui`) provides a slash-command surface (`/claude`, `/gemini`,
+> `/codex`, `/opencode` detect → interactive launch → Toolkit install fallback;
+> `/cursor`/`/grok` guidance; `/agents`, `/toolkit`) — the TUI is currently
+> **v2 / not shipped** (its source is git-untracked). This document remains the
+> design contract for the
 > **remaining** Direction B surface — the plan-executing router as a CLI/editor
 > surface. Do **not** claim the standalone router or `atlas /claude` commands
 > are implemented. Prerequisites that are real: the **AI CLI connection layer
 > (`@atlas/agents`, behind `AgentPort`)** (adapters, executable detection,
-> supervised process runs), the session manager, and the TUI. (See
+> supervised process runs) and the session manager. (See
 > [CURRENT_STATE.md](./CURRENT_STATE.md).)
 
 ---

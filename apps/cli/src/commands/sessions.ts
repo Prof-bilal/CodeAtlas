@@ -1,6 +1,22 @@
-import type { Command } from "commander";
+import { existsSync } from "node:fs";
 import { basename } from "node:path";
-import { createSessionManager, type Session, type SessionPort } from "@atlas/sdk";
+import {
+  type MeasuredQuantity,
+  type Session,
+  type SessionPort,
+  createContextSDK,
+  createSessionManager,
+  createUsageService,
+} from "@atlas/sdk";
+import type { Command } from "commander";
+import { contextDbPath } from "./search";
+import { formatMeasured, usageDbPath } from "./usage";
+
+/** Injectable services for {@link registerSessions}. */
+export interface SessionsCommandOptions {
+  /** Session manager override (defaults to a real in-memory manager). */
+  readonly sessions?: SessionPort;
+}
 
 /** Display label for a known provider id (falls back to a capitalized id). */
 export function agentLabel(provider: string): string {
@@ -65,46 +81,124 @@ export function formatSessionInfo(session: Session): string {
   return lines.join("\n");
 }
 
-export function registerSessions(program: Command): void {
+/** The token-impact figures printed when a session stops. */
+export interface SessionTokenImpact {
+  /** Tokens the session burned (usage records scoped to its session id). */
+  readonly burned: MeasuredQuantity;
+  /** Estimated tokens the whole repo would cost without CodeAtlas context. */
+  readonly withoutCodeAtlas: MeasuredQuantity;
+  /** Estimated tokens saved by using CodeAtlas (`withoutCodeAtlas − burned`). */
+  readonly saved: MeasuredQuantity;
+}
+
+/**
+ * Combine the burned and baseline figures into a full impact report. `saved`
+ * stays `unknown` unless both inputs are numeric — the tri-state model never
+ * invents a difference.
+ */
+export function computeSessionTokenImpact(
+  burned: MeasuredQuantity,
+  withoutCodeAtlas: MeasuredQuantity,
+): SessionTokenImpact {
+  const saved: MeasuredQuantity =
+    burned.value !== null && withoutCodeAtlas.value !== null
+      ? {
+          source: "estimated",
+          value: withoutCodeAtlas.value - burned.value,
+          note: "estimated; whole-repo baseline minus burned session usage",
+        }
+      : { source: "unknown", value: null, note: "needs numeric burned and baseline tokens" };
+  return { burned, withoutCodeAtlas, saved };
+}
+
+/** Render the token-impact report for `atlas sessions stop`. */
+export function renderSessionTokenImpact(impact: SessionTokenImpact): string {
+  return [
+    "Token impact",
+    `Burned:            ${formatMeasured(impact.burned)}`,
+    `Without CodeAtlas: ${formatMeasured(impact.withoutCodeAtlas)}`,
+    `Saved:             ${formatMeasured(impact.saved)}`,
+  ].join("\n");
+}
+
+/** Read the tokens recorded for one session from `.codeatlas/usage.db`. */
+export function sessionBurnedTokens(root: string, sessionId: string): MeasuredQuantity {
+  const dbPath = usageDbPath(root);
+  if (!existsSync(dbPath)) {
+    return { source: "unknown", value: null, note: "no usage database" };
+  }
+  const usage = createUsageService({ filePath: dbPath });
+  try {
+    return usage.statistics({ sessionId }).tokens.total;
+  } finally {
+    usage.close();
+  }
+}
+
+/**
+ * Estimate the "without CodeAtlas" baseline: the whole repo's source tokens
+ * (indexed file bytes ÷ 4, the documented character→token heuristic), or
+ * `unknown` when there is no index.
+ */
+export function wholeRepoBaselineTokens(root: string): MeasuredQuantity {
+  const dbPath = contextDbPath(root);
+  if (!existsSync(dbPath)) {
+    return { source: "unknown", value: null, note: "no context index" };
+  }
+  const context = createContextSDK({ dbPath, repositoryPath: root });
+  try {
+    const files = context.files.listFiles();
+    if (files.length === 0) {
+      return { source: "unknown", value: null, note: "no indexed files" };
+    }
+    const bytes = files.reduce((sum, file) => sum + file.size, 0);
+    return {
+      source: "estimated",
+      value: Math.ceil(bytes / 4),
+      note: "indexed source bytes ÷ 4 (character→token heuristic)",
+    };
+  } finally {
+    context.close();
+  }
+}
+
+export function registerSessions(program: Command, options: SessionsCommandOptions = {}): void {
+  const manager = options.sessions ?? createSessionManager();
   const sessions = program.command("sessions").description("Manage external AI agent sessions");
 
   sessions
     .command("list")
     .description("List tracked agent sessions")
     .action(async () => {
-      await listSessions();
+      await listSessions(manager);
     });
 
   sessions
     .command("info <sessionId>")
     .description("Show details for one session")
     .action(async (sessionId: string) => {
-      await showSession(sessionId);
+      await showSession(manager, sessionId);
     });
 
   sessions
     .command("stop <sessionId>")
-    .description("Gracefully stop a running session")
+    .description("Gracefully stop a running session and report its token impact")
     .action(async (sessionId: string) => {
-      await stopSession(sessionId);
+      await stopSession(manager, sessionId);
     });
 
   // Bare `atlas sessions` lists sessions, mirroring `atlas sessions list`.
   sessions.action(async () => {
-    await listSessions();
+    await listSessions(manager);
   });
 }
 
-function manager(): SessionPort {
-  return createSessionManager();
+async function listSessions(manager: SessionPort): Promise<void> {
+  console.log(renderSessionsTable(manager.listSessions()));
 }
 
-async function listSessions(): Promise<void> {
-  console.log(renderSessionsTable(manager().listSessions()));
-}
-
-async function showSession(sessionId: string): Promise<void> {
-  const session = manager().getSession(sessionId);
+async function showSession(manager: SessionPort, sessionId: string): Promise<void> {
+  const session = manager.getSession(sessionId);
   if (session === undefined) {
     console.error(`Session not found: ${sessionId}`);
     process.exitCode = 1;
@@ -113,20 +207,24 @@ async function showSession(sessionId: string): Promise<void> {
   console.log(formatSessionInfo(session));
 }
 
-async function stopSession(sessionId: string): Promise<void> {
-  const sessions = manager();
-  const session = sessions.getSession(sessionId);
+async function stopSession(manager: SessionPort, sessionId: string): Promise<void> {
+  const session = manager.getSession(sessionId);
   if (session === undefined) {
     console.error(`Session not found: ${sessionId}`);
     process.exitCode = 1;
     return;
   }
   console.log(`Stopping session ${sessionId}...`);
-  const result = await sessions.stopSession(sessionId);
+  const result = await manager.stopSession(sessionId);
   if (!result.ok) {
     console.error(result.error.message);
     process.exitCode = 1;
     return;
   }
   console.log("✓ Session stopped");
+  const impact = computeSessionTokenImpact(
+    sessionBurnedTokens(session.repositoryPath, session.id),
+    wholeRepoBaselineTokens(session.repositoryPath),
+  );
+  console.log(renderSessionTokenImpact(impact));
 }

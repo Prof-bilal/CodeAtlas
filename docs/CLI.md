@@ -6,14 +6,14 @@ The command-line contract for the `atlas` binary.
 > Context SDK**, **`atlas mcp` starts the MCP server**, **`atlas sessions`
 > manages AI agent sessions**, **`atlas usage` reports AI usage &
 > credits**, **`atlas tools` is SDK-backed**, **`atlas context` is wired**, and
-> **`init`/`build`/`update` run the SDK indexer**. The interactive **`atlas tui`**
-> (also opened by bare `atlas` on a TTY) provides the slash-command surface:
-> `/scan`, `/search`, `/context`, `/agents`, `/toolkit`, `/tools-install`, and
-> `/claude` `/gemini` `/codex` `/opencode` (detect → launch interactively →
-> install) plus `/cursor` `/grok` (install guidance). `explain`/`doctor` still
-> print `[atlas <cmd>] Coming Soon` and do not call any service. The detailed
-> behavior below is the **contract** — flagged **[implemented]** / **[stubbed]**
-> / **[planned]** per command.
+> **`init`/`build`/`update` run the SDK indexer**. **`atlas explain`** resolves a
+> symbol/file/module/concept deterministically (and generates an AI summary only
+> with an explicit `--ai` flag when a provider is configured), and **`atlas
+> doctor`** runs a diagnostic checklist (exit `1` on failure). The interactive
+> **`atlas tui`** is **v2 / not shipped** — its source stays on disk but is
+> untracked, and bare `atlas` always prints help. The detailed behavior below is
+> the **contract** — flagged **[implemented]** / **[stubbed]** / **[planned]**
+> per command.
 
 ---
 
@@ -43,13 +43,13 @@ Options take precedence over environment/config where they overlap.
 | `atlas mcp` | **[implemented]** | Start the **MCP server** over stdio for the current project (option `--root <path>` overrides `ATLAS_ROOT`/cwd). `@atlas/mcp` tools read context through the Context SDK. See [MCP.md](./MCP.md). |
 | `atlas sessions` / `atlas sessions list` | **[implemented]** | List tracked AI agent sessions (table). |
 | `atlas sessions info <id>` | **[implemented]** | Show details for one session (provider, status, repository, pid, started/ended, exit code). Never prints keys/env. |
-| `atlas sessions stop <id>` | **[implemented]** | Gracefully stop a running session (`✓ Session stopped`); missing/bad id exits `1` with a message. Sessions are created programmatically via the SDK (`createSessionManager`). |
+| `atlas sessions stop <id>` | **[implemented]** | Gracefully stop a running session (`✓ Session stopped`), then print a **token-impact** report: tokens the session burned (usage records scoped to its session id, read from `.codeatlas/usage.db`), the estimated "without CodeAtlas" baseline (whole-repo source tokens = indexed file bytes ÷ 4), and tokens saved. Tri-state: `unknown` when a figure has no data. `--ai`-free, deterministic. Missing/bad id exits `1` with a message. Sessions are created programmatically via the SDK (`createSessionManager`) or `atlas context launch`. |
 | `atlas usage` (bare) | **[implemented]** | Print the usage summary (same as `atlas usage summary`). Reads `.codeatlas/usage.db` via `createUsageService()` from the SDK (ADR-009). See [USAGE.md](./USAGE.md). |
 | `atlas usage summary` | **[implemented]** | Totals (events, requests, tokens, cost, avg latency) + budget status. `--json` → `{ statistics, budgets }`. Tri-state rendering: `unknown` where no data, `(estimated)` labels where a figure is an estimate. |
 | `atlas usage list` | **[implemented]** | Table of recorded usage events (ID, agent, provider, model, tokens, cost, latency, when); "No usage recorded." when empty. `--json` → `{ records }`; `--provider <provider>` filters. |
 | `atlas usage budgets` | **[implemented]** | Per-scope budget status lines; "No budgets." when none. `--json` → `{ budgets }`. |
-| `atlas explain <target>` | **[stubbed]** `Coming Soon` | Explain a symbol or concept; deterministic mode first, AI explanation only when a provider is configured. |
-| `atlas doctor` | **[stubbed]** `Coming Soon` | Diagnose installation & project issues (Node version, `.codeatlas` presence & integrity, agent binaries for the orchestrator, provider config sanity). |
+| `atlas explain <target>` | **[implemented]** | Explain a symbol, file, module, or concept from the index. Deterministic first: a file path resolves to its content + stored summary + dependencies; a module path to `modules.explain`; a symbol name to `getSymbol` + `findReferences` + dependencies; anything else to `getRelevantContext`. `--ai` generates a fresh AI summary (file/module only) via `summaries.generateFile`/`generateModule` — explicit opt-in, fails cleanly without a configured provider. Options `--repo <path>`, `--json`, `--ai`. Exit `1` when no index exists. |
+| `atlas doctor` | **[implemented]** | Diagnose installation & project health. Checks: Node runtime `>=22.5.0` (for `node:sqlite`), context index (`createContextSDK.status` + `freshness` + `.codeatlas/manifest.json`), AI agents (`createAgentService.detectAll`), agent MCP registration (`createAgentMcpService.status`), provider sanity + Ollama status (**never prints keys**). PASS/WARN/FAIL output; exit `1` on any FAIL. Options `--repo <path>`, `--json`. |
 | `atlas config` | **[planned]** — not registered | View/edit configuration (providers, keys source, agents, ignored dirs). Keys never printed. |
 | `atlas agents` | **[planned]** — not registered | List discovered agent CLIs for the orchestrator (Direction B). The connection layer (`@atlas/agents` behind `AgentPort`) is implemented; the CLI command is not. |
 | `atlas agents <name>` | **[planned]** — not registered | Launch/inspect a specific agent session. |
@@ -64,7 +64,7 @@ Options take precedence over environment/config where they overlap.
 | `atlas context <task>` | **[implemented]** | Build and render a deny-filtered, budgeted Context Package; `--explain` renders content-free selection reasons, `--json` emits package/explanation data, and budget/instruction/overview flags tune SDK assembly. |
 | `atlas context launch <task>` | **[implemented]** | Launch a provider session seeded with the rendered Context Package via `SessionPort`; requires `--provider`, supports `--repo`, `--json`, and tuning flags. |
 | `atlas context attach <session-id> <task>` | **[implemented]** | Attach context to a `CREATED` session; live/terminal sessions return a clean exit-1 typed error. |
-| `atlas tui` | **[implemented]** | Interactive terminal UI (requires a TTY). Header shows repository + context state; slash commands: `/scan` (SDK indexer), `/search <query>`, `/context <task>`, `/agents` (detected AI CLIs), `/toolkit` (installed + recommended tools sidebar), `/tools-install <tool>` (plan → confirm → install through the Toolkit), `/claude` `/gemini` `/codex` `/opencode` (detect → launch **interactively** with a terminal handoff → install via npm when missing), `/cursor` `/grok` (vendor install guidance), `/status`, `/help`, `/exit`. Bare `atlas` opens it when stdin is a TTY (help otherwise). |
+| `atlas tui` | **[v2 / not shipped]** — not registered | Interactive terminal UI (slash commands, interactive agent launch/install). Source lives on disk in `apps/cli/src/tui/` but is **git-untracked** so fresh clones build without it; bare `atlas` prints help. Slash surface returns as a v2 follow-up. |
 | `atlas setup` | **[planned]** — not registered | Guided environment → agent → tool recommendation → install → configure → verify (no auto-install without consent). |
 
 ### Agent slash commands (Direction B)
@@ -76,15 +76,15 @@ atlas /codex <prompt...>
 atlas /opencode <prompt...>
 ```
 
-A working slash surface **already exists inside `atlas tui`** (`/claude`,
-`/gemini`, `/codex`, `/opencode`, `/cursor`, `/grok`), backed by `@atlas/agents`
-+ the session manager + the Toolkit installer. The **standalone**
-`atlas /<agent> <prompt>` router is **[planned]** and will land once the
-orchestrator router ships (Phase 4 of the roadmap). The connection layer the
-slash commands depend on (`@atlas/agents` behind
-`AgentPort`) and the **Agent Session Manager** (`atlas sessions`) exist; the
-standalone router does not. The planned `/tools` interface (Directory C) is
-documented in [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
+A slash surface existed **inside `atlas tui`** (`/claude`, `/gemini`, `/codex`,
+`/opencode`, `/cursor`, `/grok`), backed by `@atlas/agents` + the session
+manager + the Toolkit installer; the TUI is currently **v2 / not shipped**
+(untracked, see `atlas tui` above). The **standalone** `atlas /<agent> <prompt>`
+router is **[planned]** and will land once the orchestrator router ships (Phase
+4 of the roadmap). The connection layer the slash commands depend on
+(`@atlas/agents` behind `AgentPort`) and the **Agent Session Manager**
+(`atlas sessions`) exist; the standalone router does not. The planned `/tools`
+interface (Directory C) is documented in [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
 
 ---
 
@@ -129,8 +129,12 @@ atlas tools          → createToolkitSDK() → Registry / Manifest / Compatibil
                          Security / Installer / Configurator façade
 atlas init/build/update → indexProject() → scanner → hashing → parser → graph →
                           ContextStore
-atlas explain/doctor → "Coming Soon" (future: deterministic symbol explanation /
-                       environment diagnostics)
+atlas explain/doctor → createContextSDK(status/freshness/symbols/files/modules/
+                        summaries/search) + createAgentService/detectAll +
+                        createAgentMcpService/status + createProviderService/
+                        createOllamaService (doctor); explain resolves
+                        deterministically and generates AI summaries only with
+                        `--ai` when a provider is configured
 ```
 
 Wired commands call exactly the SDK/`@atlas/mcp` surface they need and render
@@ -156,5 +160,7 @@ ran is a regression.
 
 - CLI tests assert the **command list**, **version**, **placeholder text**, and
   **`atlas search` end-to-end** against a fixture `.codeatlas/context.db`
-  (including the missing-index error and `process.exitCode = 1`), in
+  (including the missing-index error and `process.exitCode = 1`), plus
+  **`atlas explain`** (symbol/file/JSON/missing-index) and **`atlas doctor`**
+  (healthy exit, `--json` report, human rendering) in
   `apps/cli/tests/cli.test.ts`. See [TESTING.md](./TESTING.md).

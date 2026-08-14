@@ -254,11 +254,11 @@ examples/        # README placeholder only (no runnable examples)
   `Container.getSearch()`/`getContextDb()`. See
   [CONTEXT_SDK.md](./CONTEXT_SDK.md) + [ADR-005](./decisions/ADR-005.md).
 
-### CLI (`apps/cli`) — **[PARTIAL]**
+### CLI (`apps/cli`) — **[IMPLEMENTED]**
 
-- Commander.js program `atlas`, eleven top-level commands — `init`, `build`,
+- Commander.js program `atlas`, twelve top-level commands — `init`, `build`,
   `update`, `scan`, `search`, `sessions`, `usage`, `explain`, `doctor`, `mcp`,
-  and `tools`.
+  `context`, and `tools`.
   **`search` is wired
   to the Context SDK**: it opens `.codeatlas/context.db` (via `ATLAS_ROOT` or
   cwd) with `createContextSDK`, runs `context.search.search(...)`, and prints
@@ -273,9 +273,10 @@ examples/        # README placeholder only (no runnable examples)
   trust/risk before execution and requires `--yes` consent; all data commands
   support `--json`. **`init`/`build`/`update` run the SDK-owned indexer**
   (`indexProject`; `update` is incremental) and **`scan` prints a metadata-only
-  project overview** (`scanProjectOverview`). The two remaining commands
-  (`explain`, `doctor`) still print
-  `[atlas <command>] Coming Soon`. No `/agent`-style slash commands (the agent
+  project overview** (`scanProjectOverview`). **`explain`** resolves a target
+  deterministically (file/module/symbol/concept) with optional `--ai` AI
+  summaries, and **`doctor`** runs a PASS/WARN/FAIL health checklist (exit `1`
+  on failure). No `/agent`-style slash commands (the agent
   router is planned).
 - Dependency note: the CLI may import `@atlas/sdk` **and** `@atlas/mcp` (so it
   can start the server); enforced by ESLint. See `docs/DEPENDENCIES.md`.
@@ -284,8 +285,10 @@ examples/        # README placeholder only (no runnable examples)
   code `1` when no context database exists.
 - Tests assert the command list, version, placeholder text, `atlas search`
   end-to-end against a fixture database (including the missing-index error),
-  and the `usage` rendering/CLI (`usageDbPath`, `formatMeasured`,
-  `renderUsageSummary`, `renderUsageTable`, fresh-project empty output, JSON).
+  `atlas explain` (symbol/file/JSON/missing-index), `atlas doctor`
+  (healthy/`--json`/render), and the `usage` rendering/CLI (`usageDbPath`,
+  `formatMeasured`, `renderUsageSummary`, `renderUsageTable`, fresh-project
+  empty output, JSON).
 
 ### MCP server (`packages/mcp`) — **[IMPLEMENTED]**
 
@@ -318,12 +321,15 @@ examples/        # README placeholder only (no runnable examples)
   (project/symbols/modules/summaries/dependencies), `codeatlas.*` palette
   commands, and a status-bar indicator.
 - `atlas init`/`build`/`update` delegate to the SDK-owned `indexProject()` flow,
-  which creates the manifest/database and reports hash changes. `explain` and
-  top-level `doctor` remain placeholders.
+  which creates the manifest/database and reports hash changes. `atlas explain`
+  resolves symbols/files/modules/concepts deterministically (AI summary only via
+  explicit `--ai`), and `atlas doctor` runs a health checklist (exit `1` on
+  failure).
 - The extension is anonymous at the database: it never opens `.codeatlas`
   itself (see `docs/VSCODE.md`), and is tested headlessly.
-- Interactive agent launching lives in the **TUI** (`atlas tui`), not the
-  VS Code extension. The extension is a read-only context viewer.
+- Interactive agent launching lived in the **TUI** (`atlas tui`), which is
+  **v2 / not shipped** (untracked source; bare `atlas` prints help). The
+  extension is a read-only context viewer.
 - JetBrains / other editor integrations are still **[PLANNED]**.
 
 ### AI CLI connection layer (`packages/agents`) — **[EXISTING]**
@@ -424,16 +430,16 @@ examples/        # README placeholder only (no runnable examples)
 
 ### Unified AI CLI Orchestrator (`/gemini`, `/claude`, `/codex`, `/opencode`, ...) — **[PARTIAL]**
 
-- **The connection layer, the session manager (`@atlas/agents`), the
-  plan-executing orchestrator (`@atlas/sdk`), and the interactive TUI surface
-  (`atlas tui`) exist; the standalone orchestrator router/CLI does not.** Agent
+- **The connection layer, the session manager (`@atlas/agents`), and the
+  plan-executing orchestrator (`@atlas/sdk`) exist; the standalone orchestrator
+  router/CLI does not.** Agent
   sessions are implemented (`SessionManager` behind `SessionPort`, `atlas
   sessions list/info/stop`, interactive `stdio: "inherit"` launches).
-  `atlas tui` provides the **slash-command surface**: `/claude`, `/gemini`,
+  The interactive **TUI slash surface** (`atlas tui`: `/claude`, `/gemini`,
   `/codex`, `/opencode` detect → launch interactively → install via the Toolkit
-  when missing; `/cursor` and `/grok` print vendor install guidance; `/agents`
-  lists detected CLIs; `/toolkit` and `/tools-install <tool>` drive the Agent
-  Toolkit sidebar. There is still **no agent router** for the plan-executing
+  when missing; `/cursor` and `/grok` vendor guidance; `/agents`, `/toolkit`,
+  `/tools-install <tool>`) is **v2 / not shipped** — its source is git-untracked.
+  There is still **no agent router** for the plan-executing
   orchestrator (Direction B) and no standalone `atlas agents` CLI command.
 
 ### Agent Toolkit (Direction C) — **[PARTIAL]**
@@ -583,14 +589,14 @@ examples/        # README placeholder only (no runnable examples)
 | Intended direction                    | Status in repo |
 | ------------------------------------- | -------------- |
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking intentionally stubbed; `search` + `mcp` are CLI-wired |
-| **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`), and the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) are implemented; the standalone router / `atlas agents` CLI remains planned |
+| **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) are implemented; the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) is **v2 / not shipped** (untracked); the standalone router / `atlas agents` CLI remains planned |
 | **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~65% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, and the thin SDK-backed Toolkit CLI; `/tools` slash integration and `atlas setup` remain planned |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
-at: (1) top-level `explain`/`doctor` remain stubs,
-(2) context ranking/assembly (stub), and (3) the **standalone router** of the
-orchestrator (the plan-executing orchestrator itself exists in
-`@atlas/sdk`, and the `atlas tui` slash surface covers agent launch/install).
+at: (1) the **standalone router** of the orchestrator (the plan-executing
+orchestrator itself exists in `@atlas/sdk`, and the TUI slash surface that
+covered agent launch/install is v2/untracked), and (2) any editor integrations
+beyond VS Code.
 MCP (`@atlas/mcp`) and the VS Code extension (`@atlas/extension`)
 are thin consumers of the SDK; JetBrains/other editor integrations are still
 absent.

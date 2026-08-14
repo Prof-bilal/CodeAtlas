@@ -1,19 +1,30 @@
 # Installation
 
-CodeAtlas is a **pnpm + TypeScript monorepo**. Install it either from source or
-(as published) as a global npm package.
+CodeAtlas is published on npm as **`codeatlas-cli`**. Install the end-user CLI
+globally, or build it from source for development.
 
 ## Requirements
 
 | Tool | Version | Notes |
 | ---- | ------- | ----- |
 | Node.js | `>=22.5.0` | The storage layer uses the built-in `node:sqlite`. Other packages target `>=20.19.0`; the `.nvmrc` pins **22**. |
-| pnpm | `9.15.0` | Pinned in `package.json`; enable via Corepack (`corepack enable`). |
+| pnpm | `9.15.0` | Pinned in `package.json`; enable via Corepack (`corepack enable`). Only needed to build from source. |
 
 Platforms: Windows, macOS, and Linux (development is exercised on Windows; the
 code uses no platform-specific shelling).
 
-## Option A — from source (recommended for development)
+## Option A — published global CLI (recommended for end users)
+
+```bash
+npm install --global codeatlas-cli
+atlas --version
+```
+
+This installs a self-contained `atlas` binary (the bundled CLI reports its own
+published version, e.g. `0.2.1`). No `@atlas/*` workspace packages are needed
+or installed.
+
+## Option B — from source (recommended for development)
 
 ```bash
 git clone <codeatlas-repository-url> CodeAtlas
@@ -33,18 +44,11 @@ Run the CLI from the repo:
 node apps/cli/dist/index.js --help
 ```
 
-## Option B — global CLI (after publish)
-
-```bash
-npm install --global codeatlas-cli
-atlas --help
-```
-
 ## Verify the installation
 
 ```bash
-pnpm check        # typecheck + lint + format-check + test (the quality gate)
-pnpm build        # build every workspace package
+atlas --version    # published CLI reports its own version (e.g. 0.2.1)
+pnpm check         # typecheck + lint + format-check + test (from a source checkout)
 ```
 
 Then index a real repository:

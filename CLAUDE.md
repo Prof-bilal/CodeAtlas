@@ -17,16 +17,18 @@ rules and instruction. Read `AGENTS.md` first; everything there applies here.
 
 ## Non-obvious things to remember about this codebase
 
-- **`@atlas/context` is intentionally a stub.** Its methods throw
-  `ComingSoonError` by design. Do not "fix" it by removing the port or silently
-  implementing ranking — that decision is an ADR
-  (`docs/decisions/ADR-001.md`).
-- **The CLI is partly wired.** `atlas search` opens `.codeatlas/context.db`
-  (root from `ATLAS_ROOT` or cwd) and prints ranked hits via `createContextSDK`;
-  `atlas mcp` starts the MCP server (`@atlas/mcp`). `init`/`build`/`update`/
-  `explain`/`doctor` still print "Coming Soon" and call nothing. `atlas tools
-  configure <tool>` is wired through `createConfigurator()` and supports
-  installed-target detection plus `--dry-run`.
+- **`@atlas/context` is implemented** as a deterministic rank-and-assemble
+  step (`ContextBuilderService` behind `ContextBuilderPort`, ADR-001). It ranks
+  search hits and resolves them to source-file `ContextItem`s — no AI. Do not
+  revert it to a stub.
+- **The CLI is wired.** `atlas search` opens `.codeatlas/context.db` (root from
+  `ATLAS_ROOT` or cwd) and prints ranked hits via `createContextSDK`; `atlas
+  mcp` starts the MCP server (`@atlas/mcp`). `init`/`build`/`update` run the
+  SDK indexer; `explain` resolves deterministically (AI summary only via
+  `--ai`); `doctor` runs a health checklist. The interactive `atlas tui` is
+  **v2 / not shipped** (untracked source). `atlas tools configure <tool>` is
+  wired through `createConfigurator()` and supports installed-target detection
+  plus `--dry-run`.
 - **Context is read through `createContextSDK` (`@atlas/sdk`)** — by `atlas
   search`, the MCP tools, and the VS Code extension (`@atlas/extension`). Do not
   open `.codeatlas/context.db` or use `@atlas/search`/`@atlas/storage` directly

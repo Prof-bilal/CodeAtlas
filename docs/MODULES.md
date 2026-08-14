@@ -201,9 +201,9 @@ and never bypasses the Context SDK.
   the context database (reads via `createContextSDK` → `ContextIntegration`).
 - Current state: implemented and tested
   (`packages/sdk/tests/orchestrator.test.ts`); **no standalone CLI/router wiring
-  yet** — the `atlas tui` slash surface exists (see Unified AI CLI below), but
-  the plan-executing router as a CLI/editor surface remains planned. See
-  [CURRENT_STATE.md](./CURRENT_STATE.md).
+  yet** — the `atlas tui` slash surface is v2 / not shipped (untracked, see
+  Unified AI CLI below), but the plan-executing router as a CLI/editor surface
+  remains planned. See [CURRENT_STATE.md](./CURRENT_STATE.md).
 
 ### Agent Toolkit — « `@atlas/toolkit` » — **[PARTIAL]**
 Responsible for the curated open-source tool ecosystem (Direction C): discover,
@@ -291,8 +291,9 @@ Responsible for the command-line interface.
   Context SDK, `mcp` starts the MCP server, `sessions` manages agent sessions
   (`createSessionManager`), `usage` reports AI usage & credits
   (`createUsageService`), `tools configure` delegates to
-  `createConfigurator()`, and `context` builds/launches/attaches safe context
-  packages; `explain`/`doctor` still print "Coming Soon".
+  `createConfigurator()`, `context` builds/launches/attaches safe context
+  packages, `explain` resolves deterministically (`--ai` for AI summaries), and
+  `doctor` runs a health checklist.
 - Must **NOT**: contain business logic; it delegates to the SDK (and to
   `@atlas/mcp` to start the server).
 
@@ -306,9 +307,10 @@ Responsible for launching and managing external AI CLI processes.
   **Agent Session Manager** (`SessionManager` behind `SessionPort`) — in
   `@atlas/agents`, composed by the SDK (`createSessionManager`) and exposed by
   `atlas sessions`; interactive `stdio: "inherit"` launches
-  (`SessionLaunchRequest.interactive`); and the **interactive TUI**
-  (`atlas tui`) slash surface (`/claude`–`/opencode` launch/install, `/cursor`
-  `/grok` guidance, `/agents`). See [AGENT_SESSIONS.md](./AGENT_SESSIONS.md).
+  (`SessionLaunchRequest.interactive`). The **interactive TUI** (`atlas tui`)
+  slash surface (`/claude`–`/opencode` launch/install, `/cursor` `/grok`
+  guidance, `/agents`) is **v2 / not shipped** (untracked source). See
+  [AGENT_SESSIONS.md](./AGENT_SESSIONS.md).
 - **Planned still:** the standalone agent router and `/agent` CLI slash
   commands (Direction B).
 - Must **NOT**: reimplement the agent's internal reasoning. See

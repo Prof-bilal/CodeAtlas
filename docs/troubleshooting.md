@@ -68,9 +68,11 @@ See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §6–§8.
 
 ## `atlas context` / `atlas explain` prints nothing useful
 
-`atlas explain` and `atlas doctor` are [PLANNED] — they still print
-`Coming Soon`. `atlas context` works but its output depends on the index:
-rebuild it with `atlas init --repo ...` if the package looks empty.
+`atlas explain` needs an index: it resolves a symbol/file/module/concept
+deterministically, so a missing `.codeatlas/context.db` exits `1` with "No
+context index found". Rebuild the index with `atlas init --repo ...` if the
+package looks empty. `atlas doctor` runs a health checklist (exit `1` on any
+FAIL) — run it to diagnose the installation before deeper debugging.
 
 ## AI summaries never generate
 

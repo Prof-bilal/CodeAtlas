@@ -1,3 +1,5 @@
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import {
   type AssembleOptions,
   type ContextIntegration,
@@ -5,11 +7,13 @@ import {
   createContextIntegration,
   createContextSDK,
   createSessionManager,
+  createUsageService,
   renderContextExplanation,
   renderContextPackage,
 } from "@atlas/sdk";
 import type { Command } from "commander";
 import { contextDbPath, resolveProjectRoot } from "./search";
+import { usageDbPath } from "./usage";
 
 export interface ContextCommandOptions {
   readonly integration?: ContextIntegration;
@@ -118,6 +122,7 @@ async function runLaunch(
           reportContextError(result.error);
           return;
         }
+        await recordSessionUsage(root, result.value);
         emit(result.value, options.json === true, renderSession);
       } catch (error) {
         reportContextError(error);
@@ -163,6 +168,35 @@ async function withIntegration(
   } finally {
     context.close();
   }
+}
+
+/**
+ * Best-effort: record a `source: "session"` usage event so the launched session
+ * shows up in `.codeatlas/usage.db` and `atlas sessions stop` can report its
+ * token impact. Never fails the launch — usage recording is observational.
+ */
+function recordSessionUsage(root: string, session: Session): Promise<void> {
+  return (async () => {
+    try {
+      const dbPath = usageDbPath(root);
+      mkdirSync(dirname(dbPath), { recursive: true });
+      const usage = createUsageService({ filePath: dbPath });
+      try {
+        await usage.record({
+          source: "session",
+          provider: session.provider,
+          agent: session.provider,
+          sessionId: session.id,
+          requestCount: 1,
+        });
+      } finally {
+        usage.close();
+      }
+    } catch {
+      // Best-effort: never fail a successful launch because usage could not be
+      // recorded (e.g. the usage store cannot be opened).
+    }
+  })();
 }
 
 function assembleOptions(options: CommonOptions): AssembleOptions {

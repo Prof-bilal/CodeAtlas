@@ -20,17 +20,28 @@ import {
   type ContextExplanation,
   type ContextIntegration,
   type ContextPackage,
+  type SessionPort,
   type ToolkitSDK,
   createUsageService,
 } from "@atlas/sdk";
 import type { FilePath, SymbolId } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { describe, expect, it, vi } from "vitest";
+import pkg from "../package.json";
 import { createCli } from "../src/cli";
 import { comingSoonMessage } from "../src/commands/coming-soon";
+import { type DoctorServices, renderDoctorReport } from "../src/commands/doctor";
 import { renderOverview } from "../src/commands/scan";
 import { contextDbPath, renderSearchHits, resolveProjectRoot } from "../src/commands/search";
-import { agentLabel, formatSessionInfo, renderSessionsTable } from "../src/commands/sessions";
+import {
+  agentLabel,
+  computeSessionTokenImpact,
+  formatSessionInfo,
+  renderSessionTokenImpact,
+  renderSessionsTable,
+  sessionBurnedTokens,
+  wholeRepoBaselineTokens,
+} from "../src/commands/sessions";
 import {
   formatCost,
   formatMeasured,
@@ -151,6 +162,55 @@ function fakeAgentMcp(
   } as AgentMcpPort & { configureCalls: unknown[] };
 }
 
+function fakeDoctorServices(overrides: Partial<DoctorServices> = {}): DoctorServices {
+  return {
+    agents: {
+      detectAll: async () => ({
+        ok: true as const,
+        value: [
+          {
+            provider: "claude",
+            binary: "claude",
+            available: true,
+            path: "/usr/local/bin/claude",
+            version: "1.0.0",
+          },
+        ],
+      }),
+    } as unknown as NonNullable<DoctorServices["agents"]>,
+    agentMcp: fakeAgentMcp() as unknown as NonNullable<DoctorServices["agentMcp"]>,
+    providers: {
+      status: () => [
+        {
+          name: "claude",
+          configured: true,
+          hasApiKey: true,
+          model: "claude-sonnet",
+          defaultModel: "claude-sonnet",
+        },
+        {
+          name: "ollama",
+          configured: true,
+          hasApiKey: false,
+          model: null,
+          defaultModel: "llama3",
+        },
+      ],
+    },
+    ollama: {
+      status: () => ({
+        connected: true,
+        mode: "local" as const,
+        baseUrl: "http://localhost:11434",
+        hasApiKey: false,
+        keyDisplay: "",
+        model: "llama3",
+      }),
+    },
+    ...overrides,
+  };
+}
+
 function fakeContextIntegration(overrides: Partial<ContextIntegration> = {}): ContextIntegration {
   const pkg = {
     task: "fix auth",
@@ -234,7 +294,6 @@ describe("atlas CLI", () => {
       "search",
       "sessions",
       "tools",
-      "tui",
       "update",
       "usage",
     ]);
@@ -525,9 +584,9 @@ describe("atlas CLI", () => {
     }
   });
 
-  it("reports the SDK version", () => {
+  it("reports the CLI package version", () => {
     const program = createCli();
-    expect(program.version()).toBeTruthy();
+    expect(program.version()).toBe(pkg.version);
   });
 
   it("prints a Coming Soon placeholder message", () => {
@@ -627,6 +686,155 @@ describe("atlas CLI", () => {
     }
   });
 
+  describe("atlas explain", () => {
+    it("explains a symbol deterministically from a persisted index", async () => {
+      await withProject(async () => {
+        const program = createCli();
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+        let output = "";
+        try {
+          await program.parseAsync(["node", "atlas", "explain", "double"]);
+          output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        } finally {
+          log.mockRestore();
+          error.mockRestore();
+        }
+        expect(output).toContain('Explanation for "double" (symbol)');
+        expect(output).toContain("Symbol: double (function)");
+        expect(output).toContain("/src/math.ts");
+        expect(error).not.toHaveBeenCalled();
+      });
+    });
+
+    it("explains a file by path", async () => {
+      await withProject(async () => {
+        const program = createCli();
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        let output = "";
+        try {
+          await program.parseAsync(["node", "atlas", "explain", "/src/math.ts"]);
+          output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        } finally {
+          log.mockRestore();
+        }
+        expect(output).toContain("(file)");
+        expect(output).toContain("/src/math.ts");
+      });
+    });
+
+    it("outputs JSON when requested", async () => {
+      await withProject(async () => {
+        const program = createCli();
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        let output = "";
+        try {
+          await program.parseAsync(["node", "atlas", "explain", "double", "--json"]);
+          output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        } finally {
+          log.mockRestore();
+        }
+        const parsed = JSON.parse(output) as { readonly kind: string; readonly symbol: unknown };
+        expect(parsed.kind).toBe("symbol");
+        expect(parsed.symbol).toBeDefined();
+      });
+    });
+
+    it("fails cleanly when no index exists", async () => {
+      const root = mkdtempSync(join(tmpdir(), "atlas-cli-explain-empty-"));
+      process.env["ATLAS_ROOT"] = root;
+      const previousExitCode = process.exitCode;
+      try {
+        const program = createCli();
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+        let stderr = "";
+        try {
+          await program.parseAsync(["node", "atlas", "explain", "double"]);
+          stderr = error.mock.calls.map((call) => call.join(" ")).join("\n");
+        } finally {
+          error.mockRestore();
+        }
+        expect(stderr).toContain("No context index found");
+        expect(process.exitCode).toBe(1);
+      } finally {
+        process.exitCode = previousExitCode;
+        process.env["ATLAS_ROOT"] = undefined;
+        rmSync(root, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe("atlas doctor", () => {
+    it("reports healthy when the index and services are in good shape", async () => {
+      await withProject(async () => {
+        const program = createCli({ doctor: fakeDoctorServices() });
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        let output = "";
+        try {
+          await program.parseAsync(["node", "atlas", "doctor"]);
+          output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        } finally {
+          log.mockRestore();
+        }
+        expect(output).toContain("[PASS] Node runtime");
+        expect(output).toContain("[PASS] Context index");
+        expect(output).toContain("[PASS] AI agents");
+        expect(output).toContain("[PASS] Ollama");
+        expect(process.exitCode).toBeUndefined();
+      });
+    });
+
+    it("exits 1 when a check fails and prints JSON on request", async () => {
+      await withProject(async () => {
+        const program = createCli({
+          doctor: fakeDoctorServices({
+            providers: { status: () => [] },
+            ollama: {
+              status: () => ({
+                connected: false,
+                mode: "local",
+                baseUrl: "",
+                hasApiKey: false,
+                keyDisplay: "",
+                model: null,
+              }),
+            },
+          }),
+        });
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        const previousExitCode = process.exitCode;
+        let output = "";
+        try {
+          await program.parseAsync(["node", "atlas", "doctor", "--json"]);
+          output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        } finally {
+          process.exitCode = previousExitCode;
+          log.mockRestore();
+        }
+        const parsed = JSON.parse(output) as {
+          readonly healthy: boolean;
+          readonly checks: readonly { readonly verdict: string }[];
+        };
+        expect(parsed.healthy).toBe(true);
+        expect(parsed.checks.length).toBeGreaterThan(0);
+      });
+    });
+
+    it("renders a human-readable report", () => {
+      const rendered = renderDoctorReport({
+        repositoryPath: "/tmp/project",
+        checks: [
+          { name: "Node runtime", verdict: "PASS", detail: "Node 22.9.0" },
+          { name: "Context index", verdict: "FAIL", detail: "No index found" },
+        ],
+        healthy: false,
+      });
+      expect(rendered).toContain("[PASS] Node runtime");
+      expect(rendered).toContain("[FAIL] Context index");
+      expect(rendered).toContain("One or more checks failed");
+    });
+  });
+
   describe("sessions rendering", () => {
     it("renders an empty session list", () => {
       expect(renderSessionsTable([])).toBe("No sessions.");
@@ -684,6 +892,86 @@ describe("atlas CLI", () => {
       expect(bare).not.toContain("PID:");
       expect(bare).not.toContain("Started:");
     });
+
+    it("computes the token impact and keeps saved unknown when either side is unknown", () => {
+      const impact = computeSessionTokenImpact(
+        { source: "actual", value: 1_200 },
+        { source: "estimated", value: 10_000 },
+      );
+      expect(impact.burned).toEqual({ source: "actual", value: 1_200 });
+      expect(impact.saved).toMatchObject({ source: "estimated", value: 8_800 });
+
+      const unknownBurned = computeSessionTokenImpact(
+        { source: "unknown", value: null },
+        { source: "estimated", value: 10_000 },
+      );
+      expect(unknownBurned.saved.value).toBeNull();
+      expect(unknownBurned.saved.source).toBe("unknown");
+
+      const unknownBaseline = computeSessionTokenImpact(
+        { source: "actual", value: 1_200 },
+        { source: "unknown", value: null },
+      );
+      expect(unknownBaseline.saved.value).toBeNull();
+    });
+
+    it("renders the token impact report", () => {
+      const rendered = renderSessionTokenImpact(
+        computeSessionTokenImpact(
+          { source: "actual", value: 1_200 },
+          { source: "estimated", value: 10_000 },
+        ),
+      );
+      expect(rendered).toContain("Token impact");
+      expect(rendered).toContain("Burned:            1200");
+      expect(rendered).toContain("Without CodeAtlas: 10000 (estimated)");
+      expect(rendered).toContain("Saved:             8800 (estimated)");
+    });
+
+    it("reads burned tokens scoped to a session from the usage database", async () => {
+      const root = mkdtempSync(join(tmpdir(), "atlas-session-burned-"));
+      try {
+        mkdirSync(join(root, ".codeatlas"), { recursive: true });
+        const usage = createUsageService({ filePath: join(root, ".codeatlas", "usage.db") });
+        await usage.record({
+          source: "provider",
+          provider: "claude",
+          model: "claude-sonnet-5",
+          sessionId: "a81f",
+          latencyMs: 100,
+          inputTokens: 500,
+          outputTokens: 700,
+          occurredAt: "2026-08-14T10:00:00.000Z",
+        });
+        await usage.record({
+          source: "provider",
+          provider: "claude",
+          model: "claude-sonnet-5",
+          sessionId: "a81f",
+          latencyMs: 50,
+          inputTokens: 100,
+          outputTokens: 200,
+          occurredAt: "2026-08-14T11:00:00.000Z",
+        });
+        usage.close();
+
+        expect(sessionBurnedTokens(root, "a81f")).toMatchObject({
+          source: "actual",
+          value: 1_500,
+        });
+        expect(sessionBurnedTokens(root, "other")).toMatchObject({
+          source: "unknown",
+          value: null,
+        });
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    });
+
+    it("estimates the whole-repo baseline from indexed file sizes", () => {
+      const baseline = wholeRepoBaselineTokens("/does/not/exist");
+      expect(baseline).toMatchObject({ source: "unknown", value: null });
+    });
   });
 
   it("lists no sessions via `atlas sessions list`", async () => {
@@ -712,6 +1000,62 @@ describe("atlas CLI", () => {
       process.exitCode = previousExitCode;
       error.mockRestore();
       log.mockRestore();
+    }
+  });
+
+  it("prints the token impact when `atlas sessions stop` finishes a session", async () => {
+    const root = mkdtempSync(join(tmpdir(), "atlas-sessions-stop-"));
+    const dotAtlas = join(root, ".codeatlas");
+    mkdirSync(dotAtlas, { recursive: true });
+
+    const usage = createUsageService({ filePath: join(dotAtlas, "usage.db") });
+    await usage.record({
+      source: "provider",
+      provider: "claude",
+      model: "claude-sonnet-5",
+      sessionId: "a81f",
+      latencyMs: 100,
+      inputTokens: 500,
+      outputTokens: 700,
+      occurredAt: "2026-08-14T10:00:00.000Z",
+    });
+    usage.close();
+
+    const stopped = session({
+      id: "a81f",
+      repositoryPath: root,
+      status: "STOPPED",
+      processId: undefined,
+      startedAt: undefined,
+      endedAt: 1_752_010_000_000,
+      exitCode: 0,
+    });
+    const sessions: SessionPort = {
+      createSession: () => ({ ok: false, error: new Error("not used") }),
+      startSession: async () => ({ ok: false, error: new Error("not used") }),
+      getSession: () => stopped,
+      listSessions: () => [],
+      getActiveSessions: () => [],
+      getSessionOutput: () => undefined,
+      stopSession: async () => ({ ok: true, value: stopped }),
+      terminateSession: async () => ({ ok: true, value: stopped }),
+      shutdown: async () => {},
+    };
+
+    const program = createCli({ sessions });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync(["node", "atlas", "sessions", "stop", "a81f"]);
+      const output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+      expect(output).toContain("Stopping session a81f...");
+      expect(output).toContain("✓ Session stopped");
+      expect(output).toContain("Token impact");
+      expect(output).toContain("Burned:");
+      expect(output).toContain("Without CodeAtlas:");
+      expect(output).toContain("Saved:");
+    } finally {
+      log.mockRestore();
+      rmSync(root, { recursive: true, force: true });
     }
   });
 

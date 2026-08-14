@@ -53,17 +53,18 @@ export class Container {
     const provider = options.provider ?? createProviderService();
     const cache = options.cache ?? new CacheService();
     const contextDb = options.contextDb ?? new ContextStore({ filePath: ":memory:" });
+    const search = options.search ?? new SearchService({ db: contextDb });
     return new Container({
       scanner: options.scanner ?? new ScannerService(),
       parser: options.parser ?? new ParserService(),
       storage: options.storage ?? new StorageService(),
       graph: options.graph ?? new GraphService(),
-      context: options.context ?? new ContextBuilderService(),
+      context: options.context ?? new ContextBuilderService({ search, db: contextDb }),
       cache,
       provider,
       summary: options.summary ?? new SummaryService({ provider, cache, hash: new HashService() }),
       contextDb,
-      search: options.search ?? new SearchService({ db: contextDb }),
+      search,
     });
   }
 

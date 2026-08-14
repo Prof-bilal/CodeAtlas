@@ -62,8 +62,10 @@ node apps/cli/dist/index.js search hello --json
 `ATLAS_ROOT` (or the current directory) as the root. `atlas mcp` starts the MCP
 server over stdio. `atlas sessions` lists/stops AI agent sessions via the SDK's
 `createSessionManager()`. `atlas init`/`build`/`update` run the SDK-owned
-indexer, and `atlas tui` (or bare `atlas` on a TTY) opens the interactive
-terminal UI. `explain`/`doctor` are still "Coming Soon" placeholders — see
+indexer. `atlas explain` resolves a symbol/file/module/concept deterministically
+(`--ai` adds an AI summary when a provider is configured), and `atlas doctor`
+runs a health checklist. The interactive `atlas tui` is **v2 / not shipped**
+(its source is untracked; bare `atlas` prints help) — see
 [CURRENT_STATE.md](./CURRENT_STATE.md).
 
 ## 5. Environment variables

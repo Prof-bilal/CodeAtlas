@@ -104,12 +104,13 @@ Launch and supervise existing AI coding CLIs. See
   [AGENT_SESSIONS.md](./AGENT_SESSIONS.md))
 - Process management for long-running sessions (`ProcessRunner.launch()` →
   supervised `RunningProcess`, SIGTERM→SIGKILL) — **[IMPLEMENTED]**
-- Agent discovery (`atlas doctor` / `atlas agents`) — **[PLANNED]** (a
-  `/agents` discovery surface exists in `atlas tui`)
-- Agent router + adapters wired (`/claude`, `/gemini`, `/codex`, `/opencode`, `/deepseek`) — **[PARTIAL]** (the `atlas tui` slash surface launches/installs these; the standalone CLI/editor router stays planned)
+- Agent discovery (`atlas doctor` / `atlas agents`) — **[PLANNED]** (`atlas
+  doctor` reports detected agents; a `/agents` discovery surface exists in the
+  v2 TUI)
+- Agent router + adapters wired (`/claude`, `/gemini`, `/codex`, `/opencode`, `/deepseek`) — **[PARTIAL]** (the v2 `atlas tui` slash surface launches/installs these; the standalone CLI/editor router stays planned)
 - Interactive terminal / TTY session handling — **[IMPLEMENTED]**
   (`SessionLaunchRequest.interactive`, `stdio: "inherit"` terminal handoff;
-  `atlas tui` suspends/reclaims the terminal)
+  the v2 TUI suspended/reclaimed the terminal)
 - Context → agent integration (`createContextIntegration`, context packages
   delivered through `SessionPort`) — **[IMPLEMENTED]** (Task 16; ADR-008)
 - Multi-agent orchestration (`createOrchestrator`, plan builder + executor +

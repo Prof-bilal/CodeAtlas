@@ -45,6 +45,7 @@ export type {
 } from "./ports/tool-registry.port";
 export type { CachePort } from "./ports/cache.port";
 export type { ContextBuilderPort } from "./ports/context.port";
+export type { ContextItem } from "./domain/entities";
 export type {
   CompatibilityCheck,
   CompatibilityEvaluationInput,

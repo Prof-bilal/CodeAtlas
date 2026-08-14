@@ -100,9 +100,9 @@ examples/       # Placeholder (no runnable examples yet)
 > `ProcessRunner.launch()` for long-running children, and the **Agent Session
 > Manager** behind `SessionPort`. It is **composed** into the SDK for sessions
 > (`createSessionManager`) and wired to the CLI (`atlas sessions`); interactive
-> `stdio: "inherit"` launches (`SessionLaunchRequest.interactive`) and the
-> **`atlas tui`** slash surface ship, while the standalone **router** remains
-> planned. See [AGENT_SESSIONS.md](./AGENT_SESSIONS.md)
+> `stdio: "inherit"` launches (`SessionLaunchRequest.interactive`) ship, the
+> **`atlas tui`** slash surface is v2 / not shipped (untracked), and the
+> standalone **router** remains planned. See [AGENT_SESSIONS.md](./AGENT_SESSIONS.md)
 > and [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md).
 
 ---
@@ -165,7 +165,8 @@ examples/       # Placeholder (no runnable examples yet)
   (and `@atlas/mcp`). **`atlas search` is wired** through the Context SDK;
   **`atlas mcp` starts the MCP server**; **`atlas init`/`build`/`update` run the
   SDK-owned indexer**; **`atlas scan`** shows a metadata-only project overview;
-  `explain`/`doctor` still print "Coming Soon".
+  **`atlas explain`** resolves deterministically (AI only via `--ai`);
+  **`atlas doctor`** runs a health checklist.
 - **`packages/mcp` (`@atlas/mcp`)** — MCP server over stdio exposing seven
   read-only tools; consumes only the Context SDK ([MCP.md](./MCP.md)).
 - **`apps/extension` (`@atlas/extension`)** — VS Code extension (Activity Bar +

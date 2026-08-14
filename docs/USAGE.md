@@ -83,6 +83,24 @@ Two ways usage enters the store:
   are never passed through to the record.
 - **`trackAgentRun`** — records an agent session run as a `session` event (tokens
   unknown by design — CLI runs don't report token usage).
+- **`atlas context launch`** — records a `session` event (provider, session id,
+  `requestCount: 1`) in `.codeatlas/usage.db` so the launched session shows up in
+  `atlas usage` and its token impact can be reported on stop. Best-effort: a
+  usage-recording failure never fails the launch.
+
+### Session token impact (`atlas sessions stop`)
+
+Stopping a session prints a token-impact report:
+
+- **Burned** — the tokens recorded against that session id
+  (`UsageQuery.sessionId`), tri-state.
+- **Without CodeAtlas** — an `estimated` baseline of what pasting the whole repo
+  would cost: **indexed file bytes ÷ 4** (the documented character→token
+  heuristic), read through the Context SDK (`createContextSDK.files`).
+- **Saved** — `withoutCodeAtlas − burned`; `unknown` unless both sides are
+  numeric (the tri-state model never invents a difference).
+
+These are estimates for orientation, never provider-reported billing.
 
 The `UsageService` (`record`) looks up pricing through the injected
 `PricingSource` (never a hardcoded provider table in business logic) and
@@ -168,6 +186,11 @@ See [CLI.md](./CLI.md) for the full command table. Summary:
 there is no data, `(estimated)` labels where a figure is an estimate. The parent
 command deliberately declares **no** `--json` option — Commander would otherwise
 consume the flag before subcommand dispatch (e.g. `atlas usage list --json`).
+
+`atlas sessions stop` reads the same database to report a session's burned
+tokens vs the whole-repo baseline (see §3). `atlas context launch` writes a
+`session` event so launched sessions appear here and their impact can be
+computed on stop.
 
 ---
 

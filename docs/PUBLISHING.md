@@ -54,15 +54,37 @@ The root shortcut builds and publishes the CLI:
 pnpm release:cli
 ```
 
+Notes from the 0.2.0/0.2.1 releases:
+
+- **Unclean working tree.** `pnpm publish` aborts with `ERR_PNPM_GIT_UNCLEAN`
+  when the tree has uncommitted changes. If you are publishing an intentionally
+  uncommitted tree (for example, a release that will be committed afterwards),
+  pass `--no-git-checks` (or set `git-checks=false`). Publishing an already
+  committed release needs no flag.
+- **Two-factor authentication.** When the npm account has 2FA enabled, publish
+  is rejected with a 403 unless you supply a valid OTP (`--otp <code>`) or an
+  npm **granular access token with "Publish" permission and "Bypass 2FA"**
+  enabled. The token can be passed as an inline registry auth config:
+  `npm publish --access public --//registry.npmjs.org/:_authToken=<npm_...>`.
+  Never commit such tokens.
+- **CLI version reporting.** `atlas --version` reports the CLI's **own**
+  `apps/cli/package.json` version (bundled at build time), not the root
+  workspace placeholder. Bump `apps/cli/package.json` and rebuild before
+  publishing, and verify with `atlas --version` from a separate directory
+  afterwards.
+
 After publication, test it from a separate directory, not from the monorepo:
 
 ```bash
 mkdir codeatlas-smoke-test
 cd codeatlas-smoke-test
 npm install --global codeatlas-cli
+atlas --version
 atlas --help
 atlas init --repo C:\path\to\a\real\repository
 atlas search authentication --repo C:\path\to\a\real\repository
+atlas explain AuthService --repo C:\path\to\a\real\repository
+atlas doctor --repo C:\path\to\a\real\repository
 ```
 
 ## Versioning
@@ -82,3 +104,10 @@ CI publishing should be added only after the manual smoke test is reliable. It
 should publish from a reviewed release tag, use npm trusted publishing or an
 organization-managed token, run `pnpm check` first, and never store npm
 credentials in the repository.
+
+## Released versions
+
+| Version | Date | Highlights |
+| ------- | ---- | ---------- |
+| `0.2.1` | 2026-08-14 | Patch: `atlas --version` reports the CLI's own version. |
+| `0.2.0` | 2026-08-14 | Feature release: deterministic context ranking (`@atlas/context`, ADR-001), `atlas explain`, `atlas doctor`, `atlas sessions stop` token-impact reporting, TUI removed from the shipped artifact. |

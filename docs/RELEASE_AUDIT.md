@@ -82,8 +82,7 @@ now polls for the escalated signal with a bounded deadline instead of a fixed
 
 - Parser: renamed imports and `export default <expr>` do not resolve
   cross-file.
-- `@atlas/context` ranking is intentionally a stub (ADR-001).
-- `explain`/`doctor` CLI commands are registered but print `Coming Soon`.
+- The interactive `atlas tui` is v2 / not shipped (untracked source).
 - No embedding/vector search — the `RelevanceScorer` seam exists but is not
   populated.
 - Storage requires Node `>=22.5.0` (`node:sqlite`); other packages target

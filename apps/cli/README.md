@@ -55,8 +55,9 @@ atlas context <task>     → wired — builds/launches a safe context package
 atlas init               → wired — initialize and index a repository
 atlas build              → wired — build an index
 atlas update             → wired — refresh an index and report changes
-atlas explain [target]   → "Coming Soon"
-atlas doctor             → "Coming Soon"
+atlas explain <target>   → wired — deterministic explanation (symbol/file/module/concept);
+                           --ai generates an AI summary when a provider is configured
+atlas doctor             → wired — health checklist; exit 1 on failure
 ```
 
 `atlas search`, `atlas sessions`, `atlas usage`, and the MCP tools read indexed

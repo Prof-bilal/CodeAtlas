@@ -155,7 +155,7 @@ the non-interactive run-mode flags (no `-p`), so the user talks to the agent
 CLI directly in their terminal; it is mutually exclusive with `captureOutput`
 (interactive wins). Callers must suspend their own stdin handling while the
 session runs and watch for the session's terminal state (`STOPPED`/`FAILED`) to
-know when control returns — `atlas tui` does exactly this.
+know when control returns — the v2 TUI did exactly this.
 
 ## 6. CLI commands
 
@@ -163,11 +163,16 @@ know when control returns — `atlas tui` does exactly this.
 atlas sessions               # list (same as `sessions list`)
 atlas sessions list          # table of tracked sessions
 atlas sessions info <id>     # details for one session
-atlas sessions stop <id>     # graceful stop; "✓ Session stopped" on success
+atlas sessions stop <id>     # graceful stop; "✓ Session stopped" + token-impact report
 ```
 
 - `info` / `stop` on a missing id print `Session not found: <id>` and exit `1`.
 - `stop` on a bad state (already stopped) prints the error and exits `1`.
+- `stop` then prints a **token-impact** report: session `Burned` tokens (from
+  `.codeatlas/usage.db`, `UsageQuery.sessionId`), an `estimated`
+  "Without CodeAtlas" baseline (indexed file bytes ÷ 4), and `Saved`. Figures
+  are `unknown` where there is no data — never guessed. `atlas context launch`
+  records the `session` usage event that powers this.
 - Output never includes API keys, tokens, env, or full sensitive launch args.
   `info` shows pid, status, repository, started/ended times, exit code, and the
   safe error message when present.

@@ -155,19 +155,19 @@ see the root [AGENTS.md](../AGENTS.md).
   `SessionLaunchRequest.interactive`. The **catalog ships the four npm
   installable CLIs** in `packages/toolkit/src/catalog.json` (`claude`
   `@anthropic-ai/claude-code`, `gemini` `@google/gemini-cli`, `codex`
-  `@openai/codex`, `opencode` `opencode-ai`) so `atlas tui` can install a
-  missing agent through the Toolkit's approval-gated npm channel.
+  `@openai/codex`, `opencode` `opencode-ai`) so a missing agent can be installed
+  through the Toolkit's approval-gated npm channel (`atlas tools`, or the v2 TUI).
   A connection layer, not an analysis agent of the context pipeline.
 - See [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md) for the planned router on
   top of it.
 
 > **Direction B (Unified AI CLI) is partial.** The `@atlas/agents` connection
-> layer, the session manager, the plan-executing orchestrator
-> (`createOrchestrator` in `@atlas/sdk`), and the **interactive TUI**
+> layer, the session manager, and the plan-executing orchestrator
+> (`createOrchestrator` in `@atlas/sdk`) are implemented; the **interactive TUI**
 > (`atlas tui`) slash surface (`/claude`–`/opencode` detect → launch
-> interactively → install; `/cursor` `/grok` guidance; `/agents`) are
-> implemented; the **standalone router** (`atlas /claude` …) remains
-> **[PLANNED]** — see [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md). The
+> interactively → install; `/cursor` `/grok` guidance; `/agents`) is
+> **v2 / not shipped** (untracked); the **standalone router** (`atlas /claude`
+> …) remains **[PLANNED]** — see [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md). The
 > **Agent Toolkit** (Direction C — curated tool registry/install/config/
 > security) is implemented behind `@atlas/toolkit` with a shipped catalog —
 > see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
