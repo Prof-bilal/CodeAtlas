@@ -3,7 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type {
   AgentInfo,
+  AgentMcpPort,
+  AgentMcpStatus,
+  AgentMcpStatusEntry,
+  AgentMcpTarget,
   AgentPort,
+  ConfigureOutcome,
   ContextIntegration,
   ContextPackage,
   ContextSDK,
@@ -272,12 +277,57 @@ function fakeOllama(overrides: Partial<OllamaService> = {}): OllamaService {
   };
 }
 
+function mcpEntry(target: AgentMcpTarget, configured: boolean): AgentMcpStatusEntry {
+  return {
+    target,
+    label: target,
+    available: true,
+    filePath: `~/.${target}/settings.json`,
+    configured,
+    detail: "agent detected (1.0.0)",
+  };
+}
+
+function fakeAgentMcp(
+  overrides: Partial<AgentMcpPort> = {},
+  entries: readonly AgentMcpStatusEntry[] = [mcpEntry("claude", true)],
+): AgentMcpPort & { configureCalls: unknown[] } {
+  const configureCalls: unknown[] = [];
+  const status: AgentMcpStatus = {
+    entries,
+    needsConfiguration: entries.some((entry) => entry.available && !entry.configured),
+  };
+  return {
+    configureCalls,
+    targets: ["claude", "gemini", "codex", "opencode", "cursor", "cline"],
+    status: async () => ({ ok: true, value: status }),
+    configure: async (options = {}) => {
+      configureCalls.push(options);
+      const appliedTargets = options.targets ?? [];
+      const outcome: ConfigureOutcome = {
+        toolName: "codeatlas",
+        configHome: "/tmp",
+        dryRun: options.dryRun === true,
+        appliedTargets,
+        verifiedTargets: appliedTargets,
+        skippedTargets: [],
+        failedTargets: [],
+        targetChecks: [],
+        changes: [],
+      };
+      return { ok: true, value: outcome };
+    },
+    ...overrides,
+  } as AgentMcpPort & { configureCalls: unknown[] };
+}
+
 function makeDeps(options: { withDb?: boolean } = {}): TuiDeps & {
   sessions: FakeSessions;
   agents: AgentPort;
   toolkit: ToolkitSDK;
   integration: ContextIntegration;
   context: ContextSDK;
+  agentMcp: AgentMcpPort & { configureCalls: unknown[] };
   ollama: OllamaService;
 } {
   const root = mkdtempSync(join(tmpdir(), "atlas-tui-"));
@@ -299,8 +349,9 @@ function makeDeps(options: { withDb?: boolean } = {}): TuiDeps & {
     launch: vi.fn(),
     attach: vi.fn(),
   } as unknown as ContextIntegration;
+  const agentMcp = fakeAgentMcp();
   const ollama = fakeOllama();
-  return { root, dbPath, context, integration, toolkit, sessions, agents, ollama };
+  return { root, dbPath, context, integration, toolkit, sessions, agents, agentMcp, ollama };
 }
 
 describe("tui/router — parseCommandLine", () => {
@@ -626,13 +677,44 @@ describe("tui/shell — dispatch", () => {
     expect(written.join("\n")).toContain("cursor.com");
   });
 
-  it("launches an installed agent interactively and hands the terminal back", async () => {
+  it("shows registration status, then launches an installed agent interactively on opt-in", async () => {
     const deps = makeDeps();
-    const { io, written } = fakeIo();
+    const { io, written } = fakeIo(["y"]);
     await dispatch(parseCommandLine("/claude --foo"), deps, io);
     expect(deps.sessions.startCalls).toEqual([{ interactive: true, args: ["--foo"] }]);
+    expect(written.join("\n")).toContain("CodeAtlas context tools are registered for Claude.");
     expect(written.join("\n")).toContain("Launching Claude");
     expect(written.join("\n")).toContain("Claude exited");
+  });
+
+  it("does not launch when the user declines the launch opt-in", async () => {
+    const deps = makeDeps();
+    const { io, written } = fakeIo(["n"]);
+    await dispatch(parseCommandLine("/claude"), deps, io);
+    expect(deps.sessions.startCalls).toEqual([]);
+    expect(written.join("\n")).toContain("Launch cancelled.");
+  });
+
+  it("offers to register the CodeAtlas MCP server and launches after registration", async () => {
+    const deps = makeDeps();
+    deps.agentMcp = fakeAgentMcp({}, [mcpEntry("claude", false)]);
+    const { io, written } = fakeIo(["y", "y"]);
+    await dispatch(parseCommandLine("/claude"), deps, io);
+    expect(deps.agentMcp.configureCalls).toEqual([{ targets: ["claude"] }]);
+    expect(written.join("\n")).toContain("not registered for Claude");
+    expect(written.join("\n")).toContain("Registered the CodeAtlas MCP server for Claude.");
+    expect(deps.sessions.startCalls.length).toBe(1);
+  });
+
+  it("skips registration when the user declines and then declines launch", async () => {
+    const deps = makeDeps();
+    deps.agentMcp = fakeAgentMcp({}, [mcpEntry("claude", false)]);
+    const { io, written } = fakeIo(["n", "n"]);
+    await dispatch(parseCommandLine("/claude"), deps, io);
+    expect(deps.agentMcp.configureCalls).toEqual([]);
+    expect(written.join("\n")).toContain("Skipped registration");
+    expect(written.join("\n")).toContain("Launch cancelled.");
+    expect(deps.sessions.startCalls).toEqual([]);
   });
 
   it("reports unknown commands", async () => {

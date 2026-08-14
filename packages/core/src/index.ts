@@ -3,6 +3,12 @@ export * from "./domain/hashing";
 export * from "./domain/scan";
 export type { AgentInfo, AgentPort, AgentRunRequest, AgentRunResult } from "./ports/agent.port";
 export type {
+  AgentMcpPort,
+  AgentMcpStatus,
+  AgentMcpStatusEntry,
+  AgentMcpTarget,
+} from "./ports/agent-mcp.port";
+export type {
   AgentId,
   Session,
   SessionCreateRequest,

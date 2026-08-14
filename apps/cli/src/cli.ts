@@ -1,12 +1,16 @@
 import { VERSION } from "@atlas/sdk";
 import { Command } from "commander";
+import type { AgentsCommandOptions } from "./commands/agents";
 import type { ContextCommandOptions } from "./commands/context";
 import { registerCommands } from "./commands/index";
 import type { ToolsCommandOptions } from "./commands/tools";
 import { runTui } from "./tui/shell";
 
 /** Options for {@link createCli}. */
-export interface CreateCliOptions extends ToolsCommandOptions, ContextCommandOptions {
+export interface CreateCliOptions
+  extends ToolsCommandOptions,
+    ContextCommandOptions,
+    AgentsCommandOptions {
   /** Override the interactive TUI entry (tests inject a fake). */
   readonly runTui?: () => Promise<void>;
 }
@@ -33,6 +37,7 @@ export function createCli(options: CreateCliOptions = {}): Command {
   registerCommands(program, {
     ...(options.toolkit === undefined ? {} : { toolkit: options.toolkit }),
     ...(options.integration === undefined ? {} : { integration: options.integration }),
+    ...(options.agentMcp === undefined ? {} : { agentMcp: options.agentMcp }),
   });
 
   return program;

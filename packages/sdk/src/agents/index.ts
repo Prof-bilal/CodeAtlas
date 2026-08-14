@@ -1,6 +1,7 @@
 import { AgentService, type AgentServiceOptions } from "@atlas/agents";
-import type { AgentPort } from "@atlas/core";
+import type { AgentMcpPort, AgentPort } from "@atlas/core";
 import type { Result } from "@atlas/shared";
+import { AgentMcpService, type AgentMcpServiceOptions } from "@atlas/toolkit";
 
 /**
  * Build the agent connection layer (`AgentPort`): detects installed AI coding
@@ -15,6 +16,22 @@ import type { Result } from "@atlas/shared";
  */
 export function createAgentService(options: AgentServiceOptions = {}): AgentPort {
   return new AgentService(options);
+}
+
+export interface CreateAgentMcpServiceOptions extends Omit<AgentMcpServiceOptions, "agentPort"> {
+  readonly agents?: AgentPort;
+}
+
+/**
+ * Build the agent MCP-integration layer (`AgentMcpPort`): registers CodeAtlas's
+ * own MCP server (`codeatlas` stdio server, see `docs/MCP.md`) into the MCP
+ * sections of installed AI coding tools (Claude, Gemini, Codex, OpenCode,
+ * Cursor, Cline). Composed over {@link createAgentService} for detection and
+ * the Toolkit's configurator-adapter machinery for safe user-config merges.
+ */
+export function createAgentMcpService(options: CreateAgentMcpServiceOptions = {}): AgentMcpPort {
+  const agents = options.agents ?? new AgentService();
+  return new AgentMcpService({ ...options, agentPort: agents });
 }
 
 /**

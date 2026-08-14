@@ -1,4 +1,5 @@
 import type { Command } from "commander";
+import { type AgentsCommandOptions, registerAgents } from "./agents";
 import { type ContextCommandOptions, registerContext } from "./context";
 import { registerDoctor } from "./doctor";
 import { registerExplain } from "./explain";
@@ -16,7 +17,7 @@ import { registerUsage } from "./usage";
 /** Register every CLI command on the given program. */
 export function registerCommands(
   program: Command,
-  options: Pick<ToolsCommandOptions, "toolkit"> & ContextCommandOptions = {},
+  options: Pick<ToolsCommandOptions, "toolkit"> & ContextCommandOptions & AgentsCommandOptions = {},
 ): void {
   registerIndexingCommands(program);
   registerSearch(program);
@@ -25,6 +26,7 @@ export function registerCommands(
   registerUsage(program);
   registerProviders(program);
   registerOllama(program);
+  registerAgents(program, options.agentMcp === undefined ? {} : { agentMcp: options.agentMcp });
   registerTools(program, options.toolkit === undefined ? {} : { toolkit: options.toolkit });
   registerContext(
     program,

@@ -85,6 +85,11 @@ export {
 export { SecurityAssessor } from "./security.service";
 export { ConfiguratorService, type ConfiguratorServiceOptions } from "./configurator.service";
 export {
+  AgentMcpService,
+  AGENT_MCP_TOOL_NAME,
+  type AgentMcpServiceOptions,
+} from "./agent-mcp";
+export {
   ClaudeAdapter,
   GeminiAdapter,
   CodexAdapter,

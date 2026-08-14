@@ -13,6 +13,9 @@ import type {
   UsageStatistics,
 } from "@atlas/core";
 import {
+  type AgentMcpPort,
+  type AgentMcpStatus,
+  type ConfigureOutcome,
   ContextAttachUnsupportedError,
   type ContextExplanation,
   type ContextIntegration,
@@ -92,6 +95,62 @@ function fakeToolkit(overrides: Partial<ToolkitSDK> = {}): ToolkitSDK {
   } as ToolkitSDK;
 }
 
+function fakeAgentMcp(
+  overrides: Partial<AgentMcpPort> = {},
+  status?: AgentMcpStatus,
+): AgentMcpPort & { configureCalls: unknown[] } {
+  const configureCalls: unknown[] = [];
+  const entries = status?.entries ?? [
+    {
+      target: "claude" as const,
+      label: "Claude",
+      available: true,
+      filePath: "~/.claude/settings.json",
+      configured: true,
+      detail: "agent detected (1.0.0)",
+    },
+    {
+      target: "gemini" as const,
+      label: "Gemini",
+      available: false,
+      filePath: "~/.gemini/settings.json",
+      configured: false,
+      detail: "agent is not installed or could not be detected",
+    },
+  ];
+  const configured: AgentMcpStatus = status ?? {
+    entries,
+    needsConfiguration: false,
+  };
+  const outcome: ConfigureOutcome = {
+    toolName: "codeatlas",
+    configHome: "/tmp",
+    dryRun: false,
+    appliedTargets: [],
+    verifiedTargets: [],
+    skippedTargets: [],
+    failedTargets: [],
+    targetChecks: [],
+    changes: [],
+  };
+  return {
+    configureCalls,
+    targets: ["claude", "gemini", "codex", "opencode", "cursor", "cline"],
+    status: async () => ({ ok: true, value: configured }),
+    configure: async (options = {}) => {
+      configureCalls.push(options);
+      const appliedTargets = (options.targets ?? []) as string[];
+      const result: ConfigureOutcome = {
+        ...outcome,
+        appliedTargets,
+        verifiedTargets: appliedTargets,
+      };
+      return { ok: true, value: result };
+    },
+    ...overrides,
+  } as AgentMcpPort & { configureCalls: unknown[] };
+}
+
 function fakeContextIntegration(overrides: Partial<ContextIntegration> = {}): ContextIntegration {
   const pkg = {
     task: "fix auth",
@@ -162,6 +221,7 @@ describe("atlas CLI", () => {
     const program = createCli();
     const names = program.commands.map((command) => command.name()).sort();
     expect(names).toEqual([
+      "agents",
       "build",
       "context",
       "doctor",
@@ -365,6 +425,104 @@ describe("atlas CLI", () => {
     const mcp = program.commands.find((command) => command.name() === "mcp");
     expect(mcp).toBeDefined();
     expect((mcp?.description() ?? "").toLowerCase()).toContain("mcp");
+  });
+
+  it("registers the complete agents command surface", () => {
+    const program = createCli();
+    const agents = program.commands.find((command) => command.name() === "agents");
+    expect(agents?.commands.map((command) => command.name()).sort()).toEqual(["connect", "status"]);
+  });
+
+  it("renders agent MCP status and delegates connect through the injected façade", async () => {
+    const agentMcp = fakeAgentMcp();
+    const program = createCli({ agentMcp });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync(["node", "atlas", "agents"]);
+      expect(log.mock.calls.join("\n")).toContain("Claude");
+      expect(log.mock.calls.join("\n")).toContain("registered");
+
+      await program.parseAsync(["node", "atlas", "agents", "status", "--json"]);
+      expect(() => JSON.parse(log.mock.calls[1]?.[0] as string)).not.toThrow();
+
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "agents",
+        "connect",
+        "--target",
+        "claude",
+        "--dry-run",
+      ]);
+      expect(agentMcp.configureCalls).toEqual([{ dryRun: true, targets: ["claude"] }]);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("rejects an unknown agents connect target", async () => {
+    const agentMcp = fakeAgentMcp();
+    const program = createCli({ agentMcp });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const previousExitCode = process.exitCode;
+    try {
+      await program.parseAsync(["node", "atlas", "agents", "connect", "--target", "nope"]);
+      expect(error).toHaveBeenCalledOnce();
+    } finally {
+      process.exitCode = previousExitCode;
+      error.mockRestore();
+    }
+  });
+
+  it("renders planned targets on a connect dry run", async () => {
+    const agentMcp = fakeAgentMcp({
+      configure: async () => ({
+        ok: true as const,
+        value: {
+          toolName: "codeatlas",
+          configHome: "/tmp",
+          dryRun: true,
+          appliedTargets: [],
+          verifiedTargets: [],
+          skippedTargets: [],
+          failedTargets: [],
+          targetChecks: [],
+          changes: [
+            {
+              target: "claude",
+              label: "Claude",
+              filePath: "~/.claude/settings.json",
+              fileExisted: false,
+              preservedKeys: [],
+              addedKeys: ["mcpServers.codeatlas"],
+              mergedDocument: { mcpServers: { codeatlas: {} } },
+              alreadyConfigured: false,
+              problems: [],
+              description: "Register codeatlas for Claude",
+              backupPath: null,
+              verified: null,
+            },
+          ],
+        },
+      }),
+    });
+    const program = createCli({ agentMcp });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "agents",
+        "connect",
+        "--target",
+        "claude",
+        "--dry-run",
+      ]);
+      expect(log.mock.calls.join("\n")).toContain("Would configure: claude");
+      expect(log.mock.calls.join("\n")).not.toContain("No applicable");
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it("reports the SDK version", () => {

@@ -9,6 +9,8 @@ import { existsSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import {
   type AgentInfo,
+  type AgentMcpPort,
+  type AgentMcpTarget,
   type AgentPort,
   type ContextIntegration,
   type ContextSDK,
@@ -17,6 +19,7 @@ import {
   type ProviderStatus,
   type SessionPort,
   type ToolkitSDK,
+  createAgentMcpService,
   createAgentService,
   createContextIntegration,
   createContextSDK,
@@ -53,6 +56,7 @@ export interface TuiDeps {
   readonly toolkit: ToolkitSDK;
   readonly sessions: SessionPort;
   readonly agents: AgentPort;
+  readonly agentMcp: AgentMcpPort;
   readonly ollama: OllamaService;
 }
 
@@ -66,6 +70,7 @@ export interface RunTuiOptions {
   readonly toolkit?: ToolkitSDK;
   readonly sessions?: SessionPort;
   readonly agents?: AgentPort;
+  readonly agentMcp?: AgentMcpPort;
   readonly ollama?: OllamaService;
   readonly io?: TuiIo;
 }
@@ -80,11 +85,22 @@ export async function runTui(options: RunTuiOptions = {}): Promise<void> {
   const context = options.context ?? createContextSDK({ dbPath });
   const sessions = options.sessions ?? createSessionManager();
   const agents = options.agents ?? createAgentService();
+  const agentMcp = options.agentMcp ?? createAgentMcpService({ root });
   const toolkit = options.toolkit ?? createToolkitSDK({ root });
   const integration = options.integration ?? createContextIntegration({ context, sessions });
   const ollama = options.ollama ?? createOllamaService();
 
-  const deps: TuiDeps = { root, dbPath, context, integration, toolkit, sessions, agents, ollama };
+  const deps: TuiDeps = {
+    root,
+    dbPath,
+    context,
+    integration,
+    toolkit,
+    sessions,
+    agents,
+    agentMcp,
+    ollama,
+  };
 
   io.write(
     renderHeader({ repoLabel: basename(root), contextState: contextStateLabel(context.status()) }),
@@ -390,7 +406,9 @@ async function runToolsInstall(tool: string, deps: TuiDeps, io: TuiIo): Promise<
   }
 }
 
-/** `/claude` `/gemini` `/codex` `/opencode` `/cursor` `/grok`. */
+/** `/claude` `/gemini` `/codex` `/opencode` `/cursor` `/grok`.
+ *  Status-first: show the agent's install + CodeAtlas-MCP registration state,
+ *  offer to register the MCP server (opt-in), then offer to launch (opt-in). */
 async function runAgent(
   provider: AgentProvider,
   args: readonly string[],
@@ -411,7 +429,62 @@ async function runAgent(
     io.write(`Or run /tools-install ${provider} to plan and approve it here.`);
     return;
   }
+
+  const target = agentMcpTargetFor(provider);
+  if (target !== null) {
+    const status = await deps.agentMcp.status();
+    const entry = status.ok
+      ? status.value.entries.find((item) => item.target === target)
+      : undefined;
+    if (entry === undefined || !entry.configured) {
+      io.write(
+        `CodeAtlas context tools are not registered for ${agentLabel(provider)} (${deps.root}).`,
+      );
+      const register = (
+        await io.readLine(`Register the CodeAtlas MCP server for ${agentLabel(provider)}? [y/N] `)
+      )
+        .trim()
+        .toLowerCase();
+      if (register === "y" || register === "yes") {
+        const result = await deps.agentMcp.configure({ targets: [target] });
+        if (!result.ok) {
+          io.write(`Registration failed: ${result.error.message}`);
+        } else if (result.value.appliedTargets.length > 0) {
+          io.write(`Registered the CodeAtlas MCP server for ${agentLabel(provider)}.`);
+        } else {
+          io.write("Nothing to register.");
+        }
+      } else {
+        io.write("Skipped registration — launch with reduced context.");
+      }
+    } else {
+      io.write(`CodeAtlas context tools are registered for ${agentLabel(provider)}.`);
+    }
+  }
+
+  const launch = (await io.readLine(`Launch ${agentLabel(provider)} now? [y/N] `))
+    .trim()
+    .toLowerCase();
+  if (launch !== "y" && launch !== "yes") {
+    io.write("Launch cancelled.");
+    return;
+  }
   await launchAgentInteractive(provider, args, deps, io);
+}
+
+/** Map a TUI agent provider to its CodeAtlas-MCP registration target, or
+ *  `null` when the provider has no MCP registration (e.g. Grok). */
+function agentMcpTargetFor(provider: AgentProvider): AgentMcpTarget | null {
+  switch (provider) {
+    case "claude":
+    case "gemini":
+    case "codex":
+    case "opencode":
+    case "cursor":
+      return provider;
+    case "grok":
+      return null;
+  }
 }
 
 /** Launch an installed AI CLI interactively; reclaim the terminal on exit. */

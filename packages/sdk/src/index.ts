@@ -82,8 +82,22 @@ export {
 } from "./context/errors";
 export { ReadRepositories, WriteRepositories } from "./context/repositories";
 export { createSessionManager, type CreateSessionManagerOptions } from "./sessions/index";
-export { createAgentService, buildInteractiveArgs } from "./agents/index";
-export type { AgentInfo, AgentPort, AgentRunRequest, AgentRunResult } from "@atlas/core";
+export {
+  createAgentService,
+  buildInteractiveArgs,
+  createAgentMcpService,
+  type CreateAgentMcpServiceOptions,
+} from "./agents/index";
+export type {
+  AgentInfo,
+  AgentMcpPort,
+  AgentMcpStatus,
+  AgentMcpStatusEntry,
+  AgentMcpTarget,
+  AgentPort,
+  AgentRunRequest,
+  AgentRunResult,
+} from "@atlas/core";
 export type { AgentServiceOptions } from "@atlas/agents";
 export { createUsageService, type CreateUsageServiceOptions } from "./usage/index";
 export { createProviderService, createOllamaService } from "./providers/index";

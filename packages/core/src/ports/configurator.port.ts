@@ -51,7 +51,15 @@ export interface ConfiguratorPort {
 }
 
 /** The configuration targets the Toolkit can wire a tool into. */
-export type ConfigurationTarget = "claude" | "gemini" | "codex" | "opencode" | "mcp" | "vscode";
+export type ConfigurationTarget =
+  | "claude"
+  | "gemini"
+  | "codex"
+  | "opencode"
+  | "cursor"
+  | "cline"
+  | "mcp"
+  | "vscode";
 
 /**
  * The input to the Configurator — everything needed to detect, generate,
