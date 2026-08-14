@@ -10,11 +10,15 @@ import type {
   ContextStatus,
   InstallOutcome,
   InstallPlan,
+  OllamaConnectResult,
+  OllamaService,
+  OllamaStatus,
   SearchResult,
   Session,
   SessionPort,
   ToolkitSDK,
 } from "@atlas/sdk";
+import type { Result } from "@atlas/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { TuiIo } from "../src/tui/io";
 import {
@@ -239,12 +243,42 @@ function minimalPackage(task: string): ContextPackage {
   };
 }
 
+function fakeOllama(overrides: Partial<OllamaService> = {}): OllamaService {
+  const status: OllamaStatus = {
+    connected: false,
+    mode: "local",
+    baseUrl: "http://localhost:11434",
+    hasApiKey: false,
+    keyDisplay: "",
+    model: null,
+  };
+  return {
+    status: () => status,
+    connect: async () => ({
+      ok: true,
+      value: { status: { ...status, connected: true }, models: ["llama3.2"] },
+    }),
+    disconnect: () => {},
+    listModels: async () => ({ ok: true, value: ["llama3.2"] }),
+    use: () => ({ ...status, model: "llama3.2" }),
+    overview: () => ({
+      providers: [
+        { name: "ollama", configured: false, hasApiKey: false, model: null, defaultModel: null },
+      ],
+      defaultProvider: "claude",
+      defaultModel: null,
+    }),
+    ...overrides,
+  };
+}
+
 function makeDeps(options: { withDb?: boolean } = {}): TuiDeps & {
   sessions: FakeSessions;
   agents: AgentPort;
   toolkit: ToolkitSDK;
   integration: ContextIntegration;
   context: ContextSDK;
+  ollama: OllamaService;
 } {
   const root = mkdtempSync(join(tmpdir(), "atlas-tui-"));
   const dbPath = join(root, ".codeatlas", "context.db");
@@ -265,7 +299,8 @@ function makeDeps(options: { withDb?: boolean } = {}): TuiDeps & {
     launch: vi.fn(),
     attach: vi.fn(),
   } as unknown as ContextIntegration;
-  return { root, dbPath, context, integration, toolkit, sessions, agents };
+  const ollama = fakeOllama();
+  return { root, dbPath, context, integration, toolkit, sessions, agents, ollama };
 }
 
 describe("tui/router — parseCommandLine", () => {
@@ -317,6 +352,31 @@ describe("tui/router — parseCommandLine", () => {
       args: [],
     });
     expect(parseCommandLine("/codex")).toEqual({ kind: "agent", provider: "codex", args: [] });
+  });
+
+  it("parses /providers and /ollama actions", () => {
+    expect(parseCommandLine("/providers")).toEqual({ kind: "providers" });
+    expect(parseCommandLine("/ollama")).toEqual({ kind: "ollama", action: null, args: [] });
+    expect(parseCommandLine("/ollama connect")).toEqual({
+      kind: "ollama",
+      action: "connect",
+      args: [],
+    });
+    expect(parseCommandLine("/ollama disconnect")).toEqual({
+      kind: "ollama",
+      action: "disconnect",
+      args: [],
+    });
+    expect(parseCommandLine("/ollama models")).toEqual({
+      kind: "ollama",
+      action: "models",
+      args: [],
+    });
+    expect(parseCommandLine("/ollama use llama3.2")).toEqual({
+      kind: "ollama",
+      action: "use",
+      args: ["llama3.2"],
+    });
   });
 
   it("marks anything else as unknown", () => {
@@ -475,6 +535,88 @@ describe("tui/shell — dispatch", () => {
     await dispatch(parseCommandLine("/gemini"), deps, io);
     expect(written.join("\n")).toContain("not installed");
     expect(written.join("\n")).toContain("/tools-install gemini");
+  });
+
+  it("renders the unified provider overview for /providers", async () => {
+    const deps = makeDeps();
+    const { io, written } = fakeIo();
+    await dispatch(parseCommandLine("/providers"), deps, io);
+    expect(written.join("\n")).toContain("AI Providers");
+    expect(written.join("\n")).toContain("ollama");
+    expect(written.join("\n")).toContain("Default provider");
+  });
+
+  it("renders Ollama status for bare /ollama", async () => {
+    const deps = makeDeps();
+    const { io, written } = fakeIo();
+    await dispatch(parseCommandLine("/ollama"), deps, io);
+    expect(written.join("\n")).toContain("Ollama");
+    expect(written.join("\n")).toContain("Not connected");
+  });
+
+  it("connects Ollama locally from /ollama connect", async () => {
+    const deps = makeDeps();
+    const connect = vi.fn(
+      async (): Promise<Result<OllamaConnectResult>> => ({
+        ok: true,
+        value: {
+          status: {
+            connected: true,
+            mode: "local",
+            baseUrl: "http://localhost:11434",
+            hasApiKey: false,
+            keyDisplay: "",
+            model: "llama3.2",
+          },
+          models: ["llama3.2"],
+        },
+      }),
+    );
+    deps.ollama = fakeOllama({ connect });
+    const { io, written } = fakeIo([""]);
+    await dispatch(parseCommandLine("/ollama connect"), deps, io);
+    expect(connect).toHaveBeenCalledWith({ saveKey: true });
+    expect(written.join("\n")).toContain("Connected");
+  });
+
+  it("disconnects Ollama from /ollama disconnect", async () => {
+    const deps = makeDeps();
+    const disconnect = vi.fn();
+    deps.ollama = fakeOllama({ disconnect });
+    const { io, written } = fakeIo();
+    await dispatch(parseCommandLine("/ollama disconnect"), deps, io);
+    expect(disconnect).toHaveBeenCalled();
+    expect(written.join(" ")).toContain("disconnected");
+  });
+
+  it("lists Ollama models from /ollama models", async () => {
+    const deps = makeDeps();
+    const listModels = vi.fn(async () => ({ ok: true as const, value: ["llama3.2", "qwen3"] }));
+    deps.ollama = fakeOllama({ listModels });
+    const { io, written } = fakeIo();
+    await dispatch(parseCommandLine("/ollama models"), deps, io);
+    expect(listModels).toHaveBeenCalled();
+    expect(written.join("\n")).toContain("llama3.2");
+    expect(written.join("\n")).toContain("qwen3");
+  });
+
+  it("selects a model from /ollama use", async () => {
+    const deps = makeDeps();
+    const use = vi.fn(
+      (): OllamaStatus => ({
+        connected: true,
+        mode: "local",
+        baseUrl: "http://localhost:11434",
+        hasApiKey: false,
+        keyDisplay: "",
+        model: "qwen3",
+      }),
+    );
+    deps.ollama = fakeOllama({ use });
+    const { io, written } = fakeIo();
+    await dispatch(parseCommandLine("/ollama use qwen3"), deps, io);
+    expect(use).toHaveBeenCalledWith("qwen3");
+    expect(written.join("\n")).toContain("qwen3");
   });
 
   it("shows vendor install guidance for a manual agent", async () => {

@@ -13,16 +13,20 @@ import {
   type ContextIntegration,
   type ContextSDK,
   type IndexResult,
+  type OllamaService,
+  type ProviderStatus,
   type SessionPort,
   type ToolkitSDK,
   createAgentService,
   createContextIntegration,
   createContextSDK,
+  createOllamaService,
   createSessionManager,
   createToolkitSDK,
   indexProject,
   renderContextPackage,
 } from "@atlas/sdk";
+import { renderOllamaConnect, renderOllamaModels, renderOllamaStatus } from "../commands/providers";
 import { contextDbPath, renderSearchHits, resolveProjectRoot } from "../commands/search";
 import { agentLabel } from "../commands/sessions";
 import { installGuideFor, providerLabel } from "./guides";
@@ -33,10 +37,12 @@ import {
   renderHeader,
   renderHelp,
   renderManualInstall,
+  renderOllamaPanel,
+  renderProvidersPanel,
   renderToolkitSidebar,
   sessionSummary,
 } from "./render";
-import { type AgentProvider, type TuiCommand, parseCommandLine } from "./router";
+import { type AgentProvider, type OllamaAction, type TuiCommand, parseCommandLine } from "./router";
 
 /** Everything the TUI needs, injectable for tests. */
 export interface TuiDeps {
@@ -47,6 +53,7 @@ export interface TuiDeps {
   readonly toolkit: ToolkitSDK;
   readonly sessions: SessionPort;
   readonly agents: AgentPort;
+  readonly ollama: OllamaService;
 }
 
 /** Options for {@link runTui}. */
@@ -59,6 +66,7 @@ export interface RunTuiOptions {
   readonly toolkit?: ToolkitSDK;
   readonly sessions?: SessionPort;
   readonly agents?: AgentPort;
+  readonly ollama?: OllamaService;
   readonly io?: TuiIo;
 }
 
@@ -74,8 +82,9 @@ export async function runTui(options: RunTuiOptions = {}): Promise<void> {
   const agents = options.agents ?? createAgentService();
   const toolkit = options.toolkit ?? createToolkitSDK({ root });
   const integration = options.integration ?? createContextIntegration({ context, sessions });
+  const ollama = options.ollama ?? createOllamaService();
 
-  const deps: TuiDeps = { root, dbPath, context, integration, toolkit, sessions, agents };
+  const deps: TuiDeps = { root, dbPath, context, integration, toolkit, sessions, agents, ollama };
 
   io.write(
     renderHeader({ repoLabel: basename(root), contextState: contextStateLabel(context.status()) }),
@@ -120,6 +129,12 @@ export async function dispatch(command: TuiCommand, deps: TuiDeps, io: TuiIo): P
       return;
     case "agents":
       await runAgents(deps, io);
+      return;
+    case "providers":
+      await runProviders(deps, io);
+      return;
+    case "ollama":
+      await runOllama(command.action, command.args, deps, io);
       return;
     case "toolkit":
       await runToolkit(deps, io);
@@ -225,6 +240,94 @@ async function runAgents(deps: TuiDeps, io: TuiIo): Promise<void> {
     return;
   }
   io.write(renderAgents(result.value));
+}
+
+/** `/providers`: unified AI-provider status. */
+async function runProviders(deps: TuiDeps, io: TuiIo): Promise<void> {
+  const overview = deps.ollama.overview();
+  io.write(
+    renderProvidersPanel([
+      ...overview.providers.map(renderProviderStatusRow),
+      "",
+      `Default provider: ${overview.defaultProvider}`,
+      `Default model: ${overview.defaultModel ?? "none"}`,
+    ]),
+  );
+}
+
+function renderProviderStatusRow(status: ProviderStatus): string {
+  if (!status.configured) {
+    return `  ○ ${status.name}  not configured`;
+  }
+  const key = status.hasApiKey || status.name === "ollama" ? "" : "  (missing key)";
+  return `  ✓ ${status.name}  ${status.model ?? "no model"}${key}`;
+}
+
+/** `/ollama [connect|disconnect|models|use <model>]`; bare shows status. */
+async function runOllama(
+  action: OllamaAction | null,
+  args: readonly string[],
+  deps: TuiDeps,
+  io: TuiIo,
+): Promise<void> {
+  if (action === null) {
+    const status = deps.ollama.status();
+    io.write(
+      renderOllamaPanel([
+        status.connected ? "  ✓ Connected" : "  ○ Not connected",
+        `  Mode: ${status.mode}`,
+        `  Base URL: ${status.baseUrl}`,
+        `  API key: ${status.hasApiKey ? status.keyDisplay : "not set"}`,
+        `  Model: ${status.model ?? "none selected"}`,
+      ]),
+    );
+    return;
+  }
+  switch (action) {
+    case "connect": {
+      const answer = await io.readLine(
+        "Ollama API key (leave empty for a local server, type 'no' to cancel): ",
+      );
+      if (answer.trim().toLowerCase() === "no") {
+        io.write("Connect cancelled.");
+        return;
+      }
+      io.write("Testing connection...");
+      const key = answer.trim();
+      const result = await deps.ollama.connect({
+        ...(key !== "" ? { apiKey: key } : {}),
+        saveKey: true,
+      });
+      if (!result.ok) {
+        io.write(`Connection failed: ${result.error.message}`);
+        return;
+      }
+      io.write(renderOllamaConnect(result.value));
+      return;
+    }
+    case "disconnect":
+      deps.ollama.disconnect();
+      io.write("Ollama disconnected.");
+      return;
+    case "models": {
+      const result = await deps.ollama.listModels();
+      if (!result.ok) {
+        io.write(`Failed to list models: ${result.error.message}`);
+        return;
+      }
+      io.write(renderOllamaModels(result.value));
+      return;
+    }
+    case "use": {
+      const model = args.join(" ").trim();
+      if (model === "") {
+        io.write("Usage: /ollama use <model>");
+        return;
+      }
+      io.write(renderOllamaStatus(deps.ollama.use(model)));
+      return;
+    }
+  }
 }
 
 /** `/toolkit`: installed + recommended tools sidebar. */

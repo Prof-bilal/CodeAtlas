@@ -1,13 +1,27 @@
-export type { ProviderAdapter, ProviderConfig, ProviderName } from "./adapter";
+export type { ProviderAdapter, ProviderConfig, ProviderName, ProviderStatus } from "./adapter";
 export { ClaudeAdapter } from "./adapters/anthropic";
 export { GeminiAdapter } from "./adapters/gemini";
+export { OllamaAdapter } from "./adapters/ollama";
 export {
   DeepSeekAdapter,
   OpenAIAdapter,
   OpenAICompatibleAdapter,
 } from "./adapters/openai-compatible";
+export {
+  API_KEY_ENV,
+  BASE_URL_ENV,
+  defaultUserConfigPath,
+  loadUserSettings,
+  maskApiKey,
+  readApiKey,
+  readApiKeys,
+  readProviderConfigs,
+  removeUserSettings,
+  saveUserSettings,
+} from "./config";
+export type { UserProviderSettings } from "./config";
 export { ProviderRequestError, UnknownProviderError } from "./errors";
 export { ProviderService } from "./provider.service";
-export type { ProviderServiceOptions } from "./provider.service";
+export type { ModelListingAdapter, ProviderServiceOptions } from "./provider.service";
 export { fetchTransport } from "./transport";
 export type { HttpTransport, HttpResponse } from "./transport";

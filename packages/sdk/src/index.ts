@@ -86,6 +86,17 @@ export { createAgentService, buildInteractiveArgs } from "./agents/index";
 export type { AgentInfo, AgentPort, AgentRunRequest, AgentRunResult } from "@atlas/core";
 export type { AgentServiceOptions } from "@atlas/agents";
 export { createUsageService, type CreateUsageServiceOptions } from "./usage/index";
+export { createProviderService, createOllamaService } from "./providers/index";
+export type {
+  CreateOllamaServiceOptions,
+  CreateProviderServiceOptions,
+  OllamaConnectRequest,
+  OllamaConnectResult,
+  OllamaService,
+  OllamaStatus,
+  ProviderOverview,
+} from "./providers/index";
+export type { ProviderStatus } from "@atlas/providers";
 export { createToolRegistry, type CreateToolRegistryOptions } from "./toolkit/index";
 export {
   createCompatibilityEngine,

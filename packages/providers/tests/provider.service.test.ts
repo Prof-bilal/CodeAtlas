@@ -62,4 +62,33 @@ describe("ProviderService", () => {
     }
     expect(result.value.content).toBe("echo:hello");
   });
+
+  it("exposes per-provider status with hasApiKey tracking", () => {
+    const fake = createFakeTransport([]);
+    const service = new ProviderService({
+      transport: fake.transport,
+      providers: { openai: { apiKey: "o" } },
+    });
+    service.register({
+      name: "ollama",
+      defaultModel: "llama3.2",
+      async complete() {
+        return ok({ provider: "ollama", content: "", model: "llama3.2" });
+      },
+    });
+
+    const statuses = service.status();
+    const openai = statuses.find((status) => status.name === "openai");
+    expect(openai).toEqual({
+      name: "openai",
+      configured: true,
+      hasApiKey: true,
+      model: "gpt-4o",
+      defaultModel: "gpt-4o",
+    });
+    const ollama = statuses.find((status) => status.name === "ollama");
+    expect(ollama?.configured).toBe(true);
+    expect(ollama?.hasApiKey).toBe(true);
+    expect(ollama?.defaultModel).toBe("llama3.2");
+  });
 });

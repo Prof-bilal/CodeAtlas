@@ -17,11 +17,11 @@ import type {
   SummaryPort,
 } from "@atlas/core";
 import { HashService, hashContent } from "@atlas/hashing";
-import { ProviderService } from "@atlas/providers";
 import { SearchService } from "@atlas/search";
 import { type FilePath, type Result, type SymbolId, fail } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { SummaryService } from "@atlas/summary";
+import { createProviderService } from "../providers/index";
 import {
   ContextUnavailableError,
   DependencyNotFoundError,
@@ -267,11 +267,13 @@ class ContextSDKFacade implements ContextSDK {
   ) {
     this.config = config;
     // AI summaries are optional; without a wired port or configured provider the
-    // generation methods fail cleanly instead of crashing.
+    // generation methods fail cleanly instead of crashing. The default provider
+    // is built from the environment + user provider settings, so a connected
+    // Ollama (or a keyed cloud provider) powers summaries with no code change.
     this.summary =
       summary ??
       new SummaryService({
-        provider: new ProviderService(),
+        provider: createProviderService(),
         cache: new CacheService(),
         hash: new HashService(),
       });

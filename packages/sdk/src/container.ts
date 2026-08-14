@@ -1,3 +1,5 @@
+import { CacheService } from "@atlas/cache";
+import { ContextBuilderService } from "@atlas/context";
 import type {
   CachePort,
   ContextBuilderPort,
@@ -10,16 +12,14 @@ import type {
   StoragePort,
   SummaryPort,
 } from "@atlas/core";
-import { CacheService } from "@atlas/cache";
-import { ContextBuilderService } from "@atlas/context";
 import { GraphService } from "@atlas/graph";
 import { HashService } from "@atlas/hashing";
 import { ParserService } from "@atlas/parser";
-import { ProviderService } from "@atlas/providers";
 import { ScannerService } from "@atlas/scanner";
 import { SearchService } from "@atlas/search";
 import { ContextStore, StorageService } from "@atlas/storage";
 import { SummaryService } from "@atlas/summary";
+import { createProviderService } from "./providers/index";
 
 /** The full set of services that make up a CodeAtlas runtime. */
 export interface ContainerServices {
@@ -50,7 +50,7 @@ export class Container {
 
   /** Create a container, using built-in defaults unless overridden. */
   public static create(options: ContainerOptions = {}): Container {
-    const provider = options.provider ?? new ProviderService();
+    const provider = options.provider ?? createProviderService();
     const cache = options.cache ?? new CacheService();
     const contextDb = options.contextDb ?? new ContextStore({ filePath: ":memory:" });
     return new Container({

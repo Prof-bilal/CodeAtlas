@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ClaudeAdapter } from "../src/adapters/anthropic";
 import { GeminiAdapter } from "../src/adapters/gemini";
+import { OllamaAdapter } from "../src/adapters/ollama";
 import { DeepSeekAdapter, OpenAIAdapter } from "../src/adapters/openai-compatible";
 import { ProviderRequestError } from "../src/errors";
 import { createFakeTransport } from "./helpers";
@@ -111,6 +112,71 @@ describe("provider adapters", () => {
     expect(call.url).toContain("/models/gemini-1.5-pro:generateContent");
     const body = call.body as { generationConfig?: Record<string, unknown> };
     expect(body.generationConfig).toEqual({ responseMimeType: "application/json" });
+  });
+
+  it("OllamaAdapter talks to a local server without auth and lists models", async () => {
+    const fake = createFakeTransport([
+      {
+        status: 200,
+        json: {
+          choices: [{ message: { content: "local answer" } }],
+          model: "llama3.2",
+          usage: { prompt_tokens: 3, completion_tokens: 2 },
+        },
+      },
+      { status: 200, json: { models: [{ name: "llama3.2" }, { name: "qwen3" }] } },
+    ]);
+    const adapter = new OllamaAdapter(
+      { baseUrl: "http://localhost:11434", apiKey: "" },
+      fake.transport,
+    );
+
+    const result = await adapter.complete({ prompt: "hello", json: true, temperature: 0 });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.content).toBe("local answer");
+      expect(result.value.usage).toEqual({ inputTokens: 3, outputTokens: 2, totalTokens: 5 });
+    }
+
+    const chat = fake.calls[0];
+    expect(chat.url).toBe("http://localhost:11434/v1/chat/completions");
+    expect(chat.headers["Authorization"]).toBeUndefined();
+    const body = chat.body as Record<string, unknown>;
+    expect(body["model"]).toBe("llama3.2");
+    expect(body["format"]).toBe("json");
+    expect(body["temperature"]).toBe(0);
+
+    const listing = await adapter.listModels();
+    expect(listing.ok).toBe(true);
+    if (listing.ok) {
+      expect(listing.value).toEqual(["llama3.2", "qwen3"]);
+    }
+    expect(fake.calls[1].url).toBe("http://localhost:11434/api/tags");
+  });
+
+  it("OllamaAdapter sends a Bearer key for cloud mode", async () => {
+    const fake = createFakeTransport([
+      {
+        status: 200,
+        json: { choices: [{ message: { content: "cloud answer" } }], model: "gpt-oss" },
+      },
+    ]);
+    const adapter = new OllamaAdapter(
+      { baseUrl: "https://ollama.example.com", apiKey: "ollama-key" },
+      fake.transport,
+    );
+    const result = await adapter.complete({ prompt: "hello" });
+    expect(result.ok).toBe(true);
+    const call = fake.calls[0];
+    expect(call.url).toBe("https://ollama.example.com/v1/chat/completions");
+    expect(call.headers["Authorization"]).toBe("Bearer ollama-key");
+  });
+
+  it("OllamaAdapter surfaces a failed model listing as an error result", async () => {
+    const fake = createFakeTransport([{ status: 500, json: { error: "down" } }]);
+    const adapter = new OllamaAdapter({ apiKey: "" }, fake.transport);
+    const result = await adapter.listModels();
+    expect(result.ok).toBe(false);
   });
 
   it("fails with ProviderRequestError on a non-2xx response", async () => {

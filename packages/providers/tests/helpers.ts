@@ -1,4 +1,4 @@
-import type { HttpTransport, HttpResponse } from "../src/transport";
+import type { HttpResponse, HttpTransport } from "../src/transport";
 
 export interface TransportCall {
   readonly url: string;
@@ -16,16 +16,23 @@ export function createFakeTransport(responses: readonly HttpResponse[]): {
 } {
   const calls: TransportCall[] = [];
   let index = 0;
+  const next = (): HttpResponse => {
+    const response = responses[Math.min(index, responses.length - 1)] ?? {
+      status: 200,
+      json: {},
+    };
+    index += 1;
+    return response;
+  };
   return {
     transport: {
       async post(url, headers, body) {
         calls.push({ url, headers, body });
-        const response = responses[Math.min(index, responses.length - 1)] ?? {
-          status: 200,
-          json: {},
-        };
-        index += 1;
-        return response;
+        return next();
+      },
+      async get(url, headers = {}) {
+        calls.push({ url, headers, body: undefined });
+        return next();
       },
     },
     calls,

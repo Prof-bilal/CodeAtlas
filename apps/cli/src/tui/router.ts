@@ -23,17 +23,34 @@ export const AGENT_PROVIDERS: readonly AgentProvider[] = [
 ];
 
 /** A command that only carries its kind. */
-export type SimpleCommandKind = "help" | "status" | "scan" | "agents" | "toolkit" | "exit";
+export type SimpleCommandKind =
+  | "help"
+  | "status"
+  | "scan"
+  | "agents"
+  | "toolkit"
+  | "providers"
+  | "exit";
+
+/** `/ollama` sub-actions (bare `/ollama` shows status). */
+export type OllamaAction = "connect" | "disconnect" | "models" | "use";
 
 /** Every command the router can produce. */
 export type TuiCommand =
   | { readonly kind: SimpleCommandKind }
   | { readonly kind: "agent"; readonly provider: AgentProvider; readonly args: readonly string[] }
+  | {
+      readonly kind: "ollama";
+      readonly action: OllamaAction | null;
+      readonly args: readonly string[];
+    }
   | { readonly kind: "search"; readonly query: string }
   | { readonly kind: "context"; readonly task: string }
   | { readonly kind: "tools-install"; readonly tool: string }
   | { readonly kind: "unknown"; readonly raw: string }
   | { readonly kind: "empty" };
+
+const OLLAMA_ACTIONS: readonly string[] = ["connect", "disconnect", "models", "use"];
 
 /** Parse one user input line into a command (never throws). */
 export function parseCommandLine(line: string): TuiCommand {
@@ -54,6 +71,8 @@ export function parseCommandLine(line: string): TuiCommand {
       return { kind: "agents" };
     case "/toolkit":
       return { kind: "toolkit" };
+    case "/providers":
+      return { kind: "providers" };
     case "/exit":
     case "/quit":
       return { kind: "exit" };
@@ -63,6 +82,17 @@ export function parseCommandLine(line: string): TuiCommand {
       return { kind: "context", task: rest.join(" ").trim() };
     case "/tools-install":
       return { kind: "tools-install", tool: rest.join(" ").trim() };
+    case "/ollama": {
+      const [action, ...tail] = rest;
+      if (action !== undefined && OLLAMA_ACTIONS.includes(action.toLowerCase())) {
+        return {
+          kind: "ollama",
+          action: action.toLowerCase() as OllamaAction,
+          args: tail,
+        };
+      }
+      return { kind: "ollama", action: null, args: [] };
+    }
     default:
       if (lower.startsWith("/")) {
         const provider = lower.slice(1);

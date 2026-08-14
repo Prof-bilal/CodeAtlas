@@ -55,6 +55,9 @@ export function renderHelp(): string {
     "  /agents               List installed AI CLIs",
     "  /toolkit              Show repo tools (installed + recommended)",
     "  /tools-install <tool> Plan and install a tool from the catalog",
+    "  /providers            Show AI provider status (Ollama, OpenAI, …)",
+    "  /ollama [connect|disconnect|models|use <model>]",
+    "                        Manage the optional Ollama AI provider",
     "  /claude [/gemini /codex /opencode] [args...]",
     "                        Launch an AI CLI in your terminal",
     "  /cursor /grok         Show install instructions for these CLIs",
@@ -122,4 +125,14 @@ export function renderManualInstall(guide: ManualInstallGuide): string {
 /** Summarize the count of running sessions for `/status`. */
 export function sessionSummary(count: number): string {
   return count === 0 ? "0 active sessions" : `${count} active session${count === 1 ? "" : "s"}`;
+}
+
+/** Render the `/providers` AI-provider overview. */
+export function renderProvidersPanel(lines: readonly string[]): string {
+  return box("AI Providers", lines);
+}
+
+/** Render the `/ollama` status panel. */
+export function renderOllamaPanel(lines: readonly string[]): string {
+  return box("Ollama", lines);
 }

@@ -4,6 +4,7 @@ import { registerDoctor } from "./doctor";
 import { registerExplain } from "./explain";
 import { registerIndexingCommands } from "./indexing";
 import { registerMcp } from "./mcp";
+import { registerOllama, registerProviders } from "./providers";
 import { registerScan } from "./scan";
 import { registerSearch } from "./search";
 import { registerSessions } from "./sessions";
@@ -22,6 +23,8 @@ export function registerCommands(
   registerScan(program);
   registerSessions(program);
   registerUsage(program);
+  registerProviders(program);
+  registerOllama(program);
   registerTools(program, options.toolkit === undefined ? {} : { toolkit: options.toolkit });
   registerContext(
     program,

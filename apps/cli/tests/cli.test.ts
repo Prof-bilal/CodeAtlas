@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type {
@@ -168,6 +168,8 @@ describe("atlas CLI", () => {
       "explain",
       "init",
       "mcp",
+      "ollama",
+      "providers",
       "scan",
       "search",
       "sessions",
@@ -804,6 +806,83 @@ describe("atlas CLI", () => {
           log.mockRestore();
         }
       });
+    });
+  });
+
+  describe("providers & ollama commands", () => {
+    const configPath = () => join(tmpdir(), `atlas-providers-cli-${Date.now()}.json`);
+
+    it("shows every provider in `atlas providers`", async () => {
+      const program = createCli();
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      const env = process.env["ATLAS_PROVIDERS_CONFIG"];
+      process.env["ATLAS_PROVIDERS_CONFIG"] = configPath();
+      try {
+        await program.parseAsync(["node", "atlas", "providers"]);
+        const output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        expect(output).toContain("AI PROVIDERS");
+        expect(output).toContain("ollama");
+        expect(output).toContain("Default provider: claude");
+      } finally {
+        process.env["ATLAS_PROVIDERS_CONFIG"] = env;
+        log.mockRestore();
+      }
+    });
+
+    it("prints the Ollama status for `atlas ollama` and `atlas ollama status`", async () => {
+      const program = createCli();
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      const env = process.env["ATLAS_PROVIDERS_CONFIG"];
+      process.env["ATLAS_PROVIDERS_CONFIG"] = configPath();
+      try {
+        await program.parseAsync(["node", "atlas", "ollama"]);
+        const bare = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        expect(bare).toContain("OLLAMA");
+        expect(bare).toContain("Not connected");
+        log.mockClear();
+        await program.parseAsync(["node", "atlas", "ollama", "status"]);
+        const status = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        expect(status).toContain("Mode: local");
+      } finally {
+        process.env["ATLAS_PROVIDERS_CONFIG"] = env;
+        log.mockRestore();
+      }
+    });
+
+    it("selects an Ollama model with `atlas ollama use`", async () => {
+      const path = configPath();
+      const program = createCli();
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      const env = process.env["ATLAS_PROVIDERS_CONFIG"];
+      process.env["ATLAS_PROVIDERS_CONFIG"] = path;
+      try {
+        await program.parseAsync(["node", "atlas", "ollama", "use", "qwen3"]);
+        const output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        expect(output).toContain("qwen3");
+        const persisted = JSON.parse(readFileSync(path, "utf8")) as { activeModel: string };
+        expect(persisted.activeModel).toBe("qwen3");
+      } finally {
+        process.env["ATLAS_PROVIDERS_CONFIG"] = env;
+        log.mockRestore();
+        rmSync(path, { force: true });
+      }
+    });
+
+    it("reports the connection failure exit code for `atlas ollama connect`", async () => {
+      const program = createCli();
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      const env = process.env["ATLAS_PROVIDERS_CONFIG"];
+      process.env["ATLAS_PROVIDERS_CONFIG"] = configPath();
+      process.env["OLLAMA_BASE_URL"] = "http://127.0.0.1:1";
+      try {
+        await program.parseAsync(["node", "atlas", "ollama", "connect"]);
+        expect(process.exitCode).toBe(1);
+      } finally {
+        process.env["ATLAS_PROVIDERS_CONFIG"] = env;
+        process.env["OLLAMA_BASE_URL"] = undefined;
+        log.mockRestore();
+        process.exitCode = undefined;
+      }
     });
   });
 });
