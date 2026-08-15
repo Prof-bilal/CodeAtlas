@@ -36,7 +36,7 @@ Thumbs.db
 # Generated CodeAtlas artifacts
 .codeatlas/
 ui/
-docs/Design.md
+docs/DESIGN.md
 
 # Real-repository integration test output
 tests/integration/results/
@@ -46,7 +46,6 @@ test-repo/
 
 # Unrelated experimental app (Go + Bun TUI spike, planning notes only)
 go-tui-app/
-PROMPTS.md
 
 # The interactive TUI (v2 / not shipped): kept on disk but untracked so fresh
 # clones build without it.
