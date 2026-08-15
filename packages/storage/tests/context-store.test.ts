@@ -1,4 +1,4 @@
-import type { SourceFile, Summary, Symbol } from "@atlas/core";
+import type { Symbol as AtlasSymbol, SourceFile, Summary } from "@atlas/core";
 import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
 import { describe, expect, it } from "vitest";
 import { ContextStore } from "../src/context-store";
@@ -7,7 +7,7 @@ function file(path: string, content = "export const value = 1;"): SourceFile {
   return { path: path as FilePath, language: "typescript", content };
 }
 
-function symbol(symbolId: string, name: string, filePath: string): Symbol {
+function symbol(symbolId: string, name: string, filePath: string): AtlasSymbol {
   return {
     id: symbolId as SymbolId,
     name,
@@ -111,6 +111,30 @@ describe("ContextStore", () => {
     store.close();
   });
 
+  it("deleteContext removes graph edges touching the deleted file's symbols", () => {
+    const store = new ContextStore();
+    store.saveContext({
+      files: [file("/a.ts"), file("/keep.ts")],
+      symbols: [symbol("s1", "run", "/a.ts")],
+      dependencies: [
+        { from: "n:file:/a.ts" as NodeId, to: "n:s1" as NodeId, kind: "calls" },
+        { from: "n:s1" as NodeId, to: "n:file:/keep.ts" as NodeId, kind: "calls" },
+        { from: "n:file:/keep.ts" as NodeId, to: "n:other" as NodeId, kind: "calls" },
+      ],
+    });
+
+    store.deleteContext({ kind: "file", path: "/a.ts" as FilePath });
+
+    const snapshot = store.loadContext();
+    // Both edges that touch the deleted symbol node are gone; the unrelated
+    // keep.ts edge survives. (Regression: symbol node ids were resolved after
+    // the cascade, leaving these edges dangling.)
+    expect(snapshot.dependencies).toEqual([
+      { from: "n:file:/keep.ts" as NodeId, to: "n:other" as NodeId, kind: "calls" },
+    ]);
+    store.close();
+  });
+
   it("deleteContext 'all' clears every table", () => {
     const store = new ContextStore();
     store.saveContext({ files: [file("/a.ts")], symbols: [symbol("s1", "run", "/a.ts")] });
@@ -150,7 +174,7 @@ describe("ContextStore", () => {
     store.saveContext({ symbols: [symbol("s1", "parser", "/a.ts")] });
     const result = store.searchContext("parser");
     expect(result[0].kind).toBe("symbol");
-    expect(result[0]!.score).toBe(100);
+    expect(result[0]?.score).toBe(100);
     store.close();
   });
 

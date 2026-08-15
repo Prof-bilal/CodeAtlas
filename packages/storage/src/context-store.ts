@@ -236,15 +236,21 @@ export class ContextStore implements ContextDatabasePort {
     const file = this.files.findByPath(path);
     const fileId = file?.id;
 
+    // Resolve the file's symbol node ids BEFORE the file row is deleted: the
+    // `Files → Symbols` ON DELETE CASCADE removes the symbol rows, so querying
+    // them after the delete returns nothing and their graph edges would be
+    // left dangling. Collect them first so every touching edge is cleaned up.
+    const symbolNodeIds =
+      fileId === undefined
+        ? []
+        : this.symbols.byFile(fileId).map((symbol) => symbolNodeId(symbol.id));
+
     count += this.files.deleteByPath(path); // cascades symbol rows
     count += this.summaries.deleteByTarget(path);
     count += this.modules.deleteByPath(path);
     count += this.hashes.deleteByPath(path);
 
-    const nodeIds = [fileNodeId(path)];
-    if (fileId !== undefined) {
-      nodeIds.push(...this.symbols.byFile(fileId).map((symbol) => symbolNodeId(symbol.id)));
-    }
+    const nodeIds = [fileNodeId(path), ...symbolNodeIds];
     for (const nodeId of nodeIds) {
       count += this.dependencies.deleteByNodeId(nodeId);
       count += this.relationships.deleteByNodeId(nodeId);
