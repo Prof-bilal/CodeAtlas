@@ -86,6 +86,71 @@ describe("ScannerService.scanProject", () => {
     }
   });
 
+  it("applies root .gitignore patterns to files and directories", async () => {
+    const project = createTestProject({
+      ".gitignore": "*.log\nbuild/\nconfig/local.env\ndist/\n",
+      "src/index.ts": "x",
+      "debug.log": "x",
+      "build/out.js": "x",
+      "config/local.env": "x",
+      "config/other.json": "{}",
+      "dist/generated.ts": "x",
+    });
+    try {
+      const result = await scanProject(project.root as FilePath);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+
+      expect(result.value.totalFiles).toBe(3); // .gitignore + src/index.ts + config/other.json
+      const names = result.value.files.map((file) => file.name).sort();
+      expect(names).toEqual([".gitignore", "index.ts", "other.json"]);
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("applies nested .gitignore files scoped to their directory", async () => {
+    const project = createTestProject({
+      ".gitignore": "*.log\n",
+      "src/.gitignore": "!special.log\n",
+      "src/debug.log": "x",
+      "src/special.log": "x",
+      "debug.log": "x",
+    });
+    try {
+      const result = await scanProject(project.root as FilePath);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+
+      expect(result.value.totalFiles).toBe(3); // both .gitignore + src/special.log
+      expect(result.value.files.map((file) => file.name).sort()).toEqual([
+        ".gitignore",
+        ".gitignore",
+        "special.log",
+      ]);
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("respectGitignore: false disables .gitignore patterns", async () => {
+    const project = createTestProject({
+      ".gitignore": "*.log\n",
+      "debug.log": "x",
+      "src/index.ts": "x",
+    });
+    try {
+      const service = new ScannerService({ respectGitignore: false });
+      const result = await service.scanProject(project.root as FilePath);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value.totalFiles).toBe(3); // .gitignore + debug.log + index.ts
+      expect(result.value.totalFolders).toBe(1);
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it("respects maxDepth to limit recursion", async () => {
     const project = createTestProject({
       "root.ts": "x",

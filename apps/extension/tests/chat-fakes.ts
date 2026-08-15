@@ -102,6 +102,10 @@ export class FakeContextIntegration implements ContextIntegration {
   public async attach(): Promise<Result<never>> {
     return fail(new Error("attach is not used by the chat panel"));
   }
+
+  public async brief(): Promise<Result<never>> {
+    return fail(new Error("brief is not used by the chat panel"));
+  }
 }
 
 /** A fake `AgentPort` with a configurable set of installed CLIs. */

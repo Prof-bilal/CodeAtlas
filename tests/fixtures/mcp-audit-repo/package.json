@@ -1,0 +1,19 @@
+{
+  "name": "mcp-audit-repo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Intentional fixture repository for the CodeAtlas MCP audit.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "express": "^4.19.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
+  }
+}

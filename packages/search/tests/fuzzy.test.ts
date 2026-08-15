@@ -85,4 +85,11 @@ describe("queryTerms", () => {
     expect(queryTerms("")).toEqual([]);
     expect(queryTerms("   ")).toEqual([]);
   });
+
+  it("strips trailing sentence punctuation including dots from names", () => {
+    const terms = queryTerms("Explain how AuthService depends on UserRepository.");
+    expect(terms).toContain("userrepository");
+    expect(terms).not.toContain("userrepository.");
+    expect(queryTerms("open src/config.json now")).toContain("src/config.json");
+  });
 });

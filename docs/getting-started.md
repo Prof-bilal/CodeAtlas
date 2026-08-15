@@ -81,6 +81,7 @@ Start the MCP server and point Claude Desktop / Cursor / VS Code at it — see
 
 ## Next steps
 
+- Use CodeAtlas with an AI provider: [AI_WORKFLOW.md](./AI_WORKFLOW.md)
 - Understand the model: [CONTEXT.md](./CONTEXT.md)
 - Read context programmatically: [CONTEXT_SDK.md](./CONTEXT_SDK.md)
 - Explore the CLI surface: [CLI.md](./CLI.md)

@@ -126,14 +126,15 @@ export const STOPWORDS: ReadonlySet<string> = new Set([
 
 /**
  * Split a query into meaningful search terms: lowercase, whitespace-split,
- * leading/trailing punctuation stripped (keeping dots so `auth.ts` survives),
- * and stopwords / one-character tokens dropped. Returns `[]` when there is no
- * meaningful term.
+ * leading/trailing punctuation stripped — including dots at the edges so a
+ * sentence-final name like `UserRepository.` becomes `userrepository`, while
+ * internal dots survive so `auth.ts` stays intact — and stopwords /
+ * one-character tokens dropped. Returns `[]` when there is no meaningful term.
  */
 export function queryTerms(query: string): readonly string[] {
   const terms: string[] = [];
   for (const raw of query.trim().toLowerCase().split(/\s+/)) {
-    const term = raw.replace(/^[^\w.]+|[^\w.]+$/g, "");
+    const term = raw.replace(/^[^\w]+|[^\w]+$/g, "");
     if (term.length < 2) {
       continue;
     }

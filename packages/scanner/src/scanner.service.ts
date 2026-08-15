@@ -1,19 +1,25 @@
+import { readFile as readFileAsync, readdir, stat } from "node:fs/promises";
+import { basename, join, resolve } from "node:path";
 import type {
   DetectedFileType,
   DetectedLanguage,
   FileTreeNode,
   ProjectScan,
-  ScannerPort,
   ScannedFile,
+  ScannerPort,
   SourceFile,
 } from "@atlas/core";
-import { readdir, readFile as readFileAsync, stat } from "node:fs/promises";
-import { basename, join, resolve } from "node:path";
 import type { FilePath, Result } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
-import { detectFramework, type FrameworkSignals } from "./framework";
-import { createIgnoreMatcher, DEFAULT_IGNORED_DIRECTORIES } from "./ignore";
-import { detectLanguageByName, extensionOf, LANGUAGE_BY_EXTENSION } from "./language";
+import { type FrameworkSignals, detectFramework } from "./framework";
+import {
+  GITIGNORE_FILE_NAME,
+  GitignoreMatcher,
+  type GitignoreScope,
+  parseGitignore,
+} from "./gitignore";
+import { DEFAULT_IGNORED_DIRECTORIES, createIgnoreMatcher } from "./ignore";
+import { LANGUAGE_BY_EXTENSION, detectLanguageByName, extensionOf } from "./language";
 
 /** Configuration for a {@link ScannerService}. */
 export interface ScannerOptions {
@@ -27,6 +33,11 @@ export interface ScannerOptions {
    * `undefined` means unlimited depth.
    */
   readonly maxDepth?: number;
+  /**
+   * Whether `.gitignore` file patterns are honored during the scan.
+   * `true` by default. When disabled, only `ignoredDirectories` applies.
+   */
+  readonly respectGitignore?: boolean;
 }
 
 /** Result of walking one directory. */
@@ -73,10 +84,12 @@ export async function scanProject(rootPath: FilePath): Promise<Result<ProjectSca
 export class ScannerService implements ScannerPort {
   private readonly ignored: readonly string[] = DEFAULT_IGNORED_DIRECTORIES;
   private readonly maxDepth: number | undefined;
+  private readonly respectGitignore: boolean;
 
   public constructor(options: ScannerOptions = {}) {
     this.ignored = options.ignoredDirectories ?? DEFAULT_IGNORED_DIRECTORIES;
     this.maxDepth = options.maxDepth;
+    this.respectGitignore = options.respectGitignore ?? true;
   }
 
   /**
@@ -96,7 +109,10 @@ export class ScannerService implements ScannerPort {
 
     try {
       const ignore = createIgnoreMatcher(this.ignored);
-      const walked = await this.walkDirectory(root, ignore, 0);
+      const gitignore = this.respectGitignore
+        ? GitignoreMatcher.empty()
+        : GitignoreMatcher.disabled();
+      const walked = await this.walkDirectory(root, ignore, gitignore, 0);
       const markers = await this.collectRootMarkers(root);
 
       return ok({
@@ -150,6 +166,7 @@ export class ScannerService implements ScannerPort {
   private async walkDirectory(
     dir: string,
     ignore: (name: string) => boolean,
+    gitignore: GitignoreMatcher,
     depth: number,
   ): Promise<WalkResult> {
     const entries = await readdir(dir, { withFileTypes: true });
@@ -158,6 +175,11 @@ export class ScannerService implements ScannerPort {
     let dotFolders = 0;
     const shouldRecurse = this.maxDepth === undefined || depth + 1 <= this.maxDepth;
 
+    // A nested `.gitignore` applies to this directory and everything below it.
+    const nestedGitignore = this.respectGitignore
+      ? await this.withLocalGitignore(gitignore, dir)
+      : gitignore;
+
     for (const entry of entries) {
       const fullPath = join(dir, entry.name);
 
@@ -165,9 +187,12 @@ export class ScannerService implements ScannerPort {
         if (ignore(entry.name)) {
           continue;
         }
+        if (nestedGitignore.isIgnored(fullPath, true)) {
+          continue;
+        }
         dotFolders += 1;
         if (shouldRecurse) {
-          const sub = await this.walkDirectory(fullPath, ignore, depth + 1);
+          const sub = await this.walkDirectory(fullPath, ignore, nestedGitignore, depth + 1);
           dotFolders += sub.dotFolders;
           files.push(...sub.files);
           children.push(sub.node);
@@ -183,6 +208,10 @@ export class ScannerService implements ScannerPort {
       }
 
       if (!entry.isFile()) {
+        continue;
+      }
+
+      if (nestedGitignore.isIgnored(fullPath, false)) {
         continue;
       }
 
@@ -211,6 +240,24 @@ export class ScannerService implements ScannerPort {
       files,
       dotFolders,
     };
+  }
+
+  /**
+   * Load `<dir>/.gitignore` (when present) and return a matcher with it scoped
+   * to `dir`. Returns an unchanged matcher when no `.gitignore` exists.
+   */
+  private async withLocalGitignore(
+    current: GitignoreMatcher,
+    dir: string,
+  ): Promise<GitignoreMatcher> {
+    let content: string;
+    try {
+      content = await readFileAsync(join(dir, GITIGNORE_FILE_NAME), "utf8");
+    } catch {
+      return current;
+    }
+    const scope: GitignoreScope = { base: dir, rules: parseGitignore(content) };
+    return current.withScope(scope.base, scope.rules);
   }
 
   private async fileSize(path: string): Promise<number> {

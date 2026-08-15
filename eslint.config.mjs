@@ -98,6 +98,7 @@ export default tseslint.config(
       "ui/**",
       "test-repo/**",
       "go-tui-app/**",
+      "tests/fixtures/**",
     ],
   },
   {
@@ -151,8 +152,9 @@ export default tseslint.config(
     // `@modelcontextprotocol/sdk` only maps its `.js` subpath exports to
     // `.d.ts` for extensionless specifiers, so `import/no-unresolved` reports
     // false positives for `@modelcontextprotocol/sdk/server/mcp.js` etc. (TS
-    // and Node both resolve them). Scope an `ignore` to the MCP package.
-    files: ["packages/mcp/**/*.ts"],
+    // and Node both resolve them). Scope an `ignore` to the MCP package and
+    // the benchmark harness that drives a real MCP client.
+    files: ["packages/mcp/**/*.ts", "tests/**/*.ts"],
     rules: {
       "import/no-unresolved": ["error", { ignore: ["^@modelcontextprotocol/sdk/"] }],
     },

@@ -276,13 +276,18 @@ examples/        # README placeholder only (no runnable examples)
   project overview** (`scanProjectOverview`). **`explain`** resolves a target
   deterministically (file/module/symbol/concept) with optional `--ai` AI
   summaries, and **`doctor`** runs a PASS/WARN/FAIL health checklist (exit `1`
-  on failure). No `/agent`-style slash commands (the agent
-  router is planned).
+  on failure). **Standalone agent launch commands** exist for every agent with
+  a launch adapter (`atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>`:
+  sugar over `atlas context launch --provider <agent>`, `--ai` briefing
+  supported). No interactive `/agent`-style slash commands (the plan-executing
+  agent router is planned).
 - Dependency note: the CLI may import `@atlas/sdk` **and** `@atlas/mcp` (so it
   can start the server); enforced by ESLint. See `docs/DEPENDENCIES.md`.
 - `atlas search` accepts positional query words plus `--repo`, `--limit`,
-  `--type`, `--no-fuzzy`, and `--json`; it reports a friendly error and exit
-  code `1` when no context database exists.
+  `type`, `no-fuzzy`, and `json`; `--ai` additionally generates (or reuses
+  stored) AI summaries for the top 5 file hits via `summaries.generateFile`,
+  failing cleanly without a configured provider. It reports a friendly error
+  and exit code `1` when no context database exists.
 - Tests assert the command list, version, placeholder text, `atlas search`
   end-to-end against a fixture database (including the missing-index error),
   `atlas explain` (symbol/file/JSON/missing-index), `atlas doctor`
@@ -303,9 +308,14 @@ examples/        # README placeholder only (no runnable examples)
 - Exposes seven tools: `search_symbols`, `search_files`, `get_summary`,
   `get_dependencies`, `explain_module`, `project_overview`,
   `read_file_range`. Each has a zod
-  input schema (validated by the SDK, surfaced as `-32602` on failure) and
-  returns `structuredContent` + a JSON text block; domain errors return
-  `isError: true`. `read_file_range` is a version-aware working-tree read with
+  input schema (validated by the SDK, surfaced as `-32602` on failure), an
+  `outputSchema` the server validates `structuredContent` against, and returns
+  `structuredContent` + a JSON text block; domain errors return
+  `isError: true` with text content only (no `structuredContent`, so
+  outputSchema-validating clients see the real error). Tools auto-refresh the
+  index incrementally before reads when the working tree has changed, and
+  report the outcome via `freshness` on every result.
+  `read_file_range` is a version-aware working-tree read with
   freshness metadata (mirrors the Context SDK `files.readRange`).
 - Ships a `codeatlas-mcp` binary (`src/bin.ts`) **and** the `atlas mcp` CLI
   command, plus a library API (`createMcpServer` / `startStdioServer`). The
@@ -321,7 +331,10 @@ examples/        # README placeholder only (no runnable examples)
   (project/symbols/modules/summaries/dependencies), `codeatlas.*` palette
   commands, and a status-bar indicator.
 - `atlas init`/`build`/`update` delegate to the SDK-owned `indexProject()` flow,
-  which creates the manifest/database and reports hash changes. `atlas explain`
+  which creates the manifest/database and reports hash changes. An explicit
+  `--summaries` flag also generates an AI file summary per parsed file (cached
+  by content hash, persisted to the `Summaries` table, failures counted not
+  fatal — `update` only summarizes changed/added files). `atlas explain`
   resolves symbols/files/modules/concepts deterministically (AI summary only via
   explicit `--ai`), and `atlas doctor` runs a health checklist (exit `1` on
   failure).
@@ -350,8 +363,11 @@ examples/        # README placeholder only (no runnable examples)
   The SDK composes it (`createSessionManager()`) and the CLI exposes
   `atlas sessions list` / `info` / `stop`. See `docs/AGENT_SESSIONS.md` +
   ADR-007.
-- **Not yet wired** into the SDK/CLI for *routing* (slash commands) — the
-  agent router and `/claude`-style commands remain planned. Package
+- **Wired into the CLI for standalone launches**: `atlas context launch`
+  and the `atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` commands
+  deliver a Context Package through this port. **Not yet wired for *plan*
+  routing** — the interactive slash router and `/claude`-style commands remain
+  planned. Package
   `package.json` description: "AI CLI connection layer for CodeAtlas — detect
   and run external AI coding CLIs."
 - Tests: `packages/agents/tests/*.test.ts` (executable resolution, service
@@ -384,10 +400,17 @@ examples/        # README placeholder only (no runnable examples)
   launch). `explain()` projects a package to a content-free explanation; render
   helpers produce a plain prompt and a `--explain`-style listing.
 - **CLI wiring (Task 26) is implemented**: `atlas context <task>` builds and
-  renders the package, `--explain` renders content-free reasons, `--json`
-  emits machine-readable package/explanation data, and `launch`/`attach`
-  deliver through the existing `SessionPort`. Budget, instruction, overview,
-  and repository/provider flags are forwarded to the SDK. The future slash
+  renders the package (the `context` command is a namespace whose `build`
+  subcommand is the default, so `atlas context <task>` and
+  `atlas context build <task>` are equivalent), `explain` renders content-free
+  reasons, `json` emits machine-readable package/explanation data,
+  `--ai` appends a provider-backed AI context briefing (success: briefing
+  section in text / full `ContextBriefing` in JSON; failure: degrades to the
+  deterministic package with `aiMessage` and still exits 0), and
+  `launch`/`attach` deliver through the existing `SessionPort` (`--ai`
+  prepends the briefing to the session prompt; a failed briefing still
+  launches). Budget, instruction, overview, and repository/provider flags are
+  forwarded to the SDK. The future slash
   router remains separate. Tests: `packages/sdk/tests/context-integration.test.ts`
   and `apps/cli/tests/cli.test.ts`.
   See ADR-008.
@@ -423,7 +446,9 @@ examples/        # README placeholder only (no runnable examples)
   merging them away; `renderCombinedReport()` renders the attributed report.
 - **Live view**: `orchestrator.getRun(id?)` exposes the run snapshot as it
   progresses (`onProgress`), and `orchestrator.cancel(id?)` stops a running run.
-- **No CLI/router wiring yet** — no `atlas /claude`-style commands (see below).
+- **No plan-router CLI wiring yet** — no interactive `atlas /claude`-style
+  commands (see below); the standalone `atlas <agent> <prompt...>` launch
+  commands above are a separate, non-orchestrated surface.
   Tests: `packages/sdk/tests/orchestrator.test.ts` (plan validation, parallel/
   sequential execution, timeouts, retries, cancellation, abort-on-failure,
   isolated scopes, orphan cleanup, live view, conflict detection).
@@ -439,6 +464,11 @@ examples/        # README placeholder only (no runnable examples)
   `/codex`, `/opencode` detect → launch interactively → install via the Toolkit
   when missing; `/cursor` and `/grok` vendor guidance; `/agents`, `/toolkit`,
   `/tools-install <tool>`) is **v2 / not shipped** — its source is git-untracked.
+- **Standalone launch commands are implemented** for every agent with a launch
+  adapter: `atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` are thin
+  wrappers over `atlas context launch --provider <agent>`, sharing the same
+  context-assembly, `--ai` briefing, and rendering path
+  (`apps/cli/src/commands/context.ts`).
   There is still **no agent router** for the plan-executing
   orchestrator (Direction B) and no standalone `atlas agents` CLI command.
 
@@ -589,7 +619,7 @@ examples/        # README placeholder only (no runnable examples)
 | Intended direction                    | Status in repo |
 | ------------------------------------- | -------------- |
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking intentionally stubbed; `search` + `mcp` are CLI-wired |
-| **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) are implemented; the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) is **v2 / not shipped** (untracked); the standalone router / `atlas agents` CLI remains planned |
+| **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) are implemented; **standalone launch commands** (`atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` with `--ai` briefing) are implemented; the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) is **v2 / not shipped** (untracked); the plan-executing standalone router / `atlas agents` CLI remains planned |
 | **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~65% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, and the thin SDK-backed Toolkit CLI; `/tools` slash integration and `atlas setup` remain planned |
 
 The existing code fully implements **Direction A's pipeline layers** but stops

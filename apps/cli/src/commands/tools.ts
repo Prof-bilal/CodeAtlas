@@ -1,9 +1,9 @@
 import {
-  createToolkitSDK,
   type ConfigureOutcome,
   type InstallApproval,
-  type ToolkitSDK,
   type ToolkitDoctorEntry,
+  type ToolkitSDK,
+  createToolkitSDK,
 } from "@atlas/sdk";
 import type { Command } from "commander";
 

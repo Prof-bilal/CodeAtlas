@@ -1,12 +1,12 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { describe, expect, it } from "vitest";
-import { createMcpServer, type CodeAtlasMcpServer } from "../src/server";
+import { type CodeAtlasMcpServer, createMcpServer } from "../src/server";
 import { TOOL_NAMES } from "../src/tools";
-import { createFixture, silentLogger, type Fixture } from "./fixture";
+import { type Fixture, createFixture, silentLogger } from "./fixture";
 
 interface TestConnection {
   readonly mcp: CodeAtlasMcpServer;
@@ -58,7 +58,7 @@ function isTextBlock(block: unknown): block is { readonly type: "text"; readonly
 }
 
 describe("MCP server protocol", () => {
-  it("advertises exactly the six tools over tools/list", async () => {
+  it("advertises exactly the seven tools over tools/list", async () => {
     await withConnection(async ({ client }) => {
       const { tools } = await client.listTools();
       const names = tools.map((tool) => tool.name).sort();
@@ -110,6 +110,7 @@ describe("MCP server protocol", () => {
     await withConnection(async ({ client }) => {
       const result = await client.callTool({ name: "no_such_tool", arguments: {} });
       expect(result.isError).toBe(true);
+      expect(result.structuredContent).toBeUndefined();
       expect(textOf(result)).toContain("no_such_tool");
     });
   });
@@ -132,8 +133,31 @@ describe("MCP server protocol", () => {
       await client.connect(clientTransport);
       const result = await client.callTool({ name: "project_overview", arguments: {} });
       expect(result.isError).toBe(true);
-      const structured = result.structuredContent as Record<string, unknown>;
-      expect(String(structured["error"])).toContain("No context index found");
+      expect(textOf(result)).toContain("No context index found");
+    } finally {
+      await mcp.close();
+      await client.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("returns an isError result and keeps the protocol alive for a corrupted index", async () => {
+    const root = mkdtempSync(join(tmpdir(), "atlas-mcp-server-corrupt-"));
+    mkdirSync(join(root, ".codeatlas"), { recursive: true });
+    writeFileSync(join(root, ".codeatlas", "context.db"), "not a sqlite database", "utf8");
+    const mcp = createMcpServer({ root, logger: silentLogger() });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "test-client", version: "0.0.0" }, { capabilities: {} });
+    try {
+      await mcp.connect(serverTransport);
+      await client.connect(clientTransport);
+      const result = await client.callTool({ name: "project_overview", arguments: {} });
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toBeUndefined();
+      expect(textOf(result).length).toBeGreaterThan(0);
+
+      const listed = await client.listTools();
+      expect(listed.tools.map((tool) => tool.name).sort()).toEqual([...TOOL_NAMES].sort());
     } finally {
       await mcp.close();
       await client.close();

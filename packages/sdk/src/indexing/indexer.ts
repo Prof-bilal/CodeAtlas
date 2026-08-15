@@ -1,11 +1,14 @@
 ﻿import { mkdir } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
+import { CacheService } from "@atlas/cache";
 import type {
   ContextData,
   PersistedDependency,
   PersistedModule,
   Symbol as PersistedSymbol,
   SourceFile,
+  Summary,
+  SummaryPort,
 } from "@atlas/core";
 import { GraphService } from "@atlas/graph";
 import { HashService } from "@atlas/hashing";
@@ -13,12 +16,21 @@ import { ParserService } from "@atlas/parser";
 import { ScannerService, generateManifest } from "@atlas/scanner";
 import { type FilePath, type Result, fail, ok } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
+import { SummaryService } from "@atlas/summary";
 import { fileNodeId, symbolNodeId } from "../context/nodes";
+import { createProviderService } from "../providers/index";
 
 export interface IndexRequest {
   readonly repositoryPath: string;
   readonly dbPath?: string;
   readonly mode?: "build" | "update";
+  /**
+   * Generate an AI file summary for every freshly parsed file after indexing
+   * (AI is optional; without a provider the failures are counted, not fatal).
+   */
+  readonly summaries?: boolean;
+  /** Summary port override (defaults to a provider-backed service). */
+  readonly summary?: SummaryPort;
 }
 
 export interface IndexResult {
@@ -35,6 +47,10 @@ export interface IndexResult {
   readonly deleted: number;
   readonly unchanged: number;
   readonly manifestPath: string;
+  /** File summaries generated and stored when `summaries` was requested. */
+  readonly summaries: number;
+  /** Files whose summary generation failed (e.g. no provider configured). */
+  readonly summariesFailed: number;
 }
 
 /**
@@ -204,6 +220,31 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
     }
 
     const modules = buildModules(repositoryPath, paths);
+
+    // Optional AI enrichment: generate a file summary per freshly parsed file.
+    // Summaries are cached by content hash, so unchanged files hit the cache on
+    // later runs; a missing provider (or any generation failure) degrades
+    // cleanly by counting the failure instead of aborting the build.
+    const summaries: Summary[] = [];
+    let summariesFailed = 0;
+    if (request.summaries === true) {
+      const summaryPort =
+        request.summary ??
+        new SummaryService({
+          provider: createProviderService(),
+          cache: new CacheService(),
+          hash: new HashService(),
+        });
+      for (const file of filesToParse) {
+        const summary = await summaryPort.summarizeFile(file);
+        if (summary.ok) {
+          summaries.push(summary.value);
+        } else {
+          summariesFailed += 1;
+        }
+      }
+    }
+
     const data: ContextData = {
       files: sourceFiles,
       symbols: mergedSymbols,
@@ -211,6 +252,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       modules,
       hashes: current.value.hashes,
       metadata: { repositoryPath, manifestPath: manifest.value.path },
+      ...(summaries.length > 0 ? { summaries } : {}),
     };
 
     if (incremental) {
@@ -240,6 +282,8 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       deleted: diff.deletedCount,
       unchanged: diff.unchangedCount,
       manifestPath: manifest.value.path,
+      summaries: summaries.length,
+      summariesFailed,
     });
   } catch (error) {
     return fail(error instanceof Error ? error : new Error(String(error)));

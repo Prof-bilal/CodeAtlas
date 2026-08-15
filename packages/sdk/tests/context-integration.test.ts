@@ -1,26 +1,35 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
-import type { ContextData, Session, SessionPort, SourceFile, Summary, Symbol } from "@atlas/core";
-import { ok, type FilePath, type NodeId, type SymbolId } from "@atlas/shared";
-import { ContextStore } from "@atlas/storage";
 import { SessionStateError } from "@atlas/agents";
+import type {
+  ContextData,
+  Symbol as CoreSymbol,
+  Session,
+  SessionPort,
+  SourceFile,
+  Summary,
+} from "@atlas/core";
+import { type FilePath, type NodeId, type SymbolId, fail, ok } from "@atlas/shared";
+import { ContextStore } from "@atlas/storage";
+import { afterEach, describe, expect, it } from "vitest";
 import {
-  createContextSDK,
-  createContextIntegration,
-  applyBudget,
-  DEFAULT_CONTEXT_BUDGET,
-  estimateTokens,
-  denyFilter,
-  renderContextPackage,
-  renderContextExplanation,
-  toContextExplanation,
+  type BriefingPort,
   ContextAttachUnsupportedError,
-  InvalidQueryError,
   type ContextPackage,
   type ContextPackageItem,
   type ContextSDK,
+  DEFAULT_CONTEXT_BUDGET,
+  InvalidQueryError,
+  applyBudget,
+  createContextIntegration,
+  createContextSDK,
+  denyFilter,
+  estimateTokens,
+  renderContextBriefing,
+  renderContextExplanation,
+  renderContextPackage,
+  toContextExplanation,
 } from "../src/index";
 
 const tempDirs: string[] = [];
@@ -39,8 +48,8 @@ function fixtureSymbol(
   id: string,
   name: string,
   filePath: string,
-  kind: Symbol["kind"] = "function",
-): Symbol {
+  kind: CoreSymbol["kind"] = "function",
+): CoreSymbol {
   return {
     id: id as SymbolId,
     name,
@@ -481,6 +490,76 @@ describe("createContextIntegration — delivery", () => {
       const integration = createContextIntegration({ context: sdk, sessions: fakeSessions().port });
       const result = await integration.attach({ sessionId: "nope", task: "double" });
       expect(result.ok).toBe(false);
+    });
+  });
+});
+
+describe("createContextIntegration — brief (AI)", () => {
+  function fakeBriefing(
+    okValue: boolean,
+    overview: string,
+    keyPoints: readonly string[],
+  ): BriefingPort {
+    return {
+      generate: async () =>
+        okValue
+          ? ok({
+              content: { overview, keyPoints },
+              metadata: {
+                generatedAt: "2026-08-15T00:00:00.000Z",
+                provider: "claude",
+                model: "claude-sonnet-5",
+                prompt: null,
+                cacheHit: false,
+                durationMs: 0,
+                inputTokens: 0,
+                outputTokens: 0,
+                totalTokens: 0,
+              },
+            })
+          : fail(new Error("no provider configured")),
+    };
+  }
+
+  it("returns the deterministic package plus an AI briefing", async () => {
+    const repo = tempRepo();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({
+        context: sdk,
+        sessions: fakeSessions().port,
+        ai: fakeBriefing(true, "Auth lives in /src/auth.ts.", ["login calls double"]),
+      });
+      const result = await integration.brief({ task: "double" });
+      expect(result.ok).toBe(true);
+      if (!result.ok) {
+        return;
+      }
+      expect(result.value.task).toBe("double");
+      expect(result.value.content.overview).toBe("Auth lives in /src/auth.ts.");
+      expect(result.value.content.keyPoints).toContain("login calls double");
+      expect(result.value.metadata.provider).toBe("claude");
+      expect(result.value.package.items.length).toBeGreaterThan(0);
+      expect(result.value.package.items.some((i) => i.kind === "file")).toBe(true);
+      const text = renderContextBriefing(result.value);
+      expect(text).toContain("Auth lives in /src/auth.ts.");
+      expect(text).toContain("# Task");
+    });
+  });
+
+  it("fails cleanly when the AI briefing cannot be generated", async () => {
+    const repo = tempRepo();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({
+        context: sdk,
+        sessions: fakeSessions().port,
+        ai: fakeBriefing(false, "", []),
+      });
+      const result = await integration.brief({ task: "double" });
+      expect(result.ok).toBe(false);
+      if (result.ok) {
+        return;
+      }
+      expect(result.error.message).toBe("no provider configured");
     });
   });
 });

@@ -1,5 +1,9 @@
 import type { ConfigurationTarget } from "@atlas/core";
-import type { ConfigurationAdapter, ConfigurationContext } from "./configurator-adapter";
+import type {
+  ConfigFormat,
+  ConfigurationAdapter,
+  ConfigurationContext,
+} from "./configurator-adapter";
 import { configPathFor } from "./configurator-adapter";
 
 /**
@@ -7,47 +11,52 @@ import { configPathFor } from "./configurator-adapter";
  * (Claude / Gemini / Codex / OpenCode / MCP / VS Code), mirroring the
  * `@atlas/providers` / `@atlas/agents` adapter pattern.
  *
- * The exact user-config files and JSON sections each agent CLI reads were
- * **not** live-verified in this repository (same caveat as the AI-CLI
- * `runMode` flags): they are the common, documented defaults, and the merge
- * logic never clobbers keys it does not own. Where a real tool uses a
- * different on-disk format (e.g. Codex uses `config.toml`), the adapter
- * documents its managed JSON segment and **refuses to merge into an
- * unparseable file** rather than risk overwriting unrelated user config.
+ * The exact user-config files and sections each agent CLI reads (ADR-010):
+ * Claude Code reads `~/.claude.json` (it silently ignores `mcpServers` in
+ * `settings.json`), Gemini reads `~/.gemini/settings.json` (a strict schema
+ * unknown keys invalidate the whole file), Codex reads TOML from
+ * `~/.codex/config.toml`, and OpenCode reads JSONC from
+ * `~/.config/opencode/opencode.jsonc`. The merge logic never clobbers keys it
+ * does not own, and an unparseable file is reported as blocked rather than
+ * overwritten.
  */
 
 /**
  * The stdio MCP-server entry registered for an MCP-supporting tool under an
- * agent's MCP section (`mcpServers` / `mcp_servers` / `mcp`).
+ * agent's MCP section (`mcpServers` / `mcp_servers` / `mcp`). Written to match
+ * each agent's schema: no provenance keys (Gemini rejects them) — CodeAtlas
+ * records provenance in its own MCP index instead.
  */
 function mcpEntry(ctx: ConfigurationContext): Readonly<Record<string, unknown>> {
-  const version = ctx.toolVersion === null ? {} : { version: ctx.toolVersion };
-  return { type: "stdio", command: ctx.toolName, args: [], registeredBy: "codeatlas", ...version };
+  return { type: "stdio", command: ctx.toolName, args: [] };
 }
 
 /** The enablement marker written for a non-MCP tool under an agent's tools
  *  section (a CodeAtlas-managed segment, documented as best-effort). */
-function toolEntry(ctx: ConfigurationContext): Readonly<Record<string, unknown>> {
-  const version = ctx.toolVersion === null ? {} : { version: ctx.toolVersion };
-  return { enabled: true, registeredBy: "codeatlas", ...version };
+function toolEntry(): Readonly<Record<string, unknown>> {
+  return { enabled: true };
 }
 
 /**
  * Shared base for the four AI-CLI adapters: detects through `AgentPort`
- * (`requiresAgent` = its provider id), writes a JSON settings file under the
- * tool's user-config directory, and merges one section per tool
+ * (`requiresAgent` = its provider id), writes a config file under the tool's
+ * user-config directory, and merges one section per tool
  * (`mcpServers` / `mcp_servers` / `mcp` for MCP tools, `tools` otherwise).
  */
 abstract class CliAgentAdapter implements ConfigurationAdapter {
   public abstract readonly target: ConfigurationTarget;
   public abstract readonly label: string;
   public abstract readonly requiresAgent: string;
-  /** Config sub-directory under the config home (e.g. `.claude`). */
-  protected abstract readonly dirName: string;
+  /** Config sub-directory under the config home (e.g. `.claude`), or `null`
+   *  for a file directly in the config home (e.g. Claude's `~/.claude.json`). */
+  protected abstract readonly dirName: string | null;
   /** Config file name (e.g. `settings.json`). */
   protected abstract readonly fileName: string;
   /** The MCP section key of this agent's settings file. */
   protected abstract readonly mcpSectionKey: string;
+  /** The on-disk document format (default JSON; Codex is TOML, OpenCode
+   *  JSONC). */
+  public readonly format: ConfigFormat = "json";
 
   public configPath(ctx: ConfigurationContext): string {
     return configPathFor(ctx, this.dirName, this.fileName);
@@ -58,7 +67,7 @@ abstract class CliAgentAdapter implements ConfigurationAdapter {
   }
 
   public buildEntry(ctx: ConfigurationContext): Readonly<Record<string, unknown>> {
-    return ctx.mcp ? mcpEntry(ctx) : toolEntry(ctx);
+    return ctx.mcp ? mcpEntry(ctx) : toolEntry();
   }
 
   public describe(ctx: ConfigurationContext): string {
@@ -68,22 +77,26 @@ abstract class CliAgentAdapter implements ConfigurationAdapter {
 }
 
 /**
- * Claude Code adapter — writes `~/.claude/settings.json`; registers MCP
- * servers under the `mcpServers` section (Claude Code's documented key for
- * managed stdio servers).
+ * Claude Code adapter — writes `~/.claude.json` (top-level `mcpServers`).
+ * Claude Code **silently ignores** `mcpServers` placed in `settings.json`;
+ * user-scope servers live in `~/.claude.json` under the top-level `mcpServers`
+ * key — exactly what `claude mcp add --scope user` writes.
  */
 export class ClaudeAdapter extends CliAgentAdapter {
   public readonly target = "claude" as const;
   public readonly label = "Claude";
   public readonly requiresAgent = "claude";
-  protected readonly dirName = ".claude";
-  protected readonly fileName = "settings.json";
+  protected readonly dirName = null;
+  protected readonly fileName = ".claude.json";
   protected readonly mcpSectionKey = "mcpServers";
+  public override readonly format: ConfigFormat = "json";
 }
 
 /**
  * Gemini CLI adapter — writes `~/.gemini/settings.json`; registers MCP
- * servers under the `mcpServers` section.
+ * servers under the `mcpServers` section. Gemini's `MCPServerConfig` schema is
+ * strict (`additionalProperties: false`): only the documented keys are
+ * written, never provenance markers.
  */
 export class GeminiAdapter extends CliAgentAdapter {
   public readonly target = "gemini" as const;
@@ -92,49 +105,50 @@ export class GeminiAdapter extends CliAgentAdapter {
   protected readonly dirName = ".gemini";
   protected readonly fileName = "settings.json";
   protected readonly mcpSectionKey = "mcpServers";
+  public override readonly format: ConfigFormat = "json";
 }
 
 /**
- * Codex CLI adapter — writes `~/.codex/config.json` (the CodeAtlas-managed
- * JSON segment of the Codex config directory). The real Codex CLI uses
- * `config.toml`; because this adapter only merges JSON, an existing
- * non-JSON/unparseable Codex file is reported as blocked and **never
- * overwritten** — related user config is protected by design. MCP servers are
- * registered under `mcp_servers` (Codex's documented key).
+ * Codex CLI adapter — writes `~/.codex/config.toml` (the file the Codex CLI
+ * actually reads) under `[mcp_servers.<tool>]`. TOML merges are surgical and
+ * comment-preserving (`configurator-toml.ts`): every unrelated table, key, and
+ * comment is kept byte-for-byte, and an unparseable line blocks the change
+ * rather than risking a corrupt write.
  */
 export class CodexAdapter extends CliAgentAdapter {
   public readonly target = "codex" as const;
   public readonly label = "Codex";
   public readonly requiresAgent = "codex";
   protected readonly dirName = ".codex";
-  protected readonly fileName = "config.json";
+  protected readonly fileName = "config.toml";
   protected readonly mcpSectionKey = "mcp_servers";
+  public override readonly format: ConfigFormat = "toml";
 }
 
 /**
- * OpenCode adapter — writes `~/.opencode/config.json`; registers MCP servers
- * under the `mcp` section using OpenCode's documented local-server shape
- * (`type: "local"`, command as an argument array).
+ * OpenCode adapter — writes `~/.config/opencode/opencode.jsonc` (JSONC);
+ * registers MCP servers under the `mcp` section using OpenCode's documented
+ * local-server shape (`type: "local"`, command as an argument array, `enabled`,
+ * `environment`).
  */
 export class OpenCodeAdapter extends CliAgentAdapter {
   public readonly target = "opencode" as const;
   public readonly label = "OpenCode";
   public readonly requiresAgent = "opencode";
-  protected readonly dirName = ".opencode";
-  protected readonly fileName = "config.json";
+  protected readonly dirName = ".config/opencode";
+  protected readonly fileName = "opencode.jsonc";
   protected readonly mcpSectionKey = "mcp";
+  public override readonly format: ConfigFormat = "jsonc";
 
   public override buildEntry(ctx: ConfigurationContext): Readonly<Record<string, unknown>> {
     if (!ctx.mcp) {
-      return toolEntry(ctx);
+      return toolEntry();
     }
-    const version = ctx.toolVersion === null ? {} : { version: ctx.toolVersion };
     return {
       type: "local",
       command: [ctx.toolName],
-      env: {},
-      registeredBy: "codeatlas",
-      ...version,
+      enabled: true,
+      environment: {},
     };
   }
 }

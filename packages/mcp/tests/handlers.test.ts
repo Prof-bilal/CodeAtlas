@@ -222,14 +222,35 @@ describe("get_summary", () => {
   });
 
   it("fails cleanly when generating without a provider", async () => {
-    await withFixture(async (ctx) => {
-      await expect(
-        HANDLERS.get_summary(ctx, { target: "/src/nope.ts", generate: true }),
-      ).rejects.toThrow(ToolDomainError);
-      await expect(
-        HANDLERS.get_summary(ctx, { target: "/src/nope.ts", generate: true }),
-      ).rejects.toThrow(/Summary generation failed/);
-    });
+    const home = mkdtempSync(join(tmpdir(), "atlas-mcp-noprovider-"));
+    const previousUserProfile = process.env["USERPROFILE"];
+    const previousHome = process.env["HOME"];
+    process.env["USERPROFILE"] = home;
+    process.env["HOME"] = home;
+    try {
+      await withFixture(async (ctx) => {
+        await expect(
+          HANDLERS.get_summary(ctx, { target: "/src/nope.ts", generate: true }),
+        ).rejects.toThrow(ToolDomainError);
+        await expect(
+          HANDLERS.get_summary(ctx, { target: "/src/nope.ts", generate: true }),
+        ).rejects.toThrow(/Summary generation failed/);
+      });
+    } finally {
+      if (previousUserProfile === undefined) {
+        // biome-ignore lint/performance/noDelete: truly unset the env var; assigning undefined throws in Node >= 20.
+        delete process.env["USERPROFILE"];
+      } else {
+        process.env["USERPROFILE"] = previousUserProfile;
+      }
+      if (previousHome === undefined) {
+        // biome-ignore lint/performance/noDelete: truly unset the env var; assigning undefined throws in Node >= 20.
+        delete process.env["HOME"];
+      } else {
+        process.env["HOME"] = previousHome;
+      }
+      rmSync(home, { recursive: true, force: true });
+    }
   });
 });
 

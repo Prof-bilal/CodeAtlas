@@ -1,0 +1,11 @@
+{
+  "port": 3000,
+  "environment": "development",
+  "cacheTtlMs": 60000,
+  "authTokenTtlMs": 3600000,
+  "databaseUrl": "sqlite://./data.db",
+  "features": {
+    "passwordReset": true,
+    "payments": true
+  }
+}

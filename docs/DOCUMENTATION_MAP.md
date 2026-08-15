@@ -33,6 +33,7 @@ README.md
 | `docs/CONTEXT_SDK.md` | The Context API/SDK — the single read interface consumers use. |
 | `docs/DEPENDENCIES.md` | Allowed import directions + dependency-add policy. |
 | `docs/AI_PROVIDERS.md` | Provider interface & adapters. |
+| `docs/AI_WORKFLOW.md` | End-to-end AI workflow: connect a provider, generate summaries, launch agent sessions with context, read token usage/savings. |
 | `docs/USAGE.md` | AI Usage & Credits: tri-state actual/estimated/unknown provenance, pricing abstraction, budgets/limits, collection seams, `atlas usage`. |
 | `docs/AGENT_ORCHESTRATOR.md` | Unified AI CLI orchestrator (implemented, Task 17): bounded agent roles, execution, result combination. |
 | `docs/AGENT_SESSIONS.md` | Agent Session Manager (implemented): session lifecycle, states, CLI commands, failure/shutdown behavior. |
@@ -41,6 +42,7 @@ README.md
 | `docs/TOOL_MANIFEST.md` | Tool Manifest (implemented, Task 20): per-installed-tool state schema, `.codeatlas/tools/` layout, untrusted-input validation; consumed by toolkit services. |
 | `docs/CLI.md` | The `atlas` CLI contract, including the implemented SDK-backed Toolkit commands. |
 | `docs/MCP.md` | The MCP server: configuration + full tool reference. |
+| `docs/MCP_AUDIT.md` | MCP production-hardening audit: server hardening summary, the agent-registration matrix (claude/gemini/codex/opencode/cursor/cline), verification commands, test map, limitations. |
 | `docs/VSCODE.md` | The VS Code extension (`@atlas/extension`): what it does and how it consumes the SDK. |
 | `docs/installation.md` | Installing CodeAtlas (published global CLI or from source). |
 | `docs/getting-started.md` | 10-minute end-to-end walkthrough against a real repository. |

@@ -319,9 +319,9 @@ Responsible for launching and managing external AI CLI processes.
 ### MCP — « `@atlas/mcp` » — **[IMPLEMENTED]**
 Responsible for exposing context to external AI agents over MCP.
 
-- Owns: the `codeatlas-mcp` stdio server (or `atlas mcp` CLI command), the six
+- Owns: the `codeatlas-mcp` stdio server (or `atlas mcp` CLI command), the seven
   tools (`search_symbols`, `search_files`, `get_summary`, `get_dependencies`,
-  `explain_module`, `project_overview`), zod input schemas + request
+  `explain_module`, `project_overview`, `read_file_range`), zod input schemas + request
   validation, error handling, and stderr logging. Consumes **only**
   `@atlas/sdk` — every tool reads through **`createContextSDK`** sub-APIs.
 - Must **NOT**: own the context engine itself, hardcode an AI provider, import

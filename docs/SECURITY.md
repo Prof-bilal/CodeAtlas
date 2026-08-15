@@ -103,8 +103,9 @@ Belt-and-braces on anything that touches a shell, a path, or the network.
 
 `@atlas/mcp` exposes *context* to external agents over stdio (see `docs/MCP.md`):
 
-- All six tools are **read-only** today: they query the persisted index
-  (`search_*`, `get_dependencies`, `explain_module`, `project_overview`) or
+- All seven tools are **read-only** today: they query the persisted index
+  (`search_*`, `get_dependencies`, `explain_module`, `project_overview`,
+  `read_file_range`) or
   read a stored summary. None mutate the analyzed repo or execute commands.
   `get_summary ... generate: true` is the only path that reaches an AI provider,
   and only when one is configured — it sends the relevant file content, not the

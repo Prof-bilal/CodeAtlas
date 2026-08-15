@@ -3,6 +3,13 @@ export {
   DEFAULT_IGNORED_DIRECTORIES,
 } from "./ignore";
 export {
+  GITIGNORE_FILE_NAME,
+  GitignoreMatcher,
+  type GitignoreRule,
+  type GitignoreScope,
+  parseGitignore,
+} from "./gitignore";
+export {
   detectFramework,
   type FrameworkSignals,
 } from "./framework";

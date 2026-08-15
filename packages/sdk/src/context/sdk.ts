@@ -21,6 +21,7 @@ import { SearchService } from "@atlas/search";
 import { type FilePath, type Result, type SymbolId, fail } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { SummaryService } from "@atlas/summary";
+import { type IndexResult, indexProject } from "../indexing/indexer";
 import { createProviderService } from "../providers/index";
 import {
   ContextUnavailableError,
@@ -237,6 +238,13 @@ export interface ContextSDK {
   freshness(): Promise<FreshnessSignal>;
   /** Persisted per-file hashes (path â†’ SHA-256), for working-tree staleness checks. */
   hashes(): Readonly<Record<string, string>>;
+  /**
+   * Run the SDK-owned incremental indexer over the repository and re-open the
+   * search index, so reads reflect the current working tree. This is the
+   * primitive MCP/CLI auto-refresh uses after external edits. Returns a failed
+   * {@link Result} (and leaves the current index intact) when the update fails.
+   */
+  refresh(): Promise<Result<IndexResult>>;
   /** Deterministic relevant-context assembly for a query. */
   getRelevantContext(query: string): RelevantContext;
   /** Whether an index currently exists for this SDK. */
@@ -735,6 +743,21 @@ class ContextSDKFacade implements ContextSDK {
       return {};
     }
     return this.reads.hashes();
+  }
+
+  public async refresh(): Promise<Result<IndexResult>> {
+    this.requireAvailable();
+    const result = await indexProject({
+      repositoryPath: this.config.repositoryPath,
+      dbPath: this.config.dbPath,
+      mode: "update",
+    });
+    if (result.ok) {
+      // The incremental indexer wrote through its own connection; mark the
+      // in-memory search index dirty so the next read reloads fresh rows.
+      this.markDirty();
+    }
+    return result;
   }
 
   public getRelevantContext(query: string): RelevantContext {

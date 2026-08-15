@@ -1,4 +1,9 @@
-import type { ContextExplanation, ContextPackage, ContextPackageItem } from "./models";
+import type {
+  ContextBriefing,
+  ContextExplanation,
+  ContextPackage,
+  ContextPackageItem,
+} from "./models";
 
 /**
  * Render helpers for the Context → Agent integration layer.
@@ -20,7 +25,7 @@ const STALENESS_LABEL: Readonly<Record<string, string>> = {
 /** Render a full, provider-independent prompt from a context package. */
 export function renderContextPackage(pkg: ContextPackage): string {
   const lines: string[] = [];
-  lines.push(`# Task`);
+  lines.push("# Task");
   lines.push(pkg.task);
   lines.push("");
   lines.push(
@@ -46,13 +51,13 @@ export function renderContextPackage(pkg: ContextPackage): string {
     }
     lines.push("");
   }
-  lines.push(`# Budget`);
+  lines.push("# Budget");
   lines.push(
     `${pkg.budget.itemsIncluded}/${pkg.budget.itemsRequested} items, ` +
       `${pkg.budget.tokensEstimated} estimated tokens (cap ${pkg.budget.budget.maxTokensTotal}).`,
   );
   if (pkg.budget.budgetExceeded) {
-    lines.push(`Warning: essential context alone exceeds the total token budget.`);
+    lines.push("Warning: essential context alone exceeds the total token budget.");
   }
   if (pkg.exclusions.droppedPaths.length > 0) {
     lines.push(`Excluded (secrets/deny-filter): ${pkg.exclusions.droppedPaths.join(", ")}.`);
@@ -80,6 +85,24 @@ export function renderContextExplanation(explanation: ContextExplanation): strin
   );
   if (explanation.exclusions.droppedPaths.length > 0) {
     lines.push(`Excluded: ${explanation.exclusions.droppedPaths.join(", ")}.`);
+  }
+  return lines.join("\n");
+}
+
+/** Render a briefing: the deterministic package plus its AI section. */
+export function renderContextBriefing(briefing: ContextBriefing): string {
+  return `${renderContextPackage(briefing.package)}\n\n${renderBriefingSection(briefing)}`;
+}
+
+/** Render just the AI briefing section (without the deterministic package). */
+export function renderBriefingSection(briefing: ContextBriefing): string {
+  const meta = briefing.metadata;
+  const lines = [
+    `# AI context briefing (${meta.provider}/${meta.model}${meta.cacheHit ? ", cached" : ""})`,
+    briefing.content.overview,
+  ];
+  for (const point of briefing.content.keyPoints) {
+    lines.push(`- ${point}`);
   }
   return lines.join("\n");
 }

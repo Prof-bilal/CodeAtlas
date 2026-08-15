@@ -5,7 +5,7 @@ import type {
   SearchRequest,
   SearchResult,
 } from "@atlas/core";
-import { fail, ok, type FilePath, type Result } from "@atlas/shared";
+import { type FilePath, type Result, fail, ok } from "@atlas/shared";
 import { LexicalScorer, type RelevanceScorer } from "./scoring";
 import type { IndexedEntity } from "./search-index";
 import { buildIndex } from "./search-index";
@@ -78,7 +78,7 @@ export class SearchService implements SearchPort {
     const fuzzy = options.fuzzy ?? true;
     const types = options.types;
 
-    const ranked: Array<readonly [SearchResult, number]> = [];
+    const ranked: Array<{ hit: SearchResult; score: number; entity: IndexedEntity }> = [];
     for (const entity of this.entities) {
       if (types !== undefined && !types.includes(entity.kind)) {
         continue;
@@ -87,11 +87,49 @@ export class SearchService implements SearchPort {
       if (score <= 0 || score < minScore) {
         continue;
       }
-      ranked.push([toResult(entity, score), score]);
+      ranked.push({ hit: toResult(entity, score), score, entity });
     }
-    ranked.sort((left, right) => right[1] - left[1]);
-    return ranked.slice(0, limit).map(([hit]) => hit);
+    ranked.sort(compareRanked);
+    return ranked.slice(0, limit).map(({ hit }) => hit);
   }
+}
+
+// ── ranking ─────────────────────────────────────────────────────────────────
+
+/**
+ * Symbol kinds that declare a definition. Used as a stable tiebreak so that,
+ * at equal score, a definition outranks an import/re-export reference of the
+ * same name (which would otherwise surface in arbitrary DB index order).
+ */
+const DEFINITION_KINDS = new Set([
+  "class",
+  "interface",
+  "function",
+  "method",
+  "constructor",
+  "property",
+  "variable",
+  "constant",
+  "enum",
+  "enum-member",
+  "type-alias",
+]);
+
+function compareRanked(
+  left: { score: number; entity: IndexedEntity },
+  right: { score: number; entity: IndexedEntity },
+): number {
+  if (right.score !== left.score) {
+    return right.score - left.score;
+  }
+  return definitionPreference(right.entity) - definitionPreference(left.entity);
+}
+
+function definitionPreference(entity: IndexedEntity): number {
+  if (entity.kind === "symbol" && DEFINITION_KINDS.has(entity.symbolKind)) {
+    return 1;
+  }
+  return 0;
 }
 
 // ── result mapping ──────────────────────────────────────────────────────────

@@ -1,4 +1,3 @@
-import { describe, expect, it, vi } from "vitest";
 import { AgentCliNotFoundError } from "@atlas/agents";
 import type {
   ContextScope,
@@ -10,19 +9,20 @@ import type {
   SessionPort,
   TaskPlan,
 } from "@atlas/core";
-import { fail, ok, type Result } from "@atlas/shared";
+import { type Result, fail, ok } from "@atlas/shared";
+import { describe, expect, it, vi } from "vitest";
 import {
-  createOrchestrator,
-  buildPlan,
-  reviewPlan,
-  combineResults,
-  detectConflicts,
-  renderCombinedReport,
-  MAX_PLAN_ROLES,
-  PlanValidationError,
   type ContextIntegration,
   type ContextPackage,
+  MAX_PLAN_ROLES,
   type Orchestrator,
+  PlanValidationError,
+  buildPlan,
+  combineResults,
+  createOrchestrator,
+  detectConflicts,
+  renderCombinedReport,
+  reviewPlan,
 } from "../src/index";
 
 const ROLE_TASK = {
@@ -213,6 +213,9 @@ function createFakeIntegration(): FakeIntegration {
       return fail(new Error("unused in orchestrator tests"));
     },
     async attach() {
+      return fail(new Error("unused in orchestrator tests"));
+    },
+    async brief() {
       return fail(new Error("unused in orchestrator tests"));
     },
   };

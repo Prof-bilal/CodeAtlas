@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { AgentInfo, AgentMcpTarget, AgentPort } from "@atlas/core";
 import { describe, expect, it } from "vitest";
 import { AGENT_MCP_TOOL_NAME, AgentMcpService } from "../src/agent-mcp";
+import { parseTomlDocument } from "../src/configurator-toml";
 
 class FakeAgents implements AgentPort {
   public readonly defaultProvider = "claude";
@@ -33,9 +34,13 @@ function home(): string {
   return mkdtempSync(join(tmpdir(), "atlas-agent-mcp-"));
 }
 
-function readSection(configHome: string, dir: string, file: string, key: string) {
-  const document = JSON.parse(readFileSync(join(configHome, dir, file), "utf8"));
-  return document[key][AGENT_MCP_TOOL_NAME];
+/** Read `configHome/<dir>/<file>` (or `configHome/<file>` when `dir` is null)
+ *  as JSON/JSONC and return `document[key][toolName]`. */
+function readSection(configHome: string, dir: string | null, file: string, key: string): unknown {
+  const path = dir === null ? join(configHome, file) : join(configHome, dir, file);
+  const raw = readFileSync(path, "utf8");
+  const document = JSON.parse(raw) as Record<string, Record<string, unknown>>;
+  return document[key]?.[AGENT_MCP_TOOL_NAME];
 }
 
 describe("agent MCP registration", () => {
@@ -57,7 +62,7 @@ describe("agent MCP registration", () => {
     expect(result.value.needsConfiguration).toBe(true);
   });
 
-  it("writes stdio entries for CLI agents with ATLAS_ROOT and registeredBy", async () => {
+  it("writes stdio entries for Claude into ~/.claude.json mcpServers", async () => {
     const configHome = home();
     const service = new AgentMcpService({
       agentPort: agents("claude"),
@@ -68,18 +73,37 @@ describe("agent MCP registration", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.appliedTargets).toEqual(["claude"]);
-    expect(result.value.failedTargets).toEqual([]);
-    const entry = readSection(configHome, ".claude", "settings.json", "mcpServers");
+    expect(result.value.verifiedTargets).toEqual(["claude"]);
+    const entry = readSection(configHome, null, ".claude.json", "mcpServers");
     expect(entry).toEqual({
       type: "stdio",
       command: "atlas",
       args: ["mcp"],
       env: { ATLAS_ROOT: "/repo" },
-      registeredBy: "codeatlas",
     });
   });
 
-  it("uses the local command shape for OpenCode and always-available host targets", async () => {
+  it("writes schema-clean stdio entries for Gemini (strict settings schema)", async () => {
+    const configHome = home();
+    const service = new AgentMcpService({
+      agentPort: agents("gemini"),
+      root: "/repo",
+      configHome,
+    });
+    const result = await service.configure({ targets: ["gemini"] });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const entry = readSection(configHome, ".gemini", "settings.json", "mcpServers");
+    expect(entry).toEqual({
+      type: "stdio",
+      command: "atlas",
+      args: ["mcp"],
+      env: { ATLAS_ROOT: "/repo" },
+    });
+    expect(Object.keys(entry as object).sort()).toEqual(["args", "command", "env", "type"]);
+  });
+
+  it("writes the local command shape for OpenCode into ~/.config/opencode/opencode.jsonc", async () => {
     const configHome = home();
     const service = new AgentMcpService({
       agentPort: agents("opencode"),
@@ -92,19 +116,82 @@ describe("agent MCP registration", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.appliedTargets).toEqual(["opencode", "cursor"]);
-    expect(readSection(configHome, ".opencode", "config.json", "mcp")).toEqual({
+    const opencodeEntry = readSection(configHome, ".config/opencode", "opencode.jsonc", "mcp");
+    expect(opencodeEntry).toEqual({
       type: "local",
       command: ["codeatlas-mcp"],
-      env: { ATLAS_ROOT: "/repo" },
-      registeredBy: "codeatlas",
+      enabled: true,
+      environment: { ATLAS_ROOT: "/repo" },
     });
-    expect(readSection(configHome, ".cursor", "mcp.json", "mcpServers")).toEqual({
+    const cursorEntry = readSection(configHome, ".cursor", "mcp.json", "mcpServers");
+    expect(cursorEntry).toEqual({
       type: "stdio",
       command: "codeatlas-mcp",
       args: [],
       env: { ATLAS_ROOT: "/repo" },
-      registeredBy: "codeatlas",
     });
+  });
+
+  it("writes a real [mcp_servers.codeatlas] table into Codex's config.toml", async () => {
+    const configHome = home();
+    const service = new AgentMcpService({
+      agentPort: agents("codex"),
+      root: "/repo",
+      configHome,
+    });
+    const result = await service.configure({ targets: ["codex"] });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.appliedTargets).toEqual(["codex"]);
+    expect(result.value.verifiedTargets).toEqual(["codex"]);
+    const raw = readFileSync(join(configHome, ".codex", "config.toml"), "utf8");
+    const document = parseTomlDocument(raw);
+    expect(document.ok).toBe(true);
+    if (!document.ok) return;
+    const section = document.value["mcp_servers"] as Record<string, unknown>;
+    expect(section[AGENT_MCP_TOOL_NAME]).toEqual({
+      command: "atlas",
+      args: ["mcp"],
+      env: { ATLAS_ROOT: "/repo" },
+    });
+    expect(raw).toContain("[mcp_servers.codeatlas]");
+  });
+
+  it("merges a comment-heavy Codex config.toml without touching unrelated bytes", async () => {
+    const configHome = home();
+    const codexPath = join(configHome, ".codex", "config.toml");
+    mkdirSync(join(configHome, ".codex"), { recursive: true });
+    writeFileSync(
+      codexPath,
+      [
+        "# user comment that must survive",
+        'model = "gpt-5-mini"',
+        "",
+        "[mcp_servers.node_repl]",
+        'command = "node_repl.exe"',
+        "",
+        "[projects.'c:\\some\\path']",
+        'trust_level = "trusted"',
+        "",
+      ].join("\n"),
+    );
+    const service = new AgentMcpService({
+      agentPort: agents("codex"),
+      root: "/repo",
+      configHome,
+    });
+    const result = await service.configure({ targets: ["codex"] });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const merged = readFileSync(codexPath, "utf8");
+    expect(merged).toContain("# user comment that must survive");
+    expect(merged).toContain('model = "gpt-5-mini"');
+    expect(merged).toContain('command = "node_repl.exe"');
+    expect(merged).toContain("[mcp_servers.codeatlas]");
+    expect(merged).toContain('command = "atlas"');
+    expect(merged).toContain("[projects.'c:\\some\\path']");
+    const document = parseTomlDocument(merged);
+    expect(document.ok).toBe(true);
   });
 
   it("skips targets that are already configured and only writes for installed agents", async () => {
@@ -135,15 +222,14 @@ describe("agent MCP registration", () => {
     if (!result.ok) return;
     expect(result.value.appliedTargets).toEqual([]);
     expect(result.value.changes.map((change) => change.target)).toEqual(["claude"]);
-    expect(existsSync(join(configHome, ".claude", "settings.json"))).toBe(false);
+    expect(existsSync(join(configHome, ".claude.json"))).toBe(false);
   });
 
   it("merges existing user config and reports unparseable files as failed", async () => {
     const configHome = home();
-    const claudePath = join(configHome, ".claude", "settings.json");
+    const claudePath = join(configHome, ".claude.json");
     const geminiPath = join(configHome, ".gemini", "settings.json");
     mkdirSync(join(configHome, ".gemini"), { recursive: true });
-    mkdirSync(join(configHome, ".claude"), { recursive: true });
     writeFileSync(claudePath, JSON.stringify({ theme: "dark", mcpServers: { other: {} } }));
     writeFileSync(geminiPath, "not-json");
     const service = new AgentMcpService({
@@ -172,6 +258,6 @@ describe("agent MCP registration", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.appliedTargets).toEqual(["gemini"]);
-    expect(existsSync(join(configHome, ".claude", "settings.json"))).toBe(false);
+    expect(existsSync(join(configHome, ".claude.json"))).toBe(false);
   });
 });

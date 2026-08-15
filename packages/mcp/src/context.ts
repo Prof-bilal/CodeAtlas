@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { type ContextSDK, createContextSDK } from "@atlas/sdk";
+import { FreshnessController, type FreshnessReport } from "./freshness";
 import { ToolDomainError } from "./validation";
 
 export interface CodeAtlasContextOptions {
@@ -8,6 +9,16 @@ export interface CodeAtlasContextOptions {
   readonly root?: string;
   /** Explicit path to the context database file (overrides `root`). */
   readonly dbPath?: string;
+  /**
+   * Auto-refresh the index when the working tree changes before serving reads
+   * (default `true`). Disabling it restores the explicit `atlas update` model.
+   */
+  readonly autoRefresh?: boolean;
+  /**
+   * Debounce (ms) for the full path-set freshness probe. `0` (default) probes
+   * on every read so external edits are reflected immediately.
+   */
+  readonly autoRefreshIntervalMs?: number;
 }
 
 export interface ResolvedContextConfig {
@@ -41,11 +52,17 @@ export class CodeAtlasContext {
   public readonly root: string;
   public readonly dbPath: string;
   private sdk: ContextSDK | null = null;
+  private readonly freshness: FreshnessController;
 
   public constructor(options: CodeAtlasContextOptions = {}) {
     const config = resolveContextConfig(options);
     this.root = config.root;
     this.dbPath = config.dbPath;
+    this.freshness = new FreshnessController({
+      autoRefresh: options.autoRefresh ?? true,
+      intervalMs: options.autoRefreshIntervalMs ?? 0,
+      root: this.root,
+    });
   }
 
   /** True when a context database currently exists on disk. */
@@ -82,5 +99,19 @@ export class CodeAtlasContext {
   public close(): void {
     this.sdk?.close();
     this.sdk = null;
+    this.freshness.reset();
+  }
+
+  /**
+   * Detect whether the working tree has drifted from the index and, when it
+   * has, incrementally refresh the index before reads are served. No-ops (with
+   * an `unavailable` report) when no index exists yet.
+   */
+  public async ensureFresh(): Promise<FreshnessReport> {
+    const sdk = this.open();
+    if (sdk === null) {
+      return { state: "unavailable", refreshed: false, checkedAt: new Date().toISOString() };
+    }
+    return this.freshness.ensureFresh(sdk);
   }
 }

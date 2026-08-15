@@ -4,6 +4,7 @@ import type { AgentsCommandOptions } from "./commands/agents";
 import type { ContextCommandOptions } from "./commands/context";
 import type { DoctorCommandOptions } from "./commands/doctor";
 import { registerCommands } from "./commands/index";
+import type { SearchCommandOptions } from "./commands/search";
 import type { SessionsCommandOptions } from "./commands/sessions";
 import type { ToolsCommandOptions } from "./commands/tools";
 
@@ -13,7 +14,8 @@ export interface CreateCliOptions
     ContextCommandOptions,
     AgentsCommandOptions,
     DoctorCommandOptions,
-    SessionsCommandOptions {}
+    SessionsCommandOptions,
+    SearchCommandOptions {}
 
 /** Build and configure the `atlas` CLI program (no side effects). */
 export function createCli(options: CreateCliOptions = {}): Command {
@@ -34,6 +36,7 @@ export function createCli(options: CreateCliOptions = {}): Command {
     ...(options.agentMcp === undefined ? {} : { agentMcp: options.agentMcp }),
     ...(options.doctor === undefined ? {} : { doctor: options.doctor }),
     ...(options.sessions === undefined ? {} : { sessions: options.sessions }),
+    ...(options.summary === undefined ? {} : { summary: options.summary }),
   });
 
   return program;

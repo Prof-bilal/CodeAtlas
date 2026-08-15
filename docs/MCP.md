@@ -67,9 +67,13 @@ Every tool call returns one of:
 - A **normal result** — a JSON object as `structuredContent` (and as a
   pretty-printed JSON text block). Not an error even when the answer is
   "nothing stored" (e.g. `get_summary` returns `found: false`).
-- An **error result** (`isError: true`) with `structuredContent: { ok: false, error: "<message>" }`
-  for domain failures: missing index, generation without a provider, a module
-  path with nothing under it, an unreadable index, etc.
+- An **error result** (`isError: true`) carrying only text content — **no
+  `structuredContent`** — for domain failures: missing index, generation
+  without a provider, a module path with nothing under it, an unreadable index,
+  a path outside the index, etc. (`structuredContent` is deliberately omitted
+  on errors so clients that validate it against the tool's `outputSchema` do
+  not reject the error itself; the human-readable message is in the text
+  block.)
 - A protocol-level **`-32602` invalid params** error for arguments that fail
   the tool's declared input schema (e.g. a missing `query`).
 

@@ -18,6 +18,7 @@ Quick links:
 - [CONTEXT_SDK.md](./CONTEXT_SDK.md) — the single read API consumers use
 - [DEPENDENCIES.md](./DEPENDENCIES.md) — import rules + dependency policy
 - [AI_PROVIDERS.md](./AI_PROVIDERS.md) — provider adapters
+- [AI_WORKFLOW.md](./AI_WORKFLOW.md) — how to actually use AI with CodeAtlas (connect, summarize, launch agents, track tokens)
 - [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md) — planned unified AI CLI
 - [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) — Agent Toolkit design and current implementation (Registry, Manifest, Compatibility, Installer, Configurator, Security/Trust, and SDK-backed CLI; slash/setup surfaces remain planned)
 - [CLI.md](./CLI.md) — the `atlas` CLI contract

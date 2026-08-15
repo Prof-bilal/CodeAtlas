@@ -96,7 +96,7 @@ Provider API keys (e.g. `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, ...) come from
 ## 7. Where to look
 
 | Concern | Location |
-| ------- | -------- |
+| ------- | ------------ |
 | Contracts / entities | `packages/core` (ports + domain), `packages/shared` |
 | Directory walking, ignore rules, manifest | `packages/scanner` |
 | Hashing / change detection | `packages/hashing` |

@@ -1,12 +1,21 @@
-import { fail, type Result } from "@atlas/shared";
 import { UnknownSessionError } from "@atlas/agents";
 import type { Session, SessionPort } from "@atlas/core";
+import { type Result, fail, ok } from "@atlas/shared";
 import type { ContextSDK } from "../context/sdk";
-import { assembleContextPackage, type AssembleOptions } from "./assemble";
-import { detectStaleness } from "./staleness";
-import { renderContextPackage, toContextExplanation } from "./render";
-import type { ContextExplanation, ContextPackage } from "./models";
+import { type AssembleOptions, assembleContextPackage } from "./assemble";
+import { type BriefingPort, createBriefingPort } from "./briefing";
 import { ContextAttachUnsupportedError } from "./errors";
+import type { ContextBriefing, ContextExplanation, ContextPackage } from "./models";
+import { renderContextPackage, toContextExplanation } from "./render";
+import { detectStaleness } from "./staleness";
+
+export {
+  BRIEFING_PROMPT_TEMPLATE,
+  createBriefingPort,
+  type BriefingPort,
+  type BriefingRequest,
+  type BriefingResponse,
+} from "./briefing";
 
 export {
   assembleContextPackage,
@@ -26,6 +35,7 @@ export {
 } from "./instructions";
 export type {
   BudgetRecord,
+  ContextBriefing,
   ContextBudget,
   ContextExplanation,
   ContextExplanationItem,
@@ -38,6 +48,8 @@ export type {
   StalenessState,
 } from "./models";
 export {
+  renderBriefingSection,
+  renderContextBriefing,
   renderContextExplanation,
   renderContextPackage,
   toContextExplanation,
@@ -75,6 +87,8 @@ export interface ContextIntegrationOptions {
   readonly context: ContextSDK;
   /** The session port every package is delivered through. */
   readonly sessions: SessionPort;
+  /** AI briefing port for `brief` (defaults to a provider-backed port). */
+  readonly ai?: BriefingPort;
 }
 
 /**
@@ -101,11 +115,19 @@ export interface ContextIntegration {
    * adapters — that case reports a typed {@link ContextAttachUnsupportedError}.
    */
   attach(input: AttachInput): Promise<Result<Session>>;
+  /**
+   * Assemble a package deterministically (as {@link buildPackage}) and generate
+   * an AI briefing of it. The briefing is additive and explicit: it never
+   * changes the assembled package, and it fails cleanly when no provider is
+   * configured. Consumers that do not want AI can ignore this method.
+   */
+  brief(input: BuildPackageInput): Promise<Result<ContextBriefing>>;
 }
 
 /** Create the Context → Agent integration façade. */
 export function createContextIntegration(options: ContextIntegrationOptions): ContextIntegration {
   const { context, sessions } = options;
+  const ai = options.ai ?? createBriefingPort();
 
   return {
     async buildPackage(input: BuildPackageInput): Promise<ContextPackage> {
@@ -150,6 +172,23 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
       }
       return sessions.startSession(session.id, {
         prompt: renderContextPackage(pkg),
+      });
+    },
+
+    async brief(input: BuildPackageInput): Promise<Result<ContextBriefing>> {
+      const pkg = await this.buildPackage(input);
+      const generated = await ai.generate({
+        target: input.task,
+        content: renderContextPackage(pkg),
+      });
+      if (!generated.ok) {
+        return generated;
+      }
+      return ok({
+        task: input.task,
+        content: generated.value.content,
+        metadata: generated.value.metadata,
+        package: pkg,
       });
     },
   };

@@ -13,6 +13,7 @@
  * - **serializable** — plain data, no functions, no AI-CLI-specific formatting.
  */
 
+import type { SummaryContent, SummaryMetadata } from "@atlas/core";
 import type { FreshnessSignal, FreshnessState } from "../context/models";
 
 /**
@@ -39,6 +40,7 @@ export type ContextItemSource =
   | "explicit"
   | "summary"
   | "dependency"
+  | "dependency-chain"
   | "instructions"
   | "overview";
 
@@ -131,4 +133,20 @@ export interface ContextExplanation {
   readonly staleness: StaleContextSignal;
   readonly budget: BudgetRecord;
   readonly exclusions: ExclusionRecord;
+}
+
+/**
+ * The AI-enriched projection of a context package (behind `--ai`): the
+ * deterministic package plus a structured model-generated briefing of it. The
+ * package itself is always assembled deterministically — the briefing never
+ * replaces or alters it.
+ */
+export interface ContextBriefing {
+  readonly task: string;
+  /** The structured AI summary: overview + key points. */
+  readonly content: SummaryContent;
+  /** Generation metadata (provider, model, tokens, cache). */
+  readonly metadata: SummaryMetadata;
+  /** The exact deterministic package the briefing summarizes. */
+  readonly package: ContextPackage;
 }

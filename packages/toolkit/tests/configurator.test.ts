@@ -47,7 +47,7 @@ describe("tool configurator", () => {
     if (!result.ok) return;
     expect(result.value.appliedTargets).toEqual([]);
     expect(result.value.changes.map((change) => change.target)).toEqual(["claude"]);
-    expect(existsSync(join(configHome, ".claude", "settings.json"))).toBe(false);
+    expect(existsSync(join(configHome, ".claude.json"))).toBe(false);
   });
 
   it("merges unrelated settings and backs up before applying", async () => {
@@ -73,9 +73,8 @@ describe("tool configurator", () => {
 
   it("refuses invalid config and rolls back a failed write", async () => {
     const configHome = home();
-    const path = join(configHome, ".claude", "settings.json");
+    const path = join(configHome, ".claude.json");
     const service = new ConfiguratorService({ agentPort: agents("claude"), configHome });
-    mkdirSync(join(configHome, ".claude"), { recursive: true });
     writeFileSync(path, "not-json");
     const invalid = await service.configure({ toolName: "tool", supportedAgents: ["claude"] });
     expect(invalid.ok).toBe(true);
@@ -84,9 +83,8 @@ describe("tool configurator", () => {
 
   it("restores the original file when applying the merged config fails", async () => {
     const configHome = home();
-    const path = join(configHome, ".claude", "settings.json");
+    const path = join(configHome, ".claude.json");
     const original = JSON.stringify({ keep: "me" });
-    mkdirSync(join(configHome, ".claude"), { recursive: true });
     writeFileSync(path, original);
     const real = new FsConfigWriter();
     const writer: ConfigWriter = {
@@ -110,8 +108,12 @@ describe("tool configurator", () => {
       mcp: true,
     });
     expect(result.ok).toBe(true);
-    const document = JSON.parse(readFileSync(join(configHome, ".opencode", "config.json"), "utf8"));
+    const document = JSON.parse(
+      readFileSync(join(configHome, ".config", "opencode", "opencode.jsonc"), "utf8"),
+    );
     expect(document.mcp["mcp-tool"].type).toBe("local");
     expect(document.mcp["mcp-tool"].command).toEqual(["mcp-tool"]);
+    expect(document.mcp["mcp-tool"].enabled).toBe(true);
+    expect(document.mcp["mcp-tool"].environment).toEqual({});
   });
 });

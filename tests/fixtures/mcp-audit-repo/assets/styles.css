@@ -1,0 +1,17 @@
+/* Fixture stylesheet — scanned as a file, no symbols. */
+:root {
+  --brand-color: #4a90d9;
+  --radius: 4px;
+}
+
+.button {
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  background: var(--brand-color);
+  color: #fff;
+}
+
+.card {
+  border: 1px solid #ddd;
+  padding: 16px;
+}

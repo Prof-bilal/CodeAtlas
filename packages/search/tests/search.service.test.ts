@@ -154,6 +154,22 @@ describe("SearchService", () => {
     expect(hits[1]).toMatchObject({ title: "doubleHelper" });
   });
 
+  it("ranks a definition above equal-score import/re-export references", () => {
+    const service = new SearchService();
+    service.indexSnapshot(
+      snapshot({
+        symbols: [
+          symbol("s1", "createUserRoutes", "/src/api/index.ts", { kind: "export" }),
+          symbol("s2", "createUserRoutes", "/src/index.ts", { kind: "import" }),
+          symbol("s3", "createUserRoutes", "/src/api/routes.ts"),
+        ],
+      }),
+    );
+    const hits = service.search("createUserRoutes");
+    expect(hits[0]).toMatchObject({ path: "/src/api/routes.ts" });
+    expect(hits).toHaveLength(3);
+  });
+
   it("honors limit, minScore, and empty queries", () => {
     const service = new SearchService();
     service.indexSnapshot(snapshot());

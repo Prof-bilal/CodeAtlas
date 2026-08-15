@@ -13,6 +13,7 @@ import type {
 } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 import {
+  type ConfigFormat,
   type ConfigWriter,
   type ConfigurationAdapter,
   type ConfigurationContext,
@@ -39,18 +40,28 @@ export interface AgentMcpServiceOptions {
   readonly now?: () => Date;
 }
 
-/** The MCP server entry registered for the `codeatlas` tool. */
+/** The MCP server entry registered for the `codeatlas` tool. The entry shape
+ *  is the **exact schema each agent accepts** (ADR-010): no provenance keys
+ *  are written into agent configs — Gemini's strict settings schema rejects
+ *  unknown keys, and CodeAtlas records provenance in its own MCP index
+ *  (`~/.codeatlas/mcp/servers.json`) instead. */
 function codeatlasEntry(
   root: string,
   command: string,
   args: readonly string[],
   local: boolean,
+  envKey: string,
+  enabled: boolean,
+  typed: boolean,
 ): Readonly<Record<string, unknown>> {
-  const base = { env: { ATLAS_ROOT: root }, registeredBy: "codeatlas" };
+  const base: Readonly<Record<string, unknown>> = {
+    [envKey]: { ATLAS_ROOT: root },
+    ...(enabled ? { enabled: true } : {}),
+  };
   if (local) {
     return { ...base, type: "local", command: [command, ...args] };
   }
-  return { ...base, type: "stdio", command, args };
+  return { ...base, ...(typed ? { type: "stdio" } : {}), command, args };
 }
 
 /** One agent-MCP target adapter (Claude / Gemini / Codex / OpenCode / Cursor /
@@ -60,26 +71,34 @@ class AgentMcpTargetAdapter implements ConfigurationAdapter {
   public readonly target: ConfigurationTarget;
   public readonly label: string;
   public readonly requiresAgent: string | null;
+  public readonly format: ConfigFormat;
 
-  private readonly dirName: string;
+  private readonly dirName: string | null;
   private readonly fileName: string;
   private readonly sectionKey: string;
   private readonly root: string;
   private readonly command: string;
   private readonly args: readonly string[];
   private readonly local: boolean;
+  private readonly envKey: string;
+  private readonly enabled: boolean;
+  private readonly typed: boolean;
 
   public constructor(
     target: AgentMcpTarget,
     label: string,
     requiresAgent: string | null,
-    dirName: string,
+    dirName: string | null,
     fileName: string,
     sectionKey: string,
     root: string,
     command: string,
     args: readonly string[],
     local = false,
+    format: ConfigFormat = "json",
+    envKey = "env",
+    enabled = false,
+    typed = true,
   ) {
     this.target = target;
     this.label = label;
@@ -91,6 +110,10 @@ class AgentMcpTargetAdapter implements ConfigurationAdapter {
     this.command = command;
     this.args = args;
     this.local = local;
+    this.format = format;
+    this.envKey = envKey;
+    this.enabled = enabled;
+    this.typed = typed;
   }
 
   public configPath(ctx: ConfigurationContext): string {
@@ -102,7 +125,15 @@ class AgentMcpTargetAdapter implements ConfigurationAdapter {
   }
 
   public buildEntry(): Readonly<Record<string, unknown>> {
-    return codeatlasEntry(this.root, this.command, this.args, this.local);
+    return codeatlasEntry(
+      this.root,
+      this.command,
+      this.args,
+      this.local,
+      this.envKey,
+      this.enabled,
+      this.typed,
+    );
   }
 
   public describe(ctx: ConfigurationContext): string {
@@ -272,6 +303,23 @@ export class AgentMcpService implements AgentMcpPort {
   }
 }
 
+/**
+ * The corrected per-agent config facts (ADR-010). Each target writes the file
+ * the agent CLI actually reads and an entry matching its schema:
+ *  - claude   `~/.claude.json` top-level `mcpServers` — Claude Code **silently
+ *    ignores** `mcpServers` in `settings.json`; only `~/.claude.json` (user
+ *    scope, what `claude mcp add --scope user` writes) and `.mcp.json`
+ *    (project scope) are read.
+ *  - gemini   `~/.gemini/settings.json` `mcpServers` — a **strict** schema
+ *    (`MCPServerConfig`, `additionalProperties: false`); unknown keys such as
+ *    a provenance marker make the whole file invalid, so none are written.
+ *  - codex    `~/.codex/config.toml` `[mcp_servers.codeatlas]` — the Codex CLI
+ *    reads TOML, not JSON; written via a surgical comment-preserving merge.
+ *  - opencode `~/.config/opencode/opencode.jsonc` `mcp` — JSONC with the
+ *    documented local-server shape (`type: "local"`, command array, `enabled`,
+ *    `environment`).
+ *  - cursor / cline — JSON settings files as before.
+ */
 function buildAdapters(
   root: string,
   command: string,
@@ -281,10 +329,14 @@ function buildAdapters(
     target: AgentMcpTarget,
     label: string,
     requiresAgent: string | null,
-    dirName: string,
+    dirName: string | null,
     fileName: string,
     sectionKey: string,
     local = false,
+    format: ConfigFormat = "json",
+    envKey = "env",
+    enabled = false,
+    typed = true,
   ) =>
     new AgentMcpTargetAdapter(
       target,
@@ -297,12 +349,39 @@ function buildAdapters(
       command,
       args,
       local,
+      format,
+      envKey,
+      enabled,
+      typed,
     );
   return [
-    make("claude", "Claude", "claude", ".claude", "settings.json", "mcpServers"),
+    make("claude", "Claude", "claude", null, ".claude.json", "mcpServers"),
     make("gemini", "Gemini", "gemini", ".gemini", "settings.json", "mcpServers"),
-    make("codex", "Codex", "codex", ".codex", "config.json", "mcp_servers"),
-    make("opencode", "OpenCode", "opencode", ".opencode", "config.json", "mcp", true),
+    make(
+      "codex",
+      "Codex",
+      "codex",
+      ".codex",
+      "config.toml",
+      "mcp_servers",
+      false,
+      "toml",
+      "env",
+      false,
+      false,
+    ),
+    make(
+      "opencode",
+      "OpenCode",
+      "opencode",
+      ".config/opencode",
+      "opencode.jsonc",
+      "mcp",
+      true,
+      "jsonc",
+      "environment",
+      true,
+    ),
     make("cursor", "Cursor", null, ".cursor", "mcp.json", "mcpServers"),
     make("cline", "Cline", null, ".cline", "cline_mcp_settings.json", "mcpServers"),
   ];

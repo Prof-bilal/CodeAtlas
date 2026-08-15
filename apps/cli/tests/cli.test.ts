@@ -17,14 +17,19 @@ import {
   type AgentMcpStatus,
   type ConfigureOutcome,
   ContextAttachUnsupportedError,
+  type ContextBriefing,
   type ContextExplanation,
   type ContextIntegration,
   type ContextPackage,
+  type ContextSDK,
+  type SearchResult,
   type SessionPort,
+  type Summary,
+  type SummaryPort,
   type ToolkitSDK,
   createUsageService,
 } from "@atlas/sdk";
-import type { FilePath, SymbolId } from "@atlas/shared";
+import { type FilePath, type Result, type SymbolId, fail, ok } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { describe, expect, it, vi } from "vitest";
 import pkg from "../package.json";
@@ -32,7 +37,14 @@ import { createCli } from "../src/cli";
 import { comingSoonMessage } from "../src/commands/coming-soon";
 import { type DoctorServices, renderDoctorReport } from "../src/commands/doctor";
 import { renderOverview } from "../src/commands/scan";
-import { contextDbPath, renderSearchHits, resolveProjectRoot } from "../src/commands/search";
+import {
+  AI_SUMMARY_LIMIT,
+  buildSearchAI,
+  contextDbPath,
+  renderSearchAI,
+  renderSearchHits,
+  resolveProjectRoot,
+} from "../src/commands/search";
 import {
   agentLabel,
   computeSessionTokenImpact,
@@ -212,7 +224,30 @@ function fakeDoctorServices(overrides: Partial<DoctorServices> = {}): DoctorServ
 }
 
 function fakeContextIntegration(overrides: Partial<ContextIntegration> = {}): ContextIntegration {
-  const pkg = {
+  const pkg = fakeContextIntegrationPackage();
+  const explanation = { ...pkg, items: [] } as ContextExplanation;
+  return {
+    buildPackage: vi.fn(async () => pkg),
+    explain: vi.fn(async () => explanation),
+    launch: vi.fn(async () => ({
+      ok: true as const,
+      value: session({ id: "s1", status: "RUNNING" }),
+    })),
+    attach: vi.fn(async () => ({
+      ok: true as const,
+      value: session({ id: "s1", status: "RUNNING" }),
+    })),
+    brief: vi.fn(async () => ({
+      ok: false as const,
+      error: new Error("brief not configured for this fake"),
+    })),
+    ...overrides,
+  };
+}
+
+/** The deterministic package `fakeContextIntegration` returns (and briefings wrap). */
+function fakeContextIntegrationPackage(): ContextPackage {
+  return {
     task: "fix auth",
     items: [],
     staleness: {
@@ -234,20 +269,30 @@ function fakeContextIntegration(overrides: Partial<ContextIntegration> = {}): Co
       budgetExceeded: false,
     },
     exclusions: { droppedPaths: [], droppedPatterns: [] },
-  } as ContextPackage;
-  const explanation = { ...pkg, items: [] } as ContextExplanation;
+  };
+}
+
+/** A provider-backed briefing of the fake package (used by `--ai` tests). */
+function aiBriefing(): ContextBriefing {
+  const pkg = fakeContextIntegrationPackage();
   return {
-    buildPackage: vi.fn(async () => pkg),
-    explain: vi.fn(async () => explanation),
-    launch: vi.fn(async () => ({
-      ok: true as const,
-      value: session({ id: "s1", status: "RUNNING" }),
-    })),
-    attach: vi.fn(async () => ({
-      ok: true as const,
-      value: session({ id: "s1", status: "RUNNING" }),
-    })),
-    ...overrides,
+    task: pkg.task,
+    content: {
+      overview: "Auth is handled in /src/auth.ts.",
+      keyPoints: ["login calls double"],
+    },
+    metadata: {
+      generatedAt: "2026-08-15T00:00:00.000Z",
+      provider: "claude",
+      model: "claude-sonnet-5",
+      prompt: null,
+      cacheHit: false,
+      durationMs: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+    },
+    package: pkg,
   };
 }
 
@@ -276,6 +321,44 @@ async function withProject(fn: (root: string) => Promise<void>): Promise<void> {
   }
 }
 
+function aiSummary(path: string, overrides: Partial<Summary> = {}): Summary {
+  return {
+    kind: "file",
+    target: path,
+    content: { overview: `Overview of ${path}`, keyPoints: ["point one", "point two"] },
+    metadata: {
+      generatedAt: "2026-08-15T00:00:00.000Z",
+      provider: "ollama",
+      model: "llama3.2",
+      prompt: null,
+      cacheHit: false,
+      durationMs: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+    },
+    ...overrides,
+  };
+}
+
+function fileHit(path: string): SearchResult {
+  return { kind: "file", title: path, path: path as FilePath, targetId: null, score: 10 };
+}
+
+function fakeSearchContext(
+  summaries: {
+    stored?: (path: string) => Summary | undefined;
+    generate?: (path: string) => Promise<Result<Summary>>;
+  } = {},
+): ContextSDK {
+  return {
+    summaries: {
+      getFileSummary: summaries.stored ?? (() => undefined),
+      generateFile: summaries.generate ?? (async () => fail(new Error("no provider configured"))),
+    },
+  } as unknown as ContextSDK;
+}
+
 describe("atlas CLI", () => {
   it("registers all expected commands", () => {
     const program = createCli();
@@ -283,12 +366,16 @@ describe("atlas CLI", () => {
     expect(names).toEqual([
       "agents",
       "build",
+      "claude",
+      "codex",
       "context",
       "doctor",
       "explain",
+      "gemini",
       "init",
       "mcp",
       "ollama",
+      "opencode",
       "providers",
       "scan",
       "search",
@@ -366,6 +453,239 @@ describe("atlas CLI", () => {
       "search",
       "update",
     ]);
+  });
+
+  describe("atlas context --ai", () => {
+    it("builds the package and appends the AI briefing section on success", async () => {
+      const integration = fakeContextIntegration({
+        brief: vi.fn(async () => ok(aiBriefing())),
+      });
+      const program = createCli({ integration });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await program.parseAsync(["node", "atlas", "context", "fix auth", "--ai"]);
+        expect(integration.brief).toHaveBeenCalledWith(
+          expect.objectContaining({ task: "fix auth" }),
+        );
+        expect(log.mock.calls.join(" ")).toContain("AI context briefing");
+        expect(log.mock.calls.join(" ")).toContain("Auth is handled in /src/auth.ts.");
+      } finally {
+        log.mockRestore();
+      }
+    });
+
+    it("emits the briefing document as JSON with --ai --json", async () => {
+      const integration = fakeContextIntegration({
+        brief: vi.fn(async () => ok(aiBriefing())),
+      });
+      const program = createCli({ integration });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await program.parseAsync(["node", "atlas", "context", "fix auth", "--ai", "--json"]);
+        const output = log.mock.calls.join(" ");
+        expect(output).toContain('"overview"');
+        expect(output).toContain("Auth is handled in /src/auth.ts.");
+        expect(output).toContain('"package"');
+      } finally {
+        log.mockRestore();
+      }
+    });
+
+    it("degrades to the deterministic package when the briefing fails", async () => {
+      const integration = fakeContextIntegration({
+        brief: vi.fn(async () => fail(new Error("no provider configured"))),
+      });
+      const program = createCli({ integration });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await program.parseAsync(["node", "atlas", "context", "fix auth", "--ai"]);
+        expect(integration.buildPackage).toHaveBeenCalledWith(
+          expect.objectContaining({ task: "fix auth" }),
+        );
+        expect(log.mock.calls.join(" ")).toContain(
+          "AI briefing unavailable: no provider configured",
+        );
+        expect(log.mock.calls.join(" ")).toContain("# Task");
+      } finally {
+        log.mockRestore();
+      }
+    });
+
+    it("records the AI failure in JSON output without crashing", async () => {
+      const integration = fakeContextIntegration({
+        brief: vi.fn(async () => fail(new Error("no provider configured"))),
+      });
+      const program = createCli({ integration });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await program.parseAsync(["node", "atlas", "context", "fix auth", "--ai", "--json"]);
+        const output = log.mock.calls.join(" ");
+        expect(output).toContain('"aiMessage"');
+        expect(output).toContain("no provider configured");
+      } finally {
+        log.mockRestore();
+      }
+    });
+
+    it("launch --ai prepends the briefing to the session prompt", async () => {
+      const integration = fakeContextIntegration({
+        brief: vi.fn(async () => ok(aiBriefing())),
+      });
+      const program = createCli({ integration });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await program.parseAsync([
+          "node",
+          "atlas",
+          "context",
+          "launch",
+          "fix auth",
+          "--provider",
+          "claude",
+          "--ai",
+        ]);
+        expect(integration.launch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            task: "fix auth",
+            provider: "claude",
+            prompt: expect.stringContaining("Auth is handled in /src/auth.ts."),
+          }),
+        );
+        expect(log.mock.calls.join(" ")).toContain("Session s1 started");
+      } finally {
+        log.mockRestore();
+      }
+    });
+
+    it("attach --ai prepends the briefing to the session prompt", async () => {
+      const integration = fakeContextIntegration({
+        brief: vi.fn(async () => ok(aiBriefing())),
+      });
+      const program = createCli({ integration });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await program.parseAsync(["node", "atlas", "context", "attach", "s1", "fix auth", "--ai"]);
+        expect(integration.attach).toHaveBeenCalledWith(
+          expect.objectContaining({
+            sessionId: "s1",
+            task: "fix auth",
+            prompt: expect.stringContaining("Auth is handled in /src/auth.ts."),
+          }),
+        );
+        expect(log.mock.calls.join(" ")).toContain("Session s1 started");
+      } finally {
+        log.mockRestore();
+      }
+    });
+
+    it("launch --ai still launches when the briefing fails", async () => {
+      const integration = fakeContextIntegration({
+        brief: vi.fn(async () => fail(new Error("no provider configured"))),
+      });
+      const program = createCli({ integration });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      const error = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        await program.parseAsync([
+          "node",
+          "atlas",
+          "context",
+          "launch",
+          "fix auth",
+          "--provider",
+          "claude",
+          "--ai",
+        ]);
+        expect(error.mock.calls.join(" ")).toContain("AI briefing unavailable");
+        expect(integration.launch).toHaveBeenCalledWith(
+          expect.not.objectContaining({ prompt: expect.anything() }),
+        );
+        expect(log.mock.calls.join(" ")).toContain("Session s1 started");
+      } finally {
+        log.mockRestore();
+        error.mockRestore();
+      }
+    });
+  });
+
+  describe("atlas <agent> launch commands", () => {
+    const AGENTS = ["claude", "gemini", "codex", "opencode"];
+
+    it("registers a standalone launch command for every supported agent", () => {
+      const program = createCli();
+      for (const agent of AGENTS) {
+        expect(program.commands.some((command) => command.name() === agent)).toBe(true);
+      }
+    });
+
+    it("launches the agent seeded with the rendered context package", async () => {
+      const integration = fakeContextIntegration();
+      const program = createCli({ integration });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await program.parseAsync(["node", "atlas", "claude", "fix", "the", "auth", "bug"]);
+        expect(integration.launch).toHaveBeenCalledWith(
+          expect.objectContaining({ task: "fix the auth bug", provider: "claude" }),
+        );
+        expect(integration.launch).toHaveBeenCalledWith(
+          expect.not.objectContaining({ prompt: expect.anything() }),
+        );
+        expect(log.mock.calls.join(" ")).toContain("Session s1 started");
+      } finally {
+        log.mockRestore();
+      }
+    });
+
+    it("prepends the AI briefing to the prompt with --ai", async () => {
+      const integration = fakeContextIntegration({
+        brief: vi.fn(async () => ok(aiBriefing())),
+      });
+      const program = createCli({ integration });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await program.parseAsync(["node", "atlas", "codex", "fix auth", "--ai"]);
+        expect(integration.launch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            task: "fix auth",
+            provider: "codex",
+            prompt: expect.stringContaining("Auth is handled in /src/auth.ts."),
+          }),
+        );
+      } finally {
+        log.mockRestore();
+      }
+    });
+
+    it("still launches when the briefing fails", async () => {
+      const integration = fakeContextIntegration();
+      const program = createCli({ integration });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      const error = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        await program.parseAsync(["node", "atlas", "gemini", "fix auth", "--ai"]);
+        expect(error.mock.calls.join(" ")).toContain("AI briefing unavailable");
+        expect(integration.launch).toHaveBeenCalledWith(
+          expect.not.objectContaining({ prompt: expect.anything() }),
+        );
+        expect(log.mock.calls.join(" ")).toContain("Session s1 started");
+      } finally {
+        log.mockRestore();
+        error.mockRestore();
+      }
+    });
+
+    it("emits the session as JSON with --json", async () => {
+      const integration = fakeContextIntegration();
+      const program = createCli({ integration });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await program.parseAsync(["node", "atlas", "opencode", "fix auth", "--json"]);
+        expect(log.mock.calls.join(" ")).toContain('"id"');
+        expect(log.mock.calls.join(" ")).toContain('"provider"');
+      } finally {
+        log.mockRestore();
+      }
+    });
   });
 
   it("delegates Toolkit search and renders JSON without touching Toolkit internals", async () => {
@@ -684,6 +1004,106 @@ describe("atlas CLI", () => {
       process.env["ATLAS_ROOT"] = undefined;
       rmSync(root, { recursive: true, force: true });
     }
+  });
+
+  describe("atlas search --ai", () => {
+    it("renders AI summaries with overview, key points, and provider/model", () => {
+      const rendered = renderSearchAI([
+        { path: "/src/math.ts", summary: aiSummary("/src/math.ts") },
+      ]);
+      expect(rendered).toContain("AI summaries (top file hits):");
+      expect(rendered).toContain("/src/math.ts (ollama/llama3.2):");
+      expect(rendered).toContain("Overview of /src/math.ts");
+      expect(rendered).toContain("point one");
+    });
+
+    it("marks cached summaries", () => {
+      const summary = aiSummary("/src/math.ts");
+      const rendered = renderSearchAI([
+        {
+          path: "/src/math.ts",
+          summary: { ...summary, metadata: { ...summary.metadata, cacheHit: true } },
+        },
+      ]);
+      expect(rendered).toContain("(cached)");
+    });
+
+    it("renders failure messages per file", () => {
+      const rendered = renderSearchAI([
+        { path: "/src/math.ts", message: "no provider configured" },
+      ]);
+      expect(rendered).toContain("/src/math.ts: no provider configured");
+    });
+
+    it("renders the empty case", () => {
+      expect(renderSearchAI([])).toContain("no file hits");
+    });
+
+    it("uses a stored summary instead of generating", async () => {
+      const generate = vi.fn(async () => fail(new Error("should not be called")));
+      const context = fakeSearchContext({
+        stored: () => aiSummary("/src/math.ts"),
+        generate,
+      });
+      const entries = await buildSearchAI(context, [fileHit("/src/math.ts")]);
+      expect(entries).toHaveLength(1);
+      expect(entries[0].summary?.content.overview).toBe("Overview of /src/math.ts");
+      expect(generate).not.toHaveBeenCalled();
+    });
+
+    it("generates a fresh summary when none is stored", async () => {
+      const context = fakeSearchContext({
+        generate: async () => ok(aiSummary("/src/math.ts")),
+      });
+      const entries = await buildSearchAI(context, [fileHit("/src/math.ts")]);
+      expect(entries).toHaveLength(1);
+      expect(entries[0].summary?.content.overview).toBe("Overview of /src/math.ts");
+    });
+
+    it("surfaces a generation failure as a message", async () => {
+      const context = fakeSearchContext({
+        generate: async () => fail(new Error("no provider configured")),
+      });
+      const entries = await buildSearchAI(context, [fileHit("/src/math.ts")]);
+      expect(entries).toHaveLength(1);
+      expect(entries[0].summary).toBeUndefined();
+      expect(entries[0].message).toBe("no provider configured");
+    });
+
+    it("caps the number of summarized file hits", async () => {
+      const context = fakeSearchContext({
+        generate: async () => ok(aiSummary("x")),
+      });
+      const hits = Array.from({ length: 20 }, (_, index) => fileHit(`/src/file-${index}.ts`));
+      const entries = await buildSearchAI(context, hits);
+      expect(entries).toHaveLength(AI_SUMMARY_LIMIT);
+    });
+
+    it("renders the AI section through the CLI with an injected summary port", async () => {
+      await withProject(async () => {
+        const program = createCli({
+          summary: {
+            summarizeFile: async (file) => ok(aiSummary(file.path)),
+            summarizeFolder: async () => fail(new Error("unused")),
+            summarizeModule: async () => fail(new Error("unused")),
+            summarizeProject: async () => fail(new Error("unused")),
+          },
+        });
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+        let output = "";
+        try {
+          await program.parseAsync(["node", "atlas", "search", "double", "--ai"]);
+          output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        } finally {
+          log.mockRestore();
+          error.mockRestore();
+        }
+        expect(output).toContain("AI summaries (top file hits):");
+        expect(output).toContain("/src/math.ts (ollama/llama3.2):");
+        expect(error).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe("atlas explain", () => {
@@ -1388,6 +1808,62 @@ describe("atlas CLI", () => {
         log.mockRestore();
         process.exitCode = undefined;
       }
+    });
+  });
+
+  describe("indexing commands", () => {
+    function fakeSummaryPort(calls: string[]): SummaryPort {
+      return {
+        summarizeFile: async (file) => {
+          calls.push(file.path);
+          return ok(aiSummary(file.path));
+        },
+        summarizeFolder: async () => fail(new Error("not used")),
+        summarizeModule: async () => fail(new Error("not used")),
+        summarizeProject: async () => fail(new Error("not used")),
+      };
+    }
+
+    function makeIndexProject(): { root: string; calls: string[] } {
+      const root = mkdtempSync(join(tmpdir(), "atlas-cli-index-"));
+      mkdirSync(join(root, "src"), { recursive: true });
+      writeFileSync(
+        join(root, "src", "math.ts"),
+        "export function double(value: number) { return value * 2; }\n",
+      );
+      return { root, calls: [] };
+    }
+
+    it("generates AI summaries with `atlas build --summaries`", async () => {
+      const { root, calls } = makeIndexProject();
+      const program = createCli({ summary: fakeSummaryPort(calls) });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      let output = "";
+      try {
+        await program.parseAsync(["node", "atlas", "build", "--repo", root, "--summaries"]);
+        output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+      } finally {
+        log.mockRestore();
+        rmSync(root, { recursive: true, force: true });
+      }
+      expect(calls).toHaveLength(1);
+      expect(output).toContain("Summaries: 1 (0 failed)");
+    });
+
+    it("skips summaries without the flag", async () => {
+      const { root, calls } = makeIndexProject();
+      const program = createCli({ summary: fakeSummaryPort(calls) });
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      let output = "";
+      try {
+        await program.parseAsync(["node", "atlas", "build", "--repo", root]);
+        output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+      } finally {
+        log.mockRestore();
+        rmSync(root, { recursive: true, force: true });
+      }
+      expect(calls).toHaveLength(0);
+      expect(output).not.toContain("Summaries:");
     });
   });
 });

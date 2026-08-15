@@ -85,7 +85,7 @@ Make the index persistent and queryable.
 ## Phase 3 — AI integration *(partially done)*
 
 - Providers adapters — **[IMPLEMENTED]** (add streaming, real default models)
-- **MCP server** exposing context (search/symbols) — **[IMPLEMENTED]** — `@atlas/mcp`, stdio server + 6 tools; runnable via `atlas mcp` and the `codeatlas-mcp` binary (see [MCP.md](./MCP.md)); follow-ups: MCP resources/prompts
+- **MCP server** exposing context (search/symbols) — **[IMPLEMENTED]** — `@atlas/mcp`, stdio server + 7 tools; runnable via `atlas mcp` and the `codeatlas-mcp` binary (see [MCP.md](./MCP.md)); follow-ups: MCP resources/prompts
 - **SDK** (Container + `createContextSDK`) — **[IMPLEMENTED]** — documented as the programmatic API / plugin seam; publishing to the npm registry is a future step
 - Provider expansion: Ollama, others — **[PLANNED]**
 

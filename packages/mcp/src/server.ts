@@ -4,6 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { CodeAtlasContext, type CodeAtlasContextOptions } from "./context";
+import type { FreshnessReport } from "./freshness";
 import { HANDLERS, type HandlerContext } from "./handlers";
 import { type LogLevel, type Logger, createLogger } from "./log";
 import { TOOLS, type ToolDefinition } from "./tools";
@@ -69,8 +70,13 @@ export async function startStdioServer(
   await mcp.connect(transport);
   mcp.logger.info(`CodeAtlas MCP server ready (context database: ${mcp.context.dbPath})`);
 
-  const shutdown = (signal: NodeJS.Signals): void => {
-    mcp.logger.info(`received ${signal}; shutting down`);
+  let shuttingDown = false;
+  const shutdown = (reason: string): void => {
+    if (shuttingDown) {
+      return;
+    }
+    shuttingDown = true;
+    mcp.logger.info(`received ${reason}; shutting down`);
     mcp
       .close()
       .catch(() => undefined)
@@ -78,6 +84,8 @@ export async function startStdioServer(
   };
   process.once("SIGINT", () => shutdown("SIGINT"));
   process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.stdin.once("end", () => shutdown("stdin end"));
+  process.stdin.once("close", () => shutdown("stdin close"));
   return mcp;
 }
 
@@ -89,6 +97,7 @@ function registerTools(server: McpServer, context: CodeAtlasContext, logger: Log
         title: tool.title,
         description: tool.description,
         inputSchema: tool.inputSchema,
+        outputSchema: tool.outputSchema,
       },
       (args, _extra) => runTool(tool, context, logger, args),
     );
@@ -102,18 +111,30 @@ async function runTool(
   logger: Logger,
   args: unknown,
 ): Promise<CallToolResult> {
+  logger.debug(`tool call: ${tool.name}`);
+  // Detect stale index state before serving reads: refresh incrementally when
+  // the working tree has drifted, and report the outcome to the client.
+  const freshness = await context.ensureFresh();
   const hctx: HandlerContext = { ctx: context, logger };
   const handler = HANDLERS[tool.name];
-  logger.debug(`tool call: ${tool.name}`);
   try {
     const result = await handler(hctx, args as ToolArgs);
+    const enriched = enrichFreshness(result, freshness);
     return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-      structuredContent: result as Record<string, unknown>,
+      content: [{ type: "text", text: JSON.stringify(enriched, null, 2) }],
+      structuredContent: enriched as Record<string, unknown>,
     };
   } catch (error) {
     return toErrorResult(tool.name, error, logger);
   }
+}
+
+/** Attach the freshness report to object results (leaves primitives alone). */
+function enrichFreshness(result: unknown, freshness: FreshnessReport): unknown {
+  if (typeof result === "object" && result !== null && !Array.isArray(result)) {
+    return { ...result, freshness };
+  }
+  return result;
 }
 
 /** Turn a thrown error into a readable, machine-checkable error result. */
@@ -125,9 +146,13 @@ function toErrorResult(toolName: string, error: unknown, logger: Logger): CallTo
   } else {
     logger.error(`unexpected error in tool "${toolName}"`, error);
   }
+  // `isError: true` + text content signal the failure. Deliberately no
+  // `structuredContent` here: clients validate it against the tool's
+  // `outputSchema`, and `{ ok: false, error }` does not match any tool's
+  // declared success shape (observed: opencode rejected it as -32602 and
+  // masked the real error).
   return {
     content: [{ type: "text", text: message }],
-    structuredContent: { ok: false, error: message },
     isError: true,
   };
 }

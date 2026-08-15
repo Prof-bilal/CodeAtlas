@@ -37,6 +37,10 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["packages/*/tests/**/*.test.ts", "apps/**/tests/**/*.test.ts"],
+    // MCP audit/context suites index real fixture trees in temp dirs; 5s is too
+    // tight under parallel load (gitignore adds per-directory I/O). 15s is
+    // generous for a single suite while still failing genuinely hung tests.
+    testTimeout: 15000,
     server: {
       deps: {
         external: ["node:sqlite"],

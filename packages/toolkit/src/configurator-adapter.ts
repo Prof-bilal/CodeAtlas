@@ -9,6 +9,8 @@ import {
   ConfigVerifyError,
   ConfigWriteError,
 } from "./configurator-errors";
+import { mergeTomlSection, parseTomlDocument, serializeTomlDocument } from "./configurator-toml";
+import { parseJsonc } from "./jsonc";
 
 /**
  * Everything one adapter needs to describe and build a configuration change
@@ -29,12 +31,15 @@ export interface ConfigurationContext {
   readonly timestamp: string;
 }
 
+/** The on-disk document format of a managed config file (ADR-010). */
+export type ConfigFormat = "json" | "jsonc" | "toml";
+
 /**
  * One configuration adapter per target (Claude / Gemini / Codex / OpenCode /
  * MCP / VS Code), mirroring `@atlas/providers` and `@atlas/agents`.
  *
- * Provider-specific facts — the config file each target reads, the JSON
- * section it writes into, the entry shape, and the change description — live
+ * Provider-specific facts — the config file each target reads, the section
+ * it writes into, the entry shape, and the change description — live
  * **inside the adapter**, never in the service.
  */
 export interface ConfigurationAdapter {
@@ -49,6 +54,13 @@ export interface ConfigurationAdapter {
    * `AgentPort`.
    */
   readonly requiresAgent: string | null;
+  /**
+   * The on-disk document format of the managed config file: `"json"`
+   * (default), `"jsonc"` (OpenCode — comments/trailing commas stripped on
+   * read, written as plain JSON, which is valid JSONC), or `"toml"` (Codex
+   * written via a surgical, comment-preserving section merge). See ADR-010.
+   */
+  readonly format?: ConfigFormat;
   /** Resolve the user-config file this adapter manages. */
   configPath(ctx: ConfigurationContext): string;
   /** The top-level JSON section the adapter manages, or `null` when the whole
@@ -156,7 +168,7 @@ export function buildConfigurationChange(
     };
   }
 
-  const parsed = parseConfigDocument(existing);
+  const parsed = parseConfigDocument(existing, adapter.format);
   if (!parsed.ok) {
     return {
       ...base,
@@ -166,7 +178,7 @@ export function buildConfigurationChange(
       mergedDocument: null,
       alreadyConfigured: false,
       problems: [
-        "the existing config file is not valid JSON — refusing to modify it (never clobber)",
+        `the existing config file is not valid ${adapter.format ?? "json"} — refusing to modify it (never clobber)`,
       ],
     };
   }
@@ -180,7 +192,7 @@ export function buildConfigurationChange(
       mergedDocument: null,
       alreadyConfigured: false,
       problems: [
-        "the existing config file is not a JSON object — refusing to modify it (never clobber)",
+        `the existing config file is not a ${adapter.format ?? "json"} object — refusing to modify it (never clobber)`,
       ],
     };
   }
@@ -285,10 +297,13 @@ export async function applyConfigurationChange(
     }
   }
 
-  const written = await writer.write(
-    change.filePath,
-    serializeConfigDocument(change.mergedDocument),
-  );
+  const contentResult = await contentToWrite(adapter, ctx, change, writer);
+  if (!contentResult.ok) {
+    await rollbackConfiguration(change.filePath, backupPath, change.fileExisted, writer);
+    return fail(contentResult.error);
+  }
+
+  const written = await writer.write(change.filePath, contentResult.value);
   if (!written.ok) {
     await rollbackConfiguration(change.filePath, backupPath, change.fileExisted, writer);
     return fail(new ConfigWriteError(change.filePath, written.error));
@@ -331,12 +346,17 @@ export async function verifyConfigurationEntry(
   if (read.value === null) {
     return fail(new ConfigVerifyError(filePath, "the config file is missing after the write"));
   }
-  const parsed = parseConfigDocument(read.value);
+  const parsed = parseConfigDocument(read.value, adapter.format);
   if (!parsed.ok) {
     return fail(new ConfigVerifyError(filePath, parsed.error.message));
   }
   if (!isConfigObject(parsed.value)) {
-    return fail(new ConfigVerifyError(filePath, "the written config is not a JSON object"));
+    return fail(
+      new ConfigVerifyError(
+        filePath,
+        `the written config is not a ${adapter.format ?? "json"} object`,
+      ),
+    );
   }
   const actual = entryFromDocument(parsed.value, rootKey, ctx.toolName);
   if (!deepEqualConfiguration(actual, expectedEntry)) {
@@ -386,8 +406,10 @@ export async function rollbackConfiguration(
   }
 }
 
-/** Parse a user-config file as JSON. */
-export function parseConfigDocument(raw: string): Result<unknown> {
+/** Parse a user-config file in the adapter's on-disk format. */
+export function parseConfigDocument(raw: string, format?: ConfigFormat): Result<unknown> {
+  if (format === "toml") return parseTomlDocument(raw);
+  if (format === "jsonc") return parseJsonc(raw);
   try {
     return ok(JSON.parse(raw) as unknown);
   } catch (error) {
@@ -398,9 +420,55 @@ export function parseConfigDocument(raw: string): Result<unknown> {
 /**
  * Serialize a merged document the way CodeAtlas writes its own JSON state
  * (2-space indent + trailing newline — the Scanner/Tool-Manifest convention).
+ * For `"toml"` the document is rendered back to TOML; `"jsonc"` files are
+ * written as plain JSON (JSON is valid JSONC). Note: `applyConfigurationChange`
+ * does **not** use this for TOML — it performs a surgical, comment-preserving
+ * section merge instead (see {@link contentToWrite}).
  */
-export function serializeConfigDocument(document: Readonly<Record<string, unknown>>): string {
+export function serializeConfigDocument(
+  document: Readonly<Record<string, unknown>>,
+  format?: ConfigFormat,
+): string {
+  if (format === "toml") return serializeTomlDocument(document);
   return `${JSON.stringify(document, null, 2)}\n`;
+}
+
+/**
+ * Resolve the exact text to write for an applied change. For `"toml"` targets
+ * the merged text is produced by a surgical section merge against the current
+ * on-disk content (comments and unrelated tables preserved byte-for-byte); for
+ * JSON/JSONC the merged document is serialized.
+ */
+async function contentToWrite(
+  adapter: ConfigurationAdapter,
+  ctx: ConfigurationContext,
+  change: ConfigurationChange,
+  writer: ConfigWriter,
+): Promise<Result<string>> {
+  const format = adapter.format ?? "json";
+  if (format !== "toml") {
+    if (change.mergedDocument === null) {
+      return fail(new ConfigMergeError(change.filePath, change.problems));
+    }
+    return ok(serializeConfigDocument(change.mergedDocument, format));
+  }
+  const rootKey = adapter.rootKey(ctx);
+  if (rootKey === null) {
+    return fail(new ConfigMergeError(change.filePath, ["TOML targets need a section key"]));
+  }
+  const original = change.fileExisted ? await writer.read(change.filePath) : ok(null);
+  if (!original.ok) {
+    return fail(new ConfigReadError(change.filePath, original.error));
+  }
+  const entry =
+    change.mergedDocument === null
+      ? adapter.buildEntry(ctx)
+      : ((entryFromDocument(change.mergedDocument, rootKey, ctx.toolName) as
+          | Readonly<Record<string, unknown>>
+          | undefined) ?? adapter.buildEntry(ctx));
+  const merged = mergeTomlSection(original.value, rootKey, ctx.toolName, entry);
+  if (!merged.ok) return fail(merged.error);
+  return ok(merged.value.text);
 }
 
 /** An fs-safe backup file name for a config file, from an ISO timestamp. */

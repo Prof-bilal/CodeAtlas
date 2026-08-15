@@ -1,9 +1,12 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
+  type ContextSDK,
   type SearchHitKind,
   type SearchRequest,
   type SearchResult,
+  type Summary,
+  type SummaryPort,
   createContextSDK,
 } from "@atlas/sdk";
 import { InvalidArgumentError } from "commander";
@@ -18,6 +21,15 @@ const SEARCH_KINDS: readonly SearchHitKind[] = [
   "summary",
 ];
 
+/** The maximum number of top file hits summarized by `atlas search --ai`. */
+export const AI_SUMMARY_LIMIT = 5;
+
+/** Injectable services for {@link registerSearch}. */
+export interface SearchCommandOptions {
+  /** Summary generation port override (defaults to the SDK's provider-backed port). */
+  readonly summary?: SummaryPort;
+}
+
 /** Parsed `atlas search` CLI options (Commander's camel-cased values). */
 export interface SearchCliOptions {
   readonly repo?: string;
@@ -25,6 +37,7 @@ export interface SearchCliOptions {
   readonly type?: string[];
   readonly fuzzy: boolean;
   readonly json?: boolean;
+  readonly ai?: boolean;
 }
 
 /** The project root: `ATLAS_ROOT` when set, else the working directory. */
@@ -55,7 +68,66 @@ export function renderSearchHits(query: string, hits: readonly SearchResult[]): 
   return lines.join("\n");
 }
 
-export function registerSearch(program: Command): void {
+/** One AI summary attached to a file hit by `atlas search --ai`. */
+export interface SearchAISummaryEntry {
+  readonly path: string;
+  /** The summary when a stored one existed or generation succeeded. */
+  readonly summary?: Summary;
+  /** Message when the summary could not be produced (e.g. no provider). */
+  readonly message?: string;
+}
+
+/** Build AI summary entries for the top file hits: stored first, else fresh. */
+export async function buildSearchAI(
+  context: ContextSDK,
+  hits: readonly SearchResult[],
+  limit: number = AI_SUMMARY_LIMIT,
+): Promise<readonly SearchAISummaryEntry[]> {
+  const fileHits = hits.filter((hit) => hit.kind === "file").slice(0, limit);
+  const entries: SearchAISummaryEntry[] = [];
+  for (const hit of fileHits) {
+    const path = hit.path;
+    if (path === null || path === "") {
+      continue;
+    }
+    const stored = context.summaries.getFileSummary(path);
+    if (stored !== undefined) {
+      entries.push({ path, summary: stored });
+      continue;
+    }
+    const generated = await context.summaries.generateFile(path);
+    if (generated.ok) {
+      entries.push({ path, summary: generated.value });
+    } else {
+      entries.push({ path, message: generated.error.message });
+    }
+  }
+  return entries;
+}
+
+/** Render the AI summaries section of `atlas search --ai`. */
+export function renderSearchAI(entries: readonly SearchAISummaryEntry[]): string {
+  if (entries.length === 0) {
+    return "AI summaries: no file hits to summarize.";
+  }
+  const lines = ["AI summaries (top file hits):"];
+  for (const entry of entries) {
+    if (entry.summary !== undefined) {
+      const meta = entry.summary.metadata;
+      const note = meta.cacheHit ? " (cached)" : "";
+      lines.push(`  ${entry.path} (${meta.provider}/${meta.model}${note}):`);
+      lines.push(`    ${entry.summary.content.overview}`);
+      for (const point of entry.summary.content.keyPoints) {
+        lines.push(`    • ${point}`);
+      }
+    } else {
+      lines.push(`  ${entry.path}: ${entry.message ?? "summary unavailable"}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+export function registerSearch(program: Command, options: SearchCommandOptions = {}): void {
   program
     .command("search")
     .description("Search the CodeAtlas index (symbols, files, modules, dependencies, summaries)")
@@ -70,12 +142,17 @@ export function registerSearch(program: Command): void {
     )
     .option("--no-fuzzy", "disable typo-tolerant fuzzy matching")
     .option("--json", "print results as JSON")
-    .action(async (query: string[], options: SearchCliOptions) => {
-      await runSearch(query.join(" "), options);
+    .option("--ai", "generate AI summaries for the top file hits (requires a configured provider)")
+    .action(async (query: string[], cliOptions: SearchCliOptions) => {
+      await runSearch(query.join(" "), cliOptions, options);
     });
 }
 
-async function runSearch(query: string, options: SearchCliOptions): Promise<void> {
+async function runSearch(
+  query: string,
+  options: SearchCliOptions,
+  commandOptions: SearchCommandOptions = {},
+): Promise<void> {
   const root = options.repo === undefined ? resolveProjectRoot() : resolve(options.repo);
   const dbPath = contextDbPath(root);
   if (!existsSync(dbPath)) {
@@ -85,7 +162,10 @@ async function runSearch(query: string, options: SearchCliOptions): Promise<void
     return;
   }
 
-  const context = createContextSDK({ dbPath });
+  const context = createContextSDK({
+    dbPath,
+    ...(commandOptions.summary === undefined ? {} : { summary: commandOptions.summary }),
+  });
   try {
     const types =
       options.type !== undefined && options.type.length > 0
@@ -98,10 +178,17 @@ async function runSearch(query: string, options: SearchCliOptions): Promise<void
     };
     const hits = context.search.search(query, request);
 
+    const aiEntries = options.ai === true ? await buildSearchAI(context, hits) : [];
+
     if (options.json === true) {
-      console.log(JSON.stringify(hits, null, 2));
+      const output = options.ai === true ? { hits, aiSummaries: aiEntries } : hits;
+      console.log(JSON.stringify(output, null, 2));
     } else {
-      console.log(renderSearchHits(query, hits));
+      const rendered = [renderSearchHits(query, hits)];
+      if (options.ai === true) {
+        rendered.push("", renderSearchAI(aiEntries));
+      }
+      console.log(rendered.join("\n"));
     }
   } finally {
     // Release the SQLite file handle (WAL) so the on-disk index can be replaced.

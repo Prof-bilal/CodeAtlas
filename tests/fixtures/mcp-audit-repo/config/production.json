@@ -1,0 +1,11 @@
+{
+  "port": 8080,
+  "environment": "production",
+  "cacheTtlMs": 30000,
+  "authTokenTtlMs": 900000,
+  "databaseUrl": "postgres://app:secret@db.example.com/app",
+  "features": {
+    "passwordReset": true,
+    "payments": true
+  }
+}

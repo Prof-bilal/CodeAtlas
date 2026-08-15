@@ -1,0 +1,4 @@
+Random notes for the fixture.
+
+This file is intentionally unrelated to the codebase and exists to test that
+irrelevant, non-source files do not pollute context results.

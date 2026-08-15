@@ -1,0 +1,11 @@
+{
+  "serviceName": "mcp-audit-fixture",
+  "auth": {
+    "passwordResetMinutes": 30,
+    "sessionTtlMinutes": 60
+  },
+  "payments": {
+    "currency": "USD",
+    "maxAmount": 5000
+  }
+}

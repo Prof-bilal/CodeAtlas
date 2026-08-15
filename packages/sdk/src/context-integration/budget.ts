@@ -1,4 +1,4 @@
-import type { ContextBudget, ContextPackageItem, BudgetRecord } from "./models";
+import type { BudgetRecord, ContextBudget, ContextPackageItem } from "./models";
 
 /** The default budget for a context package (overridable per call). */
 export const DEFAULT_CONTEXT_BUDGET: ContextBudget = {
@@ -27,7 +27,10 @@ export function estimateTokens(text: string): number {
  *   package fits; `budgetExceeded` is set when even the essential items alone
  *   would exceed the cap.
  * - **Max-items cap** drops the tail (ranked items first, then the overview)
- *   while never dropping `instructions`.
+ *   while never dropping `instructions`. `dependency-chain` files (the graph
+ *   hop-expansion for dependency-intent tasks) also survive the item-count cap
+ *   because they are the direct answer to the task, but they still yield to the
+ *   token cap when the package is over budget.
  *
  * @param items - Items ordered with essential context first, then rank-descending.
  * @param budget - The effective budget to enforce.
@@ -41,17 +44,19 @@ export function applyBudget(
     truncateToTokens(item, budget.maxTokensPerItem, itemsTruncated),
   );
 
-  // Drop from the tail, preserving essential (instructions/overview) items.
-  const dropable = (item: ContextPackageItem): boolean =>
-    item.kind === "instructions" ? false : true;
+  // The token cap may drop anything except project instructions.
+  const dropableByTokens = (item: ContextPackageItem): boolean => item.kind !== "instructions";
+  // The item-count cap additionally protects dependency-chain evidence files.
+  const dropableByCount = (item: ContextPackageItem): boolean =>
+    item.kind !== "instructions" && item.source !== "dependency-chain";
 
   let current = truncated;
   let total = current.reduce((sum, item) => sum + item.tokens, 0);
 
   const droppedByTokens: string[] = [];
-  while (total > budget.maxTokensTotal && current.some((item) => dropable(item))) {
+  while (total > budget.maxTokensTotal && current.some((item) => dropableByTokens(item))) {
     const tail = current[current.length - 1];
-    if (tail === undefined || !dropable(tail)) {
+    if (tail === undefined || !dropableByTokens(tail)) {
       break;
     }
     droppedByTokens.push(tail.id);
@@ -61,9 +66,9 @@ export function applyBudget(
   const budgetExceeded = total > budget.maxTokensTotal;
 
   const itemsDroppedByCount: string[] = [];
-  while (current.length > budget.maxItems && current.some((item) => dropable(item))) {
+  while (current.length > budget.maxItems && current.some((item) => dropableByCount(item))) {
     const tail = current[current.length - 1];
-    if (tail === undefined || !dropable(tail)) {
+    if (tail === undefined || !dropableByCount(tail)) {
       break;
     }
     itemsDroppedByCount.push(tail.id);

@@ -1,6 +1,6 @@
-import type { Command } from "commander";
 import { resolve } from "node:path";
 import { startStdioServer } from "@atlas/mcp";
+import type { Command } from "commander";
 import { resolveProjectRoot } from "./search";
 
 /**

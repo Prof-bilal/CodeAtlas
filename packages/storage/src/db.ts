@@ -16,10 +16,15 @@ const DatabaseSyncConstructor = requireNode("node:sqlite").DatabaseSync as typeo
  */
 export function openDatabase(filePath: string): DatabaseSync {
   const db = new DatabaseSyncConstructor(filePath);
-  if (filePath !== ":memory:") {
-    db.exec("PRAGMA journal_mode = WAL;");
+  try {
+    if (filePath !== ":memory:") {
+      db.exec("PRAGMA journal_mode = WAL;");
+    }
+    db.exec("PRAGMA foreign_keys = ON;");
+    db.exec("PRAGMA busy_timeout = 5000;");
+    return db;
+  } catch (error) {
+    db.close();
+    throw error;
   }
-  db.exec("PRAGMA foreign_keys = ON;");
-  db.exec("PRAGMA busy_timeout = 5000;");
-  return db;
 }

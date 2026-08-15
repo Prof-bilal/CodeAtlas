@@ -35,11 +35,11 @@ Options take precedence over environment/config where they overlap.
 
 | Command | Current behavior | Target contract |
 | ------- | ---------------- | --------------- |
-| `atlas init` | **[implemented]** | Initialize and index the current project; supports `--repo` and `--json`. Runs the SDK-owned indexer (`indexProject`, mode `build`). |
-| `atlas build` | **[implemented]** | Build/resolve the context index: scan → hash → parse changed files → build graph → persist to the context DB via the SDK indexer (`indexProject`, mode `build`). Reports files/symbols/summaries counts. |
-| `atlas update` | **[implemented]** | Incrementally update an existing index via the SDK indexer: reuse hashes, re-parse and merge only `changed`/`added` files, drop `deleted` files. No-op when nothing changed. |
+| `atlas init` | **[implemented]** | Initialize and index the current project; supports `repo`, `json`, and `--summaries`. Runs the SDK-owned indexer (`indexProject`, mode `build`). |
+| `atlas build` | **[implemented]** | Build/resolve the context index: scan → hash → parse changed files → build graph → persist to the context DB via the SDK indexer (`indexProject`, mode `build`). Reports files/symbols/summaries counts. `--summaries` generates an AI file summary for every parsed file after indexing (explicit opt-in, content-hash cached, persisted to the Summaries table, failures counted not fatal). |
+| `atlas update` | **[implemented]** | Incrementally update an existing index via the SDK indexer: reuse hashes, re-parse and merge only `changed`/`added` files, drop `deleted` files. No-op when nothing changed. `--summaries` generates AI summaries for the re-parsed files only. |
 | `atlas scan` | **[implemented]** | Show a hierarchical overview of a project tree (files, folders, languages, framework) with **no indexing** — metadata only, via `scanProjectOverview()` from the SDK. Options: `--repo <path>`, `--json`. |
-| `atlas search <query...>` | **[implemented]** | Search the index (symbols, files, modules, dependencies, summaries) with ranked, fuzzy-aware results. Options: `--repo <path>`, `--limit <n>`, `--type <kind>` (repeatable), `--no-fuzzy`, `--json`. Reads `.codeatlas/context.db` via the **Context SDK** (`createContextSDK` — see [CONTEXT_SDK.md](./CONTEXT_SDK.md)); errors with exit code `1` when no index exists. |
+| `atlas search <query...>` | **[implemented]** | Search the index (symbols, files, modules, dependencies, summaries) with ranked, fuzzy-aware results. Options: `repo <path>`, `limit <n>`, `type <kind>` (repeatable), `no-fuzzy`, `json`, `--ai`. `--ai` additionally generates (or reuses stored) AI summaries for the **top 5 file hits** via `summaries.generateFile` — explicit opt-in, content-hash cached, fails cleanly without a configured provider; deterministic hits are unchanged. Reads `.codeatlas/context.db` via the **Context SDK** (`createContextSDK` — see [CONTEXT_SDK.md](./CONTEXT_SDK.md)); errors with exit code `1` when no index exists. |
 | `atlas mcp` | **[implemented]** | Start the **MCP server** over stdio for the current project (option `--root <path>` overrides `ATLAS_ROOT`/cwd). `@atlas/mcp` tools read context through the Context SDK. See [MCP.md](./MCP.md). |
 | `atlas sessions` / `atlas sessions list` | **[implemented]** | List tracked AI agent sessions (table). |
 | `atlas sessions info <id>` | **[implemented]** | Show details for one session (provider, status, repository, pid, started/ended, exit code). Never prints keys/env. |
@@ -61,30 +61,36 @@ Options take precedence over environment/config where they overlap.
 | `atlas tools update` | **[implemented]** | Report local registry and installed-tool state; `--json` supported. |
 | `atlas tools doctor` | **[implemented]** | Reconcile installed manifests, integration state, and trust; `--json` supported. |
 | `atlas tools configure <tool>` | **[implemented]** | Configure only installed agents/hosts declared by the tool; `--dry-run` renders exact changes, `--json` emits machine-readable output, and `--config-home` supports managed/test user-config roots. |
-| `atlas context <task>` | **[implemented]** | Build and render a deny-filtered, budgeted Context Package; `--explain` renders content-free selection reasons, `--json` emits package/explanation data, and budget/instruction/overview flags tune SDK assembly. |
-| `atlas context launch <task>` | **[implemented]** | Launch a provider session seeded with the rendered Context Package via `SessionPort`; requires `--provider`, supports `--repo`, `--json`, and tuning flags. |
-| `atlas context attach <session-id> <task>` | **[implemented]** | Attach context to a `CREATED` session; live/terminal sessions return a clean exit-1 typed error. |
+| `atlas context <task>` | **[implemented]** | Build and render a deny-filtered, budgeted Context Package (explicit form: `atlas context build <task>`); `explain` renders content-free selection reasons, `json` emits package/explanation data, `--ai` appends a provider-backed AI context briefing (degrades to the deterministic package when no provider is configured), and budget/instruction/overview flags tune SDK assembly. |
+| `atlas context launch <task>` | **[implemented]** | Launch a provider session seeded with the rendered Context Package via `SessionPort`; requires `provider`, supports `repo`, `json`, `--ai` (prepends the briefing to the session prompt), and tuning flags. |
+| `atlas context attach <session-id> <task>` | **[implemented]** | Attach context to a `CREATED` session; `--ai` prepends a briefing to the prompt; live/terminal sessions return a clean exit-1 typed error. |
+| `atlas claude <prompt...>` | **[implemented]** | Launch the `claude` AI CLI seeded with a Context Package for the prompt (sugar over `atlas context launch --provider claude`); `--ai` prepends an AI briefing, `json`/budget/instruction/overview flags match `context launch`. |
+| `atlas gemini <prompt...>` | **[implemented]** | Launch the `gemini` AI CLI seeded with a Context Package for the prompt (`--ai` briefing supported). |
+| `atlas codex <prompt...>` | **[implemented]** | Launch the `codex` AI CLI seeded with a Context Package for the prompt (`--ai` briefing supported). |
+| `atlas opencode <prompt...>` | **[implemented]** | Launch the `opencode` AI CLI seeded with a Context Package for the prompt (`--ai` briefing supported). |
 | `atlas tui` | **[v2 / not shipped]** — not registered | Interactive terminal UI (slash commands, interactive agent launch/install). Source lives on disk in `apps/cli/src/tui/` but is **git-untracked** so fresh clones build without it; bare `atlas` prints help. Slash surface returns as a v2 follow-up. |
 | `atlas setup` | **[planned]** — not registered | Guided environment → agent → tool recommendation → install → configure → verify (no auto-install without consent). |
 
-### Agent slash commands (Direction B)
+### Agent launch commands (Direction B)
 
 ```text
-atlas /gemini <prompt...>   # [planned] standalone router (not yet registered)
-atlas /claude <prompt...>
-atlas /codex <prompt...>
-atlas /opencode <prompt...>
+atlas claude <prompt...>       # [implemented] standalone launch with context
+atlas gemini <prompt...>
+atlas codex <prompt...>
+atlas opencode <prompt...>
 ```
 
-A slash surface existed **inside `atlas tui`** (`/claude`, `/gemini`, `/codex`,
-`/opencode`, `/cursor`, `/grok`), backed by `@atlas/agents` + the session
-manager + the Toolkit installer; the TUI is currently **v2 / not shipped**
-(untracked, see `atlas tui` above). The **standalone** `atlas /<agent> <prompt>`
-router is **[planned]** and will land once the orchestrator router ships (Phase
-4 of the roadmap). The connection layer the slash commands depend on
-(`@atlas/agents` behind `AgentPort`) and the **Agent Session Manager**
-(`atlas sessions`) exist; the standalone router does not. The planned `/tools`
-interface (Directory C) is documented in [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
+Each `atlas <agent> <prompt...>` command is a thin wrapper over
+`atlas context launch <prompt> --provider <agent>`: it assembles a budgeted,
+deny-filtered Context Package for the prompt and starts the agent CLI seeded
+with it. `--ai` prepends an AI context briefing to the prompt (degrades
+cleanly to the deterministic package without a configured provider). Tuning
+flags match `atlas context launch`: `--repo <path>`, `--json`,
+`--max-tokens-total <number>`, `--include-instructions`, `--no-instructions`,
+`--include-overview`, `--no-overview`. These cover the agents that have a
+defined launch adapter (`@atlas/agents`); the interactive **slash surface**
+(`/claude`, `/cursor`, `/grok`, …) inside `atlas tui` remains **v2 / not
+shipped** (untracked, see `atlas tui` above).
 
 ---
 

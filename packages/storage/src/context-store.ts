@@ -50,8 +50,14 @@ export class ContextStore implements ContextDatabasePort {
   private readonly metadata: MetadataRepository;
 
   public constructor(options: ContextStoreOptions = {}) {
-    this.db = openDatabase(options.filePath ?? ":memory:");
-    runMigrations(this.db, options.migrations);
+    const db = openDatabase(options.filePath ?? ":memory:");
+    try {
+      runMigrations(db, options.migrations);
+    } catch (error) {
+      db.close();
+      throw error;
+    }
+    this.db = db;
     this.files = new FileRepository(this.db);
     this.symbols = new SymbolRepository(this.db);
     this.dependencies = new DependencyRepository(this.db);
