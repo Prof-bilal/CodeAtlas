@@ -2,9 +2,9 @@ import type { ProviderRequest, ProviderResponse, TokenUsage } from "@atlas/core"
 import type { Result } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
 import type { ProviderAdapter, ProviderConfig } from "../adapter";
-import { ProviderRequestError } from "../errors";
+import { ProviderNetworkError, ProviderRequestError } from "../errors";
 import { asObject, getNumber, getString, isOkStatus, usageFrom, withUsage } from "../parse";
-import type { HttpTransport } from "../transport";
+import type { HttpResponse, HttpTransport } from "../transport";
 
 /** Gemini adapter for the `generateContent` REST API. */
 export class GeminiAdapter implements ProviderAdapter {
@@ -35,11 +35,16 @@ export class GeminiAdapter implements ProviderAdapter {
         : {}),
       ...(Object.keys(generationConfig).length > 0 ? { generationConfig } : {}),
     };
-    const response = await this.transport.post(
-      `${this.baseUrl}/models/${model}:generateContent?key=${encodeURIComponent(this.apiKey)}`,
-      { "Content-Type": "application/json" },
-      body,
-    );
+    let response: HttpResponse;
+    try {
+      response = await this.transport.post(
+        `${this.baseUrl}/models/${model}:generateContent?key=${encodeURIComponent(this.apiKey)}`,
+        { "Content-Type": "application/json" },
+        body,
+      );
+    } catch (error) {
+      return fail(new ProviderNetworkError(this.name, error));
+    }
     if (!isOkStatus(response.status)) {
       return fail(new ProviderRequestError(this.name, response.status, response.json));
     }

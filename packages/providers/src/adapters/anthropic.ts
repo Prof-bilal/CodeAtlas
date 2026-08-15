@@ -2,9 +2,9 @@ import type { ProviderRequest, ProviderResponse, TokenUsage } from "@atlas/core"
 import type { Result } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
 import type { ProviderAdapter, ProviderConfig } from "../adapter";
-import { ProviderRequestError } from "../errors";
+import { ProviderNetworkError, ProviderRequestError } from "../errors";
 import { asObject, getNumber, getString, isOkStatus, usageFrom, withUsage } from "../parse";
-import type { HttpTransport } from "../transport";
+import type { HttpResponse, HttpTransport } from "../transport";
 
 /**
  * Claude adapter for the Anthropic Messages API. Anthropic has no
@@ -34,15 +34,20 @@ export class ClaudeAdapter implements ProviderAdapter {
       ...(request.system !== undefined ? { system: request.system } : {}),
       ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
     };
-    const response = await this.transport.post(
-      `${this.baseUrl}/messages`,
-      {
-        "x-api-key": this.apiKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body,
-    );
+    let response: HttpResponse;
+    try {
+      response = await this.transport.post(
+        `${this.baseUrl}/messages`,
+        {
+          "x-api-key": this.apiKey,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body,
+      );
+    } catch (error) {
+      return fail(new ProviderNetworkError(this.name, error));
+    }
     if (!isOkStatus(response.status)) {
       return fail(new ProviderRequestError(this.name, response.status, response.json));
     }

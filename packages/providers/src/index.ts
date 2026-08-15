@@ -20,7 +20,7 @@ export {
   saveUserSettings,
 } from "./config";
 export type { UserProviderSettings } from "./config";
-export { ProviderRequestError, UnknownProviderError } from "./errors";
+export { ProviderNetworkError, ProviderRequestError, UnknownProviderError } from "./errors";
 export { ProviderService } from "./provider.service";
 export type { ModelListingAdapter, ProviderServiceOptions } from "./provider.service";
 export { fetchTransport } from "./transport";

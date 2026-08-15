@@ -3,9 +3,20 @@ import type { Result } from "@atlas/shared";
 import { ok } from "@atlas/shared";
 import { describe, expect, it } from "vitest";
 import type { ProviderAdapter } from "../src/adapter";
-import { UnknownProviderError } from "../src/errors";
+import { ProviderNetworkError, ProviderRequestError, UnknownProviderError } from "../src/errors";
 import { ProviderService } from "../src/provider.service";
+import type { HttpTransport } from "../src/transport";
 import { createFakeTransport } from "./helpers";
+
+/** A transport that never answers — simulates offline/DNS/connection errors. */
+const offlineTransport: HttpTransport = {
+  async post() {
+    throw new Error("ECONNREFUSED: connection refused");
+  },
+  async get() {
+    throw new Error("ECONNREFUSED: connection refused");
+  },
+};
 
 describe("ProviderService", () => {
   it("registers configured built-in providers and routes by name", async () => {
@@ -90,5 +101,57 @@ describe("ProviderService", () => {
     expect(ollama?.configured).toBe(true);
     expect(ollama?.hasApiKey).toBe(true);
     expect(ollama?.defaultModel).toBe("llama3.2");
+  });
+
+  it("fails with ProviderNetworkError when the transport rejects (all adapters)", async () => {
+    const service = new ProviderService({
+      transport: offlineTransport,
+      providers: {
+        claude: { apiKey: "c" },
+        openai: { apiKey: "o" },
+        gemini: { apiKey: "g" },
+        deepseek: { apiKey: "d" },
+        ollama: { apiKey: "" },
+      },
+    });
+
+    for (const provider of ["claude", "openai", "gemini", "deepseek", "ollama"]) {
+      const result = await service.complete({ provider, prompt: "hi" });
+      expect(result.ok, `${provider} should fail cleanly`).toBe(false);
+      if (result.ok) {
+        continue;
+      }
+      // A transport-level failure must surface as a typed failure, not an
+      // unhandled rejection.
+      expect(result.error).toBeInstanceOf(ProviderNetworkError);
+    }
+  });
+
+  it("fails with ProviderNetworkError when the transport rejects (ollama listModels)", async () => {
+    const service = new ProviderService({
+      transport: offlineTransport,
+      providers: { ollama: { apiKey: "" } },
+    });
+    const result = await service.listModels("ollama");
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      return;
+    }
+    expect(result.error).toBeInstanceOf(ProviderNetworkError);
+  });
+
+  it("still surfaces a typed ProviderRequestError on a non-2xx response", async () => {
+    const fake = createFakeTransport([{ status: 500, json: { error: "boom" } }]);
+    const service = new ProviderService({
+      transport: fake.transport,
+      providers: { claude: { apiKey: "c" } },
+    });
+    const result = await service.complete({ prompt: "hi" });
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      return;
+    }
+    expect(result.error).toBeInstanceOf(ProviderRequestError);
+    expect(result.error.message).toContain("500");
   });
 });

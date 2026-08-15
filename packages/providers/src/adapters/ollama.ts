@@ -2,7 +2,7 @@ import type { ProviderRequest, ProviderResponse, TokenUsage } from "@atlas/core"
 import type { Result } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
 import type { ProviderAdapter, ProviderConfig } from "../adapter";
-import { ProviderRequestError } from "../errors";
+import { ProviderNetworkError, ProviderRequestError } from "../errors";
 import { asObject, getNumber, getString, isOkStatus, usageFrom, withUsage } from "../parse";
 import type { HttpResponse, HttpTransport } from "../transport";
 
@@ -45,11 +45,16 @@ export class OllamaAdapter implements ProviderAdapter {
       ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
       ...(request.json === true ? { format: "json" } : {}),
     };
-    const response = await this.transport.post(
-      `${this.baseUrl}/v1/chat/completions`,
-      this.headers(),
-      body,
-    );
+    let response: HttpResponse;
+    try {
+      response = await this.transport.post(
+        `${this.baseUrl}/v1/chat/completions`,
+        this.headers(),
+        body,
+      );
+    } catch (error) {
+      return fail(new ProviderNetworkError(this.name, error));
+    }
     if (!isOkStatus(response.status)) {
       return fail(new ProviderRequestError(this.name, response.status, response.json));
     }
@@ -68,7 +73,7 @@ export class OllamaAdapter implements ProviderAdapter {
     try {
       response = await this.transport.get(`${this.baseUrl}/api/tags`, this.headers());
     } catch (error) {
-      return fail(error instanceof Error ? error : new Error("Ollama request failed."));
+      return fail(new ProviderNetworkError(this.name, error));
     }
     if (!isOkStatus(response.status)) {
       return fail(new ProviderRequestError(this.name, response.status, response.json));

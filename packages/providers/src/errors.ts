@@ -23,3 +23,26 @@ export class ProviderRequestError extends Error {
     this.body = body;
   }
 }
+
+/**
+ * Thrown (as a `Result` failure) when the provider transport cannot reach the
+ * API at all (offline, DNS failure, connection refused, timeout, …) — i.e. no
+ * HTTP response was received. Kept distinct from {@link ProviderRequestError}
+ * so callers can distinguish "the API answered with an error" from "the API
+ * never answered".
+ */
+export class ProviderNetworkError extends Error {
+  public readonly provider: string;
+  public override readonly cause: unknown;
+
+  public constructor(provider: string, cause: unknown) {
+    super(
+      `Provider "${provider}" request failed before a response: ${
+        cause instanceof Error ? cause.message : String(cause)
+      }`,
+    );
+    this.name = "ProviderNetworkError";
+    this.provider = provider;
+    this.cause = cause;
+  }
+}

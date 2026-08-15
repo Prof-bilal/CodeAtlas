@@ -2,9 +2,9 @@ import type { ProviderRequest, ProviderResponse, TokenUsage } from "@atlas/core"
 import type { Result } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
 import type { ProviderAdapter, ProviderConfig } from "../adapter";
-import { ProviderRequestError } from "../errors";
+import { ProviderNetworkError, ProviderRequestError } from "../errors";
 import { asObject, getNumber, getString, isOkStatus, usageFrom, withUsage } from "../parse";
-import type { HttpTransport } from "../transport";
+import type { HttpResponse, HttpTransport } from "../transport";
 
 /**
  * Base adapter for OpenAI-compatible chat-completions APIs. Subclasses provide
@@ -44,11 +44,16 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
       ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
       ...(request.json === true ? { response_format: { type: "json_object" } } : {}),
     };
-    const response = await this.transport.post(
-      `${this.baseUrl}/chat/completions`,
-      { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json" },
-      body,
-    );
+    let response: HttpResponse;
+    try {
+      response = await this.transport.post(
+        `${this.baseUrl}/chat/completions`,
+        { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json" },
+        body,
+      );
+    } catch (error) {
+      return fail(new ProviderNetworkError(this.name, error));
+    }
     if (!isOkStatus(response.status)) {
       return fail(new ProviderRequestError(this.name, response.status, response.json));
     }
