@@ -1,4 +1,4 @@
 {
-  "*.{ts,tsx}": ["eslint --fix", "biome check --write"],
-  "*.json": ["biome check --write"]
+  "*.{ts,tsx}": ["eslint --fix", "biome check --write --no-errors-on-unmatched"],
+  "*.json": ["biome check --write --no-errors-on-unmatched"]
 }
