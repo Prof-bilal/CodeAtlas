@@ -78,7 +78,7 @@
 
 | Feature | Claimed | Implemented | Tested | Live-checked | Verdict |
 | --- | --- | --- | --- | --- | --- |
-| `atlas init` / `build` / `update` | Yes | Yes | Partial | Yes | **PASS (gap)** — no behavioral tests for `init`/`update` (only registration); exercised via integration suite |
+| `atlas init` / `build` / `update` | Yes | Yes | Partial | Yes | **PASS (gap)** — no behavioral CLI tests for `init`/`update` (only registration); covered at the SDK level by `packages/sdk/tests/indexing` + MCP audit fixtures |
 | `atlas scan` | Yes | Yes | Yes | Yes | **PASS** |
 | `atlas search` (+ `--ai`, `--json`) | Yes | Yes | Yes | Yes | **PASS** |
 | `atlas mcp` | Yes | Yes | Partial | Yes | **PASS (gap)** — no CLI-level behavioral test (covered at package level) |
@@ -146,7 +146,7 @@
 | Typecheck / lint / format (`pnpm check`) | Yes | Yes | — | **Yes — all pass** | **PASS** |
 | Build (`pnpm build`) | Yes | Yes | — | **Yes — passes** | **PASS** |
 | MCP tool tests (all 7 tools) | Yes | Yes | Yes | Yes | **PASS** |
-| Integration suite (`pnpm test:integration`, 36 tests) | Yes | Yes | Yes | **NOT on this machine** | **PARTIAL** — hard-requires gitignored `test-repo/AIbuilder` (absent on fresh clone → suite fails); **not run in CI** |
+| External integration suite (`tests/integration`, `test-repo/AIbuilder`) | Yes | Yes | Yes | Removed | **REMOVED (2026-08-16)** — depended on a gitignored external fixture not cloneable in CI; deleted with its wiring (`pnpm test:integration`, `vitest.integration.config.ts`) |
 | Benchmarks (`tests/benchmarks/mcp-benchmark.ts`) | Yes | Yes | Manual | Partial | **PARTIAL** — tracked but not wired to a script, not run in CI |
 
 ## 10. Distribution & release
@@ -155,7 +155,7 @@
 | --- | --- | --- | --- | --- | --- |
 | Published `codeatlas-cli` (v0.2.1) | Yes | Yes | Yes | Yes | **PASS** — self-contained bundle (tsup inlines `@atlas/*`; zero `require("@atlas/…")`) |
 | `@atlas/*` scoped packages publishable | Implicit | Partially | — | — | **PARTIAL** — no `publishConfig`, no license/repository fields; `@atlas` scope externally owned → deliberately unpublished |
-| CI (`pnpm check` on push/PR) | Yes | Yes | Yes | Yes | **PASS (gap)** — no integration suite, no Windows runner, no publish, no tags, no coverage |
+| CI (`pnpm check` on push/PR) | Yes | Yes | Yes | Yes | **PASS (gap)** — no Windows runner, no publish, no tags, no coverage |
 | GitHub issue/PR templates | — | No | — | — | **PLANNED** |
 
 ## 11. Cross-cutting verdicts

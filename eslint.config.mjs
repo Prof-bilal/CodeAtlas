@@ -96,7 +96,6 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/coverage/**",
       "ui/**",
-      "test-repo/**",
       "go-tui-app/**",
       "tests/fixtures/**",
     ],

@@ -233,8 +233,6 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) and
   [docs/MODULES.md](docs/MODULES.md) · [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)
 - Security & privacy: [docs/SECURITY.md](docs/SECURITY.md) ·
   [docs/PRIVACY.md](docs/PRIVACY.md)
-- How to run a real-repository integration test:
-  [docs/AI-BUILDER-INTEGRATION-TEST.md](docs/AI-BUILDER-INTEGRATION-TEST.md)
 
 ## Contributing
 

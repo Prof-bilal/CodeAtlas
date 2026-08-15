@@ -27,8 +27,8 @@ gates, and what actually ships in this changeset. Companion to
   the real implementation lives in the SDK-owned indexer and
   `apps/cli/src/commands/indexing.ts`.
 - `go-tui-app/` (an external, uncommitted experiment) is excluded via
-  `.gitignore`, and `eslint.config.mjs` ignores `test-repo/**` and
-  `go-tui-app/**` so `pnpm lint` is green locally.
+  `.gitignore`, and `eslint.config.mjs` ignores `go-tui-app/**` so `pnpm lint`
+  is green locally.
 - Git metadata, husky/commitlint (Conventional Commits) and a CI workflow
   (`.github/workflows/ci.yml`) are present.
 

@@ -38,12 +38,6 @@ Thumbs.db
 ui/
 docs/DESIGN.md
 
-# Real-repository integration test output
-tests/integration/results/
-
-# External test fixture (a full copy of an external repo with its own .git)
-test-repo/
-
 # Unrelated experimental app (Go + Bun TUI spike, planning notes only)
 go-tui-app/
 

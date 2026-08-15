@@ -651,8 +651,7 @@ absent.
    full Conventional-Commits history; `.husky`/`commitlint`/`.gitignore` are
    configured and active.
 4. **CI/CD**: `.github/workflows/ci.yml` runs `pnpm check`-style gates (Node 22,
-   pnpm 9.15.0) on push/PR to `main`, plus a serial `integration` job that
-   clones the public `test-repo/AIbuilder` fixture and runs `pnpm test:integration`.
+   pnpm 9.15.0) on push/PR to `main`.
 5. **`.codeatlas/`**: `atlas init`/`build`/`update` (SDK-owned `indexProject`)
    write `manifest.json` and `context.db`; `@atlas/usage` writes `usage.db`; the
    Toolkit writes `tools/<name>.json`. See [CONTEXT_STORAGE.md](./CONTEXT_STORAGE.md).
@@ -671,12 +670,3 @@ Full test files exist in every package (`packages/*/tests/*.test.ts`) and in
 `apps/cli`. Coverage is genuine (unit-level, behavior-focused). See
 [TESTING.md](./TESTING.md) and `pnpm test` for the runnable suite. At the time
 of writing the suite is expected to pass.
-
-**Real-repository integration suite (added 2026-08-13):** `pnpm test:integration`
-runs 36 tests against the external fixture `test-repo/AIbuilder` — scan,
-search, context retrieval, incremental updates, SDK reads, agents/sessions,
-toolkit, errors/security, and token efficiency. It surfaced and fixed three P1
-search-relevance defects (`@atlas/search` per-term scoring + Windows path
-normalization, `@atlas/sdk` stopword pollution in context assembly) and
-corrected a stale incremental-cost claim in `docs/CONTEXT.md`. Full results:
-`docs/AI-BUILDER-INTEGRATION-TEST.md`.

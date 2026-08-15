@@ -43,10 +43,10 @@ agent and contributor.
 Release-readiness verdict: the published `codeatlas-cli` 0.2.1 is **usable by a
 real developer today** for the core value (scan → index → search → context →
 MCP → VS Code → launch agents). It is **not a clean public open-source release**
-yet: the integration suite hard-requires a gitignored fixture and would fail on
-a fresh clone, CI does not run it, no Windows CI, no tags/release automation,
-stale docs, tracked dead code (extension chat module), and two real code bugs
-(see §Critical Findings).
+yet: no Windows CI, no tags/release automation, stale docs, tracked dead code
+(extension chat module), and two real code bugs (see §Critical Findings). The
+external integration suite described below was **removed (2026-08-16)** because
+its fixture (`test-repo/AIbuilder`) is not publicly cloneable in CI.
 
 **Overall health score: 7.4 / 10.** Feature completion: Direction A ≈ 90%,
 Direction B ≈ 45% (implemented but unwired), Direction C ≈ 75%.
@@ -141,9 +141,9 @@ unchanged files (`:157-162`), carries over usage edges for untouched files
 the repo was ~4.6 s (cold). **However:**
 - The scan (whole tree) and `store.loadContext()` (whole 19 MB DB) run on every
   update, so `update` wall-time is dominated by non-parse work.
-- `docs/AI-BUILDER-INTEGRATION-TEST.md:2.4` still claims "update re-reads and
-  re-parses every TS file" — that predates the incremental work and is stale;
-  `docs/CONTEXT.md` §3 is current.
+- `docs/CONTEXT.md` §3 documents the incremental update behavior; the stale
+  claim in `docs/AI-BUILDER-INTEGRATION-TEST.md:2.4` is moot — that doc was
+  removed with the integration suite (2026-08-16).
 
 ### 4.3 Freshness — PASS
 
@@ -163,7 +163,7 @@ cannot silently be served as fresh** — this invariant holds.
   at cross-file definitions. Functional but under-utilized code.
 - Vector/embedding search is PLANNED (lexical-only today).
 
-### 4.5 Token efficiency (measured via `docs/benchmark.md` + integration suite)
+### 4.5 Token efficiency (measured via `docs/benchmark.md`)
 
 On the 30-file fixture, five context tasks achieved **52.9–82.2% estimated-token
 savings vs the full repo with recall = 1.00 on all five** (baseline 14,420 est.
@@ -206,7 +206,8 @@ synonym gap ("authentication" vs "auth") requires the planned embedding scorer.
 
 Notable gaps:
 - No behavioral tests for `atlas init` / `atlas update` / `atlas mcp` at the CLI
-  level (registration only); MCP covered at package level, update via integration.
+  level (registration only); MCP covered at package level, incremental update at
+  the SDK/MCP level.
 - `atlas agents status/connect` is implemented but `docs/CLI.md` still lists
   `atlas agents` as "[planned] — not registered".
 - `atlas context` ≈ **22 s** on the 395-file audit repo (§Performance).
@@ -331,10 +332,13 @@ session-level cache would help substantially).
 - **Unit: 899 tests / 88 files — all pass** (`pnpm test`, 40.6 s). Every package
   has tests; all 7 MCP tools have protocol-level and E2E tests; security-critical
   claims (arg-array spawn, approval gates, traversal rejection) are asserted.
-- **Integration: `tests/integration/*` (00–09, "36 tests") — PASS locally for
-  the author, but FAILS on a fresh clone** because it hard-wires
-  `test-repo/AIbuilder` (`tests/integration/helpers.ts:11`), which is
-  gitignored/absent, with no skip guards. It is also **not run in CI**.
+- **Integration: `tests/integration/*` (00–09, "36 tests") — REMOVED (2026-08-16).**
+  It passed locally for the author but hard-wired `test-repo/AIbuilder`
+  (`tests/integration/helpers.ts:11`), a gitignored external fixture that is not
+  anonymously cloneable, so CI failed on the clone step. The suite, its config,
+  its CI job, and its docs were deleted; the defects it caught (search scoring,
+  Windows path normalization, SDK stopwords, incremental cost claims) are fixed
+  and covered by unit tests.
 - **Coverage gaps:**
   - No `packages/search/tests/scoring.test.ts` (damping factors untested) or
     `search-index.test.ts`.
@@ -372,7 +376,6 @@ stale claims that directly contradict code** — the worst is the `@atlas/contex
 | `docs/CURRENT_STATE.md:24,638` / `README.md:78` | only storage needs Node ≥22.5.0 | `@atlas/usage` also does |
 | `AGENTS.md:12` / `CURRENT_STATE.md` | "twelve top-level subcommands" | 19 registered |
 | `docs/CLI.md` | `atlas agents` "planned — not registered" | `status/connect` implemented |
-| `docs/AI-BUILDER-INTEGRATION-TEST.md:2.4` | update re-parses every file | now parse-only-changed |
 
 Also: `docs/DESIGN.md`, `docs/FINAL-MVP-AUDIT.md`, `docs/PRINCIPLES.md`,
 `docs/decisions/README.md` are orphaned/stale and not in the
@@ -409,8 +412,7 @@ A new developer CAN: discover (README is solid), install
 - `pnpm release:cli` works (published 0.2.1 on npm). No automated release,
   no tags, no `changesets` (CHANGELOG is hand-maintained, Keep-a-Changelog).
 - Minor: `tsup.config.base.ts` alias map omits `@atlas/summary` (works in
-  practice); `apps/cli` has an unused `ts-morph` devDependency; `vitest.integration.config.ts`
-  is not covered by root `tsc`.
+  practice); `apps/cli` has an unused `ts-morph` devDependency.
 
 ---
 
@@ -424,7 +426,7 @@ A new developer CAN: discover (README is solid), install
 | `apps/cli/src/tui/*`, `commands/tui.ts`, `tests/tui.test.ts` | ARCHIVE (untracked, on disk) | documented v2 experiment; keep out of git |
 | `go-tui-app/plan.md` | ARCHIVE/GITIGNORE | planning notes only, gitignored |
 | `ui/` (untracked Next.js site) | DECIDE | gitignored but a `pnpm-workspace` member; remove from workspace or track |
-| `test-repo/AIbuilder` | GITIGNORE (fixture) | needed only by integration suite; document setup |
+| `test-repo/AIbuilder` | GITIGNORE (fixture) | **REMOVED (2026-08-16)** — not publicly cloneable in CI; deleted with the integration suite |
 | `docs/DESIGN.md`, `docs/FINAL-MVP-AUDIT.md`, `docs/PRINCIPLES.md`, `docs/decisions/README.md` | ARCHIVE or UPDATE | stale/orphaned; fix `Design.md` case-collision in `.gitignore` |
 | `build.log`, `install.log`, `apps/cli/.release/*.tgz` | GITIGNORE | already ignored |
 | `PROMPTS.md` | DECIDE | tracked but listed in `.gitignore` (dead entry) |
@@ -483,7 +485,7 @@ A new developer CAN: discover (README is solid), install
 ## 20. Low-Priority / INFO
 
 17. Unused `ts-morph` devDep in `apps/cli`; `tsup.config.base.ts` missing
-    `@atlas/summary` alias; `vitest.integration.config.ts` outside root `tsc`.
+    `@atlas/summary` alias.
 18. `status().hasApiKey` for Ollama always `true` (misleading name only);
     Gemini key in URL query string.
 19. `metadata.prompt` recorded as `null` for default prompts in summaries;
@@ -538,10 +540,13 @@ A new developer CAN: discover (README is solid), install
    removed. Extension `chat/*` removal and `ui/` fate remain maintainer
    decisions (deferred).
 4. Wire `pnpm test:integration` into CI with a checked-in or downloaded fixture;
-   add a Windows runner. — **DONE (2026-08-16):** CI gains an `integration` job
-   that clones the public `test-repo/AIbuilder` fixture (`github.com/Prof-bilal/AIBuilder`
-   verified reachable) and runs `pnpm test:integration` on Ubuntu. A Windows
-   runner is not yet added.
+   add a Windows runner. — **DONE then REVERTED (2026-08-16):** CI gained an
+   `integration` job cloning the `test-repo/AIbuilder` fixture, but the fixture
+   is **not anonymously cloneable** (`fatal: could not read Username` in CI), so
+   the job was removed. The entire external integration suite (`tests/integration/*`,
+   `vitest.integration.config.ts`, `docs/AI-BUILDER-INTEGRATION-TEST.md`,
+   `test:integration` script, gitignore/eslint entries) was **deleted**; the
+   defects it found are fixed and unit-tested. A Windows runner is not yet added.
 
 **Short term:**
 5. Add a session-level snapshot cache in the Context SDK to kill the repeated
@@ -586,7 +591,7 @@ A new developer CAN: discover (README is solid), install
    1.00 (estimated); dangling-edge bug can silently degrade graph on deletes.
 8. **Test-coverage gaps:** storage delete-edge, provider network errors,
    `@atlas/search` scoring, context builder edge cases, CLI init/update/mcp,
-   `summarizeModule`; integration suite absent from CI and fresh-clone-broken.
+   `summarizeModule`; the external integration suite was removed (2026-08-16).
 9. **Documentation gaps/staleness:** §13 table (the `@atlas/context` stub claim
    is the standout); version/engine/subcommand-count drift; `CLI.md` agents row.
 10. **Release blockers:** fresh-clone integration failure; no Windows CI;
