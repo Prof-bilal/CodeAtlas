@@ -138,8 +138,9 @@ examples/       # Placeholder (no runnable examples yet)
   context snapshot — symbols, files, modules, dependencies, and summaries, with
   typo-tolerant fuzzy matching. Ranking flows through a `RelevanceScorer` seam so
   an embedding scorer (vector search) can be added later without touching callers.
-- **`packages/context`** → `ContextBuilderPort`: **stub by design** — ranking/assembly
-  intentionally deferred; methods throw `ComingSoonError`.
+- **`packages/context`** → `ContextBuilderPort`: deterministic ranking/assembly
+  (ADR-001 "Deterministic Before AI") — ranks search hits and resolves them to
+  source-file `ContextItem[]`; no AI.
 - **`packages/agents`** → `AgentPort` (+ `SessionPort`): the **AI CLI
   connection layer** for Direction B — per-CLI adapters
   (Claude/Gemini/Codex/OpenCode), executable detection, supervised
@@ -296,9 +297,10 @@ const container = Container.create({ provider: new CustomProvider() });
 
 These divergences from a "perfect" target are intentional and documented:
 
-1. **`context` is a stub.** Context ranking/assembly is deferred behind
-   `ContextBuilderPort` on purpose (the deterministic core comes first). Do not
-   "fix" it by removing the port or by silently implementing ranking.
+1. **`context` is deterministic, not AI-ranked.** Context ranking/assembly
+   (`ContextBuilderService` behind `ContextBuilderPort`, ADR-001) ships as a
+   deterministic rank-and-assemble step. Do not "fix" it by gating it behind an
+   LLM or by removing the port — ranking stays AI-optional.
 2. **`module-resolution.ts` is duplicated** in `graph` and `parser`. This is a
    deliberate decoupling (graph must not depend on parser) at the cost of small
    duplication. Do not unify them unless a shared home is introduced in `core`.

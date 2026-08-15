@@ -109,11 +109,11 @@ Verified with real mutations of `src/pages/auth/Login.tsx`:
 | `update` (no changes) | 145 | 0 | 0 | 185 |
 
 Correctness: changed/added/deleted are detected correctly, deleted files leave
-**no orphaned symbols**, and a no-op update is fully idempotent. **Performance
-limitation (verified):** the SDK indexer still re-reads and re-parses every TS
-file on each `update` — the hash diff drives the counters but is not yet used
-to select parse input, so `update` ≈ `build` in wall time (~6–7 s here). This
-is now documented in `docs/CONTEXT.md` §3.
+**no orphaned symbols**, and a no-op update is fully idempotent. The SDK
+indexer is genuinely incremental: on `update` it re-reads and re-parses only
+`changed`/`added` TypeScript files, reuses the persisted snapshot for
+`unchanged` files, and drops `deleted` files — so a one-file edit re-parses one
+file (~1–2 s here).
 
 ### 2.5 Context SDK read surface — PASS
 

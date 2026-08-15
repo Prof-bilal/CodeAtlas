@@ -106,13 +106,16 @@ Responsible **only** for AI-assisted semantic summaries.
 - Must use the **provider abstraction** (`ProviderPort`) — never call a vendor
   directly. Must **NOT** do analysis the parser/graph can do.
 
-### Context Ranking & Assembly — « `@atlas/context` » — **[STUB]**
+### Context Ranking & Assembly — « `@atlas/context` » — **[IMPLEMENTED]**
 Responsible for ranking/assembling the most relevant context for an LLM prompt.
 
-- Current state: `ContextBuilderService` exists behind `ContextBuilderPort` but
-  both methods throw `ComingSoonError` — an **intentional stub**.
-- When implemented it will: score files/symbols vs. a query, select a limit,
-  assemble `ContextItem[]` — no UI, no persistence logic.
+- Current state: `ContextBuilderService` implements `ContextBuilderPort` — a
+  deterministic rank-and-assemble step (ADR-001): `build` runs a ranked search
+  and resolves hits to source-file `ContextItem[]`; `sourceFile` returns one
+  file as an item. No AI gating — context is always available.
+- It: scores files/symbols vs. a query via the injected `SearchPort`, selects a
+  limit, deduplicates per source file, and assembles `ContextItem[]` — no UI,
+  no persistence logic.
 
 ### Ranked Search — « `@atlas/search` » — **[IMPLEMENTED]**
 Responsible for **querying** the indexed context with ranked, typo-aware results.
@@ -277,7 +280,7 @@ Responsible for the **stable programmatic interface** through which consumers
   `@atlas/search`, `@atlas/storage`, or `@atlas/summary`, or sees SQL/rows.
 - Read vs write: consumers use the read APIs; the indexing pipeline owns
   `context.write`.
-- Must **NOT**: implement ranking/assembly (that is `@atlas/context`'s stub,
+- Must **NOT**: implement ranking/assembly (that is `@atlas/context`'s job,
   ADR-001), spawn providers, or hold feature logic that belongs in a feature
   package. See [CONTEXT_SDK.md](./CONTEXT_SDK.md) and
   [ADR-005](./decisions/ADR-005.md) for background.
@@ -348,7 +351,7 @@ Responsible for editor integration.
 | Which files are "in scope" | Scanner (files) + Hashing (changes) |
 | What a symbol *is*       | Parser (`Symbol`) + Core entity |
 | Where data lives         | `@atlas/storage` (+ scanner manifest file, + `@atlas/usage`'s own `usage.db`, + `.codeatlas/tools/` tool manifests by `@atlas/toolkit`) |
-| How context gets picked  | `@atlas/context` (stub) |
+| How context gets picked  | `@atlas/context` (deterministic ranker, ADR-001) |
 | What tools a user may install | Agent Toolkit Registry + Security/Trust assessor (implemented) |
 | How tools get installed/configured | Agent Toolkit Installer + Configurator (implemented, Tasks 22–23) |
 | External AI CLI detection | `@atlas/agents` (`AgentPort`, implemented) |

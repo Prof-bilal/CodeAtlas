@@ -23,9 +23,9 @@ The core analysis pipeline must **not** depend on an AI provider.
   search must remain useful with **no provider configured**.
 - AI only *adds* semantic summaries and conversational explanations — it never
   gates the pipeline.
-- The `context` stub (intentional, see [CURRENT_STATE.md](./CURRENT_STATE.md))
-  reflects this: ranking/assembly is deferred until the deterministic core is
-  solid, so that AI is an enhancement, not a dependency.
+- The `context` ranker (deterministic, see [CURRENT_STATE.md](./CURRENT_STATE.md))
+  reflects this: ranking/assembly is deterministic (ADR-001) rather than LLM
+  gated, so that AI is an enhancement, not a dependency.
 
 ## Provider Agnostic
 

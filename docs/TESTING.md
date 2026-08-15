@@ -41,8 +41,8 @@ The testing contract for the monorepo.
   shared state. Use fixtures + `mock` where needed.
 - **Test both success and failure** (`Result` `ok`/`fail` paths, error cases,
   edge inputs: empty dirs, missing files, unicode paths).
-- **Dead/stubbed features are tested as stubs.** The `context` service's tests
-  assert `ComingSoonError` — that is intentional and correct today.
+- **Implemented features are tested as implemented.** The `context` service's
+  tests assert ranked `ContextItem[]` output — not a placeholder error.
 
 ## 3. Running
 

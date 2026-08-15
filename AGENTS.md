@@ -38,7 +38,7 @@ Non-obvious facts (verified as of 2026-08-14):
   `ContextBuilderPort`, ADR-001): it ranks search hits and resolves them to
   source-file `ContextItem`s — no AI. Do not add AI gating or revert it to a
   stub.
-- The CLI has **twelve** top-level subcommands. `atlas search`, `atlas mcp`,
+- The CLI has **nineteen** top-level subcommands. `atlas search`, `atlas mcp`,
   `atlas sessions`, `atlas usage`, the full SDK-backed `atlas tools`,
   `atlas context`, `atlas explain`, and `atlas doctor`
   command surface are wired

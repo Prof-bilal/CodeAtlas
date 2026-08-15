@@ -21,11 +21,11 @@
 | **Description** | Open-source **AI Context Engine** (+ future Unified AI CLI Orchestrator) |
 | **License** | MIT |
 | **Monorepo** | pnpm workspaces (`pnpm-workspace.yaml`, pnpm `9.15.0`) |
-| **Runtime** | Node.js `>=20.19.0` (one exception, see §5) |
+| **Runtime** | Node.js `>=20.19.0` (exceptions: `@atlas/storage` + `@atlas/usage` need `>=22.5.0`, see §5) |
 | **Language** | TypeScript, strict mode, ESM (`"type": "module"`) |
 | **Package manager** | pnpm |
 | **Git** | **Is a git repository** (branch `main`, remote `github.com/Prof-bilal/CodeAtlas.git`). `.gitignore`, `.husky`, and `commitlint` are configured. |
-| **Published version** | `0.0.0` everywhere (package.json, `@atlas/shared` `VERSION`) |
+| **Published version** | CLI `codeatlas-cli` `0.2.1`; `@atlas/*` workspace packages `0.0.0` (`@atlas/shared` `VERSION`) |
 
 Verified by full-tree inspection (`packages/*`, `apps/*`, configs) and by reading
 every package's source and tests.
@@ -223,21 +223,25 @@ examples/        # README placeholder only (no runnable examples)
   `packages/usage/tests/{collector,pricing,usage.service,usage-store,integration}.test.ts`
   (no provider credentials / network). See ADR-009.
 
-### Context ranking & assembly (`packages/context`) — **[STUB]**
+### Context ranking & assembly (`packages/context`) — **[IMPLEMENTED]**
 
-- `ContextBuilderService` implements `ContextBuilderPort` but **both** methods
-  (`build`, `sourceFile`) throw `ComingSoonError("context.build")` /
-  `("context.sourceFile")`. The class comment states this is intentional:
-  *"context ranking is intentionally not implemented yet"*.
-- This is the **only** deliberately stubbed service.
-- The SDK `Container` wires this stub in by default, so `getContext()` calls
-  fail by design. Do **not** treat this as an accident.
+- `ContextBuilderService` implements `ContextBuilderPort` (ADR-001
+  "Deterministic Before AI"). `build(query, limit)` refreshes the injected
+  `SearchPort`, runs a ranked search over the indexed context, resolves each hit
+  to the source file that carries it, deduplicates file/symbol hits for the same
+  file (keeping the highest score), and returns the surviving files as ranked
+  `ContextItem[]` (source + content + score). `sourceFile(path)` returns one
+  file's content as a single item. No AI is involved.
+- The SDK `Container` wires this service in by default, so `getContext()` and
+  `getRelevantContext()` work out of the box. Tests:
+  `packages/context/tests/context-builder.test.ts`.
 
 ### SDK composition root (`packages/sdk`) — **[EXISTING]**
 
 - `Container.create()` wires every default implementation behind its port;
   `ContainerOptions` lets callers override each service (the plugin seam).
-- Constraint: default `Container` pulls in the `context` stub (see above).
+- Constraint: default `Container` wires the deterministic `context` service
+  behind `ContextBuilderPort` (see above).
 
 ### Context API / SDK (`packages/sdk/src/context/`) — **[EXISTING]**
 
@@ -248,7 +252,7 @@ examples/        # README placeholder only (no runnable examples)
   `WriteRepositories` (clear read/write split). No SQL/rows ever reach callers;
   errors are typed SDK errors (`FileNotFoundError`, `SymbolNotFoundError`, …).
 - `getRelevantContext` is **deterministic** (search + persisted deps + stored
-  summaries) — it does not implement the `@atlas/context` ranking stub
+  summaries) — a richer assembly independent of `@atlas/context`'s ranker
   (ADR-001). Future vector ranking plugs into `@atlas/search`'s `RelevanceScorer`.
 - The CLI's `atlas search` routes through this SDK instead of reaching for
   `Container.getSearch()`/`getContextDb()`. See
@@ -256,9 +260,11 @@ examples/        # README placeholder only (no runnable examples)
 
 ### CLI (`apps/cli`) — **[IMPLEMENTED]**
 
-- Commander.js program `atlas`, twelve top-level commands — `init`, `build`,
+- Commander.js program `atlas`, **19 top-level commands** — `init`, `build`,
   `update`, `scan`, `search`, `sessions`, `usage`, `explain`, `doctor`, `mcp`,
-  `context`, and `tools`.
+  `context`, `tools`, `providers`, `agents`, `ollama`, and the standalone agent
+  launchers `claude`/`gemini`/`codex`/`opencode` (sugar over `atlas context
+  launch --provider <agent>`; the future slash router remains planned).
   **`search` is wired
   to the Context SDK**: it opens `.codeatlas/context.db` (via `ATLAS_ROOT` or
   cwd) with `createContextSDK`, runs `context.search.search(...)`, and prints
@@ -618,7 +624,7 @@ examples/        # README placeholder only (no runnable examples)
 
 | Intended direction                    | Status in repo |
 | ------------------------------------- | -------------- |
-| **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking intentionally stubbed; `search` + `mcp` are CLI-wired |
+| **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking is deterministic (ADR-001, no AI); `search` + `mcp` are CLI-wired |
 | **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) are implemented; **standalone launch commands** (`atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` with `--ai` briefing) are implemented; the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) is **v2 / not shipped** (untracked); the plan-executing standalone router / `atlas agents` CLI remains planned |
 | **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~65% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, and the thin SDK-backed Toolkit CLI; `/tools` slash integration and `atlas setup` remain planned |
 
@@ -635,16 +641,18 @@ absent.
 
 ## 5. Cross-cutting facts & known inconsistencies
 
-1. **Engine version drift.** `packages/storage` requires Node `>=22.5.0`
-   (because of `node:sqlite`); every other package requires `>=20.19.0`. The
-   root engine is `>=20.19.0`. Running on Node <22.5 breaks `storage`.
+1. **Engine version drift.** `packages/storage` and `packages/usage` require
+   Node `>=22.5.0` (both use `node:sqlite`); every other package requires
+   `>=20.19.0`. The root engine is `>=20.19.0`. Running on Node <22.5 breaks
+   `storage` and `usage`.
 2. **Provider default model ids are placeholder values** (not verified against
    vendor catalogs).
 3. **Git history exists.** The repository is a git repo (branch `main`) with a
    full Conventional-Commits history; `.husky`/`commitlint`/`.gitignore` are
    configured and active.
 4. **CI/CD**: `.github/workflows/ci.yml` runs `pnpm check`-style gates (Node 22,
-   pnpm 9.15.0) on push/PR to `main`.
+   pnpm 9.15.0) on push/PR to `main`, plus a serial `integration` job that
+   clones the public `test-repo/AIbuilder` fixture and runs `pnpm test:integration`.
 5. **`.codeatlas/`**: `atlas init`/`build`/`update` (SDK-owned `indexProject`)
    write `manifest.json` and `context.db`; `@atlas/usage` writes `usage.db`; the
    Toolkit writes `tools/<name>.json`. See [CONTEXT_STORAGE.md](./CONTEXT_STORAGE.md).

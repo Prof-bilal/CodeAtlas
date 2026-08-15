@@ -51,8 +51,15 @@ Options take precedence over environment/config where they overlap.
 | `atlas explain <target>` | **[implemented]** | Explain a symbol, file, module, or concept from the index. Deterministic first: a file path resolves to its content + stored summary + dependencies; a module path to `modules.explain`; a symbol name to `getSymbol` + `findReferences` + dependencies; anything else to `getRelevantContext`. `--ai` generates a fresh AI summary (file/module only) via `summaries.generateFile`/`generateModule` — explicit opt-in, fails cleanly without a configured provider. Options `--repo <path>`, `--json`, `--ai`. Exit `1` when no index exists. |
 | `atlas doctor` | **[implemented]** | Diagnose installation & project health. Checks: Node runtime `>=22.5.0` (for `node:sqlite`), context index (`createContextSDK.status` + `freshness` + `.codeatlas/manifest.json`), AI agents (`createAgentService.detectAll`), agent MCP registration (`createAgentMcpService.status`), provider sanity + Ollama status (**never prints keys**). PASS/WARN/FAIL output; exit `1` on any FAIL. Options `--repo <path>`, `--json`. |
 | `atlas config` | **[planned]** — not registered | View/edit configuration (providers, keys source, agents, ignored dirs). Keys never printed. |
-| `atlas agents` | **[planned]** — not registered | List discovered agent CLIs for the orchestrator (Direction B). The connection layer (`@atlas/agents` behind `AgentPort`) is implemented; the CLI command is not. |
-| `atlas agents <name>` | **[planned]** — not registered | Launch/inspect a specific agent session. |
+| `atlas agents` / `atlas agents status` | **[implemented]** | Show each AI coding tool (claude, gemini, codex, opencode, cursor, cline) and whether the CodeAtlas MCP server is registered for it (`createAgentMcpService`). `--json` supported. |
+| `atlas agents connect` | **[implemented]** | Register the CodeAtlas MCP server for installed, supported agents. Options: `--target <target>`, `--config-home <path>`, `--dry-run`, `--json`. |
+| `atlas providers` | **[implemented]** | Show the status of all AI providers (configured / has key / model, default provider+model). `--json` supported. Keys never printed. |
+| `atlas ollama` | **[implemented]** parent command | Connect, inspect, and manage the optional Ollama provider. |
+| `atlas ollama status` | **[implemented]** | Show Ollama connection status (connected, mode, base URL, key, selected model). `--json` supported. |
+| `atlas ollama connect` | **[implemented]** | Test and save the Ollama connection (local server or Ollama Cloud key); prompts for the key when a TTY is present. Options: `--api-key`, `--base-url`, `--save-key`, `--json`. |
+| `atlas ollama disconnect` | **[implemented]** | Clear the saved Ollama connection (env keys kept). |
+| `atlas ollama models` | **[implemented]** | List models exposed by the Ollama server. `--json` supported. |
+| `atlas ollama use <model>` | **[implemented]** | Select the active Ollama model for context summarization. |
 | `atlas tools` | **[implemented]** parent command | Agent Toolkit commands (Direction C — see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)). |
 | `atlas tools search <query>` | **[implemented]** | Search the curated tool registry; `--json` supported. |
 | `atlas tools info <tool>` | **[implemented]** | Show registry, trust/security, and installed manifest state; `--json` supported. |

@@ -32,7 +32,7 @@ Consumer (CLI / MCP / editor / agent)
 - Consumers never see SQL, table names, or raw rows.
 - `atlas search` already routes through this SDK (see `docs/CLI.md`).
 
-> **Why not `@atlas/context`?** That package is the *ranking/assembly* stub
+> **Why not `@atlas/context`?** That package is the *ranking/assembly* service
 > behind `ContextBuilderPort` (see [ADR-001](./decisions/ADR-001.md)). The SDK
 > is a different concern — a read/write query façade — and lives in
 > `@atlas/sdk` (see [ADR-005](./decisions/ADR-005.md)).
@@ -266,8 +266,9 @@ const relevant = context.getRelevantContext("fix login bug");
 for (const symbol of relevant.symbols) console.log(symbol.name, symbol.filePath);
 ```
 
-This is **not** the `@atlas/context` ranking stub (ADR-001 stays untouched).
-Assembly is deterministic and vector-free today.
+This is **not** the `@atlas/context` ranker (ADR-001 stays untouched as the
+deterministic ranking seam). Assembly here is deterministic and vector-free
+today.
 
 ---
 

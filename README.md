@@ -200,7 +200,7 @@ packages/
   parser/       # TypeScript parsing → normalized symbols
   storage/      # SQLite persistence (node:sqlite)
   graph/        # Code-dependency graph
-  context/      # Context rank/assembly (intentional stub — ADR-001)
+  context/      # Context rank/assembly (deterministic — ADR-001)
   cache/        # Generic caching
   providers/    # AI provider adapters
   summary/      # AI-optional summaries

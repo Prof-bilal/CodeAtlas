@@ -64,6 +64,8 @@ README.md
 | `docs/CONTRIBUTING.md` | Practical contributor guide (setup, standards, PRs, security reporting). |
 | `docs/RELEASE_AUDIT.md` | Pre-release audit: secrets scan, repo hygiene, quality gates, changeset summary. |
 | `docs/DOCUMENTATION_AUDIT.md` | Self-audit of this docs system. |
+| `docs/AUDIT_FEATURE_MATRIX.md` | Independent feature-inventory audit (2026-08-15): every feature vs. source/tests/live CLI, PASS/PLANNED/DEAD verdicts. |
+| `docs/FULL_AUDIT.md` | Independent full audit (2026-08-15): architecture, quality, security, performance, testing, docs, release readiness, findings, roadmap. |
 | `docs/decisions/README.md` | ADR index (format + which decisions are recorded). |
 
 ## 3. Navigating for a task
