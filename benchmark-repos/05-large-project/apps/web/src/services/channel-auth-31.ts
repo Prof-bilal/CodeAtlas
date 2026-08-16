@@ -1,4 +1,5 @@
-import { Logger, Result, Ok, Err } from '@atlas/shared';
+import type { Result} from '@atlas/shared';
+import { Logger, Ok, Err } from '@atlas/shared';
 
 const logger = new Logger({ context: 'ChannelauthService' });
 

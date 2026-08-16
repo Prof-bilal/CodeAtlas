@@ -25,9 +25,7 @@
         "correct": true
       },
       "codeatlas": {
-        "toolsUsed": [
-          "search"
-        ],
+        "toolsUsed": ["search"],
         "filesReturned": 20,
         "contextTokens": 1689,
         "latencyMs": 1957,
@@ -47,9 +45,7 @@
         "correct": true
       },
       "codeatlas": {
-        "toolsUsed": [
-          "search"
-        ],
+        "toolsUsed": ["search"],
         "filesReturned": 20,
         "contextTokens": 1736,
         "latencyMs": 2001,
@@ -69,9 +65,7 @@
         "correct": true
       },
       "codeatlas": {
-        "toolsUsed": [
-          "search"
-        ],
+        "toolsUsed": ["search"],
         "filesReturned": 20,
         "contextTokens": 1689,
         "latencyMs": 2247,
@@ -91,9 +85,7 @@
         "correct": true
       },
       "codeatlas": {
-        "toolsUsed": [
-          "context-build"
-        ],
+        "toolsUsed": ["context-build"],
         "filesReturned": 20,
         "contextTokens": 6184,
         "latencyMs": 11419,
@@ -113,9 +105,7 @@
         "correct": true
       },
       "codeatlas": {
-        "toolsUsed": [
-          "context-build"
-        ],
+        "toolsUsed": ["context-build"],
         "filesReturned": 20,
         "contextTokens": 6469,
         "latencyMs": 10965,
@@ -135,9 +125,7 @@
         "correct": true
       },
       "codeatlas": {
-        "toolsUsed": [
-          "search"
-        ],
+        "toolsUsed": ["search"],
         "filesReturned": 20,
         "contextTokens": 1786,
         "latencyMs": 1794,

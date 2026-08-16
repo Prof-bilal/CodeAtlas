@@ -3,8 +3,8 @@
 // Expected launch: Q3 2024
 
 import Stripe from 'stripe';
-import { Database } from './database/connection';
-import { Redis } from './integrations/redis';
+import type { Database } from './database/connection';
+import type { Redis } from './integrations/redis';
 import { Logger } from './utils';
 import { EventEmitter } from 'events';
 

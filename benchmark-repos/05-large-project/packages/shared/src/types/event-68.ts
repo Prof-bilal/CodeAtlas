@@ -28,14 +28,14 @@ export interface UpdateEventRequest68 {
   tags?: string[];
 }
 
-export type EventFilter68 = {
+export interface EventFilter68 {
   search?: string;
   status?: string[];
   priority?: string[];
   tags?: string[];
   createdFrom?: Date;
   createdTo?: Date;
-};
+}
 
 export type EventSortField68 = 'name' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
 

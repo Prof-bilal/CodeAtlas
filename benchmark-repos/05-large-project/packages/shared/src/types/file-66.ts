@@ -28,14 +28,14 @@ export interface UpdateFileRequest66 {
   tags?: string[];
 }
 
-export type FileFilter66 = {
+export interface FileFilter66 {
   search?: string;
   status?: string[];
   priority?: string[];
   tags?: string[];
   createdFrom?: Date;
   createdTo?: Date;
-};
+}
 
 export type FileSortField66 = 'name' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
 

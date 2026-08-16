@@ -1,23 +1,14 @@
 {
   "owner": {
     "level": 6,
-    "permissions": [
-      "*"
-    ]
+    "permissions": ["*"]
   },
   "admin": {
     "level": 5,
-    "permissions": [
-      "admin:*",
-      "user:*",
-      "project:*"
-    ]
+    "permissions": ["admin:*", "user:*", "project:*"]
   },
   "member": {
     "level": 3,
-    "permissions": [
-      "project:read",
-      "task:*"
-    ]
+    "permissions": ["project:read", "task:*"]
   }
 }

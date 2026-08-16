@@ -28,14 +28,14 @@ export interface UpdateEmailRequest68 {
   tags?: string[];
 }
 
-export type EmailFilter68 = {
+export interface EmailFilter68 {
   search?: string;
   status?: string[];
   priority?: string[];
   tags?: string[];
   createdFrom?: Date;
   createdTo?: Date;
-};
+}
 
 export type EmailSortField68 = 'name' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
 

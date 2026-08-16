@@ -1,8 +1,8 @@
 // User manager - handles user lifecycle operations
 // Different from UserService - this handles admin operations
 
-import { Database } from './database/connection';
-import { Redis } from './integrations/redis';
+import type { Database } from './database/connection';
+import type { Redis } from './integrations/redis';
 import { Logger } from './utils';
 
 interface ManagedUser {

@@ -2,7 +2,5 @@
   "provider": "datadog",
   "apiKey": "",
   "appKey": "",
-  "tags": [
-    "env:production"
-  ]
+  "tags": ["env:production"]
 }

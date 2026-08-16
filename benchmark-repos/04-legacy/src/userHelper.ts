@@ -1,7 +1,7 @@
 // User helper functions
 // Mix of utilities that don't belong in UserService
 
-import { Database } from './database/connection';
+import type { Database } from './database/connection';
 import { Logger } from './utils';
 
 // Username validation

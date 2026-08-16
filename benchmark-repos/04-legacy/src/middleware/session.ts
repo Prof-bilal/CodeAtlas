@@ -1,7 +1,7 @@
 // Session middleware
 // OLD implementation - uses memory store
 
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 
 const sessions = new Map<string, any>();
 

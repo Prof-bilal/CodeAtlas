@@ -2,8 +2,8 @@
 // Wraps PaymentServiceV2 with a simpler interface
 
 import { PaymentServiceV2 } from '../../paymentServiceV2';
-import { Database } from '../../database/connection';
-import { Redis } from '../../integrations/redis';
+import type { Database } from '../../database/connection';
+import type { Redis } from '../../integrations/redis';
 
 let paymentService: PaymentServiceV2;
 

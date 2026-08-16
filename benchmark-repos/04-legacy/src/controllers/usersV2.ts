@@ -1,6 +1,6 @@
 // Users controller v2 - CURRENT
 
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 export async function getProfile(req: Request, res: Response) {
   // ... v2 implementation

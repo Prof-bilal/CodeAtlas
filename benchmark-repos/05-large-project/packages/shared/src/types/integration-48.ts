@@ -28,14 +28,14 @@ export interface UpdateIntegrationRequest48 {
   tags?: string[];
 }
 
-export type IntegrationFilter48 = {
+export interface IntegrationFilter48 {
   search?: string;
   status?: string[];
   priority?: string[];
   tags?: string[];
   createdFrom?: Date;
   createdTo?: Date;
-};
+}
 
 export type IntegrationSortField48 = 'name' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
 

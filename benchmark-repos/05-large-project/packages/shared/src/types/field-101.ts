@@ -28,14 +28,14 @@ export interface UpdateFieldRequest101 {
   tags?: string[];
 }
 
-export type FieldFilter101 = {
+export interface FieldFilter101 {
   search?: string;
   status?: string[];
   priority?: string[];
   tags?: string[];
   createdFrom?: Date;
   createdTo?: Date;
-};
+}
 
 export type FieldSortField101 = 'name' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
 

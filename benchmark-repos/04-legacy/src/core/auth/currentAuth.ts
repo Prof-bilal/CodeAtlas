@@ -3,7 +3,7 @@
 // TODO: figure out if we need both this and authV2.ts
 
 import { createHmac, randomBytes } from 'crypto';
-import { Database } from '../../database/connection';
+import type { Database } from '../../database/connection';
 import { Logger } from '../../utils';
 
 export interface AuthConfig {

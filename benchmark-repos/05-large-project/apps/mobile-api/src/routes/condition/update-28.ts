@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { AuthGuard } from '@atlas/auth';
+import type { Request, Response } from 'express';
+import type { AuthGuard } from '@atlas/auth';
 import { Logger } from '@atlas/shared';
 
 const logger = new Logger({ context: 'MobileConditionupdate28' });

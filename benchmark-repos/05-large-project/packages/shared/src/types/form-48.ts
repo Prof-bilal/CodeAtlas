@@ -28,14 +28,14 @@ export interface UpdateFormRequest48 {
   tags?: string[];
 }
 
-export type FormFilter48 = {
+export interface FormFilter48 {
   search?: string;
   status?: string[];
   priority?: string[];
   tags?: string[];
   createdFrom?: Date;
   createdTo?: Date;
-};
+}
 
 export type FormSortField48 = 'name' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
 

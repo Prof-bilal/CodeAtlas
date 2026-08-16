@@ -28,14 +28,14 @@ export interface UpdateFileRequest5 {
   tags?: string[];
 }
 
-export type FileFilter5 = {
+export interface FileFilter5 {
   search?: string;
   status?: string[];
   priority?: string[];
   tags?: string[];
   createdFrom?: Date;
   createdTo?: Date;
-};
+}
 
 export type FileSortField5 = 'name' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
 

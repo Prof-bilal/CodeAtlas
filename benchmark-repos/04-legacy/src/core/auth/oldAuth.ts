@@ -3,7 +3,7 @@
 // Kept for backward compatibility with legacy API routes
 
 import { createHash } from 'crypto';
-import { Database } from '../../database/connection';
+import type { Database } from '../../database/connection';
 
 interface LegacyUser {
   id: number;

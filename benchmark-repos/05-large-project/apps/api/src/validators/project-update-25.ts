@@ -1,4 +1,5 @@
-import { Result, Ok, Err } from '@atlas/shared';
+import type { Result} from '@atlas/shared';
+import { Ok, Err } from '@atlas/shared';
 
 interface ValidationSchema25 { [key: string]: { type: string; required?: boolean; minLength?: number; maxLength?: number; pattern?: RegExp; enum?: unknown[]; } }
 

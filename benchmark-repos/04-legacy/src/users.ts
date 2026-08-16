@@ -1,7 +1,7 @@
 // User management - basic version
 // DEPRECATED 2024-02 - use userService.ts instead
 
-import { Database } from './database/connection';
+import type { Database } from './database/connection';
 import { hashPassword } from './auth';
 import { Logger } from './utils';
 

@@ -28,14 +28,14 @@ export interface UpdateFeedbackRequest134 {
   tags?: string[];
 }
 
-export type FeedbackFilter134 = {
+export interface FeedbackFilter134 {
   search?: string;
   status?: string[];
   priority?: string[];
   tags?: string[];
   createdFrom?: Date;
   createdTo?: Date;
-};
+}
 
 export type FeedbackSortField134 = 'name' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
 

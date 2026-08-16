@@ -1,7 +1,7 @@
 // Users controller - OLD
 // DEPRECATED
 
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 export async function getUsers(req: Request, res: Response) {
   // ... old implementation

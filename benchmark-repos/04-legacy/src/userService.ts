@@ -2,8 +2,8 @@
 // CURRENT implementation for user management
 // Last updated: 2024-03-01
 
-import { Database } from './database/connection';
-import { Redis } from './integrations/redis';
+import type { Database } from './database/connection';
+import type { Redis } from './integrations/redis';
 import { Logger } from './utils';
 import { createHmac, randomBytes } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';

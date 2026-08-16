@@ -28,14 +28,14 @@ export interface UpdateIntegrationRequest22 {
   tags?: string[];
 }
 
-export type IntegrationFilter22 = {
+export interface IntegrationFilter22 {
   search?: string;
   status?: string[];
   priority?: string[];
   tags?: string[];
   createdFrom?: Date;
   createdTo?: Date;
-};
+}
 
 export type IntegrationSortField22 = 'name' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
 

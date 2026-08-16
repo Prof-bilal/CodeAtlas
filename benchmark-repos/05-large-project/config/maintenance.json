@@ -1,8 +1,6 @@
 {
   "enabled": false,
   "message": "System under maintenance",
-  "allowedIPs": [
-    "127.0.0.1"
-  ],
+  "allowedIPs": ["127.0.0.1"],
   "estimatedDuration": 3600
 }

@@ -28,14 +28,14 @@ export interface UpdateFeatureRequest104 {
   tags?: string[];
 }
 
-export type FeatureFilter104 = {
+export interface FeatureFilter104 {
   search?: string;
   status?: string[];
   priority?: string[];
   tags?: string[];
   createdFrom?: Date;
   createdTo?: Date;
-};
+}
 
 export type FeatureSortField104 = 'name' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
 

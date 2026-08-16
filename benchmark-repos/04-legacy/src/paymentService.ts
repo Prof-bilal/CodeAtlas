@@ -3,7 +3,7 @@
 // DO NOT USE for new integrations
 
 import { stripe } from './integrations/stripe';
-import { Database } from './database/connection';
+import type { Database } from './database/connection';
 import { Logger } from './utils';
 import { v4 as uuidv4 } from 'uuid';
 

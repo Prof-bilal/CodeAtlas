@@ -1,4 +1,5 @@
-import { Result, Ok, Err, Logger } from '@atlas/shared';
+import type { Result} from '@atlas/shared';
+import { Ok, Err, Logger } from '@atlas/shared';
 
 const logger = new Logger({ context: 'Storage.MetricWorker22' });
 
