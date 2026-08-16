@@ -22,6 +22,7 @@ import { type FilePath, type Result, type SymbolId, fail } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { SummaryService } from "@atlas/summary";
 import { type IndexResult, indexProject } from "../indexing/indexer";
+import { scanProjectOverview } from "../indexing/scan";
 import { createProviderService } from "../providers/index";
 import {
   ContextUnavailableError,
@@ -343,6 +344,9 @@ class ContextSDKFacade implements ContextSDK {
 
   private markDirty(): void {
     this.indexDirty = true;
+    // The snapshot is served from a cache; drop it so the next read sees the
+    // freshly written rows.
+    this.reads.invalidateSnapshot();
   }
 
   private searchHits(
@@ -734,6 +738,9 @@ class ContextSDKFacade implements ContextSDK {
       config: this.config,
       status: () => this.status(),
       hashes: () => this.hashes(),
+      // Scan the working tree so files added after the last index are detected
+      // as `added` rather than being invisible to the freshness probe.
+      scan: () => scanProjectOverview(this.config.repositoryPath as FilePath),
     };
     return detectFreshness(input);
   }

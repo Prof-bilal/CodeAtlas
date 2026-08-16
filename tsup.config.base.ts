@@ -26,6 +26,7 @@ const workspaceAliases: Record<string, string> = {
   "@atlas/cache": resolve(ROOT, "packages/cache/src/index.ts"),
   "@atlas/providers": resolve(ROOT, "packages/providers/src/index.ts"),
   "@atlas/search": resolve(ROOT, "packages/search/src/index.ts"),
+  "@atlas/summary": resolve(ROOT, "packages/summary/src/index.ts"),
   "@atlas/sdk": resolve(ROOT, "packages/sdk/src/index.ts"),
   "@atlas/agents": resolve(ROOT, "packages/agents/src/index.ts"),
   "@atlas/usage": resolve(ROOT, "packages/usage/src/index.ts"),

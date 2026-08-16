@@ -75,8 +75,8 @@ see the root [AGENTS.md](../AGENTS.md).
   - `resolveSymbol(id)` looks up symbols parsed earlier in the same session.
 - Architecture: TypeScript first (via `ts-morph`); more languages via
   `LanguageParser` + `ParserRegistry`.
-- Known gaps: renamed imports (`import { a as b }`) and `export default <expr>`
-  do not resolve cross-file.
+- Known gaps: namespaces and bare expressions are not extracted. Renamed
+  imports (`import { a as b }`) and `export default <expr>` resolve cross-file.
 
 ## Graph Agent
 

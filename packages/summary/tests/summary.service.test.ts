@@ -1,6 +1,6 @@
 import type { ProviderPort, ProviderRequest, SourceFile, TokenUsage } from "@atlas/core";
 import type { FilePath } from "@atlas/shared";
-import { ok } from "@atlas/shared";
+import { fail, ok } from "@atlas/shared";
 import { CacheService } from "@atlas/cache";
 import { HashService } from "@atlas/hashing";
 import { describe, expect, it } from "vitest";
@@ -12,9 +12,14 @@ class FakeProvider implements ProviderPort {
   public calls: ProviderRequest[] = [];
   public content = JSON.stringify({ overview: "A demo module", keyPoints: ["key point"] });
   public usage: TokenUsage | null = { inputTokens: 5, outputTokens: 2, totalTokens: 7 };
+  /** Call numbers (1-based) that should fail; each consumes a failure. */
+  public failOnCall = new Set<number>();
 
   public async complete(request: ProviderRequest) {
     this.calls.push(request);
+    if (this.failOnCall.has(this.calls.length)) {
+      return fail(new SummaryParseError("per-file failure"));
+    }
     return ok({
       provider: "claude",
       model: "fake-model",
@@ -140,5 +145,45 @@ describe("SummaryService", () => {
     await service.summarizeFile(file("/a.ts", "export const a = 1;"));
     await service.summarizeFile(file("/a.ts", "export const a = 1;"), { force: true });
     expect(provider.calls.length).toBe(2);
+  });
+
+  it("summarizeFolder skips a failed per-file summary instead of aborting the scope", async () => {
+    // Fail the first per-file call; the second and the scope call succeed.
+    const provider = new FakeProvider();
+    provider.failOnCall.add(1);
+    const service = buildService(provider);
+    const files = [
+      file("/src/a.ts", "export const a = 1;"),
+      file("/src/b.ts", "export const b = 2;"),
+    ];
+
+    const scope = await service.summarizeFolder("/src", files);
+    expect(scope.ok).toBe(true);
+    if (!scope.ok) {
+      return;
+    }
+    expect(scope.value.kind).toBe("folder");
+    expect(scope.value.content.overview).toBe("A demo module");
+    // Three calls total: the failed per-file, the successful per-file, and
+    // the scope summary (which still ran despite the earlier failure).
+    expect(provider.calls.length).toBe(3);
+  });
+
+  it("summarizeFolder returns a failure when every per-file summary fails", async () => {
+    const provider = new FakeProvider();
+    provider.failOnCall.add(1);
+    provider.failOnCall.add(2);
+    const service = buildService(provider);
+    const files = [
+      file("/src/a.ts", "export const a = 1;"),
+      file("/src/b.ts", "export const b = 2;"),
+    ];
+
+    const scope = await service.summarizeFolder("/src", files);
+    expect(scope.ok).toBe(false);
+    if (scope.ok) {
+      return;
+    }
+    expect(scope.error).toBeInstanceOf(SummaryParseError);
   });
 });

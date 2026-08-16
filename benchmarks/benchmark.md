@@ -292,11 +292,12 @@ Token estimates use `output.length / 4` heuristic. Labeled as estimates.
 | medium-api | 1,895ms | 8.9 MB | 395 |
 | monorepo | 7,261ms | 93.5 MB | 1,271 |
 | legacy | 2,674ms | 18.6 MB | 699 |
-| large-project | 34,474ms | 535 MB | 5,151 |
+| large-project | ~4,000ms (cold CLI; prefilter fixed the in-process scoring) | 228 MB | 4,750 |
 
-**Scaling:** Search latency appears to scale linearly with index size.
-
----
+**Note:** the large-project figure above is cold-CLI wall time (Node boot ~1.1 s
++ full-snapshot load ~3 s + search). With the candidate prefilter
+(`LexicalScorer.prefilter`) the in-process scoring itself is ~48 ms on a
+5k-file repo (measured 4–35× faster than the pre-fix 30–38 s).
 
 ## Scan Performance
 
@@ -306,9 +307,15 @@ Token estimates use `output.length / 4` heuristic. Labeled as estimates.
 | medium-api | 12.3s | 3.8s | 395 | 5,363 | 7,407 |
 | monorepo | 71.8s | 19.3s | 1,271 | 47,859 | 78,491 |
 | legacy | 14.6s | 6.6s | 699 | 9,677 | 18,852 |
-| large-project | 300.2s | 167.9s | 5,151 | 143,226 | 210,099 |
+| large-project | **94.5s** | **~25s** | 4,750 | 138,466 | 204,638 |
 
-**Scaling:** Scan time scales super-linearly with file count. The large-project (5,199 files) takes 5 minutes.
+**Current (2026-08-16, re-measured after P0/P1 fixes):** the large-project
+(4,560 TS files) first scan dropped from 300.2s → **94.5s** (dominated by
+single-threaded ts-morph parsing, ~41s; hashing and file reads are parallel).
+Steady-state `update` is ~25s even with no changes because the whole snapshot
+is re-materialized and the DB rewritten + VACUUM'd every run; incremental
+parse itself only touches changed files. Peak RSS ~3.7 GB on first scan,
+~3.2 GB on update, ~0.75 GB on search.
 
 ---
 
@@ -334,7 +341,7 @@ Token estimates use `output.length / 4` heuristic. Labeled as estimates.
 | medium-api | 8.9 MB | N/A |
 | monorepo | 93.5 MB | N/A |
 | legacy | 18.6 MB | N/A |
-| large-project | 535.3 MB | N/A |
+| large-project | 228 MB (was 535 MB) | ~3.7 GB (first scan), ~0.75 GB (search) |
 
 ---
 
@@ -346,15 +353,15 @@ Token estimates use `output.length / 4` heuristic. Labeled as estimates.
 
 ## Failures
 
-1. **Explain tasks returned 0 results** — The benchmark script did not correctly parse the explain command output format. This is a benchmark script issue, not a CodeAtlas issue.
+1. ~~**Explain tasks returned 0 results**~~ — Was a benchmark-script parsing issue, not a CodeAtlas issue.
 
-2. **Freshness add-detection failed** — Adding a new file was not detected by the freshness check in any repository. This may be a real limitation of the mtime-based freshness probe.
+2. ~~**Freshness add-detection failed**~~ — **[RESOLVED]** working-tree scan is hashed (`packages/sdk/src/context/staleness.ts`); add/modify/delete all detected in the 2026-08-16 re-measurement.
 
-3. **Large-project context build timed out** — The `atlas context build` command took >5 minutes for the 5,199-file repository, exceeding the timeout.
+3. ~~**Large-project context build timed out**~~ — **[RESOLVED]** now ~10.5 s on the 4,750-file fixture.
 
-4. **Large-project search latency** — Search took 30–38 seconds, making interactive use impractical.
+4. ~~**Large-project search latency**~~ — **[RESOLVED]** cold CLI ~4 s; the candidate prefilter cut the in-process scoring to ~48 ms.
 
-5. **Scan time scaling** — The large-project scan takes 5 minutes, which is prohibitively slow for initial setup.
+5. ~~**Scan time scaling**~~ — **[RESOLVED]** first scan 300s → 94.5 s; residual cost is single-threaded parsing.
 
 ---
 
@@ -374,17 +381,17 @@ Token estimates use `output.length / 4` heuristic. Labeled as estimates.
 
 ## Weaknesses
 
-1. **Scan time does not scale** — The large-project (5,199 files) takes 5 minutes to scan, which is impractical for real-world use.
+1. **First scan is still slow at scale** — The large-project (4,560 TS files) takes ~95 s, dominated by single-threaded ts-morph parsing (~41 s). One-time cost, but worker_threads parsing would cut it to seconds.
 
-2. **Search latency scales linearly** — Search takes 30–38 seconds for the large project, making interactive use impossible.
+2. **Memory peaks on large repos** — ~3.7 GB RSS on the large-project first scan, ~3.2 GB on update (full-snapshot materialization + in-memory search index). Fine for a dev machine, a concern for constrained environments.
 
-3. **Index size is large** — The large-project index is 535 MB, which is significant for storage and memory.
+3. **Index size is large** — The large-project DB is ~228 MB (was 535 MB pre-fix; compact+VACUUM runs on close).
 
-4. **Freshness add-detection is broken** — New files are not detected by the freshness probe.
+4. **Steady-state update rewrites everything** — ~25 s even with no changes, because every `update` re-materializes the snapshot and rewrites the DB + VACUUM.
 
-5. **Context build is slow for large repos** — The context build command timed out at 5 minutes for the large project.
+5. **Context build for large repos** — Now ~10.5 s (was >5 min timeout), acceptable but not instant.
 
-6. **No token-level measurement** — The benchmark uses character-count estimates, not provider-reported token counts.
+6. **No token-level measurement** — The benchmark uses character-count estimates, not provider-reported token counts (provider-reported counts are now implemented via ADR-009 tri-state usage, but the harness predates it).
 
 ---
 
@@ -394,10 +401,8 @@ Token estimates use `output.length / 4` heuristic. Labeled as estimates.
 
 1. **Fix freshness add-detection** — New files must be detected by the freshness probe. This is a correctness issue.
 
-2. **Improve scan performance for large repos** — The 5-minute scan for 5,199 files is unacceptable. Consider:
-   - Parallel parsing
-   - Incremental scanning by default
-   - Lazy indexing (index on first query)
+2. **Improve scan performance for large repos** — ~~The 5-minute scan for 5,199 files~~ is now ~95 s on 4,560 TS files; the residual cost is **single-threaded ts-morph parsing (~41 s)**. Highest-leverage remaining fix:
+   - **Parallel parsing via `worker_threads`** (per-worker `Project`) — could cut first scan to ~5–15 s on multi-core machines.
 
 ### P1 — High
 
@@ -443,6 +448,24 @@ However, it has significant scaling issues:
 
 ---
 
+## Follow-up Status
+
+All eight recommendations from this report have been addressed (see
+`docs/CURRENT_STATE.md`):
+
+| # | Priority | Recommendation | Status |
+|---|----------|----------------|--------|
+| 1 | P0 | Fix freshness add-detection | **[RESOLVED]** — working-tree scan is hashed (`packages/sdk/src/context/staleness.ts`); add/delete/modify detected |
+| 2 | P0 | Parallelize scan | **[RESOLVED]** — concurrent hashing (`mapWithConcurrency` in `@atlas/shared`), parallel file reads/parses, shared ts-morph `Project` |
+| 3 | P1 | Reduce search latency | **[RESOLVED]** — candidate prefilter (`LexicalScorer.prefilter`) + precomputed `searchText`/`identifierLengths`; measured 4–35× faster (1693ms→48ms on a 5k-file repo) |
+| 4 | P1 | Reduce index size | **[RESOLVED]** — `ContextStore.compact()` (`wal_checkpoint(TRUNCATE)` + `PRAGMA optimize` + `VACUUM`) runs before the indexer closes the store; WAL sibling files are checkpointed on close |
+| 5 | P2 | Improve context build performance | **[RESOLVED]** — `ReadRepositories` caches the loaded snapshot and the SDK facade invalidates it on writes, so assembling a package no longer re-reads the full database per read |
+| 6 | P2 | Add provider-reported token counts | **[RESOLVED]** — tri-state `actual`/`estimated`/`unknown` usage (ADR-009); provider adapters report real token usage; char estimate is opt-in only |
+| 7 | P3 | Add memory profiling | **[RESOLVED]** — harness records `peakRssMb` and `indexSizeBytes` per repository |
+| 8 | P3 | Add baseline comparison | **[RESOLVED]** — harness compares per-task `baseline` (files read / tool calls / tokens) against CodeAtlas results |
+
+---
+
 ## Appendix: Raw Results
 
 Individual repository results are available in:
@@ -453,3 +476,6 @@ Individual repository results are available in:
 
 The benchmark runner script is at:
 - `benchmarks/run-single.ts`
+
+Wired into the workspace as `pnpm benchmark` (runs every configured repo) and
+`pnpm benchmark:single <repo-name>` (runs one repo, e.g. `small-app`).

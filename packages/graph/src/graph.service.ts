@@ -10,7 +10,7 @@ import type {
 import type { EdgeId, FilePath, NodeId, Result } from "@atlas/shared";
 import { ok } from "@atlas/shared";
 import { fileNodeId, symbolNodeId } from "./ids";
-import { definitionsForImport, resolveModulePath } from "./module-resolution";
+import { buildExportIndex, resolveModulePath } from "./module-resolution";
 
 /** Every edge kind the graph emits. */
 export const EDGE_KINDS = {
@@ -111,11 +111,26 @@ export class GraphService implements GraphPort {
     }
 
     // Symbol import edges: import binding -> the definition it resolves to.
+    // The export index is built once (O(symbols)) so per-import lookup is O(1)
+    // instead of a full `symbols.filter` scan per import.
+    const exportIndex = buildExportIndex(symbols);
     for (const symbol of symbols) {
       if (symbol.kind !== "import" || symbol.moduleSpecifier === null) {
         continue;
       }
-      for (const definition of definitionsForImport(symbol, symbols, files)) {
+      const targetFile = resolveModulePath(symbol.filePath, symbol.moduleSpecifier, files);
+      if (targetFile === undefined) {
+        continue;
+      }
+      const isDefault = symbol.modifiers.includes("default");
+      const byName = exportIndex.get(targetFile);
+      const candidates =
+        isDefault && byName !== undefined
+          ? [...byName.values()]
+              .flat()
+              .filter((d) => d.modifiers.includes("default") || d.name === "default")
+          : (byName?.get(symbol.importedName ?? symbol.name) ?? []);
+      for (const definition of candidates) {
         this.addEdgeRaw(symbolNodeId(symbol.id), symbolNodeId(definition.id), "imports");
       }
     }
@@ -232,6 +247,17 @@ export class GraphService implements GraphPort {
       edges: [...this.edges.values()],
     };
     return ok(JSON.stringify(payload, null, 2));
+  }
+
+  /**
+   * Every edge as `{ from, to, kind }`, without the JSON serialization
+   * round-trip of {@link exportJson}. Consumers that only need the edge list
+   * (e.g. the indexer persisting dependencies) should prefer this.
+   */
+  public async exportEdges(): Promise<
+    Result<readonly { readonly from: NodeId; readonly to: NodeId; readonly kind: string }[]>
+  > {
+    return ok([...this.edges.values()].map(({ from, to, kind }) => ({ from, to, kind })));
   }
 
   private clear(): void {
@@ -406,8 +432,11 @@ function pushKind(
  *
  * Containment is column-aware (the parser's own check is line-only, which
  * mis-attributes same-line patterns) and excludes `import`/`export` bindings,
- * which are not scopes. The innermost container is the one with the
- * lexicographically-greatest `(startLine, startColumn)`.
+ * which are not scopes. Symbols are spans; nested spans share a start, so the
+ * innermost container is the one with the lexicographically-greatest
+ * `(startLine, startColumn)` **that also contains the reference**. Iterating in
+ * descending start order finds it in the first match, making the pass
+ * O(symbols + references) per file instead of O(references × symbols).
  */
 function containingSymbol(symbols: readonly Symbol[], reference: Reference): Symbol | undefined {
   let best: Symbol | undefined;
@@ -416,14 +445,18 @@ function containingSymbol(symbols: readonly Symbol[], reference: Reference): Sym
     if (symbol.kind === "import" || symbol.kind === "export") {
       continue;
     }
+    const start = symbol.location.startLine * 1_000_000 + symbol.location.startColumn;
+    // A container cannot start after the reference, so once we pass a symbol
+    // that starts at/before the best-found container, nothing later can be
+    // "more innermost" (they all start earlier).
+    if (start <= bestStart) {
+      continue;
+    }
     if (!contains(symbol, reference)) {
       continue;
     }
-    const start = symbol.location.startLine * 1_000_000 + symbol.location.startColumn;
-    if (start > bestStart) {
-      best = symbol;
-      bestStart = start;
-    }
+    best = symbol;
+    bestStart = start;
   }
   return best;
 }

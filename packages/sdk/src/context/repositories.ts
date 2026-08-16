@@ -27,15 +27,37 @@ import { buildNodeLabels, fileNodeId, symbolNodeId } from "./nodes";
  * typed SDK errors, so consumers never depend on database internals.
  */
 export class ReadRepositories {
-  public constructor(private readonly port: ContextDatabasePort) {}
+  private readonly port: ContextDatabasePort;
+  private cachedSnapshot: ContextSnapshot | null = null;
 
-  /** Load the current snapshot, wrapping driver failures as `DatabaseError`s. */
+  public constructor(port: ContextDatabasePort) {
+    this.port = port;
+  }
+
+  /**
+   * Load the current snapshot, wrapping driver failures as `DatabaseError`s.
+   *
+   * Reads are served from an in-memory cache so repeated queries during one
+   * logical operation (e.g. assembling a context package, which walks symbols,
+   * files, and the dependency graph) do not re-read the whole database every
+   * time. Callers must invalidate the cache after any write through
+   * {@link ContextSDK.write} (the SDK facade does this automatically).
+   */
   public loadSnapshot(): ContextSnapshot {
+    if (this.cachedSnapshot !== null) {
+      return this.cachedSnapshot;
+    }
     try {
-      return this.port.loadContext();
+      this.cachedSnapshot = this.port.loadContext();
+      return this.cachedSnapshot;
     } catch (error) {
       throw new DatabaseError("Failed to read the context database.", error);
     }
+  }
+
+  /** Drop the cached snapshot so the next read hits the database. */
+  public invalidateSnapshot(): void {
+    this.cachedSnapshot = null;
   }
 
   // ── files ─────────────────────────────────────────────────────────────────

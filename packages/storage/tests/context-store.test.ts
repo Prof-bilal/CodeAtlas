@@ -1,3 +1,6 @@
+import { existsSync, mkdtempSync, readdirSync, rmSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { Symbol as AtlasSymbol, SourceFile, Summary } from "@atlas/core";
 import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
 import { describe, expect, it } from "vitest";
@@ -178,6 +181,30 @@ describe("ContextStore", () => {
     store.close();
   });
 
+  it("searchContext returns no hits for an empty query instead of dumping every row", () => {
+    const store = new ContextStore();
+    store.saveContext({
+      files: [file("/a.ts", "export const a = 1;")],
+      symbols: [symbol("s1", "run", "/a.ts")],
+      summaries: [summary("/a.ts")],
+      modules: [{ path: "/src", name: "src", moduleType: "folder" }],
+    });
+    expect(store.searchContext("")).toHaveLength(0);
+    store.close();
+  });
+
+  it("searchContext scores case-insensitively, matching the LIKE filter", () => {
+    const store = new ContextStore();
+    store.saveContext({ symbols: [symbol("s1", "PaymentService", "/a.ts")] });
+    // SQLite LIKE is case-insensitive, so the row matches; the scorer must not
+    // produce a score-0 hit for the same query.
+    const result = store.searchContext("payment");
+    expect(result.length).toBeGreaterThan(0);
+    expect(result[0]?.score).toBeGreaterThan(0);
+    expect(result[0]?.title).toBe("PaymentService");
+    store.close();
+  });
+
   it("transaction rolls back all writes on error", () => {
     const store = new ContextStore();
     expect(() =>
@@ -188,5 +215,40 @@ describe("ContextStore", () => {
     ).toThrow("boom");
     expect(store.loadContext().files).toHaveLength(0);
     store.close();
+  });
+
+  it("close() checkpoints the WAL so no -wal sibling remains", () => {
+    const dir = mkdtempSync(join(tmpdir(), "atlas-store-"));
+    const dbPath = join(dir, "context.db");
+    const store = new ContextStore({ filePath: dbPath });
+    store.saveContext({ files: [file("/a.ts", "export const value = 1;")] });
+    // A live WAL-mode connection holds the write-ahead log as a sibling file.
+    expect(existsSync(`${dbPath}-wal`)).toBe(true);
+    store.close();
+    expect(existsSync(`${dbPath}-wal`)).toBe(false);
+    expect(existsSync(dbPath)).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("compact() reclaims pages after DELETE + re-insert cycles", () => {
+    const dir = mkdtempSync(join(tmpdir(), "atlas-store-"));
+    const dbPath = join(dir, "context.db");
+    const totalBytes = (): number =>
+      readdirSync(dir).reduce((sum, name) => sum + statSync(join(dir, name)).size, 0);
+    const store = new ContextStore({ filePath: dbPath });
+    const data = { files: Array.from({ length: 200 }, (_, i) => file(`/src/file${i}.ts`)) };
+    store.saveContext(data);
+    store.compact();
+    const before = totalBytes();
+    // Repeated full replaces clear every row and re-insert it; without
+    // compact() the file grows ~213KB per cycle as freed pages are never
+    // reclaimed. compact() must keep the footprint flat (or shrinking).
+    for (let i = 0; i < 5; i++) {
+      store.saveContext(data);
+      store.compact();
+      expect(totalBytes()).toBeLessThanOrEqual(before);
+    }
+    store.close();
+    rmSync(dir, { recursive: true, force: true });
   });
 });

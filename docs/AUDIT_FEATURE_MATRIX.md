@@ -32,15 +32,15 @@
 | Scanner (`@atlas/scanner`) | Yes | Yes | Yes | Yes (`atlas scan`) | **PASS** |
 | Manifest generation (`.codeatlas/manifest.json`) | Yes | Yes | Yes | Yes | **PASS** |
 | File hashing & snapshots (`@atlas/hashing`) | Yes | Yes | Yes | Yes | **PASS** |
-| TypeScript parser (`@atlas/parser`) | Yes | Yes (TS only) | Yes | Yes | **PASS (gap)** — renamed imports & `export default <expr>` don't resolve cross-file; other languages PLANNED |
+| TypeScript parser (`@atlas/parser`) | Yes | Yes (TS only) | Yes | Yes | **PASS** — renamed & default imports resolve cross-file; other languages PLANNED |
 | Symbol extraction & in-memory indexer | Yes | Yes | Yes | Yes | **PASS (gap)** — `SymbolIndexer` cross-file resolution is NOT used by the production pipeline (SDK feeds same-file refs into graph) |
-| Dependency graph (`@atlas/graph`) | Yes | Yes | Yes | Yes | **PASS (gap)** — shares parser's renamed-import/default-export gaps |
-| SQLite context DB (`@atlas/storage`) | Yes | Yes | Yes | Yes | **PASS (bug)** — file deletion leaves dangling symbol edges (see FULL_AUDIT §Critical) |
+| Dependency graph (`@atlas/graph`) | Yes | Yes | Yes | Yes | **PASS** — renamed & default import resolution matches the parser |
+| SQLite context DB (`@atlas/storage`) | Yes | Yes | Yes | Yes | **PASS** — file deletion cleans up symbol edges (fixed); `searchContext` guards empty queries and scores case-insensitively |
 | Migrations/versioning | Yes | Yes | Partial | Yes | **PASS** — single v1 migration, idempotent, transaction-wrapped |
-| Search (`@atlas/search`) | Yes | Yes | Yes | Yes | **PASS (gap)** — `searchContext` (DB fallback) returns all rows on empty query + case-sensitivity mismatch; no embeddings (RelevanceScorer seam only) |
-| AI summaries (`@atlas/summary`) | Yes | Yes | Yes | Partial | **PASS (gap)** — `summarizeScope` fails fast on first per-file failure; `summarizeModule` not directly tested |
+| Search (`@atlas/search`) | Yes | Yes | Yes | Yes | **PASS** — `searchContext` (DB fallback) guards empty queries and scores case-insensitively; no embeddings (RelevanceScorer seam only) |
+| AI summaries (`@atlas/summary`) | Yes | Yes | Yes | Partial | **PASS** — scope summaries skip failed per-file summaries instead of aborting; `summarizeModule` not directly tested |
 | Cache (`@atlas/cache`) | Yes | Yes | Yes | Yes | **PASS** |
-| Providers (`@atlas/providers`) | Yes | Yes | Yes | Partial | **PARTIAL (bug)** — adapters don't catch transport errors (network failure = unhandled rejection, not a `Result`); placeholder default model ids; no streaming |
+| Providers (`@atlas/providers`) | Yes | Yes | Yes | Partial | **PASS** — transport failures return `Result` (`ProviderNetworkError`); default model ids maintained current; no streaming |
 | **`@atlas/context` (rank & assemble)** | **Yes — as "[STUB]" in docs** | **Yes (fully implemented)** | **Yes** | **Yes** | **PASS — DOCS WRONG.** `ContextBuilderService` is a real deterministic rank-and-assemble (`build`/`sourceFile`). 7+ docs still claim it throws `ComingSoonError` (see FULL_AUDIT §Documentation). |
 
 ## 2. SDK & Context API
@@ -103,7 +103,7 @@
 | 10 `codeatlas.*` palette commands | Yes | Yes | Yes | No | **PASS** |
 | Status-bar indicator | Yes | Yes | Yes | No | **PASS** |
 | Reads only via Context SDK | Yes | Yes | Yes | — | **PASS** |
-| Agent chat panel (`chat/*`, `codeatlas-chat`) | Not claimed | Yes (code) | Yes | No | **DEAD CODE** — tracked, tested, but not imported by activation and not contributed in `package.json`; never reachable in a real host |
+| Agent chat panel (`chat/*`, `codeatlas-chat`) | Not claimed | ~~Yes (code)~~ | — | No | **REMOVED (2026-08-16)** — tracked dead code, never imported by activation or contributed in `package.json`; deleted with its tests |
 
 ## 6. Agents / sessions / orchestrator
 
@@ -136,7 +136,7 @@
 | Budgets (soft) vs limits (hard, fail-safe) | Yes | Yes | Yes | Partial | **PASS** |
 | `UsageStore` (`.codeatlas/usage.db`, separate DB) | Yes | Yes | Yes | Yes | **PASS** |
 | `withUsageTracking` / `trackAgentRun` | Yes | Yes | Yes | Partial | **PASS** |
-| Built-in pricing (estimated only) | Yes | Yes | Yes | Yes | **PASS (gap)** — placeholder model names; no Ollama pricing entry |
+| Built-in pricing (estimated only) | Yes | Yes | Yes | Yes | **PASS (gap)** — entries follow current default model ids; no Ollama pricing entry |
 
 ## 9. Tests & integration
 

@@ -15,7 +15,7 @@ export class GeminiAdapter implements ProviderAdapter {
   private readonly transport: HttpTransport;
 
   public constructor(config: ProviderConfig, transport: HttpTransport) {
-    this.defaultModel = config.model ?? "gemini-1.5-pro";
+    this.defaultModel = config.model ?? "gemini-2.5-pro";
     this.baseUrl = config.baseUrl ?? "https://generativelanguage.googleapis.com/v1beta";
     this.apiKey = config.apiKey;
     this.transport = transport;

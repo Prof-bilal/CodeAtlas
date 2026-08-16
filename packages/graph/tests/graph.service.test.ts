@@ -224,7 +224,7 @@ compute();`,
     expect(dependents.value.map((node) => node.id)).toContain(symbolNodeId(importCompute.id));
   });
 
-  it("does not resolve renamed imports to their definition (documented indexer gap)", async () => {
+  it("resolves renamed imports to their definition", async () => {
     const fixture = await indexFixture([
       ["/src/a.ts", `export const a = 1;`],
       [
@@ -244,7 +244,7 @@ export const c = b + 1;`,
     }
     const payload = JSON.parse(result.value) as { edges: GraphEdge[] };
     const keys = new Set(payload.edges.map((edge) => `${edge.from}>${edge.to}#${edge.kind}`));
-    expect(keys.has(`${symbolNodeId(importB.id)}>${symbolNodeId(a.id)}#imports`)).toBe(false);
+    expect(keys.has(`${symbolNodeId(importB.id)}>${symbolNodeId(a.id)}#imports`)).toBe(true);
   });
 
   it("addNode and addEdge upsert idempotently", async () => {

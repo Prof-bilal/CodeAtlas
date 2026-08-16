@@ -73,6 +73,13 @@ export interface Symbol {
   readonly modifiers: readonly string[];
   /** Module specifier for `import` / `export` symbols, else `null`. */
   readonly moduleSpecifier: string | null;
+  /**
+   * For `import` symbols, the name the binding refers to **in the imported
+   * module** — `"a"` for `import { a as b }` (where `name` is the local alias
+   * `b`) and `"default"` for `import x from "..."`. `undefined` for named
+   * imports without an alias and for every other kind.
+   */
+  readonly importedName?: string;
   /** Type text for variables, type aliases, and properties, else `null`. */
   readonly typeText: string | null;
   /**

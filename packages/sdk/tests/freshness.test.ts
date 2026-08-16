@@ -80,6 +80,26 @@ describe("context freshness (Test A: stale detection + incremental refresh)", ()
   });
 });
 
+describe("context freshness (Test A2: added-file detection)", () => {
+  it("reports a newly created file as added without an explicit update", async () => {
+    const root = await tempRepo();
+    await writeFile(join(root, "math.ts"), "export function double(n: number) { return n * 2; }\n");
+
+    const build = await indexProject({ repositoryPath: root, mode: "build" });
+    expect(build.ok).toBe(true);
+
+    await withSdkFor(root, async (sdk) => {
+      expect((await sdk.freshness()).state).toBe("fresh");
+
+      // A file added after the index was built must be detected as `added`.
+      await writeFile(join(root, "new-module.ts"), "export const added = 1;\n");
+      const stale = await sdk.freshness();
+      expect(stale.state).toBe("stale");
+      expect(stale.added).toContain(join(root, "new-module.ts"));
+    });
+  });
+});
+
 describe("context freshness (Test B: large repo → compact, budgeted context)", () => {
   it("assembles a budgeted package far smaller than the raw tree, not a full dump", async () => {
     const root = await tempRepo();

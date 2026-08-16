@@ -14,7 +14,14 @@ import { GraphService } from "@atlas/graph";
 import { HashService } from "@atlas/hashing";
 import { ParserService } from "@atlas/parser";
 import { ScannerService, generateManifest } from "@atlas/scanner";
-import { type FilePath, type Result, fail, ok } from "@atlas/shared";
+import {
+  type FilePath,
+  type Result,
+  DEFAULT_CONCURRENCY,
+  fail,
+  mapWithConcurrency,
+  ok,
+} from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { SummaryService } from "@atlas/summary";
 import { fileNodeId, symbolNodeId } from "../context/nodes";
@@ -128,18 +135,27 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
     const reparsePaths = new Set<string>();
     const sourceFiles: SourceFile[] = [];
     const filesToParse: SourceFile[] = [];
-    for (const scanned of scan.value.files) {
-      if (scanned.language !== "typescript") {
+    const scannedTsFiles = scan.value.files.filter((scanned) => scanned.language === "typescript");
+    const toRead = scannedTsFiles.filter(
+      (scanned) => !incremental || filesToReparse.has(scanned.path),
+    );
+    const readFiles = await mapWithConcurrency(toRead, DEFAULT_CONCURRENCY, async (scanned) => {
+      const file = await scanner.readFile(scanned.path);
+      return file.ok ? file.value : null;
+    });
+    for (const file of readFiles) {
+      if (file === null) {
         continue;
       }
-      if (!incremental || filesToReparse.has(scanned.path)) {
-        const file = await scanner.readFile(scanned.path);
-        if (file.ok) {
-          sourceFiles.push(file.value);
-          filesToParse.push(file.value);
-          reparsePaths.add(scanned.path);
+      sourceFiles.push(file);
+      filesToParse.push(file);
+      reparsePaths.add(file.path);
+    }
+    if (incremental) {
+      for (const scanned of scannedTsFiles) {
+        if (filesToReparse.has(scanned.path)) {
+          continue;
         }
-      } else {
         const existing = previousFiles.get(scanned.path);
         if (existing !== undefined) {
           sourceFiles.push(existing);
@@ -166,16 +182,9 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
 
     const references = parsed.parsed.flatMap((file) => file.references);
     graph.build(mergedSymbols, references);
-    const exported = await graph.exportJson();
+    const exported = await graph.exportEdges();
     if (!exported.ok) return fail(exported.error);
-    const graphData = JSON.parse(exported.value) as {
-      readonly edges: readonly {
-        readonly from: string;
-        readonly to: string;
-        readonly kind: string;
-      }[];
-    };
-    const dependencies: PersistedDependency[] = graphData.edges.map((edge) => ({
+    const dependencies: PersistedDependency[] = exported.value.map((edge) => ({
       from: edge.from as never,
       to: edge.to as never,
       kind: edge.kind,
@@ -235,8 +244,10 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
           cache: new CacheService(),
           hash: new HashService(),
         });
-      for (const file of filesToParse) {
-        const summary = await summaryPort.summarizeFile(file);
+      const results = await mapWithConcurrency(filesToParse, DEFAULT_CONCURRENCY, async (file) =>
+        summaryPort.summarizeFile(file),
+      );
+      for (const summary of results) {
         if (summary.ok) {
           summaries.push(summary.value);
         } else {
@@ -288,6 +299,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
   } catch (error) {
     return fail(error instanceof Error ? error : new Error(String(error)));
   } finally {
+    store?.compact();
     store?.close();
   }
 }

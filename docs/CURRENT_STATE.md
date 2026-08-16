@@ -116,10 +116,10 @@ examples/        # README placeholder only (no runnable examples)
   member structure, doc comments, and references.
 - `SymbolIndexer` — in-memory find/list/children/references with cross-file
   import resolution (`./x`, `../x` → `.ts`/`.tsx`/`/index.ts`/`/index.tsx`),
-  same-file reference resolution.
-- **Known gaps (documented in code):**
-  - Renamed imports (`import { a as b }`) do **not** resolve cross-file.
-  - `export default <expression>` does **not** resolve cross-file.
+  same-file reference resolution. Renamed imports (`import { a as b }`) and
+  `export default <expression>` **do** resolve cross-file (via the import
+  symbol's `importedName`).
+- **Known gap:** namespaces and bare expressions are not extracted.
 
 ### Dependency Graph — **[EXISTING]**
 
@@ -129,7 +129,8 @@ examples/        # README placeholder only (no runnable examples)
 - `shortestPath` (BFS), `detectCircularDependencies` (Tarjan SCC), `exportJson`.
 - `module-resolution.ts` intentionally duplicates the parser's module-path
   resolution so the graph stays decoupled from the parser.
-- Same renamed-import / `export default` gaps as the parser.
+- Import resolution matches the parser: renamed and default imports resolve to
+  their definitions cross-file.
 
 ### Context Database (`packages/storage`) — **[EXISTING]**
 
@@ -157,9 +158,9 @@ examples/        # README placeholder only (no runnable examples)
   `OpenAIAdapter` + `DeepSeekAdapter` (OpenAI-compatible chat completions).
 - Injectable `HttpTransport` (global `fetch` default); `json` knob per provider;
   runtime `register()`.
-- **Known gap:** default model ids are placeholders — `claude-sonnet-5` for
-  Claude and `gemini-1.5-pro` for Gemini. They are not maintained/verified
-  against live APIs. Tests use mocked transports.
+- Default model ids are maintained current: `claude-sonnet-5` (Claude),
+  `gemini-2.5-pro` (Gemini), `gpt-5.6` (OpenAI), `deepseek-v4-flash` (DeepSeek),
+  `llama3.2` (Ollama) — always overridable per request via `ProviderRequest.model`.
 - **Note:** The `ProviderService` registers **no** adapters by default; adapters
   are registered only for providers present in the config. The SDK's default
   `ProviderService()` is therefore configured with zero providers.
@@ -645,8 +646,10 @@ absent.
    Node `>=22.5.0` (both use `node:sqlite`); every other package requires
    `>=20.19.0`. The root engine is `>=20.19.0`. Running on Node <22.5 breaks
    `storage` and `usage`.
-2. **Provider default model ids are placeholder values** (not verified against
-   vendor catalogs).
+2. **Provider default model ids are best-effort current values** — verified
+    against vendor docs as of 2026-08 (`claude-sonnet-5`, `gemini-2.5-pro`,
+    `gpt-5.6`, `deepseek-v4-flash`, `llama3.2`), not live-checked; always
+    overridable per request.
 3. **Git history exists.** The repository is a git repo (branch `main`) with a
    full Conventional-Commits history; `.husky`/`commitlint`/`.gitignore` are
    configured and active.

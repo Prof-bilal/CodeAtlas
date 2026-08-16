@@ -25,7 +25,7 @@ Single source of truth for what each feature is — **verified against the code*
 | Manifest | **[IMPLEMENTED]** | `.codeatlas/manifest.json`, merge policy (in `@atlas/scanner`) |
 | File Hashing | **[IMPLEMENTED]** | SHA-256, change detection, snapshots |
 | Parser | **[PARTIAL]** | TypeScript via `ts-morph`; plugin registry ready; other languages = PLANNED |
-| Symbols (extraction + indexing) | **[IMPLEMENTED]** | `SymbolIndexer`, cross-file resolution; **gaps:** renamed imports + `export default <expr>` don't resolve cross-file |
+| Symbols (extraction + indexing) | **[IMPLEMENTED]** | `SymbolIndexer`, cross-file resolution; renamed + default imports resolve cross-file; namespaces/bare expressions not extracted |
 | Dependency Graph | **[IMPLEMENTED]** | Build, shortest path, cycles, JSON export |
 | AI Summaries | **[IMPLEMENTED]** | File/folder/module/project, content-hash cache; on-demand (`search --ai`, `explain --ai`, MCP `get_summary`) and bulk backfill during indexing (`init`/`build`/`update --summaries`, persisted to the `Summaries` table) |
 | Context DB | **[IMPLEMENTED]** | `ContextStore` (SQLite, 8 tables, migrations, transactions) |
@@ -64,8 +64,8 @@ Single source of truth for what each feature is — **verified against the code*
 
 ## Known gaps worth tracking
 
-- Parser/graph: renamed imports & `export default <expr>` cross-file resolution.
-- Providers: placeholder default model ids; no streaming.
+- Parser/graph: namespaces and bare expressions are not extracted.
+- Providers: no streaming; transport errors return `Result` (fixed).
 - Storage: engine `>=22.5.0` vs monorepo `>=20.19.0` (node:sqlite).
 - CLI: `atlas search`, `atlas mcp`, `atlas sessions`, `atlas usage`, all
   `atlas tools` commands, `atlas context`, `atlas explain`, `atlas doctor`, and

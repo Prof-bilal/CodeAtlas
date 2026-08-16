@@ -1,9 +1,16 @@
-import type { ProviderRequest, ProviderResponse, TokenUsage } from "@atlas/core";
+import type { ProviderRequest, ProviderResponse } from "@atlas/core";
 import type { Result } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
 import type { ProviderAdapter, ProviderConfig } from "../adapter";
 import { ProviderNetworkError, ProviderRequestError } from "../errors";
-import { asObject, getNumber, getString, isOkStatus, usageFrom, withUsage } from "../parse";
+import {
+  asObject,
+  chatCompletionContent,
+  chatCompletionUsage,
+  getString,
+  isOkStatus,
+  withUsage,
+} from "../parse";
 import type { HttpResponse, HttpTransport } from "../transport";
 
 /**
@@ -67,30 +74,16 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
   }
 }
 
-/** OpenAI adapter (`gpt-4o` default). */
+/** OpenAI adapter (`gpt-5.6` default). */
 export class OpenAIAdapter extends OpenAICompatibleAdapter {
   public constructor(config: ProviderConfig, transport: HttpTransport) {
-    super("openai", "gpt-4o", "https://api.openai.com/v1", config, transport);
+    super("openai", "gpt-5.6", "https://api.openai.com/v1", config, transport);
   }
 }
 
 /** DeepSeek adapter (OpenAI-compatible API). */
 export class DeepSeekAdapter extends OpenAICompatibleAdapter {
   public constructor(config: ProviderConfig, transport: HttpTransport) {
-    super("deepseek", "deepseek-chat", "https://api.deepseek.com/v1", config, transport);
+    super("deepseek", "deepseek-v4-flash", "https://api.deepseek.com/v1", config, transport);
   }
-}
-
-function chatCompletionContent(root: Record<string, unknown> | null): string {
-  const choicesValue = root?.["choices"];
-  const choices = Array.isArray(choicesValue) ? choicesValue : [];
-  const first = asObject(choices[0]);
-  const message = asObject(first?.["message"]);
-  const content = message?.["content"];
-  return typeof content === "string" ? content : "";
-}
-
-function chatCompletionUsage(root: Record<string, unknown> | null): TokenUsage | null {
-  const usage = asObject(root?.["usage"]);
-  return usageFrom(getNumber(usage, "prompt_tokens"), getNumber(usage, "completion_tokens"));
 }

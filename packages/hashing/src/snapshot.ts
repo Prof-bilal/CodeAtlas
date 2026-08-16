@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { BuildSnapshotOptions, HashSnapshot } from "@atlas/core";
-import { fail, ok, type Result } from "@atlas/shared";
+import { DEFAULT_CONCURRENCY, mapWithConcurrency, type Result, fail, ok } from "@atlas/shared";
 import { hashContent } from "./crypto";
 
 /** Schema version of the on-disk hash snapshot. Bump on shape changes. */
@@ -42,16 +42,24 @@ export async function buildSnapshot(
   paths: readonly string[],
   options: BuildSnapshotOptions = {},
 ): Promise<Result<HashSnapshot>> {
+  const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
   const hashes: Record<string, string> = {};
-  for (const path of paths) {
-    const result = await computeFileHash(path);
-    if (result.ok) {
-      hashes[path] = result.value;
-    } else if (options.strict === true) {
-      return fail(result.error);
+  try {
+    const results = await mapWithConcurrency(paths, concurrency, async (path) => {
+      const result = await computeFileHash(path);
+      return { path, result };
+    });
+    for (const { path, result } of results) {
+      if (result.ok) {
+        hashes[path] = result.value;
+      } else if (options.strict === true) {
+        return fail(result.error);
+      }
     }
+    return ok({ hashes });
+  } catch (error) {
+    return fail(error instanceof Error ? error : new Error(String(error)));
   }
-  return ok({ hashes });
 }
 
 /**

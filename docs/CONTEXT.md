@@ -96,10 +96,11 @@ documentation, and — for imports/exports — the module specifier. `SymbolInde
 indexes the session's symbols and resolves references across files
 (`./x`/`../x` → `x.ts`/`x.tsx`/`x/index.ts`/`x/index.tsx`).
 
-**Known parser gaps** (unchanged; tracked in `FEATURE_STATUS.md`):
-- renamed imports (`import { a as b }`) and `export default <expression>` do
-  **not** resolve cross-file;
+**Known parser gaps** (tracked in `FEATURE_STATUS.md`):
 - namespaces and bare expressions are not extracted.
+
+Renamed imports (`import { a as b }`) and `export default <expression>` **do**
+resolve cross-file via the import symbol's `importedName`.
 
 ### Dependency graph (`@atlas/graph`)
 `GraphService.build(symbols, references)` turns symbols + resolved references

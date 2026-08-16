@@ -75,7 +75,8 @@ Make the index persistent and queryable.
 - Search (`searchContext` + `@atlas/search`) — **[IMPLEMENTED]** — ranked
   in-memory search over symbols/files/modules/dependencies/summaries with fuzzy
   matching; vector search planned behind the `RelevanceScorer` seam
-- **Context ranking & assembly** (`@atlas/context`) — **[STUB] — implement**
+- **Context ranking & assembly** (`@atlas/context`) — **[IMPLEMENTED]** —
+  deterministic rank-and-assemble behind `ContextBuilderPort` (ADR-001)
 - Hash-backed incremental updates wired into the SDK-owned `build`/`update`
   pipeline — **[IMPLEMENTED]**
 - AI summaries — **[IMPLEMENTED]** (fold into persistence)

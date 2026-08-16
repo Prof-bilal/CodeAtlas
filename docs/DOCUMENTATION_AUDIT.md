@@ -42,7 +42,7 @@ Self-audit of the AI-agent documentation system created/adjusted on **2026-08-08
 | `docs/ROADMAP.md` | Phased plan |
 | `docs/AGENT_CATALOG.md` | Preserved prior per-agent catalog (was root `agents.md`) |
 | `docs/decisions/README.md` | ADR index + format |
-| `docs/decisions/ADR-001.md` | `@atlas/context` stub is intentional (retroactive) |
+| `docs/decisions/ADR-001.md` | `@atlas/context` deterministic rank-and-assemble behind `ContextBuilderPort` (superseded by implementation) |
 | `docs/decisions/ADR-002.md` | Orchestrate existing CLIs, don't reimplement (proposed) |
 | `docs/DOCUMENTATION_AUDIT.md` | This file |
 | `docs/README.md` | Rewritten as a docs index |
@@ -79,8 +79,9 @@ Self-audit of the AI-agent documentation system created/adjusted on **2026-08-08
 
 - **Minimum Node version drift** (`storage` needs `>=22.5.0` vs rest `>=20.19.0`):
   left as documented inconsistency, not fixed (out of scope, needs a decision).
-- **Provider default model ids** are placeholder values (`claude-sonnet-5`,
-  `gemini-1.5-pro`); no decision made — flagged for a maintainer.
+- **Provider default model ids** are maintained current (`claude-sonnet-5`,
+  `gemini-2.5-pro`, `gpt-5.6`, `deepseek-v4-flash`, `llama3.2`), overridable
+  per request via `ProviderRequest.model`.
 - Git metadata is present in the current workspace; preserve history and avoid
   destructive operations. Hook activation remains environment-dependent.
 - **Prior ADR statuses** (ADR-002 `Proposed`) — a human should accept/reject.
@@ -102,8 +103,10 @@ Self-audit of the AI-agent documentation system created/adjusted on **2026-08-08
 5. **Direction B (orchestrator)** should not start until Phases 1–2 are solid,
    and its first commit should implement the **security rules in `docs/SECURITY.md`**
    (array-args spawn, binary-from-PATH, timeouts, no shell strings).
-6. **Provider defaults:** update adapter default model ids to current vendor
-   catalogs, or remove the defaults and require explicit `model`.
+6. ~~**Provider defaults:** update adapter default model ids to current vendor
+   catalogs, or remove the defaults and require explicit `model`.~~ — **done**:
+   defaults updated to current model ids (`gemini-2.5-pro`, `gpt-5.6`,
+   `deepseek-v4-flash`).
 
 ## 6. Omissions (intended)
 

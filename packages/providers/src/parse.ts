@@ -41,3 +41,19 @@ export function usageFrom(
 export function withUsage(usage: TokenUsage | null): { usage?: TokenUsage } {
   return usage === null ? {} : { usage };
 }
+
+/** Extract the assistant text from an OpenAI-compatible chat response. */
+export function chatCompletionContent(root: Record<string, unknown> | null): string {
+  const choicesValue = root?.["choices"];
+  const choices = Array.isArray(choicesValue) ? choicesValue : [];
+  const first = asObject(choices[0]);
+  const message = asObject(first?.["message"]);
+  const content = message?.["content"];
+  return typeof content === "string" ? content : "";
+}
+
+/** Extract token usage from an OpenAI-compatible chat response. */
+export function chatCompletionUsage(root: Record<string, unknown> | null): TokenUsage | null {
+  const usage = asObject(root?.["usage"]);
+  return usageFrom(getNumber(usage, "prompt_tokens"), getNumber(usage, "completion_tokens"));
+}

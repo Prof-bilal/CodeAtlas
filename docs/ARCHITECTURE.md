@@ -86,7 +86,7 @@ packages/
   providers/    # AI model adapters (Claude / OpenAI / DeepSeek / Gemini)
   summary/      # AI file/folder/module/project summaries
   search/       # Ranked, fuzzy-aware project search (vector-ready seam)
-  context/      # Context ranking & assembly  — INTENTIONAL STUB
+  context/      # Context ranking & assembly (deterministic rank-and-assemble)
   agents/       # AI CLI connection layer (AgentPort) — spawn/detect external AI CLIs
   mcp/          # MCP server exposing context to AI tools (consumes the SDK)
   sdk/          # Composition root (Container) + Context API/SDK (createContextSDK)

@@ -314,16 +314,38 @@ Measured on the audit repo (395 files / 8740 symbols / 19 MB DB + 11 MB WAL):
 | Context SDK `search` (re-indexes snapshot) | ~1.1 s |
 | Context SDK `getRelevantContext` | ~4.7 s |
 
+Measured 2026-08-16 on `benchmark-repos/05-large-project` (4,560 TS files /
+~409k lines, stress test):
+
+| Operation | Wall time | Peak RSS |
+| --- | --- | --- |
+| `atlas init` (full first scan, cold) | **~94 s** | ~3.7 GB |
+| `atlas update` (steady-state, 0–2 files changed) | ~25 s | ~3.2 GB |
+| `atlas search` (cold CLI) | ~4 s | ~0.75 GB |
+| `atlas context build` (cold CLI) | ~10.5 s | ~1.1 GB |
+| `atlas scan` (no indexing) | ~0.7 s | ~50 MB |
+
+Indexed 4,750 files / 138,466 symbols / 204,638 dependency edges; DB ~228 MB
+(compact + VACUUM reduces it; VACUUM alone ≈ 4 s). Incremental add / modify /
+delete all detected correctly. Search relevance holds at scale (specific
+queries rank matching files first).
+
 At fixture scale (30 files) search is 9–30 ms and all MCP tools < 45 ms
 (`docs/benchmark.md`). At 10k files / 500k lines: first scan 52.6 s, search
 avg 513 ms, **RSS ~1.5 GB** (documented).
 
-**Actual bottleneck:** the Context SDK loads the entire snapshot into memory on
-first read and each `search`/`build` re-indexes it; `atlas context` performs
-several such full-snapshot operations back-to-back plus Node cold start, which
-explains ~22 s on a mid-size repo. This is the documented trade-off of the
-in-memory index, but repeated loads within one command are avoidable (a
-session-level cache would help substantially).
+**Actual bottleneck:** ts-morph parsing is single-threaded (each file parses
+serially on one thread; the `mapWithConcurrency` around it only overlaps I/O).
+On the 4,560-file fixture parsing alone is ~41 s of the ~94 s first scan.
+Secondary costs: the full snapshot is materialized into JS objects on every
+read (`loadContext`), every `update` rewrites the whole DB in one transaction
+followed by VACUUM (~4 s), and the in-memory search index retains ~2× the file
+text. These dominate the steady-state `update` cost (~25 s even with no
+changes) and RSS (~3.7 GB on the first scan, ~3.2 GB on update).
+
+The highest-leverage fix for 5,000+ files is moving ts-morph parsing to
+`worker_threads` (per-worker `Project`), which would cut the first-scan parse
+step from ~41 s toward ~4–8 s on multi-core machines.
 
 ---
 
@@ -359,23 +381,22 @@ session-level cache would help substantially).
 ## 13. Documentation
 
 The docs system is unusually extensive and mostly accurate, but **contains
-stale claims that directly contradict code** — the worst is the `@atlas/context`
-"[STUB]" claim:
+stale claims that directly contradict code** — the worst was the `@atlas/context`
+"[STUB]" claim. **All rows below have been corrected in code/docs as of
+2026-08-16** (verified against the current tree):
 
 | Doc | Stale claim | Reality |
 | --- | --- | --- |
-| `docs/CURRENT_STATE.md:226-234` (and `:9`) | `@atlas/context` is an intentional stub throwing `ComingSoonError` | Fully implemented (`context-builder.service.ts`); `FEATURE_STATUS.md:33`, `ADR-001` (status "superseded"), `CONTEXT.md` are correct |
-| `docs/MODULES.md:112-113` | same stub claim | same |
-| `docs/ARCHITECTURE.md:141-142` | same stub claim | same |
-| `docs/decisions/ADR-005.md:25` | "`@atlas/context` remains the untouched stub" | same |
+| `docs/CURRENT_STATE.md` | `@atlas/context` is an intentional stub throwing `ComingSoonError` | Fully implemented (`context-builder.service.ts`); `FEATURE_STATUS.md`, `ADR-001` (status "superseded"), `CONTEXT.md` are correct |
+| `docs/MODULES.md:109` | same stub claim | same — now `[IMPLEMENTED]` |
+| `docs/ARCHITECTURE.md:89` | "INTENTIONAL STUB" | corrected to "deterministic rank-and-assemble" |
+| `docs/decisions/ADR-005.md` | "`@atlas/context` remains the untouched stub" | corrected — deterministic rank-and-assemble |
 | `docs/TESTING.md:45` | tests assert `ComingSoonError` | tests assert ranked output |
 | `docs/decisions/README.md` (ADR index) | ADR-001 "intentionally a stub" | superseded |
-| `packages/context/README.md:6-8` | "Status: stub" | same |
-| `README.md:203` | "context/ # Context rank/assembly (intentional stub)" | same |
-| `docs/CURRENT_STATE.md:28` | version `0.0.0` everywhere | `codeatlas-cli` is 0.2.1 |
-| `docs/CURRENT_STATE.md:24,638` / `README.md:78` | only storage needs Node ≥22.5.0 | `@atlas/usage` also does |
-| `AGENTS.md:12` / `CURRENT_STATE.md` | "twelve top-level subcommands" | 19 registered |
-| `docs/CLI.md` | `atlas agents` "planned — not registered" | `status/connect` implemented |
+| `packages/context/README.md` | "Status: stub" | deterministic rank-and-assemble (ADR-001) |
+| `README.md` | "context/ # Context rank/assembly (intentional stub)" | corrected |
+| `docs/ROADMAP.md:78` | `@atlas/context` **[STUB] — implement** | corrected to **[IMPLEMENTED]** |
+| `docs/FINAL-MVP-AUDIT.md:57` | "remains an intentional ADR-001 stub" | corrected with note |
 
 Also: `docs/DESIGN.md`, `docs/FINAL-MVP-AUDIT.md`, `docs/PRINCIPLES.md`,
 `docs/decisions/README.md` are orphaned/stale and not in the
@@ -444,53 +465,101 @@ A new developer CAN: discover (README is solid), install
    the file-node edge. **Impact:** incremental updates / file deletion can leave
    stale graph edges (dangling references to dead symbols), i.e. stale context
    silently surviving. **Fix:** collect symbol ids *before* the cascade.
+   **Status: **[RESOLVED]** — fixed in `5c6de7c`; symbol node ids are collected
+   before the cascade and every touching edge is removed, with a regression test
+   asserting symbol-node edges are dropped while unrelated edges survive.**
 2. **Provider adapters swallow nothing but also catch nothing.** Network
    failures throw unhandled rejections through
    `ClaudeAdapter/GeminiAdapter/OpenAIAdapter/DeepSeekAdapter/OllamaAdapter.complete`
    (e.g. `packages/providers/src/adapters/anthropic.ts:37`), `ProviderService.complete`,
    and `SummaryService.generate`. Any offline/refused/blocked provider call
    crashes rather than returning a `Result` failure. No test covers this path.
+   **Status: **[RESOLVED]** — fixed in `1f08457`; every adapter wraps its
+   transport calls and returns `fail(new ProviderNetworkError(...))`, with
+   regression tests covering all built-in providers, `listModels`, and the
+   non-2xx path.**
 
 ## 18. High-Priority Findings
 
 3. **`atlas context` ≈ 22 s on a 395-file repo** — repeated whole-snapshot loads
    inside one command (§Performance). Hurts the flagship UX.
-4. **Documentation truth failure:** 8+ files claim `@atlas/context` is a stub
-   (§13). This is the audit's most consequential finding because the repo's
-   trust mechanism is "docs = ground truth".
-5. **Extension chat module is tracked dead code** that appears implemented.
+4. ~~**Documentation truth failure:** 8+ files claim `@atlas/context` is a stub
+    (§13). This is the audit's most consequential finding because the repo's
+    trust mechanism is "docs = ground truth".~~ **RESOLVED (2026-08-16)** — every
+    remaining `@atlas/context` stub claim (ARCHITECTURE, ROADMAP, FINAL-MVP-AUDIT,
+    ADR-005 index row, DOCUMENTATION_AUDIT index row) corrected; §13 table updated.
+5. ~~**Extension chat module is tracked dead code** that appears implemented.~~
+    **RESOLVED (2026-08-16)** — `apps/extension/src/chat/*` and its tests
+    (`chat-commands`/`chat-panel`/`chat-webview`/`slash`/`chat-fakes`) were
+    removed; the extension never imported them and contributed no chat commands.
 6. **`docs/DESIGN.md` case-collision** in `.gitignore` — a latent untracked-file
    / accidental-commit hazard on case-sensitive filesystems.
-7. **`searchContext` empty query returns all rows** + LIKE(CI)/scoring(CS)
-   mismatch can yield score-0 hits (`context-store.ts:154-173,359-368`). No
-   production caller today; latent.
+7. ~~**`searchContext` empty query returns all rows** + LIKE(CI)/scoring(CS)
+    mismatch can yield score-0 hits (`context-store.ts:154-173,359-368`). No
+    production caller today; latent.~~ **RESOLVED (2026-08-16)** — empty queries
+    now return no hits, and scoring/snippets are case-insensitive to match the
+    LIKE filter; regression tests cover both.
 
 ## 19. Medium-Priority Findings
 
-8. Parser/graph renamed-import & `export default <expr>` gaps (documented, tested
-   as a known limitation).
+8. ~~Parser/graph renamed-import & `export default <expr>` gaps (documented,
+   tested as a known limitation).~~ **RESOLVED (2026-08-16)** — renamed imports
+   (`import { a as b }`) and `export default <expr>` now resolve cross-file via
+   the import symbol's `importedName`, mirrored in both `@atlas/parser` and
+   `@atlas/graph`; regression tests added.
 9. `SymbolIndexer` cross-file resolution unused by production pipeline (INFO+).
-10. Engine note omits `@atlas/usage` (also needs Node ≥22.5.0).
-11. Integration suite not in CI and fails on fresh clone (also a release blocker,
-    §14).
+   — **INFO**, intentional (graph keeps its own documented copy;
+   `module-resolution.ts`); unchanged.
+10. ~~Engine note omits `@atlas/usage` (also needs Node ≥22.5.0).~~
+    **RESOLVED** — `docs/DEVELOPMENT.md` now lists `@atlas/usage` alongside
+    `@atlas/storage`.
+11. ~~Integration suite not in CI and fails on fresh clone (also a release
+    blocker, §14).~~ **RESOLVED (2026-08-16)** — the external fixture-dependent
+    suite (`test-repo/AIbuilder`) was removed; the remaining `*integration*`
+    tests use temp dirs, run under `pnpm check`, and CI runs `pnpm check`.
 12. `@atlas/*` packages not publish-ready; versioning `0.0.0` everywhere except
-    CLI; no tags/release automation; no issue/PR templates.
-13. Duplicated scoring (`context-store.ts` vs `@atlas/search`) with divergent
-    constants/semantics; duplicated provider `chatCompletionContent/Usage` helpers.
-14. `summarizeScope` fails fast on the first per-file summary failure.
+    CLI; no tags/release automation; no issue/PR templates. — **INFO**, unchanged.
+13. ~~Duplicated scoring (`context-store.ts` vs `@atlas/search`) with divergent
+    constants/semantics; duplicated provider `chatCompletionContent/Usage`
+    helpers.~~ **PARTIAL (2026-08-16)** — duplicated provider helpers extracted
+    into `packages/providers/src/parse.ts` (shared by the OpenAI-compatible and
+    Ollama adapters). The storage `searchContext` scoring duplication is
+    architectural (`@atlas/storage` may not import `@atlas/search`); its
+    constants were aligned case-insensitively with the LIKE filter (finding #7).
+14. ~~`summarizeScope` fails fast on the first per-file summary failure.~~
+    **RESOLVED** — per-file failures now drop that file from the scope instead
+    of aborting it; the scope summary still runs, and a scope with no successful
+    files returns the last error. Regression tests cover both paths.
 15. `atlas update` scan/hash/DB-load still full-tree (parse is incremental).
+    **ASSESSED (2026-08-16)** — measured on this repo (7,638 files): hashing is
+    parallel (`mapWithConcurrency`) and fast (~323 ms), a plain recursive walk
+    is ~84 ms, and the 5.4 s scan is dominated by the repo's own
+    `benchmark-repos/` fixtures (7,058 files) plus per-file gitignore matching,
+    not by the production path. A full-tree scan is required to detect
+    additions/deletions, so the parse-incremental design is sound. A stat-based
+    hash fast-path would save only the ~300 ms hash step and is not worth the
+    cross-cutting change (core type + scanner + hashing schema + storage
+    migration); deferred.
 16. Benchmarks not wired to a script/CI; only Linux CI (Windows logic
-    unexercised).
+    unexercised). **PARTIAL (2026-08-16)** — `pnpm benchmark` /
+    `pnpm benchmark:single <repo>` scripts added; still not run in CI.
 
 ## 20. Low-Priority / INFO
 
-17. Unused `ts-morph` devDep in `apps/cli`; `tsup.config.base.ts` missing
-    `@atlas/summary` alias.
+17. ~~Unused `ts-morph` devDep in `apps/cli`; `tsup.config.base.ts` missing
+    `@atlas/summary` alias.~~ **PARTIAL (2026-08-16)** — `@atlas/summary` alias
+    added to `tsup.config.base.ts`. `ts-morph` is a real runtime dependency of
+    `apps/cli` (the bundled parser imports it; it stays `external` in tsup), so
+    the "unused devDep" half of the claim is outdated.
 18. `status().hasApiKey` for Ollama always `true` (misleading name only);
-    Gemini key in URL query string.
+    Gemini key in URL query string. — **INFO**, unchanged (CLI already renders
+    Ollama as "local (no key)").
 19. `metadata.prompt` recorded as `null` for default prompts in summaries;
     cache entries loaded from a corrupt-but-parseable file never expire.
-20. Dead `.gitignore` entries (`PROMPTS.md`, `!.vscode/extensions.json`).
+20. ~~Dead `.gitignore` entries (`PROMPTS.md`, `!.vscode/extensions.json`).~~
+    **RESOLVED** — the `PROMPTS.md` entry is already gone from `.gitignore`;
+    `!.vscode/extensions.json` is the negation of `.vscode/*` and is inert
+    (no `.vscode/` tree in the repo).
 21. `cache.service.ts` swallowed exceptions (documented best-effort) — acceptable.
 
 ---

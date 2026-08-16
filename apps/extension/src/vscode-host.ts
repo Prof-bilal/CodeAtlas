@@ -93,7 +93,7 @@ export interface VscodeViewRegistrar {
   revealCustom?(uri: unknown): void;
 }
 
-/** A VS Code integrated terminal, narrowed to what the chat panel uses. */
+/** A VS Code integrated terminal, narrowed to the surface the extension uses. */
 export interface VscodeTerminal {
   readonly name: string;
   sendText(text: string, addNewLine?: boolean): void;
@@ -116,7 +116,7 @@ export interface VscodeTerminals {
   createTerminal(options: VscodeTerminalOptions): VscodeTerminal;
 }
 
-/** A webview inside a `WebviewView`, narrowed to what the chat panel uses. */
+/** A webview inside a `WebviewView`, narrowed to the surface the extension uses. */
 export interface VscodeWebview {
   readonly cspSource: string;
   html: string;

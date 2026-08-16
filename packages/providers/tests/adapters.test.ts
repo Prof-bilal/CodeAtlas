@@ -105,11 +105,11 @@ describe("provider adapters", () => {
       return;
     }
     expect(result.value.content).toBe('{"overview":"hi"}');
-    expect(result.value.model).toBe("gemini-1.5-pro");
+    expect(result.value.model).toBe("gemini-2.5-pro");
     expect(result.value.usage).toEqual({ inputTokens: 4, outputTokens: 2, totalTokens: 6 });
 
     const call = fake.calls[0];
-    expect(call.url).toContain("/models/gemini-1.5-pro:generateContent");
+    expect(call.url).toContain("/models/gemini-2.5-pro:generateContent");
     const body = call.body as { generationConfig?: Record<string, unknown> };
     expect(body.generationConfig).toEqual({ responseMimeType: "application/json" });
   });

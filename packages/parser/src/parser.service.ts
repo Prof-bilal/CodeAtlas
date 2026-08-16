@@ -1,6 +1,6 @@
 import type { ParserPort, SourceFile, Symbol } from "@atlas/core";
 import type { Result, SymbolId } from "@atlas/shared";
-import { fail, ok } from "@atlas/shared";
+import { DEFAULT_CONCURRENCY, fail, mapWithConcurrency, ok } from "@atlas/shared";
 import { UnsupportedLanguageError } from "./errors";
 import type { LanguageParser } from "./language-parser";
 import type { ParseBatch, ParsedFile, SkippedFile } from "./parsed-file";
@@ -84,21 +84,28 @@ export class ParserService implements ParserPort {
     const parsed: ParsedFile[] = [];
     const skipped: SkippedFile[] = [];
 
-    for (const file of files) {
+    const results = await mapWithConcurrency(files, DEFAULT_CONCURRENCY, async (file) => {
       const parser = this.registry.get(file.language);
       if (parser === undefined) {
-        skipped.push({
+        return {
+          ok: false as const,
           path: file.path,
           reason: `no parser registered for language "${file.language}"`,
-        });
-        continue;
+        };
       }
       const result = await parser.parse(file);
+      if (result.ok) {
+        return { ok: true as const, path: file.path, value: result.value };
+      }
+      return { ok: false as const, path: file.path, reason: result.error.message };
+    });
+
+    for (const result of results) {
       if (result.ok) {
         this.indexSymbols(result.value.symbols);
         parsed.push(result.value);
       } else {
-        skipped.push({ path: file.path, reason: result.error.message });
+        skipped.push({ path: result.path, reason: result.reason });
       }
     }
 

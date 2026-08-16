@@ -1,9 +1,16 @@
-import type { ProviderRequest, ProviderResponse, TokenUsage } from "@atlas/core";
+import type { ProviderRequest, ProviderResponse } from "@atlas/core";
 import type { Result } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
 import type { ProviderAdapter, ProviderConfig } from "../adapter";
 import { ProviderNetworkError, ProviderRequestError } from "../errors";
-import { asObject, getNumber, getString, isOkStatus, usageFrom, withUsage } from "../parse";
+import {
+  asObject,
+  chatCompletionContent,
+  chatCompletionUsage,
+  getString,
+  isOkStatus,
+  withUsage,
+} from "../parse";
 import type { HttpResponse, HttpTransport } from "../transport";
 
 /**
@@ -93,18 +100,4 @@ export class OllamaAdapter implements ProviderAdapter {
     }
     return headers;
   }
-}
-
-function chatCompletionContent(root: Record<string, unknown> | null): string {
-  const choicesValue = root?.["choices"];
-  const choices = Array.isArray(choicesValue) ? choicesValue : [];
-  const first = asObject(choices[0]);
-  const message = asObject(first?.["message"]);
-  const content = message?.["content"];
-  return typeof content === "string" ? content : "";
-}
-
-function chatCompletionUsage(root: Record<string, unknown> | null): TokenUsage | null {
-  const usage = asObject(root?.["usage"]);
-  return usageFrom(getNumber(usage, "prompt_tokens"), getNumber(usage, "completion_tokens"));
 }

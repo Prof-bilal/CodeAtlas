@@ -105,14 +105,21 @@ export class SummaryService implements SummaryPort {
     options: SummaryOptions,
   ): Promise<Result<Summary>> {
     // Per-file summaries: unchanged files hit the per-file cache, so only
-    // changed files reach the model.
+    // changed files reach the model. A per-file failure drops that file from
+    // the scope instead of aborting the whole summary; if every file fails we
+    // surface the last error so the caller can report it.
     const lines: string[] = [];
+    let firstError: Error | undefined;
     for (const file of files) {
       const summary = await this.summarizeFile(file, options);
       if (!summary.ok) {
-        return summary;
+        firstError ??= summary.error;
+        continue;
       }
       lines.push(`- ${file.path}: ${summary.value.content.overview}`);
+    }
+    if (lines.length === 0) {
+      return fail(firstError ?? new Error("no files to summarize"));
     }
 
     const fileHashes = files.map((file) => this.hash.hashContent(file.content)).sort();

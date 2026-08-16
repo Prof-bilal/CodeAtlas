@@ -54,7 +54,9 @@ ports and composed by the SDK.
 ### Not implemented
 
 - Deterministic `explain` and top-level `doctor`.
-- `@atlas/context` ranking/assembly remains an intentional ADR-001 stub.
+- `@atlas/context` ranking/assembly — since implemented: deterministic
+  rank-and-assemble behind `ContextBuilderPort` (ADR-001 superseded by ADR-008;
+  see `CURRENT_STATE.md`).
 
 ## 4. Completed Features
 

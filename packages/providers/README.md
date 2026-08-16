@@ -67,5 +67,6 @@ service.register(myProvider);
 
 - Real calls require API keys configured at runtime; tests exercise request
   shaping against a fake transport.
-- Default models are placeholders (`claude-sonnet-5`, `gpt-4o`, `gemini-1.5-pro`,
-  `deepseek-chat`), overridable per request via `ProviderRequest.model`.
+- Default models (`claude-sonnet-5`, `gemini-2.5-pro`, `gpt-5.6`,
+  `deepseek-v4-flash`, `llama3.2`) are best-effort current ids, overridable per
+  request via `ProviderRequest.model`.

@@ -94,8 +94,8 @@ describe("ProviderService", () => {
       name: "openai",
       configured: true,
       hasApiKey: true,
-      model: "gpt-4o",
-      defaultModel: "gpt-4o",
+      model: "gpt-5.6",
+      defaultModel: "gpt-5.6",
     });
     const ollama = statuses.find((status) => status.name === "ollama");
     expect(ollama?.configured).toBe(true);

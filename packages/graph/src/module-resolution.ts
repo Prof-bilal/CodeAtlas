@@ -44,13 +44,11 @@ export function resolveModulePath(
 /**
  * The exported symbols in the imported module that match an import binding.
  *
- * Match rule (mirrors the parser indexer): the definition is exported, has the
- * same name as the import binding, and — for default imports — carries a
- * `"default"` modifier.
- *
- * Known gaps inherited from the parser: renamed imports (`import { a as b }`
- * bind `b`, which never matches the exported `a`) and `export default <expr>`
- * (whose export symbol is named `"default"`) do not resolve.
+ * Match rule (mirrors the parser indexer): named imports match by the name
+ * used **in the module** — for renamed imports (`import { a as b }`) that is
+ * `importedName` (`"a"`), not the local alias (`"b"`). Default imports resolve
+ * to the module's default export: any exported symbol carrying a `"default"`
+ * modifier, or the `export default <expr>` assignment symbol named `"default"`.
  */
 export function definitionsForImport(
   importSymbol: Symbol,
@@ -65,14 +63,59 @@ export function definitionsForImport(
   if (targetFile === undefined) {
     return [];
   }
+  return lookupExport(importSymbol, targetFile, buildExportIndex(symbols));
+}
+
+/**
+ * Index exported symbols by `filePath → name → symbols` so per-import lookup is
+ * O(1) instead of a full `symbols.filter` scan per import. Building the index
+ * once over N symbols costs O(N); with M import bindings the previous
+ * implementation cost O(M × N), which dominates graph build time at repository
+ * scale.
+ */
+export function buildExportIndex(
+  symbols: readonly Symbol[],
+): ReadonlyMap<string, ReadonlyMap<string, readonly Symbol[]>> {
+  const byFile = new Map<string, Map<string, Symbol[]>>();
+  for (const symbol of symbols) {
+    if (!symbol.exported) {
+      continue;
+    }
+    let byName = byFile.get(symbol.filePath);
+    if (byName === undefined) {
+      byName = new Map();
+      byFile.set(symbol.filePath, byName);
+    }
+    const list = byName.get(symbol.name);
+    if (list === undefined) {
+      byName.set(symbol.name, [symbol]);
+    } else {
+      list.push(symbol);
+    }
+  }
+  return byFile;
+}
+
+/** Look up an import binding's exported definitions in the target file. */
+function lookupExport(
+  importSymbol: Symbol,
+  targetFile: FilePath,
+  byFile: ReadonlyMap<string, ReadonlyMap<string, readonly Symbol[]>>,
+): readonly Symbol[] {
+  const byName = byFile.get(targetFile);
+  if (byName === undefined) {
+    return [];
+  }
   const isDefault = importSymbol.modifiers.includes("default");
-  return symbols.filter(
-    (symbol) =>
-      symbol.filePath === targetFile &&
-      symbol.exported &&
-      symbol.name === importSymbol.name &&
-      (!isDefault || symbol.modifiers.includes("default")),
-  );
+  if (isDefault) {
+    // `export default function/class/…` symbols carry a "default" modifier;
+    // the `export default <expr>` assignment symbol is itself named "default".
+    return [...byName.values()]
+      .flat()
+      .filter((symbol) => symbol.modifiers.includes("default") || symbol.name === "default");
+  }
+  const importedName = importSymbol.importedName ?? importSymbol.name;
+  return byName.get(importedName) ?? [];
 }
 
 /**

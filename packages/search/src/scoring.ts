@@ -1,4 +1,4 @@
-import { isFuzzyMatch, isTokenMatch, queryTerms, similarity } from "./fuzzy";
+import { fuzzyThreshold, isFuzzyMatch, isTokenMatch, queryTerms, similarity } from "./fuzzy";
 import type { DependencyEntry, FileEntry, IndexedEntity, SummaryEntry } from "./search-index";
 
 /** Field-priority ceilings for the lexical scorer (higher = more important). */
@@ -8,6 +8,11 @@ const SCORE = {
   TOKEN: 75,
   SUBSTRING: 60,
 } as const;
+
+/** Normalize a raw text field for comparison (lowercase + forward slashes). */
+function normalize(text: string): string {
+  return text.toLowerCase().replaceAll("\\", "/");
+}
 
 /**
  * The relevance seam of the search module.
@@ -24,6 +29,22 @@ export interface RelevanceScorer {
    * entities because the interface is scoped to one query at a time.
    */
   score(query: string, entity: IndexedEntity, fuzzy: boolean): number;
+
+  /**
+   * Optional candidate prefilter. When provided, `SearchService` runs the
+   * query only over entities for which this predicate returns `true`, then
+   * scores those candidates normally.
+   *
+   * The predicate MUST be a superset of everything {@link score} can return a
+   * positive score for (never a false negative), so ranking is unchanged. The
+   * lexical scorer's implementation is exactly that: it keeps an entity when
+   * any query term is a substring of its precomputed lowercase text (covers
+   * exact / prefix / token / substring matches) or, when fuzzy matching is on,
+   * when an identifier field's length is within fuzzy tolerance of a term
+   * (covers edit-distance matches, since `distance ≥ |len₁ − len₂|`). Scorers
+   * without a prefilter score every entity, preserving the old behavior.
+   */
+  prefilter?(query: string, fuzzy: boolean): (entity: IndexedEntity) => boolean;
 }
 
 /**
@@ -31,6 +52,10 @@ export interface RelevanceScorer {
  * exactly, by prefix, by whole token, by substring, or (when fuzzy matching is
  * enabled) by typo-tolerant edit distance; long prose fields are matched by
  * substring only. Secondary fields are damped so the primary name/path decides.
+ *
+ * Entities built by {@link buildIndex} carry precomputed lowercase fields and
+ * a concatenated `searchText`, which the scorer reuses to avoid re-lowercasing
+ * large fields (file contents, summaries) on every query.
  */
 export class LexicalScorer implements RelevanceScorer {
   public score(query: string, entity: IndexedEntity, fuzzy: boolean): number {
@@ -48,6 +73,71 @@ export class LexicalScorer implements RelevanceScorer {
         return this.scoreDependency(query, entity, fuzzy);
       case "summary":
         return this.scoreSummary(query, entity, fuzzy);
+    }
+  }
+
+  public prefilter(query: string, fuzzy: boolean): (entity: IndexedEntity) => boolean {
+    const q = normalize(query.trim());
+    const terms = queryTerms(q);
+    const needles = terms.length > 0 ? terms : q.length > 0 ? [q] : [];
+    const fuzzyTerms = fuzzy
+      ? needles.map((needle) => ({
+          length: needle.length,
+          threshold: fuzzyThreshold(needle.length),
+        }))
+      : [];
+
+    return (entity: IndexedEntity): boolean => {
+      for (const needle of needles) {
+        const text = entity.searchText;
+        if (text !== undefined ? text.includes(needle) : this.hasText(entity, needle)) {
+          return true;
+        }
+      }
+      if (fuzzyTerms.length > 0 && entity.identifierLengths !== undefined) {
+        for (const { length, threshold } of fuzzyTerms) {
+          for (const fieldLength of entity.identifierLengths) {
+            if (Math.abs(fieldLength - length) <= threshold) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    };
+  }
+
+  /** True when `needle` is a substring of any field of an entity without precomputed text. */
+  private hasText(entity: IndexedEntity, needle: string): boolean {
+    switch (entity.kind) {
+      case "symbol":
+        return (
+          entity.name.toLowerCase().includes(needle) ||
+          entity.filePath.toLowerCase().includes(needle) ||
+          (entity.documentation ?? "").toLowerCase().includes(needle)
+        );
+      case "file":
+        return (
+          pathBasename(entity.path).toLowerCase().includes(needle) ||
+          entity.path.toLowerCase().includes(needle) ||
+          entity.content.toLowerCase().includes(needle)
+        );
+      case "module":
+        return (
+          entity.name.toLowerCase().includes(needle) || entity.path.toLowerCase().includes(needle)
+        );
+      case "dependency":
+        return (
+          entity.fromLabel.toLowerCase().includes(needle) ||
+          entity.toLabel.toLowerCase().includes(needle) ||
+          entity.relation.toLowerCase().includes(needle)
+        );
+      case "summary":
+        return (
+          entity.target.toLowerCase().includes(needle) ||
+          entity.overview.toLowerCase().includes(needle) ||
+          entity.keyPoints.some((point) => point.toLowerCase().includes(needle))
+        );
     }
   }
 
@@ -94,8 +184,8 @@ export class LexicalScorer implements RelevanceScorer {
   private scoreField(query: string, text: string, fuzzy: boolean): number {
     // Normalize path separators so forward-slash path queries match the
     // platform-native (Windows backslash) paths stored in the index.
-    const q = query.trim().toLowerCase().replaceAll("\\", "/");
-    const t = text.toLowerCase().replaceAll("\\", "/");
+    const q = normalize(query.trim());
+    const t = normalize(text);
     if (q.length === 0 || t.length === 0) {
       return 0;
     }

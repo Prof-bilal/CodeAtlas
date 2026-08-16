@@ -79,8 +79,15 @@ export class SearchService implements SearchPort {
     const types = options.types;
 
     const ranked: Array<{ hit: SearchResult; score: number; entity: IndexedEntity }> = [];
+    const prefilter = this.scorer.prefilter?.(query, fuzzy);
     for (const entity of this.entities) {
       if (types !== undefined && !types.includes(entity.kind)) {
+        continue;
+      }
+      // Skip entities that cannot match before invoking the (potentially
+      // expensive, fuzzy-aware) scorer. The prefilter is a superset of the
+      // scorer's matches, so ranking is unchanged.
+      if (prefilter !== undefined && !prefilter(entity)) {
         continue;
       }
       const score = this.scorer.score(query, entity, fuzzy);

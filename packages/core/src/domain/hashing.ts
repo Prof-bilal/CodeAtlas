@@ -13,6 +13,12 @@ export interface BuildSnapshotOptions {
    * When `false` (default), unreadable files are skipped.
    */
   readonly strict?: boolean;
+  /**
+   * Maximum number of files hashed concurrently. Defaults to a CPU-derived
+   * bound; I/O-bound trees benefit from parallelism, tiny trees from a lower
+   * value.
+   */
+  readonly concurrency?: number;
 }
 
 /** The result of comparing two {@link HashSnapshot}s. */

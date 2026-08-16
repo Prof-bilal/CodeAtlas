@@ -15,9 +15,17 @@ import { extractSymbols } from "./extractors";
  * TypeScript is the first supported language. Additional languages are added
  * by implementing {@link LanguageParser} and registering the implementation
  * with a {@link ParserRegistry} — no changes are needed here.
+ *
+ * Performance: the ts-morph {@link Project} is created once and reused for
+ * every file (parsing in-memory with no tsconfig/lib loading), and each parsed
+ * {@link SourceFile} is removed from the project afterwards so the AST does not
+ * accumulate across a large corpus. This avoids constructing a new compiler
+ * host per file, which dominates parse time at repository scale.
  */
 export class TypeScriptParser implements LanguageParser {
   public readonly languages = ["typescript"] as const;
+
+  private project: Project | undefined;
 
   public async parse(file: SourceFile): Promise<Result<ParsedFile>> {
     if (file.language !== "typescript") {
@@ -27,7 +35,7 @@ export class TypeScriptParser implements LanguageParser {
     try {
       // Parse in-memory: no tsconfig, lib files, or file-system access is
       // needed because only the AST structure is extracted, not type-checked.
-      const project = new Project({
+      const project = (this.project ??= new Project({
         useInMemoryFileSystem: true,
         skipFileDependencyResolution: true,
         skipLoadingLibFiles: true,
@@ -36,10 +44,14 @@ export class TypeScriptParser implements LanguageParser {
           noResolve: true,
           strict: false,
         },
+      }));
+      const sourceFile = project.createSourceFile(file.path, file.content, {
+        overwrite: true,
       });
-      const sourceFile = project.createSourceFile(file.path, file.content);
       const symbols = extractSymbols(sourceFile, file.path);
       const references = resolveReferenceTargets(extractReferences(sourceFile, file.path), symbols);
+      // Free the AST so a large corpus does not retain every parsed file.
+      project.removeSourceFile(sourceFile);
       return ok({ path: file.path, language: file.language, symbols, references });
     } catch (error) {
       return fail(error instanceof Error ? error : new Error(String(error)));

@@ -40,6 +40,7 @@ const SAVED_AT_KEY = "atlas.saved_at";
  */
 export class ContextStore implements ContextDatabasePort {
   private readonly db: DatabaseSync;
+  private readonly dbFilePath: string;
   private readonly files: FileRepository;
   private readonly symbols: SymbolRepository;
   private readonly dependencies: DependencyRepository;
@@ -50,7 +51,8 @@ export class ContextStore implements ContextDatabasePort {
   private readonly metadata: MetadataRepository;
 
   public constructor(options: ContextStoreOptions = {}) {
-    const db = openDatabase(options.filePath ?? ":memory:");
+    const dbPath = options.filePath ?? ":memory:";
+    const db = openDatabase(dbPath);
     try {
       runMigrations(db, options.migrations);
     } catch (error) {
@@ -58,6 +60,7 @@ export class ContextStore implements ContextDatabasePort {
       throw error;
     }
     this.db = db;
+    this.dbFilePath = dbPath;
     this.files = new FileRepository(this.db);
     this.symbols = new SymbolRepository(this.db);
     this.dependencies = new DependencyRepository(this.db);
@@ -152,6 +155,11 @@ export class ContextStore implements ContextDatabasePort {
 
   /** Search files, symbols, summaries, and modules by query text. */
   public searchContext(query: string, options: SearchOptions = {}): readonly SearchResult[] {
+    // SQLite LIKE is ASCII case-insensitive; an empty query would match every
+    // row. Guard against it so callers get no hits rather than a full dump.
+    if (query.length === 0) {
+      return [];
+    }
     const types = options.types;
     const limit = options.limit ?? 25;
     const like = `%${escapeLike(query)}%`;
@@ -173,7 +181,29 @@ export class ContextStore implements ContextDatabasePort {
   }
 
   public close(): void {
+    // Checkpoint any pending WAL frames into the main database file so a
+    // file-backed store does not leave a large `-wal` sibling behind (which
+    // bloats `.codeatlas/` when a process exits without a clean `close`, and
+    // makes directory-size measurements count both files).
+    if (this.dbFilePath !== ":memory:") {
+      this.db.exec("PRAGMA wal_checkpoint(TRUNCATE);");
+    }
     this.db.close();
+  }
+
+  /** Reclaim unused pages and refresh query plans after bulk writes. */
+  public compact(): void {
+    if (this.dbFilePath !== ":memory:") {
+      // Fold the WAL back into the main file and shrink it to zero so a crash
+      // or timeout cannot leave a multi-hundred-MB `-wal` behind, then rebuild
+      // the database file so pages freed by DELETE + re-insert cycles (the
+      // indexer's full `saveContext` replaces every row) are actually reused.
+      this.db.exec("PRAGMA wal_checkpoint(TRUNCATE);");
+      this.db.exec("PRAGMA optimize;");
+      this.db.exec("VACUUM;");
+    } else {
+      this.db.exec("PRAGMA optimize;");
+    }
   }
 
   // -- writes ---------------------------------------------------------------
@@ -281,7 +311,10 @@ export class ContextStore implements ContextDatabasePort {
         path,
         path,
         path,
-        Math.max(matchScore(path, query), content.includes(query) ? 40 : 0),
+        Math.max(
+          matchScore(path, query),
+          content.toLowerCase().includes(query.toLowerCase()) ? 40 : 0,
+        ),
         snippet,
       );
     });
@@ -362,20 +395,23 @@ function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
 
-/** 100 = exact, 80 = prefix, 50 = substring, 0 = no match. */
+/** 100 = exact, 80 = prefix, 50 = substring, 0 = no match. Case-insensitive
+ *  (matches the ASCII case-insensitivity of the SQLite LIKE filter). */
 function matchScore(text: string, query: string): number {
-  if (text === query) {
+  const normalizedText = text.toLowerCase();
+  const normalizedQuery = query.toLowerCase();
+  if (normalizedText === normalizedQuery) {
     return 100;
   }
-  if (text.startsWith(query)) {
+  if (normalizedText.startsWith(normalizedQuery)) {
     return 80;
   }
-  return text.includes(query) ? 50 : 0;
+  return normalizedText.includes(normalizedQuery) ? 50 : 0;
 }
 
-/** A ~60-char excerpt around the first occurrence of `query`. */
+/** A ~60-char excerpt around the first occurrence of `query` (case-insensitive). */
 function makeSnippet(text: string, query: string, radius = 30): string | undefined {
-  const index = text.indexOf(query);
+  const index = text.toLowerCase().indexOf(query.toLowerCase());
   if (index === -1) {
     return undefined;
   }

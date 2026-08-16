@@ -22,12 +22,15 @@ export const BUILTIN_PRICING: Readonly<Record<string, Readonly<Record<string, St
       "claude-sonnet-5": { currency: "USD", inputPerMillion: 3, outputPerMillion: 15 },
     },
     openai: {
+      "gpt-5.6": { currency: "USD", inputPerMillion: 5, outputPerMillion: 30 },
       "gpt-4o": { currency: "USD", inputPerMillion: 2.5, outputPerMillion: 10 },
     },
     deepseek: {
+      "deepseek-v4-flash": { currency: "USD", inputPerMillion: 0.14, outputPerMillion: 0.28 },
       "deepseek-chat": { currency: "USD", inputPerMillion: 0.27, outputPerMillion: 1.1 },
     },
     gemini: {
+      "gemini-2.5-pro": { currency: "USD", inputPerMillion: 1.25, outputPerMillion: 10 },
       "gemini-1.5-pro": { currency: "USD", inputPerMillion: 1.25, outputPerMillion: 5 },
     },
   };

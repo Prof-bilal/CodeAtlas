@@ -221,7 +221,15 @@ export class SymbolIndexer {
     return targets;
   }
 
-  /** Exported symbols in the imported module that match an import binding. */
+  /**
+   * The definitions in the imported module that an import binding refers to.
+   *
+   * Named imports match by the name used **in the module** — for renamed
+   * imports (`import { a as b }`) that is `importedName` (`"a"`), not the local
+   * alias (`"b"`). Default imports resolve to the module's default export: any
+   * exported symbol carrying a `"default"` modifier, or the `export default
+   * <expr>` assignment symbol named `"default"`.
+   */
   private definitionsForImport(importSymbol: Symbol): readonly Symbol[] {
     const specifier = importSymbol.moduleSpecifier;
     if (specifier === null) {
@@ -231,13 +239,22 @@ export class SymbolIndexer {
     if (targetFile === undefined) {
       return [];
     }
-    const isDefault = importSymbol.modifiers.includes("default");
     const ids = this.byFile.get(targetFile) ?? [];
-    return ids
+    const candidates = ids
       .map((id) => this.symbols.get(id))
       .filter((symbol): symbol is Symbol => symbol !== undefined)
-      .filter((symbol) => symbol.exported && symbol.name === importSymbol.name)
-      .filter((symbol) => !isDefault || symbol.modifiers.includes("default"));
+      .filter((symbol) => symbol.exported);
+
+    const isDefault = importSymbol.modifiers.includes("default");
+    if (isDefault) {
+      // `export default function/class/…` symbols carry a "default" modifier;
+      // the `export default <expr>` assignment symbol is itself named "default".
+      return candidates.filter(
+        (symbol) => symbol.modifiers.includes("default") || symbol.name === "default",
+      );
+    }
+    const importedName = importSymbol.importedName ?? importSymbol.name;
+    return candidates.filter((symbol) => symbol.name === importedName);
   }
 
   /** Resolve a relative module specifier to an indexed file path. */

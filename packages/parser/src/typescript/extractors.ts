@@ -29,6 +29,7 @@ interface SymbolInput {
   readonly exported?: boolean;
   readonly modifiers?: readonly string[];
   readonly moduleSpecifier?: string | null;
+  readonly importedName?: string;
   readonly typeText?: string | null;
 }
 
@@ -88,6 +89,7 @@ function extractImport(
         node: defaultImport,
         modifiers: [...baseModifiers, "default"],
         moduleSpecifier,
+        importedName: "default",
       }),
     );
   }
@@ -101,6 +103,7 @@ function extractImport(
         node: namespaceImport,
         modifiers: [...baseModifiers, "namespace"],
         moduleSpecifier,
+        importedName: "*",
       }),
     );
   }
@@ -114,6 +117,7 @@ function extractImport(
         node: specifier,
         modifiers: [...baseModifiers, alias === undefined ? "named" : "renamed"],
         moduleSpecifier,
+        importedName: specifier.getName(),
       }),
     );
   }
@@ -481,6 +485,7 @@ function buildSymbol(sourceFile: MorphSourceFile, filePath: FilePath, input: Sym
     exported: input.exported ?? false,
     modifiers: input.modifiers ?? [],
     moduleSpecifier: input.moduleSpecifier ?? null,
+    ...(input.importedName === undefined ? {} : { importedName: input.importedName }),
     typeText: input.typeText ?? null,
     documentation: documentationOf(input.node),
   };

@@ -203,6 +203,72 @@ export function run(): number {
       expect(refs[0].filePath).toBe("/src/app.ts");
     });
 
+    it("resolves renamed imports to the module's export", async () => {
+      const indexer = await indexFiles([
+        ["/src/a.ts", `export const a = 1;`],
+        [
+          "/src/b.ts",
+          `import { a as b } from "./a";
+export const c = b + 1;`,
+        ],
+      ]);
+      const aDef = indexer.findDefinitions("a").find((s) => s.filePath === "/src/a.ts")!;
+      const refs = indexer.findReferences(aDef.id);
+      expect(refs).toHaveLength(1);
+      expect(refs[0].filePath).toBe("/src/b.ts");
+      // The alias `b` resolves to the same definition.
+      const bAlias = indexer.findDefinitions("b").find((s) => s.kind === "import")!;
+      expect(bAlias.name).toBe("b");
+      expect(indexer.findReferences(bAlias.id)).toHaveLength(1);
+    });
+
+    it("resolves default imports to an anonymous default export", async () => {
+      const indexer = await indexFiles([
+        [
+          "/src/thing.ts",
+          `export default function(): number {
+  return 42;
+}`,
+        ],
+        [
+          "/src/app.ts",
+          `import compute from "./thing";
+export function run(): number {
+  return compute();
+}`,
+        ],
+      ]);
+      const defaultDef = indexer.listSymbols({
+        filePath: "/src/thing.ts" as FilePath,
+        exported: true,
+      })[0];
+      expect(defaultDef.name).toBe("default");
+      const refs = indexer.findReferences(defaultDef.id);
+      expect(refs).toHaveLength(1);
+      expect(refs[0].filePath).toBe("/src/app.ts");
+    });
+
+    it("resolves default imports to an export default expression", async () => {
+      const indexer = await indexFiles([
+        ["/src/thing.ts", `export default 42;`],
+        [
+          "/src/app.ts",
+          `import answer from "./thing";
+export function run(): number {
+  return answer;
+}`,
+        ],
+      ]);
+      const defaultDef = indexer.listSymbols({
+        filePath: "/src/thing.ts" as FilePath,
+        exported: true,
+      })[0];
+      expect(defaultDef.name).toBe("default");
+      const refs = indexer.findReferences(defaultDef.id);
+      expect(refs).toHaveLength(1);
+      expect(refs[0].filePath).toBe("/src/app.ts");
+    });
+
     it("leaves usages of unindexed names unresolved", async () => {
       const indexer = await indexFiles([
         [
