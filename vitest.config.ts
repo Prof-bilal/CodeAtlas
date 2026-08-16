@@ -23,6 +23,7 @@ const atlasAliases: Record<string, string> = {
   "@atlas/sdk": repoPath("packages/sdk/src/index.ts"),
   "@atlas/agents": repoPath("packages/agents/src/index.ts"),
   "@atlas/usage": repoPath("packages/usage/src/index.ts"),
+  "@atlas/metrics": repoPath("packages/metrics/src/index.ts"),
   "@atlas/toolkit": repoPath("packages/toolkit/src/index.ts"),
   "@atlas/mcp": repoPath("packages/mcp/src/index.ts"),
 };

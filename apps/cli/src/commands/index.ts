@@ -11,6 +11,7 @@ import { type SearchCommandOptions, registerSearch } from "./search";
 import { type SessionsCommandOptions, registerSessions } from "./sessions";
 import { registerTools } from "./tools";
 import type { ToolsCommandOptions } from "./tools";
+import { registerMetrics } from "./metrics";
 import { registerUsage } from "./usage";
 
 /** Register every CLI command on the given program. */
@@ -31,6 +32,7 @@ export function registerCommands(
   registerScan(program);
   registerSessions(program, options.sessions === undefined ? {} : { sessions: options.sessions });
   registerUsage(program);
+  registerMetrics(program);
   registerProviders(program);
   registerOllama(program);
   registerAgents(program, options.agentMcp === undefined ? {} : { agentMcp: options.agentMcp });

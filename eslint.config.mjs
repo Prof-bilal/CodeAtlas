@@ -21,6 +21,7 @@ const ALL_PACKAGES = [
   "@atlas/sdk",
   "@atlas/agents",
   "@atlas/usage",
+  "@atlas/metrics",
   "@atlas/toolkit",
   "@atlas/mcp",
 ];
@@ -39,6 +40,7 @@ const DEPENDENCY_MATRIX = {
   "packages/providers": ["@atlas/core", "@atlas/shared"],
   "packages/agents": ["@atlas/core", "@atlas/shared"],
   "packages/usage": ["@atlas/core", "@atlas/shared"],
+  "packages/metrics": ["@atlas/core", "@atlas/shared"],
   "packages/toolkit": ["@atlas/core", "@atlas/shared"],
   "packages/summary": ["@atlas/core", "@atlas/shared"],
   "packages/search": ["@atlas/core", "@atlas/shared"],
@@ -57,6 +59,7 @@ const DEPENDENCY_MATRIX = {
     "@atlas/search",
     "@atlas/agents",
     "@atlas/usage",
+    "@atlas/metrics",
     "@atlas/toolkit",
   ],
   "apps/cli": ["@atlas/sdk", "@atlas/mcp"],
@@ -98,6 +101,8 @@ export default tseslint.config(
       "ui/**",
       "go-tui-app/**",
       "tests/fixtures/**",
+      "benchmark-repos/**",
+      "benchmarks/**",
     ],
   },
   {

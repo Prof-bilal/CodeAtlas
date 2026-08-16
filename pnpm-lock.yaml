@@ -141,6 +141,15 @@ importers:
         specifier: ^1.30.0
         version: 1.30.0(zod@4.4.3)
 
+  packages/metrics:
+    dependencies:
+      '@atlas/core':
+        specifier: workspace:*
+        version: link:../core
+      '@atlas/shared':
+        specifier: workspace:*
+        version: link:../shared
+
   packages/parser:
     dependencies:
       '@atlas/core':
@@ -191,6 +200,9 @@ importers:
       '@atlas/hashing':
         specifier: workspace:*
         version: link:../hashing
+      '@atlas/metrics':
+        specifier: workspace:*
+        version: link:../metrics
       '@atlas/parser':
         specifier: workspace:*
         version: link:../parser

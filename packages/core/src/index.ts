@@ -144,3 +144,18 @@ export type {
 export type { SearchPort, SearchRequest } from "./ports/search.port";
 export type { ScannerPort } from "./ports/scanner.port";
 export type { StoragePort } from "./ports/storage.port";
+export type {
+  MetricsActivity,
+  MetricsContextEvent,
+  MetricsDay,
+  MetricsFileEvent,
+  MetricsMcpEvent,
+  MetricsPerformance,
+  MetricsPort,
+  MetricsRepository,
+  MetricsScanEvent,
+  MetricsSearchEvent,
+  MetricsSnapshot,
+  MetricsTokenEvent,
+  MetricsTokens,
+} from "./ports/metrics.port";

@@ -100,6 +100,7 @@ export type {
 } from "@atlas/core";
 export type { AgentServiceOptions } from "@atlas/agents";
 export { createUsageService, type CreateUsageServiceOptions } from "./usage/index";
+export { createMetricsService, type CreateMetricsServiceOptions } from "./metrics/index";
 export { createProviderService, createOllamaService } from "./providers/index";
 export type {
   CreateOllamaServiceOptions,
@@ -258,6 +259,21 @@ export type {
   TaskPlan,
 } from "@atlas/core";
 export type {
+  MetricsActivity,
+  MetricsContextEvent,
+  MetricsDay,
+  MetricsFileEvent,
+  MetricsMcpEvent,
+  MetricsPerformance,
+  MetricsPort,
+  MetricsRepository,
+  MetricsScanEvent,
+  MetricsSearchEvent,
+  MetricsSnapshot,
+  MetricsTokenEvent,
+  MetricsTokens,
+} from "@atlas/core";
+export type {
   Budget,
   BudgetInput,
   BudgetStatus,
@@ -311,3 +327,15 @@ export {
   SessionStateError,
   UnknownSessionError,
 } from "@atlas/agents";
+export {
+  MetricsError,
+  MetricsValidationError,
+  MetricsSchemaVersionError,
+  MetricsPersistenceError,
+  METRICS_SCHEMA_VERSION,
+  exportJson as exportMetricsJson,
+  exportCsv as exportMetricsCsv,
+  estimateTokens as estimateMetricTokens,
+  calculateSavings,
+  createEmptySnapshot,
+} from "@atlas/metrics";

@@ -40,6 +40,7 @@
     "@atlas/storage": "workspace:*",
     "@atlas/summary": "workspace:*",
     "@atlas/usage": "workspace:*",
+    "@atlas/metrics": "workspace:*",
     "@atlas/toolkit": "workspace:*"
   }
 }

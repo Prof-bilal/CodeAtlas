@@ -374,6 +374,7 @@ describe("atlas CLI", () => {
       "gemini",
       "init",
       "mcp",
+      "metrics",
       "ollama",
       "opencode",
       "providers",
