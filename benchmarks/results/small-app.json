@@ -1,0 +1,137 @@
+{
+  "repository": "small-app",
+  "profile": {
+    "files": 82,
+    "lines": 6609,
+    "description": "Small standalone application"
+  },
+  "scan": {
+    "firstScanMs": 3889,
+    "incrementalScanMs": 1764,
+    "filesIndexed": 76,
+    "symbolsIndexed": 1198,
+    "dependenciesIndexed": 1788
+  },
+  "tasks": [
+    {
+      "id": "small-search-auth",
+      "category": "search",
+      "description": "Find authentication implementation",
+      "baseline": {
+        "filesRead": 15,
+        "toolCalls": 8,
+        "tokensEstimated": 3000,
+        "latencyMs": 9900,
+        "correct": true
+      },
+      "codeatlas": {
+        "toolsUsed": [
+          "search"
+        ],
+        "filesReturned": 20,
+        "contextTokens": 2148,
+        "latencyMs": 1307,
+        "correct": true,
+        "staleDetected": false
+      }
+    },
+    {
+      "id": "small-search-user-create",
+      "category": "search",
+      "description": "Find user creation flow",
+      "baseline": {
+        "filesRead": 10,
+        "toolCalls": 6,
+        "tokensEstimated": 2000,
+        "latencyMs": 6800,
+        "correct": true
+      },
+      "codeatlas": {
+        "toolsUsed": [
+          "search"
+        ],
+        "filesReturned": 20,
+        "contextTokens": 2525,
+        "latencyMs": 1219,
+        "correct": true,
+        "staleDetected": false
+      }
+    },
+    {
+      "id": "small-explain-app",
+      "category": "explain",
+      "description": "Explain request flow",
+      "baseline": {
+        "filesRead": 5,
+        "toolCalls": 4,
+        "tokensEstimated": 1000,
+        "latencyMs": 3700,
+        "correct": true
+      },
+      "codeatlas": {
+        "toolsUsed": [
+          "explain"
+        ],
+        "filesReturned": 0,
+        "contextTokens": 1792,
+        "latencyMs": 1344,
+        "correct": false,
+        "staleDetected": false
+      }
+    },
+    {
+      "id": "small-context-endpoint",
+      "category": "context",
+      "description": "Add a small endpoint",
+      "baseline": {
+        "filesRead": 12,
+        "toolCalls": 5,
+        "tokensEstimated": 2400,
+        "latencyMs": 7500,
+        "correct": true
+      },
+      "codeatlas": {
+        "toolsUsed": [
+          "context-build"
+        ],
+        "filesReturned": 20,
+        "contextTokens": 4831,
+        "latencyMs": 2916,
+        "correct": true,
+        "staleDetected": false
+      }
+    },
+    {
+      "id": "small-search-auth-test",
+      "category": "search",
+      "description": "Locate tests for authentication",
+      "baseline": {
+        "filesRead": 8,
+        "toolCalls": 5,
+        "tokensEstimated": 1600,
+        "latencyMs": 5500,
+        "correct": true
+      },
+      "codeatlas": {
+        "toolsUsed": [
+          "search"
+        ],
+        "filesReturned": 20,
+        "contextTokens": 1722,
+        "latencyMs": 1295,
+        "correct": true,
+        "staleDetected": false
+      }
+    }
+  ],
+  "freshness": {
+    "modifyDetected": true,
+    "deleteDetected": true,
+    "addDetected": false,
+    "dependencyGraphUpdated": true
+  },
+  "memory": {
+    "indexSizeBytes": 2007475,
+    "peakRssMb": 15.18
+  }
+}

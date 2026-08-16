@@ -1,0 +1,7 @@
+{
+  "maxUploadSize": 104857600,
+  "maxQueryResults": 1000,
+  "maxBulkOperations": 100,
+  "maxApiKeys": 10,
+  "maxWebhooks": 50
+}

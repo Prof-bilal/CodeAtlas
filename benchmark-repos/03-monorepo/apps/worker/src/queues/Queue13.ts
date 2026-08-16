@@ -1,0 +1,2 @@
+﻿export interface QueueConfig13 { name: string; concurrency: number; maxRetries: number; }
+export class Queue13 { private config: QueueConfig13; private jobs: unknown[] = []; constructor(config: QueueConfig13) { this.config = config; } async addJob(job: unknown): Promise<void> { this.jobs.push(job); } async processNext(): Promise<unknown | null> { return this.jobs.shift() || null; } getLength(): number { return this.jobs.length; } getName(): string { return this.config.name; } } export function createQueue13(config: QueueConfig13): Queue13 { return new Queue13(config); }

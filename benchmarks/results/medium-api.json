@@ -1,0 +1,159 @@
+{
+  "repository": "medium-api",
+  "profile": {
+    "files": 405,
+    "lines": 30448,
+    "description": "Medium REST API"
+  },
+  "scan": {
+    "firstScanMs": 11712,
+    "incrementalScanMs": 8532,
+    "filesIndexed": 395,
+    "symbolsIndexed": 5363,
+    "dependenciesIndexed": 7407
+  },
+  "tasks": [
+    {
+      "id": "medium-search-auth",
+      "category": "search",
+      "description": "Find authentication flow",
+      "baseline": {
+        "filesRead": 20,
+        "toolCalls": 10,
+        "tokensEstimated": 4000,
+        "latencyMs": 13000,
+        "correct": true
+      },
+      "codeatlas": {
+        "toolsUsed": [
+          "search"
+        ],
+        "filesReturned": 20,
+        "contextTokens": 1689,
+        "latencyMs": 1957,
+        "correct": true,
+        "staleDetected": false
+      }
+    },
+    {
+      "id": "medium-search-payment",
+      "category": "search",
+      "description": "Trace payment request",
+      "baseline": {
+        "filesRead": 18,
+        "toolCalls": 9,
+        "tokensEstimated": 3600,
+        "latencyMs": 11700,
+        "correct": true
+      },
+      "codeatlas": {
+        "toolsUsed": [
+          "search"
+        ],
+        "filesReturned": 20,
+        "contextTokens": 1736,
+        "latencyMs": 2001,
+        "correct": true,
+        "staleDetected": false
+      }
+    },
+    {
+      "id": "medium-search-authz",
+      "category": "search",
+      "description": "Find authorization middleware",
+      "baseline": {
+        "filesRead": 14,
+        "toolCalls": 7,
+        "tokensEstimated": 2800,
+        "latencyMs": 9100,
+        "correct": true
+      },
+      "codeatlas": {
+        "toolsUsed": [
+          "search"
+        ],
+        "filesReturned": 20,
+        "contextTokens": 1689,
+        "latencyMs": 2247,
+        "correct": true,
+        "staleDetected": false
+      }
+    },
+    {
+      "id": "medium-context-endpoint",
+      "category": "context",
+      "description": "Add a new API endpoint",
+      "baseline": {
+        "filesRead": 16,
+        "toolCalls": 6,
+        "tokensEstimated": 3200,
+        "latencyMs": 9800,
+        "correct": true
+      },
+      "codeatlas": {
+        "toolsUsed": [
+          "context-build"
+        ],
+        "filesReturned": 20,
+        "contextTokens": 6184,
+        "latencyMs": 11419,
+        "correct": true,
+        "staleDetected": false
+      }
+    },
+    {
+      "id": "medium-context-bugfix",
+      "category": "context",
+      "description": "Fix a validation bug",
+      "baseline": {
+        "filesRead": 12,
+        "toolCalls": 5,
+        "tokensEstimated": 2400,
+        "latencyMs": 7500,
+        "correct": true
+      },
+      "codeatlas": {
+        "toolsUsed": [
+          "context-build"
+        ],
+        "filesReturned": 20,
+        "contextTokens": 6469,
+        "latencyMs": 10965,
+        "correct": true,
+        "staleDetected": false
+      }
+    },
+    {
+      "id": "medium-search-test",
+      "category": "search",
+      "description": "Identify affected tests",
+      "baseline": {
+        "filesRead": 10,
+        "toolCalls": 6,
+        "tokensEstimated": 2000,
+        "latencyMs": 6800,
+        "correct": true
+      },
+      "codeatlas": {
+        "toolsUsed": [
+          "search"
+        ],
+        "filesReturned": 20,
+        "contextTokens": 1786,
+        "latencyMs": 1794,
+        "correct": true,
+        "staleDetected": false
+      }
+    }
+  ],
+  "freshness": {
+    "modifyDetected": true,
+    "deleteDetected": true,
+    "addDetected": false,
+    "dependencyGraphUpdated": true
+  },
+  "memory": {
+    "indexSizeBytes": 9105845,
+    "peakRssMb": 15.23
+  }
+}

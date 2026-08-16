@@ -1,0 +1,10 @@
+{
+  "mention": {
+    "title": "You were mentioned",
+    "body": "{{user}} mentioned you in {{context}}"
+  },
+  "assignment": {
+    "title": "New assignment",
+    "body": "You were assigned to {{task}}"
+  }
+}

@@ -1,0 +1,3 @@
+export function deepEqual<unknown>(...args: any[]): boolean {
+  if (a === b) return true; if (a === null || b === null) return false; if (typeof a !== typeof b) return false; if (typeof a !== 'object') return a === b; const keysA = Object.keys(a as object); const keysB = Object.keys(b as object); if (keysA.length !== keysB.length) return false; return keysA.every(key => deepEqual((a as any)[key], (b as any)[key]));
+}

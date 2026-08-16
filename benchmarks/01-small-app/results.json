@@ -1,0 +1,63 @@
+{
+  "repository": "small-app",
+  "repoDir": "01-small-app",
+  "profile": {
+    "files": 82,
+    "lines": 6609
+  },
+  "scan": {
+    "firstScanMs": 8615,
+    "incrementalScanMs": 3109,
+    "filesIndexed": 76,
+    "symbolsIndexed": 1198,
+    "dependenciesIndexed": 1788
+  },
+  "tasks": [
+    {
+      "category": "search",
+      "description": "Find authentication",
+      "codeatlasLatencyMs": 1292,
+      "filesReturned": 20,
+      "contextTokens": 2148,
+      "correct": true
+    },
+    {
+      "category": "search",
+      "description": "Find user creation",
+      "codeatlasLatencyMs": 1322,
+      "filesReturned": 20,
+      "contextTokens": 2525,
+      "correct": true
+    },
+    {
+      "category": "explain",
+      "description": "Explain request flow",
+      "codeatlasLatencyMs": 1370,
+      "filesReturned": 0,
+      "contextTokens": 1792,
+      "correct": false
+    },
+    {
+      "category": "context",
+      "description": "Add endpoint context",
+      "codeatlasLatencyMs": 3403,
+      "filesReturned": 20,
+      "contextTokens": 4831,
+      "correct": true
+    },
+    {
+      "category": "search",
+      "description": "Find auth tests",
+      "codeatlasLatencyMs": 1164,
+      "filesReturned": 20,
+      "contextTokens": 1722,
+      "correct": true
+    }
+  ],
+  "freshness": {
+    "addDetected": false
+  },
+  "memory": {
+    "indexSizeBytes": 2007475
+  }
+}

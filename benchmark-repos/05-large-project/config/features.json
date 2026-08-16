@@ -1,0 +1,7 @@
+{
+  "enableSSO": true,
+  "enable2FA": true,
+  "enableWebhooks": true,
+  "enableAI": false,
+  "enableBeta": false
+}

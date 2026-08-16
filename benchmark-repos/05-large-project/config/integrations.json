@@ -1,0 +1,8 @@
+{
+  "timeout": 30000,
+  "retries": 3,
+  "circuitBreaker": {
+    "threshold": 5,
+    "resetTimeout": 30000
+  }
+}

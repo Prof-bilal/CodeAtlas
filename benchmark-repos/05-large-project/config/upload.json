@@ -1,0 +1,9 @@
+{
+  "maxFileSize": 104857600,
+  "allowedTypes": [
+    "image/*",
+    "application/pdf",
+    "text/*"
+  ],
+  "tempDir": "./temp"
+}

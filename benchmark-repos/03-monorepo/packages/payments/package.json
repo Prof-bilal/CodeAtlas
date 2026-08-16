@@ -1,0 +1,23 @@
+{
+  "name": "@monorepo/payments",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@monorepo/shared": "workspace:*",
+    "@monorepo/database": "workspace:*",
+    "stripe": "^17.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

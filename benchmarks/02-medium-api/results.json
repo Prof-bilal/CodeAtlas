@@ -1,0 +1,71 @@
+{
+  "repository": "medium-api",
+  "repoDir": "02-medium-api",
+  "profile": {
+    "files": 405,
+    "lines": 30448
+  },
+  "scan": {
+    "firstScanMs": 12264,
+    "incrementalScanMs": 3786,
+    "filesIndexed": 395,
+    "symbolsIndexed": 5363,
+    "dependenciesIndexed": 7407
+  },
+  "tasks": [
+    {
+      "category": "search",
+      "description": "Find auth flow",
+      "codeatlasLatencyMs": 2433,
+      "filesReturned": 20,
+      "contextTokens": 1689,
+      "correct": true
+    },
+    {
+      "category": "search",
+      "description": "Trace payment",
+      "codeatlasLatencyMs": 1895,
+      "filesReturned": 20,
+      "contextTokens": 1736,
+      "correct": true
+    },
+    {
+      "category": "search",
+      "description": "Find authz middleware",
+      "codeatlasLatencyMs": 1896,
+      "filesReturned": 20,
+      "contextTokens": 1689,
+      "correct": true
+    },
+    {
+      "category": "context",
+      "description": "Add endpoint context",
+      "codeatlasLatencyMs": 11263,
+      "filesReturned": 20,
+      "contextTokens": 6184,
+      "correct": true
+    },
+    {
+      "category": "context",
+      "description": "Fix validation bug",
+      "codeatlasLatencyMs": 11445,
+      "filesReturned": 20,
+      "contextTokens": 6469,
+      "correct": true
+    },
+    {
+      "category": "search",
+      "description": "Find payment tests",
+      "codeatlasLatencyMs": 1711,
+      "filesReturned": 20,
+      "contextTokens": 1786,
+      "correct": true
+    }
+  ],
+  "freshness": {
+    "addDetected": false
+  },
+  "memory": {
+    "indexSizeBytes": 9105845
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "provider": "sendgrid",
+  "apiKey": "",
+  "from": "noreply@codeatlas.dev",
+  "templatesDir": "./templates"
+}

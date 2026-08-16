@@ -1,0 +1,49 @@
+{
+  "name": "legacy-app",
+  "version": "1.0.0",
+  "description": "Legacy application - DO NOT USE for new projects",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "test": "jest",
+    "test:legacy": "jest --config jest.legacy.config.js",
+    "lint": "eslint src/",
+    "lint:legacy": "eslint src/ --ext .js",
+    "seed": "node scripts/seed.js",
+    "migrate": "node scripts/migrate.js",
+    "deploy": "node scripts/deploy.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "pg": "^8.7.0",
+    "redis": "^4.0.0",
+    "stripe": "^11.0.0",
+    "uuid": "^9.0.0",
+    "dotenv": "^16.0.0",
+    "axios": "^1.0.0",
+    "bcrypt": "^5.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "cors": "^2.8.0",
+    "helmet": "^7.0.0",
+    "morgan": "^1.10.0",
+    "compression": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.0",
+    "@types/node": "^20.0.0",
+    "@types/uuid": "^9.0.0",
+    "@types/pg": "^8.0.0",
+    "@types/cors": "^2.8.0",
+    "@types/morgan": "^1.9.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  }
+}

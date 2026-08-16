@@ -1,0 +1,71 @@
+{
+  "repository": "monorepo",
+  "repoDir": "03-monorepo",
+  "profile": {
+    "files": 1291,
+    "lines": 108637
+  },
+  "scan": {
+    "firstScanMs": 71775,
+    "incrementalScanMs": 19254,
+    "filesIndexed": 1271,
+    "symbolsIndexed": 47859,
+    "dependenciesIndexed": 78491
+  },
+  "tasks": [
+    {
+      "category": "search",
+      "description": "Find auth impl",
+      "codeatlasLatencyMs": 7218,
+      "filesReturned": 20,
+      "contextTokens": 1836,
+      "correct": true
+    },
+    {
+      "category": "search",
+      "description": "Find shared user type",
+      "codeatlasLatencyMs": 7261,
+      "filesReturned": 20,
+      "contextTokens": 1678,
+      "correct": true
+    },
+    {
+      "category": "explain",
+      "description": "Explain shared types",
+      "codeatlasLatencyMs": 10023,
+      "filesReturned": 0,
+      "contextTokens": 38,
+      "correct": false
+    },
+    {
+      "category": "search",
+      "description": "Find payment validation",
+      "codeatlasLatencyMs": 7633,
+      "filesReturned": 20,
+      "contextTokens": 1757,
+      "correct": true
+    },
+    {
+      "category": "explain",
+      "description": "Explain shared utils",
+      "codeatlasLatencyMs": 10368,
+      "filesReturned": 0,
+      "contextTokens": 38,
+      "correct": false
+    },
+    {
+      "category": "search",
+      "description": "Find shared tests",
+      "codeatlasLatencyMs": 5989,
+      "filesReturned": 20,
+      "contextTokens": 1876,
+      "correct": true
+    }
+  ],
+  "freshness": {
+    "addDetected": false
+  },
+  "memory": {
+    "indexSizeBytes": 96010660
+  }
+}

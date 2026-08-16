@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "schedule": "0 2 * * *",
+  "retention": 30,
+  "compression": true,
+  "destination": "/backups"
+}

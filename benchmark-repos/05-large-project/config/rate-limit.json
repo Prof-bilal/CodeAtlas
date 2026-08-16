@@ -1,0 +1,5 @@
+{
+  "windowMs": 60000,
+  "maxRequests": 100,
+  "lockoutMs": 900000
+}

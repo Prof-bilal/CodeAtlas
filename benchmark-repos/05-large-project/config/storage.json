@@ -1,0 +1,6 @@
+{
+  "provider": "s3",
+  "bucket": "codeatlas-files",
+  "region": "us-east-1",
+  "maxFileSize": 104857600
+}

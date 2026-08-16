@@ -1,0 +1,3 @@
+﻿export interface ProcessorJob15 { id: string; type: string; data: Record<string, unknown>; attempts: number; maxAttempts: number; createdAt: Date; }
+export interface ProcessorResult15 { success: boolean; output?: unknown; error?: string; }
+export class Processor15 { private processed: Map<string, ProcessorResult15> = new Map(); async processJob(job: ProcessorJob15): Promise<ProcessorResult15> { const result: ProcessorResult15 = { success: true, output: job.data }; this.processed.set(job.id, result); return result; } getResult(jobId: string): ProcessorResult15 | undefined { return this.processed.get(jobId); } getStats(): Record<string, number> { return { processed: this.processed.size }; } } export function createProcessor15(): Processor15 { return new Processor15(); }

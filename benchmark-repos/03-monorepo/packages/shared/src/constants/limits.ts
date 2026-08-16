@@ -1,0 +1,91 @@
+export const USER_LIMITS = {
+  MAX_NAME_LENGTH: 100,
+  MAX_EMAIL_LENGTH: 255,
+  MIN_PASSWORD_LENGTH: 8,
+  MAX_PASSWORD_LENGTH: 128,
+  MAX_AVATAR_SIZE: 5 * 1024 * 1024,
+  ALLOWED_AVATAR_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+  MAX_SESSIONS: 10,
+  SESSION_EXPIRY_HOURS: 24,
+  REFRESH_TOKEN_EXPIRY_DAYS: 30,
+} as const;
+
+export const PROJECT_LIMITS = {
+  MAX_NAME_LENGTH: 200,
+  MAX_DESCRIPTION_LENGTH: 5000,
+  MAX_MEMBERS: 100,
+  MAX_TAGS: 20,
+  MAX_TAG_LENGTH: 50,
+  MAX_BUDGET: 10000000,
+  MIN_BUDGET: 0,
+  MAX_TASKS: 10000,
+} as const;
+
+export const TASK_LIMITS = {
+  MAX_TITLE_LENGTH: 200,
+  MAX_DESCRIPTION_LENGTH: 50000,
+  MAX_TAGS: 10,
+  MAX_TAG_LENGTH: 50,
+  MAX_SUBTASKS: 50,
+  MAX_ATTACHMENTS: 20,
+  MAX_ATTACHMENT_SIZE: 25 * 1024 * 1024,
+  MAX_COMMENTS: 10000,
+  MAX_COMMENT_LENGTH: 10000,
+  MAX_DEPENDENCIES: 20,
+  MAX_ESTIMATED_HOURS: 1000,
+  ALLOWED_ATTACHMENT_TYPES: [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'application/pdf',
+    'text/plain', 'text/markdown',
+    'application/zip',
+  ],
+} as const;
+
+export const PAYMENT_LIMITS = {
+  MIN_AMOUNT: 50,
+  MAX_AMOUNT: 99999999,
+  MAX_DESCRIPTION_LENGTH: 500,
+  MAX_REFUND_DAYS: 30,
+  ALLOWED_CURRENCIES: ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY'],
+} as const;
+
+export const API_LIMITS = {
+  DEFAULT_PAGE_SIZE: 20,
+  MAX_PAGE_SIZE: 100,
+  MIN_PAGE_SIZE: 1,
+  MAX_SEARCH_LENGTH: 500,
+  MAX_FILTERS: 20,
+  RATE_LIMIT_WINDOW_MS: 60 * 1000,
+  RATE_LIMIT_MAX_REQUESTS: 100,
+  BULK_OPERATION_LIMIT: 100,
+} as const;
+
+export const FILE_LIMITS = {
+  MAX_FILENAME_LENGTH: 255,
+  MAX_PATH_LENGTH: 4096,
+  MAX_FILE_SIZE: 100 * 1024 * 1024,
+  ALLOWED_TEXT_EXTENSIONS: ['.ts', '.tsx', '.js', '.jsx', '.json', '.md', '.txt', '.css', '.html'],
+  ALLOWED_IMAGE_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'],
+  ALLOWED_DOCUMENT_EXTENSIONS: ['.pdf', '.doc', '.docx', '.xls', '.xlsx'],
+} as const;
+
+export const CACHE_LIMITS = {
+  DEFAULT_TTL_MS: 5 * 60 * 1000,
+  MAX_TTL_MS: 24 * 60 * 60 * 1000,
+  MIN_TTL_MS: 60 * 1000,
+  MAX_ENTRIES: 10000,
+} as const;
+
+export const NOTIFICATION_LIMITS = {
+  MAX_TITLE_LENGTH: 200,
+  MAX_MESSAGE_LENGTH: 2000,
+  MAX_BATCH_SIZE: 100,
+  RETENTION_DAYS: 90,
+} as const;
+
+export const VALIDATION_LIMITS = {
+  MAX_STRING_LENGTH: 10000,
+  MAX_ARRAY_LENGTH: 1000,
+  MAX_OBJECT_DEPTH: 10,
+  MAX_JSON_SIZE: 1024 * 1024,
+} as const;

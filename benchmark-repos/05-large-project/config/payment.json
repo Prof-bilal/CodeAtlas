@@ -1,0 +1,6 @@
+{
+  "provider": "stripe",
+  "secretKey": "",
+  "webhookSecret": "",
+  "currency": "USD"
+}

@@ -1,0 +1,8 @@
+{
+  "passwordMinLength": 8,
+  "passwordRequireUppercase": true,
+  "passwordRequireNumbers": true,
+  "passwordRequireSpecial": true,
+  "maxLoginAttempts": 5,
+  "lockoutDuration": 900000
+}

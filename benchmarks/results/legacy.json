@@ -1,0 +1,71 @@
+{
+  "repository": "legacy",
+  "repoDir": "04-legacy",
+  "profile": {
+    "files": 715,
+    "lines": 66972
+  },
+  "scan": {
+    "firstScanMs": 14591,
+    "incrementalScanMs": 6594,
+    "filesIndexed": 699,
+    "symbolsIndexed": 9677,
+    "dependenciesIndexed": 18852
+  },
+  "tasks": [
+    {
+      "category": "search",
+      "description": "Find active auth",
+      "codeatlasLatencyMs": 2636,
+      "filesReturned": 20,
+      "contextTokens": 1836,
+      "correct": true
+    },
+    {
+      "category": "search",
+      "description": "Find deprecated code",
+      "codeatlasLatencyMs": 2111,
+      "filesReturned": 20,
+      "contextTokens": 1621,
+      "correct": true
+    },
+    {
+      "category": "explain",
+      "description": "Explain auth wrapper",
+      "codeatlasLatencyMs": 3598,
+      "filesReturned": 0,
+      "contextTokens": 1252,
+      "correct": false
+    },
+    {
+      "category": "search",
+      "description": "Find active payment",
+      "codeatlasLatencyMs": 2674,
+      "filesReturned": 20,
+      "contextTokens": 1588,
+      "correct": true
+    },
+    {
+      "category": "search",
+      "description": "Find duplicates",
+      "codeatlasLatencyMs": 2730,
+      "filesReturned": 20,
+      "contextTokens": 1532,
+      "correct": true
+    },
+    {
+      "category": "explain",
+      "description": "Explain dependency cycle",
+      "codeatlasLatencyMs": 3448,
+      "filesReturned": 0,
+      "contextTokens": 955,
+      "correct": false
+    }
+  ],
+  "freshness": {
+    "addDetected": false
+  },
+  "memory": {
+    "indexSizeBytes": 19530180
+  }
+}

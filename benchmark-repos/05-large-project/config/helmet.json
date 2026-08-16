@@ -1,0 +1,5 @@
+{
+  "contentSecurityPolicy": true,
+  "crossOriginEmbedderPolicy": false,
+  "crossOriginOpenerPolicy": false
+}

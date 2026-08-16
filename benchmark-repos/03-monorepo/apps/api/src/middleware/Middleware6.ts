@@ -1,0 +1,2 @@
+﻿export interface MiddlewareConfig6 { name: string; order: number; enabled: boolean; }
+export class Middleware6 { private config: MiddlewareConfig6; constructor(config: MiddlewareConfig6) { this.config = config; } async execute(req: unknown, res: unknown, next: () => void): Promise<void> { if (this.config.enabled) { next(); } } getName(): string { return this.config.name; } getOrder(): number { return this.config.order; } } export function createMiddleware6(config: MiddlewareConfig6): Middleware6 { return new Middleware6(config); }

@@ -1,0 +1,14 @@
+{
+  "welcome": {
+    "subject": "Welcome",
+    "template": "welcome"
+  },
+  "reset": {
+    "subject": "Reset Password",
+    "template": "reset"
+  },
+  "verify": {
+    "subject": "Verify Email",
+    "template": "verify"
+  }
+}
