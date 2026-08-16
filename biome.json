@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": ["dist", "node_modules", "coverage", "tests/fixtures", "benchmark-repos", "benchmarks"]
+    "ignore": [
+      "dist",
+      "node_modules",
+      "coverage",
+      "tests/fixtures",
+      "benchmark-repos",
+      "benchmarks"
+    ]
   },
   "formatter": {
     "enabled": true,
