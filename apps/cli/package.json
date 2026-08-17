@@ -1,7 +1,28 @@
 {
   "name": "codeatlas-cli",
-  "version": "0.2.1",
-  "description": "Command-line interface for CodeAtlas.",
+  "version": "0.3.0-beta.0",
+  "description": "CodeAtlas CLI — a local-first AI context engine that scans, parses, and indexes a source tree into a queryable context database for developer tools and AI agents.",
+  "author": "CodeAtlas contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prof-bilal/CodeAtlas.git"
+  },
+  "homepage": "https://github.com/Prof-bilal/CodeAtlas",
+  "bugs": {
+    "url": "https://github.com/Prof-bilal/CodeAtlas/issues"
+  },
+  "keywords": [
+    "codeatlas",
+    "ai",
+    "context",
+    "code-search",
+    "code-index",
+    "mcp",
+    "agent",
+    "cli",
+    "local-first"
+  ],
   "type": "module",
   "bin": {
     "atlas": "./dist/index.js"

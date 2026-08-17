@@ -15,7 +15,7 @@ Legend: `[ ]` not started · `[~]` partial · `[x]` complete · `[!]` blocked.
 - [~] Parser: namespaces, bare expressions (P2-10; known gaps documented)
 - [x] Graph (imports/calls/refs, BFS, SCC cycle detection)
 - [x] SQLite storage, 8 tables, migrations, repositories
-- [x] P0 memory fix: statement cache on storage + usage repos — **uncommitted**
+- [x] P0 memory fix: statement cache on storage + usage repos — **committed `737236f`**
 - [x] Ranked search (fuzzy + `RelevanceScorer` seam; no embeddings yet)
 - [x] Deterministic context ranking (ADR-001)
 - [x] Context SDK (`createContextSDK`) as the only read path
@@ -69,7 +69,7 @@ Legend: `[ ]` not started · `[~]` partial · `[x]` complete · `[!]` blocked.
 
 ## Benchmarks
 
-- [ ] Commit `benchmarks/extreme/` (results.json, §7 P0-fix section) (P6-01)
+- [x] Commit `benchmarks/extreme/` (results.json, §7 P0-fix section) (P6-01)
 - [ ] Consolidate 3 benchmark artifacts w/ scope labels (P6-02)
 - [ ] Post-fix repo-5000 attempt on a safe machine (P6-03)
 - [ ] Evidence: token savings, context accuracy, incremental, freshness (P6-04)

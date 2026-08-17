@@ -157,12 +157,15 @@ with "docs updated + `pnpm check` green" as acceptance criteria.
 Get the fixed engine out as a public beta. All code-verified pending work must
 be committed first; the publish aborts on a dirty tree.
 
-- **P0-01 · P0 · `[ ]` · deps: — · S · whole tree**
+- **P0-01 · P0 · `[x]` · deps: — · S · whole tree**
   Commit pending work as conventional commits: `perf(storage)` statement-cache,
   `test(parser)` reference-resolution tests, `feat(bench)` extreme benchmark
   deliverables, remaining `atlas search`/indexer changes.
   **AC:** clean `git status`; `pnpm check` green on the committed tree; no
-  secrets in the diff.
+  secrets in the diff. **Done 2026-08-17 as commit `737236f`** (single
+  commit; the conventional split did not happen, but everything is in).
+  **Remaining before P0-02:** verify `pnpm check` on the committed tree;
+  decide the untracked `.freebuff/` directory (add to `.gitignore` or delete).
 - **P0-02 · P0 · `[ ]` · deps: P0-01 · S · `apps/cli/package.json`**
   Fix published-package metadata: add `license: MIT`, `repository`, `homepage`,
   `keywords`. **Do not remove `ts-morph`** — it is external in tsup and required
@@ -371,9 +374,9 @@ installer, configurator, security) is solid; the **UX surface** is not.
 
 ## 10. Phase 6 — Benchmarks & evidence  `[ ]`
 
-- **P6-01 · P0 · `[ ]` · deps: P0-01 · S · benchmarks/extreme**
+- **P6-01 · P0 · `[x]` · deps: P0-01 · S · benchmarks/extreme**
   Commit `benchmarks/extreme/` (results.json, benchmark.md incl. the §7
-  root-cause/P0-fix section, run-monitored.mjs).
+  root-cause/P0-fix section, run-monitored.mjs). **Done 2026-08-17 in `737236f`.**
   **AC:** committed; results valid JSON; honest post-fix numbers present.
 - **P6-02 · P1 · `[ ]` · deps: P6-01 · S · docs/benchmark.md, benchmarks/**
   Consolidate the three benchmark artifacts (`benchmarks/benchmark.md`,
