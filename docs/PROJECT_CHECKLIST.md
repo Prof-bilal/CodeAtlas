@@ -92,10 +92,9 @@ Legend: `[ ]` not started · `[~]` partial · `[x]` complete · `[!]` blocked.
 
 ## Distribution & Open Source
 
-- [ ] Fix published-package metadata: license/repository/homepage/keywords
+- [x] Fix published-package metadata: license/repository/homepage/keywords
       (P0-02)
-- [ ] Bump + publish `codeatlas-cli@0.3.0-beta.0` (P0-03…P0-06) — **needs npm
-      auth/OTP**
+- [x] Bump + publish `codeatlas-cli@0.3.0-beta.0` (P0-03…P0-06) — **published 2026-08-17** (tag `beta`)
 - [ ] Issue/PR templates, FUNDING, CODEOWNERS, dependabot (P9-02)
 - [ ] Git tag + GitHub Release + release workflow (P9-03)
 - [ ] Install/upgrade/uninstall docs (P9-04)

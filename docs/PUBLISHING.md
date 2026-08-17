@@ -109,4 +109,22 @@ credentials in the repository.
 
 | Version | Date | Highlights |
 | ------- | ---- | ---------- |
+| `0.3.0-beta.0` | 2026-08-17 | Statement-cache fix (native memory leak, peak RSS 4,274 MB → 1,698 MB on a 1000-file repo), parser reference-resolution performance/correctness, bounded search-index content, extreme benchmark suite, full npm metadata on the package. First publish after the 2026-08-16 unpublish. |
 | `0.2.1` | 2026-08-14 | Deterministic context ranking (`@atlas/context`, ADR-001), `atlas explain`, `atlas doctor`, `atlas sessions stop` token-impact reporting, TUI removed from the shipped artifact. `atlas --version` reports the CLI's own version. |
+
+Notes from the 0.3.0-beta.0 release:
+
+- **Granular token publish.** Published with a granular access token
+  (`--//registry.npmjs.org/:_authToken=<npm_...>`, "Bypass 2FA" enabled) and
+  `npm publish` run from `apps/cli` — pnpm's `--filter ... publish` did **not**
+  forward the inline token (ENEEDAUTH). Pre-release versions require an
+  explicit `--tag beta`.
+- **`--no-git-checks`.** Used because the release changes were not yet
+  committed; the P0-02/03/04 changes (package.json metadata, version, CHANGELOG)
+  were committed afterwards.
+- **Registry processing delay.** The first publish attempt returned a 409
+  (packument not fully processed); a retry ~20 s later succeeded. `npm install`
+  then needed a `npm cache clean --force` because the stale packument 404'd.
+- **npm auto-corrects `bin`.** npm normalized `"./dist/index.js"` to
+  `"dist/index.js"` in the published manifest (a harmless auto-correction).
+  Verify with `npm view codeatlas-cli@beta bin`.

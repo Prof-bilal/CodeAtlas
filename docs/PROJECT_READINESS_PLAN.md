@@ -184,15 +184,20 @@ be committed first; the publish aborts on a dirty tree.
   (entries, sizes, no stray files).
   **AC:** tarball contents match expectations; no `dist/` or `.codeatlas/`
   leakage.
-- **P0-06 · P0 · `[!]` · deps: P0-05 · S · —** *(blocked: needs user npm
-  auth/2FA OTP)*
+- **P0-06 · P0 · `[x]` · deps: P0-05 · S · —** *(was blocked: user npm auth —
+  done with a granular "Bypass 2FA" token)*
   `pnpm publish` to npm, then a global-install smoke test from a separate
   directory: `atlas --version`, `atlas init` on a small repo, `atlas search`,
   `atlas doctor`.
-  **AC:** install from registry works; core commands run.
-- **P0-07 · P1 · `[ ]` · deps: P0-06 · S · `docs/PUBLISHING.md`**
+  **AC:** install from registry works; core commands run. **Done 2026-08-17 —
+  `codeatlas-cli@0.3.0-beta.0` published with tag `beta` (also `latest`, the
+  only version after the 2026-08-16 unpublish); global install + init/search/
+  doctor/explain smoke test passed. Notes (token publish, `--no-git-checks`,
+  `--tag beta`, 409 retry, `npm cache clean`, bin auto-correction) recorded in
+  `docs/PUBLISHING.md`.**
+- **P0-07 · P1 · `[x]` · deps: P0-06 · S · `docs/PUBLISHING.md`**
   Add the `0.3.0-beta.0` row to the released-versions table.
-  **AC:** table current.
+  **AC:** table current. **Done 2026-08-17** (row + release notes).
 
 ---
 
