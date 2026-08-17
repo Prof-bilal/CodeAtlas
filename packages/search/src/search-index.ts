@@ -77,6 +77,16 @@ function symbolNodeId(symbolId: SymbolId): NodeId {
   return `n:${symbolId}` as NodeId;
 }
 
+/**
+ * The maximum number of leading characters of a file's content that the
+ * index retains for scoring/prefiltering. Retaining full bodies of huge files
+ * duplicates the corpus text in memory (~2× with the lowercased `searchText`);
+ * a bounded excerpt keeps identifier/prose matching working for the common
+ * case while hard-capping the index's memory per file. Winning hits fetch the
+ * full body on demand from the context database (see the Context SDK).
+ */
+export const MAX_INDEXED_CONTENT_CHARS = 2000;
+
 /** Lowercase and normalize a text field for comparison. */
 function normalize(text: string): string {
   return text.toLowerCase().replaceAll("\\", "/");
@@ -101,12 +111,16 @@ export function buildIndex(snapshot: ContextSnapshot): readonly IndexedEntity[] 
 
   for (const file of snapshot.files ?? []) {
     const basename = pathBasename(file.path);
+    const content =
+      file.content.length > MAX_INDEXED_CONTENT_CHARS
+        ? file.content.slice(0, MAX_INDEXED_CONTENT_CHARS)
+        : file.content;
     entities.push({
       kind: "file",
       path: file.path,
       language: file.language,
-      content: file.content,
-      searchText: normalize(`${basename}\n${file.path}\n${file.content}`),
+      content,
+      searchText: normalize(`${basename}\n${file.path}\n${content}`),
       identifierLengths: [basename.length, file.path.length],
     });
   }

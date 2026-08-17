@@ -57,6 +57,8 @@ README.md
 | `docs/CHANGE_POLICY.md` | How changes happen. |
 | `docs/FEATURE_STATUS.md` | Status tags across features. |
 | `docs/ROADMAP.md` | Phased roadmap. |
+| `docs/PROJECT_READINESS_PLAN.md` | Productization audit + phased readiness plan (code-verified, 2026-08-17): status legend, maturity snapshot, Phases 0–11 with tasks (priority/deps/complexity/files/acceptance criteria), anti-overbuild list, final report, top-10 next actions. |
+| `docs/PROJECT_CHECKLIST.md` | Short, usable release checklist mirroring the readiness plan (task IDs in parentheses). |
 | `docs/AGENT_COMPATIBILITY.md` | How external agents consume these instructions. |
 | `docs/DEVELOPMENT.md` | Developer setup & commands (prerequisites, install, build/test, debugging, env variables). |
 | `docs/DEVELOPMENT_WORKFLOW.md` | The standard agent workflow + reporting format. |

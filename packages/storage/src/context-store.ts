@@ -153,6 +153,32 @@ export class ContextStore implements ContextDatabasePort {
     };
   }
 
+  /**
+   * Read back only the persisted path → hash map. This is the indexer's
+   * change-detection fast path: on a large corpus it avoids materializing
+   * every row of every table (including full file bodies) just to diff
+   * hashes, which is gigabytes of allocations on a no-op `update`.
+   */
+  public loadHashes(): Readonly<Record<string, string>> {
+    return this.hashes.all();
+  }
+
+  /**
+   * Lightweight entity counts (single `COUNT` queries, no row bodies) used to
+   * report accurate stats on the incremental no-op fast path.
+   */
+  public stats(): {
+    readonly files: number;
+    readonly symbols: number;
+    readonly dependencies: number;
+  } {
+    return {
+      files: this.files.count(),
+      symbols: this.symbols.count(),
+      dependencies: this.dependencies.count(),
+    };
+  }
+
   /** Search files, symbols, summaries, and modules by query text. */
   public searchContext(query: string, options: SearchOptions = {}): readonly SearchResult[] {
     // SQLite LIKE is ASCII case-insensitive; an empty query would match every
@@ -191,16 +217,24 @@ export class ContextStore implements ContextDatabasePort {
     this.db.close();
   }
 
-  /** Reclaim unused pages and refresh query plans after bulk writes. */
+  /**
+   * Reclaim unused pages and refresh query plans after bulk writes.
+   *
+   * VACUUM is **conditional**: a full `VACUUM` rewrites the entire database
+   * file and takes seconds on a large corpus, yet incremental updates free
+   * only a few pages. It runs only when free pages are a meaningful share of
+   * the file, so the steady-state `atlas update` no longer pays a full rewrite
+   * every run. The WAL checkpoint and `optimize` run unconditionally (cheap).
+   */
   public compact(): void {
     if (this.dbFilePath !== ":memory:") {
-      // Fold the WAL back into the main file and shrink it to zero so a crash
-      // or timeout cannot leave a multi-hundred-MB `-wal` behind, then rebuild
-      // the database file so pages freed by DELETE + re-insert cycles (the
-      // indexer's full `saveContext` replaces every row) are actually reused.
       this.db.exec("PRAGMA wal_checkpoint(TRUNCATE);");
       this.db.exec("PRAGMA optimize;");
-      this.db.exec("VACUUM;");
+      const pageCount = pragmaNumber(this.db, "page_count");
+      const freePages = pragmaNumber(this.db, "freelist_count");
+      if (pageCount > 0 && freePages / pageCount >= 0.2) {
+        this.db.exec("VACUUM;");
+      }
     } else {
       this.db.exec("PRAGMA optimize;");
     }
@@ -389,6 +423,16 @@ function fileNodeId(path: FilePath): string {
 /** Graph node id for a symbol (mirrors `@atlas/graph` without importing it). */
 function symbolNodeId(symbolId: SymbolId): string {
   return `n:${symbolId}`;
+}
+
+/** Read a numeric `PRAGMA` value (e.g. `page_count`, `freelist_count`). */
+function pragmaNumber(db: DatabaseSync, name: string): number {
+  const row = db.prepare(`PRAGMA ${name}`).get() as Row | undefined;
+  if (row === undefined) {
+    return 0;
+  }
+  const value = row[name as keyof Row];
+  return typeof value === "number" ? value : typeof value === "bigint" ? Number(value) : 0;
 }
 
 function escapeLike(value: string): string {

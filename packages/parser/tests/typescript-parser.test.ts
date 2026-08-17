@@ -266,9 +266,21 @@ svc.start();`);
       const serviceRef = parsed.references.find((r) => r.name === "Service")!;
       expect(serviceRef.kind).toBe("construct");
 
-      // Unresolved usages keep targetSymbolId null.
+      // `svc` resolves to the module-level declaration and is kept.
       const svcRef = parsed.references.find((r) => r.name === "svc")!;
       expect(svcRef.targetSymbolId).toBe(parsed.symbols.find((s) => s.name === "svc")!.id);
+    });
+
+    it("drops usages that resolve to no symbol in the file", async () => {
+      const parsed = await parseTs(`export const BASE = 10;
+export function use(): void {
+  const x = BASE + missing();
+}`);
+      // `missing` has no definition in the file -> its usage is not retained.
+      expect(parsed.references.find((r) => r.name === "missing")).toBeUndefined();
+      // `BASE` resolves to the module symbol and is kept.
+      const baseRef = parsed.references.find((r) => r.name === "BASE")!;
+      expect(baseRef.targetSymbolId).toBe(parsed.symbols.find((s) => s.name === "BASE")!.id);
     });
 
     it("classifies heritage clause identifiers as extends and implements", async () => {
@@ -378,6 +390,36 @@ export function documented(): void {}`);
         content: "",
       });
       expect(result.ok).toBe(false);
+    });
+
+    it("skips the reference graph for files above maxReferenceLines", async () => {
+      const parser = new TypeScriptParser({ maxReferenceLines: 5 });
+      const result = await parser.parse(
+        tsFile(
+          `export const BASE = 10;
+export function double(value: number) { return value * 2; }
+export class Service {
+  start() { return BASE + double(1); }
+}
+const svc = new Service();
+`,
+        ),
+      );
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      // Symbols are still indexed for huge files...
+      expect(result.value.symbols.length).toBeGreaterThan(0);
+      expect(result.value.symbols.some((s) => s.name === "double")).toBe(true);
+      // ...but the identifier-walk/reference-resolution pass is skipped.
+      expect(result.value.references).toEqual([]);
+    });
+
+    it("resolves references normally below maxReferenceLines", async () => {
+      const parser = new TypeScriptParser({ maxReferenceLines: 100 });
+      const result = await parser.parse(tsFile("export const BASE = 10;\nconst y = BASE + 1;\n"));
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value.references.length).toBeGreaterThan(0);
     });
   });
 });

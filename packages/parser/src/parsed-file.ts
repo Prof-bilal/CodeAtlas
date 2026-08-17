@@ -15,8 +15,13 @@ export interface ParsedFile {
   /** Symbols in declaration order, linked to parents via `parentId`. */
   readonly symbols: readonly Symbol[];
   /**
-   * Identifier usages in the file. Same-file targets are resolved by the
-   * parser; cross-file targets are resolved by the symbol indexer.
+   * Identifier usages in the file that resolved to a same-file target.
+   *
+   * Usages that resolve to no symbol in the file are dropped so a large corpus
+   * stays memory-bounded: unresolved usages were never consumed by the
+   * dependency graph (which only emits edges for resolved targets) and were
+   * never persisted, yet retaining every identifier usage was the dominant
+   * peak-memory cost at repository scale.
    */
   readonly references: readonly Reference[];
 }

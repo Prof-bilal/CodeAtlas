@@ -1,4 +1,5 @@
 import type { Reference, Symbol } from "@atlas/core";
+import type { SymbolId } from "@atlas/shared";
 
 /**
  * Resolve each reference to a same-file definition using two name-based
@@ -13,28 +14,56 @@ import type { Reference, Symbol } from "@atlas/core";
  * {@link Symbol} model, so every parser can reuse it. References that do not
  * match remain unresolved (`targetSymbolId: null`) and may be resolved across
  * files by the symbol indexer.
+ *
+ * Performance: lookup structures are built **once** per file (O(symbols)),
+ * then every reference resolves in O(containers) worst case with O(1) member
+ * and module-symbol lookups. The previous implementation re-filtered the
+ * symbol array inside the reference loop, making a single 50k-line file
+ * quadratic in its (very large) symbol + reference counts.
  */
 export function resolveReferenceTargets(
   references: readonly Reference[],
   symbols: readonly Symbol[],
 ): Reference[] {
-  const moduleSymbols = symbols.filter((symbol) => symbol.parentId === null);
-  const containers = symbols.filter(
-    (symbol) => symbol.kind === "class" || symbol.kind === "interface" || symbol.kind === "enum",
-  );
+  const moduleSymbolsByName = new Map<string, Symbol>();
+  const membersByContainer = new Map<SymbolId, Map<string, Symbol>>();
+  const containers: Symbol[] = [];
+
+  for (const symbol of symbols) {
+    if (symbol.parentId === null && !moduleSymbolsByName.has(symbol.name)) {
+      moduleSymbolsByName.set(symbol.name, symbol);
+    }
+    if (symbol.kind === "class" || symbol.kind === "interface" || symbol.kind === "enum") {
+      containers.push(symbol);
+    }
+  }
+
+  // First symbol with a given (parent, name) wins, mirroring the original
+  // `symbols.find(...)` semantics for overloads and duplicate members.
+  for (const symbol of symbols) {
+    if (symbol.parentId === null) {
+      continue;
+    }
+    let members = membersByContainer.get(symbol.parentId);
+    if (members === undefined) {
+      members = new Map<string, Symbol>();
+      membersByContainer.set(symbol.parentId, members);
+    }
+    if (!members.has(symbol.name)) {
+      members.set(symbol.name, symbol);
+    }
+  }
 
   return references.map((reference) => {
     const container = containers.find((candidate) => contains(candidate, reference));
     if (container !== undefined) {
-      const member = symbols.find(
-        (symbol) => symbol.parentId === container.id && symbol.name === reference.name,
-      );
+      const member = membersByContainer.get(container.id)?.get(reference.name);
       if (member !== undefined) {
         return { ...reference, targetSymbolId: member.id };
       }
     }
 
-    const moduleMatch = moduleSymbols.find((symbol) => symbol.name === reference.name);
+    const moduleMatch = moduleSymbolsByName.get(reference.name);
     if (moduleMatch !== undefined) {
       return { ...reference, targetSymbolId: moduleMatch.id };
     }

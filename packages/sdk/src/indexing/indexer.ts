@@ -105,10 +105,12 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
     const paths = scan.value.files.map((file) => file.path);
     const current = await hasher.buildSnapshot(paths);
     if (!current.ok) return fail(current.error);
-    const previousContext = store.loadContext();
-    const previousHashes = previousContext.hashes ?? {};
-    const diff = hasher.compareHashes({ hashes: previousHashes }, current.value);
     const mode = request.mode ?? "build";
+    // Change detection reads only the persisted hashes (one table), not the
+    // whole context snapshot: a no-op `update` must not materialize every file
+    // body, symbol, and edge just to discover that nothing changed.
+    const previousHashes = store.loadHashes();
+    const diff = hasher.compareHashes({ hashes: previousHashes }, current.value);
     const incremental = mode === "update" && Object.keys(previousHashes).length > 0;
 
     // Files that must be re-read and re-parsed: every TypeScript file for a
@@ -117,13 +119,44 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
     for (const path of diff.added) {
       filesToReparse.add(path);
     }
+    const deletedSet = new Set<string>(diff.deleted);
+    const scannedTsFiles = scan.value.files.filter((scanned) => scanned.language === "typescript");
 
+    // Incremental no-op fast path: nothing changed on disk, so there is
+    // nothing to re-read, re-parse, or rewrite. Refreshing the saved-at
+    // timestamp is one metadata row; the multi-second full `updateContext` +
+    // VACUUM cycle is skipped entirely.
+    if (incremental && filesToReparse.size === 0 && deletedSet.size === 0) {
+      store.updateContext({});
+      const stats = store.stats();
+      return ok({
+        repositoryPath,
+        dbPath,
+        mode,
+        files: scannedTsFiles.length,
+        parsedFiles: 0,
+        skippedFiles: 0,
+        symbols: stats.symbols,
+        dependencies: stats.dependencies,
+        added: 0,
+        changed: 0,
+        deleted: 0,
+        unchanged: diff.unchangedCount,
+        manifestPath: manifest.value.path,
+        summaries: 0,
+        summariesFailed: 0,
+      });
+    }
+
+    // Only incremental updates need the persisted files/symbols/edges; a full
+    // `build` replaces everything and only ever needed the hash diff above.
+    const previousContext = incremental ? store.loadContext() : undefined;
     const previousFiles = new Map<string, SourceFile>();
-    for (const file of previousContext.files ?? []) {
+    for (const file of previousContext?.files ?? []) {
       previousFiles.set(file.path, file);
     }
     const previousSymbolsByFile = new Map<string, PersistedSymbol[]>();
-    for (const symbol of previousContext.symbols ?? []) {
+    for (const symbol of previousContext?.symbols ?? []) {
       const list = previousSymbolsByFile.get(symbol.filePath);
       if (list === undefined) {
         previousSymbolsByFile.set(symbol.filePath, [symbol]);
@@ -135,7 +168,6 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
     const reparsePaths = new Set<string>();
     const sourceFiles: SourceFile[] = [];
     const filesToParse: SourceFile[] = [];
-    const scannedTsFiles = scan.value.files.filter((scanned) => scanned.language === "typescript");
     const toRead = scannedTsFiles.filter(
       (scanned) => !incremental || filesToReparse.has(scanned.path),
     );
@@ -168,7 +200,6 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
     // and added files contribute freshly-parsed symbols; deleted files drop
     // theirs. PersistedSymbol ids are deterministic (file + span), so persisted ids and
     // graph edges remain stable across runs.
-    const deletedSet = new Set(diff.deleted);
     const mergedSymbols: PersistedSymbol[] = [];
     for (const [filePath, symbols] of previousSymbolsByFile) {
       if (deletedSet.has(filePath) || reparsePaths.has(filePath)) {
@@ -214,7 +245,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
         nodeIds.add(edge.from);
         nodeIds.add(edge.to);
       }
-      for (const edge of previousContext.dependencies ?? []) {
+      for (const edge of previousContext?.dependencies ?? []) {
         if (!USAGE_EDGE_KINDS.has(edge.kind)) {
           continue;
         }

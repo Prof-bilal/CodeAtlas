@@ -11,6 +11,7 @@ import { ContextStore } from "@atlas/storage";
 import { describe, expect, it } from "vitest";
 import { LexicalScorer, type RelevanceScorer } from "../src/scoring";
 import { SearchService } from "../src/search.service";
+import { MAX_INDEXED_CONTENT_CHARS } from "../src/search-index";
 
 function file(path: string, content = ""): SourceFile {
   return { path: path as FilePath, language: "typescript", content };
@@ -269,5 +270,29 @@ describe("SearchService", () => {
     const hits = service.search("where is the double function", { types: ["symbol"] });
     expect(hits.some((h) => h.title === "isActive")).toBe(false);
     expect(hits.some((h) => h.title === "double")).toBe(true);
+  });
+
+  it("bounds indexed file content so the index cannot balloon with corpus text", () => {
+    const head = "export const HEAD = 1;\n";
+    const tail = "export const TAIL = 2;\n";
+    const filler = "// padding\n".repeat(2000);
+    const content = `${head}${filler}${tail}`;
+    expect(content.length).toBeGreaterThan(MAX_INDEXED_CONTENT_CHARS);
+
+    const service = new SearchService();
+    service.indexSnapshot(
+      snapshot({
+        files: [file("/src/huge.ts", content), file("/src/small.ts", tail)],
+      }),
+    );
+
+    // Text inside the bounded excerpt still matches by content.
+    expect(
+      service.search("HEAD", { types: ["file"] }).some((h) => h.title === "/src/huge.ts"),
+    ).toBe(true);
+    // Text beyond the excerpt no longer scores by content (path/basename only).
+    const tailHits = service.search("TAIL", { types: ["file"] });
+    expect(tailHits.some((h) => h.title === "/src/huge.ts")).toBe(false);
+    expect(tailHits.some((h) => h.title === "/src/small.ts")).toBe(true);
   });
 });

@@ -1,0 +1,116 @@
+{
+  "benchmark": "codeatlas-extreme-repository-stress",
+  "date": "2026-08-17",
+  "environment": "./environment.json",
+  "verdict": "PASS_WITH_CONDITIONS",
+  "corpora": {
+    "repo-1000": {
+      "generated": true,
+      "indexed": "rebuilt on-disk after P0 fix (statement-cache) - see p0Fix below",
+      "filesTs": 1000,
+      "totalLines": 5052317,
+      "sourceBytes": 251226790,
+      "scanWallMs": 1407,
+      "build": { "ok": true, "wallMs": 188321, "peakRssMb": 1698, "minMemAvailMb": 1361 },
+      "indexBytes": 353267712,
+      "symbols": 78904,
+      "dependencies": 139408
+    },
+    "repo-5000": {
+      "generated": true,
+      "indexed": false,
+      "filesTs": 5000,
+      "totalLines": 25205885,
+      "sourceGiB": 1.2,
+      "build": { "ok": false, "trigger": "guard kill (RSS 4863MB > 4800MB cap)", "wallMs": 983644, "peakRssMb": 4863 },
+      "note": "Parse phase completes (~16 min); save phase exceeds machine memory envelope. Full index not achievable on 7.2 GiB shared machine."
+    },
+    "repo-10000": {
+      "generated": "regenerate with --repo b (8.1 GiB)",
+      "indexed": false,
+      "filesTs": 10005,
+      "totalLines": 150393960,
+      "sourceGiB": 8.1,
+      "note": "Expected ~10+ GiB peak RSS from linear scaling of full in-memory build; not attempted to protect the machine."
+    }
+  },
+  "practicalLimitSweep": [
+    { "files": 500, "ok": true, "wallSec": 111, "peakRssMb": 2803 },
+    { "files": 1000, "ok": true, "wallSec": 241, "peakRssMb": 4852, "minMemAvailMb": 338, "note": "pre-fix" },
+    { "files": 1248, "ok": false, "wallSec": 248, "peakRssMb": 4942, "trigger": "MemAvailable 53MB < 80MB" },
+    { "files": 1657, "ok": false, "wallSec": 321, "peakRssMb": 5284, "trigger": "MemAvailable 59MB < 80MB" },
+    { "files": 2500, "ok": false, "wallSec": 2425, "peakRssMb": 5324, "trigger": "MemAvailable 67MB < 80MB" },
+    { "files": 5000, "ok": false, "wallSec": 984, "peakRssMb": 4863, "trigger": "RSS 4863MB > 4800MB cap" },
+    { "files": 1000, "ok": true, "wallSec": 188, "peakRssMb": 1698, "minMemAvailMb": 1361, "note": "post-fix (P0 statement-cache); same corpus" }
+  ],
+  "search": {
+    "onRepo": "repo-1000",
+    "warmLatencyMs": [2342, 2641, 5645, 10931, 2093, 2068, 2047, 1890, 1891, 1885],
+    "coldLatencyMs": 6440,
+    "peakRssMb": 738,
+    "zeroHitQueries": ["getBalance (no such content in corpus)"]
+  },
+  "contextBuild": {
+    "onRepo": "repo-1000",
+    "budget": { "maxItems": 20, "maxTokensPerItem": 2000, "maxTokensTotal": 12000 },
+    "tasks": [
+      { "task": "Add a new billing feature", "wallMs": 5819, "items": 3, "tokensEstimated": 879 },
+      { "task": "Debug the order processing pipeline", "wallMs": 9784, "items": 8, "tokensEstimated": 10899 },
+      { "task": "Add authentication to a new API endpoint", "wallMs": 7421, "items": 3, "tokensEstimated": 879 },
+      { "task": "What is the overall project structure?", "wallMs": 4616, "items": 3, "tokensEstimated": 879 },
+      { "task": "Fix the database schema for users", "wallMs": 4278, "items": 3, "tokensEstimated": 879 }
+    ],
+    "note": "Generic tasks collapse to instructions+overview (879 tokens) because generated identifiers are opaque; concrete code-change tasks pull real files (~10.9k tokens within the 12k budget)."
+  },
+  "tokenSavings": {
+    "baselineWholeCorpusTokensEstimate": 61000000,
+    "codeatlasContextTokens": [879, 10899, 879, 879, 879],
+    "reductionFactor": "4600x - 57000x",
+    "note": "Baseline = repo-1000 source bytes / 4 chars per token (~61M tokens). CodeAtlas context caps at 12k tokens per task."
+  },
+  "mcp": {
+    "onRepo": "repo-1000",
+    "startupMs": 495,
+    "initMs": 488,
+    "requests": 12,
+    "errors": 0,
+    "toolLatencyMs": {
+      "project_overview": 4317,
+      "search_symbols": [1577, 277, 195],
+      "search_files": [103, 90],
+      "get_dependencies": [244, 247],
+      "explain_module": 217,
+      "get_summary": 80,
+      "read_file_range": [91, 84]
+    },
+    "concurrency": [
+      { "level": 5, "wallMs": 1218, "ok": 5, "errors": 0 },
+      { "level": 10, "wallMs": 2433, "ok": 10, "errors": 0 },
+      { "level": 25, "wallMs": 7517, "ok": 25, "errors": 0 }
+    ]
+  },
+  "incremental": {
+    "onRepo": "repo-1000",
+    "noopUpdateWallMs": 12434,
+    "noopUpdateParsed": 0,
+    "unchanged": 1114,
+    "note": "Hash-based skip verified: no-op update reparses zero files. Modify 1/10/100-file timing runs were interrupted by a system freeze on the shared machine; only the safe no-op measurement is recorded."
+  },
+  "p0Fix": {
+    "rootCause": "Every repository call did db.prepare(sql) per row and never released it; node:sqlite StatementSync has no close() on Node 24, so each statement (plus its native copy of bound strings) is only reclaimed at db.close(). A ~450k-statement save leaked ~1.4 GiB native.",
+    "evidence": "Probe (1000 files): parse 1661MB RSS -> save 3111MB RSS (heap flat ~1005MB => native). Raw node:sqlite stayed flat; chunked transactions did not help. Isolated file-upsert test: inline prepare leaked +157MB native vs +6MB cached.",
+    "fix": "packages/storage/src/repository/statement-cache.ts + all repositories (and @atlas/usage repositories): lazily cache one prepared statement per SQL text and reuse it.",
+    "verified": "Full 1000-file atlas init: peak 4274MB -> 1698MB, min MemAvailable 23MB -> 1361MB, wall 241s -> 188s. pnpm check green (904 tests)."
+  },
+  "stability": {
+    "systemFreezes": 3,
+    "freezeCause": "Full builds pushing RSS to ~5 GiB on a 7.2 GiB machine shared with the desktop session; kernel OOM pressure froze the system.",
+    "mitigation": "run-monitored.mjs guard (RSS cap + min-available-RAM kill) now prevents further freezes; all later failing runs were guard-killed, not crashed."
+  },
+  "bottlenecks": {
+    "P0": "Full build holds the entire corpus in memory (indexProject -> sourceFiles). Save-phase native leak FIXED (see p0Fix); 1000-file build now peaks at ~1.7 GiB instead of ~4.8 GiB. Remaining: parse-phase memory still scales ~linearly with corpus (25M-LOC extrapolates to ~5-6 GiB); no streaming/index-on-disk pipeline yet.",
+    "P1": "Parser is single-threaded (ts-morph), ~22.5k lines/s -> ~18 min for 25M lines, ~1.9 h for 150M lines on one core.",
+    "P2": "Read path also loads the full index: cold search ~6.4 s / ~738 MB for a 337 MB index; search = load + query per invocation.",
+    "P3": "Context retrieval under-returns on opaque synthetic identifiers for generic tasks (symbol/dependency-driven retrieval)."
+  }
+}

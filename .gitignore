@@ -46,3 +46,5 @@ go-tui-app/
 apps/cli/src/tui/
 apps/cli/src/commands/tui.ts
 apps/cli/tests/tui.test.ts
+# Private working notes between maintainer and assistant — never commit.
+PERFORMANCE_CHECKPOINT.md

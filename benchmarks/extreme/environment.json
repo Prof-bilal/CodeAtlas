@@ -1,0 +1,48 @@
+{
+  "capturedAt": "2026-08-17T00:12:00+05:00",
+  "os": {
+    "name": "Linux Mint",
+    "version": "22.3 (Zena)",
+    "id": "linuxmint",
+    "idLike": ["ubuntu", "debian"]
+  },
+  "cpu": {
+    "cores": 12,
+    "model": "AMD Ryzen 5 7430U with Radeon Graphics",
+    "vendor": "AuthenticAMD"
+  },
+  "memory": {
+    "memTotalKb": 7514288,
+    "memTotalGiB": 7.2,
+    "swapTotalKb": 2097148,
+    "swapTotalGiB": 2.0,
+    "memAvailableAtStartGiB": 1.8,
+    "note": "Machine shared with interactive desktop session (Firefox, Cursor, opencode). Available RAM at benchmark start ~1.8 GiB."
+  },
+  "disk": {
+    "filesystem": "ext3",
+    "device": "/dev/sda2",
+    "sizeGiB": 234,
+    "usedGiB": 21,
+    "availableGiB": 202,
+    "mount": "/"
+  },
+  "runtime": {
+    "node": "v24.19.0",
+    "nodeEngines": "codeatlas requires >=20.19.0 (>=22.5.0 for @atlas/storage)",
+    "packageManager": "pnpm 9.15.0"
+  },
+  "codeatlas": {
+    "cliVersion": "0.2.1",
+    "gitCommit": "de49e1f92becf5bbd4b5d813f15e991b6dd60b55",
+    "gitCommitDate": "2026-08-17T00:12:37+05:00",
+    "distBuild": "CLI rebuilt 2026-08-17 ~07:50 from current workspace sources (includes large-repository fixes: de-quadratic reference resolution, maxReferenceLines cap, bounded search index, incremental-update fast path)",
+    "note": "git working tree had uncommitted large-repository fixes (packages/parser, packages/search, packages/sdk, packages/storage). CLI was rebuilt to include them before benchmarking."
+  },
+  "estimatedDiskRequirementsGiB": {
+    "repoA": { "files": 5000, "locPerFile": 5000, "totalLoc": 25000000, "estimatedRawBytes": 1.5 },
+    "repoB": { "files": 10000, "locPerFile": 15000, "totalLoc": 150000000, "estimatedRawBytes": 9.0 },
+    "total": 10.5,
+    "plusIndexes": 1.5
+  }
+}

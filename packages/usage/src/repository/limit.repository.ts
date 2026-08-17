@@ -1,49 +1,51 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { UsageLimit, UsageScope } from "@atlas/core";
 import { type Row, colString, count } from "./row";
+import { StatementCache } from "./statement-cache";
 
 /** CRUD for the `Limits` table (hard caps — deny calls when exceeded). */
-export class LimitRepository {
-  public constructor(private readonly db: DatabaseSync) {}
+export class LimitRepository extends StatementCache {
+  public constructor(db: DatabaseSync) {
+    super(db);
+  }
 
   public upsert(limit: UsageLimit): void {
-    this.db
-      .prepare(
-        `INSERT INTO Limits (id, scope_kind, scope_value, currency, token_limit, cost_limit, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(scope_kind, scope_value) DO UPDATE SET
-           id = excluded.id,
-           currency = excluded.currency,
-           token_limit = excluded.token_limit,
-           cost_limit = excluded.cost_limit,
-           created_at = excluded.created_at`,
-      )
-      .run(
-        limit.id,
-        limit.scope.kind,
-        limit.scope.value,
-        limit.currency,
-        limit.tokenLimit,
-        limit.costLimit,
-        limit.createdAt,
-      );
+    this.prepare(
+      `INSERT INTO Limits (id, scope_kind, scope_value, currency, token_limit, cost_limit, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(scope_kind, scope_value) DO UPDATE SET
+         id = excluded.id,
+         currency = excluded.currency,
+         token_limit = excluded.token_limit,
+         cost_limit = excluded.cost_limit,
+         created_at = excluded.created_at`,
+    ).run(
+      limit.id,
+      limit.scope.kind,
+      limit.scope.value,
+      limit.currency,
+      limit.tokenLimit,
+      limit.costLimit,
+      limit.createdAt,
+    );
   }
 
   public get(scope: UsageScope): UsageLimit | undefined {
-    const row = this.db
-      .prepare("SELECT * FROM Limits WHERE scope_kind = ? AND scope_value = ?")
-      .get(scope.kind, scope.value) as Row | undefined;
+    const row = this.prepare("SELECT * FROM Limits WHERE scope_kind = ? AND scope_value = ?").get(
+      scope.kind,
+      scope.value,
+    ) as Row | undefined;
     return row === undefined ? undefined : limitFromRow(row);
   }
 
   public all(): UsageLimit[] {
     return (
-      this.db.prepare("SELECT * FROM Limits ORDER BY scope_kind, scope_value").all() as Row[]
+      this.prepare("SELECT * FROM Limits ORDER BY scope_kind, scope_value").all() as Row[]
     ).map(limitFromRow);
   }
 
   public clear(): number {
-    return count(this.db.prepare("DELETE FROM Limits").run().changes);
+    return count(this.prepare("DELETE FROM Limits").run().changes);
   }
 }
 

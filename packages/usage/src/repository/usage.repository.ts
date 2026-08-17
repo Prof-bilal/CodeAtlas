@@ -1,69 +1,66 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { MeasuredQuantity, QuantitySource, UsageQuery, UsageRecord } from "@atlas/core";
 import { type Row, colBoolean, colNumber, colString, count } from "./row";
+import { StatementCache } from "./statement-cache";
 
 /**
  * CRUD for the `UsageEvents` table. A usage record stores normalized token and
  * cost quantities with their tri-state provenance; raw task text, prompts, and
  * secrets are never written here (only anonymized `taskRef` references).
  */
-export class UsageRepository {
-  public constructor(private readonly db: DatabaseSync) {}
+export class UsageRepository extends StatementCache {
+  public constructor(db: DatabaseSync) {
+    super(db);
+  }
 
   public insert(record: UsageRecord): void {
-    this.db
-      .prepare(
-        `INSERT INTO UsageEvents (
-           id, source, agent, provider, model, session_id, task_id, task_ref,
-           occurred_at, request_count, latency_ms, exit_code, timed_out,
-           input_tokens, input_tokens_src, input_tokens_note,
-           output_tokens, output_tokens_src, output_tokens_note,
-           total_tokens, total_tokens_src, total_tokens_note,
-           cost_currency, cost_amount, cost_src, cost_note
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
-        record.id,
-        record.source,
-        record.agent,
-        record.provider,
-        record.model,
-        record.sessionId,
-        record.taskId,
-        record.taskRef,
-        record.occurredAt,
-        record.requestCount,
-        record.latencyMs,
-        record.exitCode,
-        record.timedOut ? 1 : 0,
-        record.tokens.input.value,
-        record.tokens.input.source,
-        record.tokens.input.note ?? null,
-        record.tokens.output.value,
-        record.tokens.output.source,
-        record.tokens.output.note ?? null,
-        record.tokens.total.value,
-        record.tokens.total.source,
-        record.tokens.total.note ?? null,
-        record.cost.currency,
-        record.cost.amount.value,
-        record.cost.amount.source,
-        record.cost.amount.note ?? null,
-      );
+    this.prepare(
+      `INSERT INTO UsageEvents (
+         id, source, agent, provider, model, session_id, task_id, task_ref,
+         occurred_at, request_count, latency_ms, exit_code, timed_out,
+         input_tokens, input_tokens_src, input_tokens_note,
+         output_tokens, output_tokens_src, output_tokens_note,
+         total_tokens, total_tokens_src, total_tokens_note,
+         cost_currency, cost_amount, cost_src, cost_note
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      record.id,
+      record.source,
+      record.agent,
+      record.provider,
+      record.model,
+      record.sessionId,
+      record.taskId,
+      record.taskRef,
+      record.occurredAt,
+      record.requestCount,
+      record.latencyMs,
+      record.exitCode,
+      record.timedOut ? 1 : 0,
+      record.tokens.input.value,
+      record.tokens.input.source,
+      record.tokens.input.note ?? null,
+      record.tokens.output.value,
+      record.tokens.output.source,
+      record.tokens.output.note ?? null,
+      record.tokens.total.value,
+      record.tokens.total.source,
+      record.tokens.total.note ?? null,
+      record.cost.currency,
+      record.cost.amount.value,
+      record.cost.amount.source,
+      record.cost.amount.note ?? null,
+    );
   }
 
   public get(id: string): UsageRecord | undefined {
-    const row = this.db.prepare("SELECT * FROM UsageEvents WHERE id = ?").get(id) as
-      | Row
-      | undefined;
+    const row = this.prepare("SELECT * FROM UsageEvents WHERE id = ?").get(id) as Row | undefined;
     return row === undefined ? undefined : usageFromRow(row);
   }
 
   /** Every record, oldest → newest. */
   public all(): UsageRecord[] {
-    const rows = this.db
-      .prepare("SELECT * FROM UsageEvents ORDER BY occurred_at, id")
-      .all() as Row[];
+    const rows = this.prepare("SELECT * FROM UsageEvents ORDER BY occurred_at, id").all() as Row[];
     return rows.map(usageFromRow);
   }
 
@@ -101,12 +98,12 @@ export class UsageRepository {
     if (query.limit !== undefined) {
       params.push(query.limit);
     }
-    const rows = this.db.prepare(sql).all(...params) as Row[];
+    const rows = this.prepare(sql).all(...params) as Row[];
     return rows.map(usageFromRow);
   }
 
   public clear(): number {
-    return count(this.db.prepare("DELETE FROM UsageEvents").run().changes);
+    return count(this.prepare("DELETE FROM UsageEvents").run().changes);
   }
 }
 
