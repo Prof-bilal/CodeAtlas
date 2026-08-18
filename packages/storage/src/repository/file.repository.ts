@@ -1,7 +1,6 @@
-import type { DatabaseSync } from "node:sqlite";
 import type { SourceFile } from "@atlas/core";
 import type { FilePath } from "@atlas/shared";
-import { colNumber, colString, count, type Row } from "./row";
+import { type Row, colNumber, colString, count } from "./row";
 import { StatementCache } from "./statement-cache";
 
 /** A `Files` row, mapped back to the source-file shape plus its id. */
@@ -16,10 +15,6 @@ export interface FileRow {
 
 /** CRUD for the `Files` table. Symbols reference `Files.id`. */
 export class FileRepository extends StatementCache {
-  public constructor(db: DatabaseSync) {
-    super(db);
-  }
-
   /** Upsert a file by path and return its row id. */
   public upsert(file: SourceFile): number {
     const now = new Date().toISOString();

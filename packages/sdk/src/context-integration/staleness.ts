@@ -1,7 +1,7 @@
+import type { FilePath } from "@atlas/shared";
 import type { ContextSDK } from "../context/sdk";
 import { detectFreshness } from "../context/staleness";
 import { scanProjectOverview } from "../indexing/scan";
-import type { FilePath } from "@atlas/shared";
 import type { StaleContextSignal } from "./models";
 
 /**

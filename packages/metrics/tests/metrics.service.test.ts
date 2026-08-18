@@ -1,7 +1,7 @@
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 import { mkdirSync, rmSync } from "node:fs";
-import { describe, expect, it, afterEach } from "vitest";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
 import { MetricsService } from "../src/metrics.service";
 
 function tmpMetricsPath(): string {

@@ -10,8 +10,8 @@ import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { describe, expect, it } from "vitest";
 import { LexicalScorer, type RelevanceScorer } from "../src/scoring";
-import { SearchService } from "../src/search.service";
 import { MAX_INDEXED_CONTENT_CHARS } from "../src/search-index";
+import { SearchService } from "../src/search.service";
 
 function file(path: string, content = ""): SourceFile {
   return { path: path as FilePath, language: "typescript", content };

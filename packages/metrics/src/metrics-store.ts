@@ -5,20 +5,20 @@
  * The file lives at `.codeatlas/metrics.json` inside the repository root.
  */
 import {
-  readFileSync,
-  writeFileSync,
-  renameSync,
-  unlinkSync,
   existsSync,
-  statSync,
   mkdirSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
 import type { MetricsSnapshot } from "@atlas/core";
 import {
+  MAX_METRICS_FILE_SIZE,
   METRICS_FILE_NAME,
   METRICS_SCHEMA_VERSION,
-  MAX_METRICS_FILE_SIZE,
   createEmptySnapshot,
   validateSnapshot,
 } from "./types";

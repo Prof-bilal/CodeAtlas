@@ -1,14 +1,9 @@
-import type { DatabaseSync } from "node:sqlite";
 import type { Summary, SummaryKind } from "@atlas/core";
-import { colBoolean, colNumber, colString, count, parseJsonArray, type Row } from "./row";
+import { type Row, colBoolean, colNumber, colString, count, parseJsonArray } from "./row";
 import { StatementCache } from "./statement-cache";
 
 /** CRUD for the `Summaries` table, keyed by (kind, target). */
 export class SummaryRepository extends StatementCache {
-  public constructor(db: DatabaseSync) {
-    super(db);
-  }
-
   /** Upsert a summary by its (kind, target) natural key. */
   public upsert(summary: Summary): void {
     this.prepare(

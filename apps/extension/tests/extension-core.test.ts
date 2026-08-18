@@ -1,13 +1,13 @@
-import { afterEach, describe, expect, it } from "vitest";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { createProjectContainer } from "@atlas/sdk";
+import { afterEach, describe, expect, it } from "vitest";
 import { ContextClient } from "../src/client";
 import type { AtlasRunner } from "../src/commands";
 import { activateExtension } from "../src/extension-core";
 import { TREE_VIEWS } from "../src/providers";
-import { createEmptyFixture, createFixture, standardData, type Fixture } from "./fixture";
 import { createFakeHost } from "./fake-host";
+import { type Fixture, createEmptyFixture, createFixture, standardData } from "./fixture";
 
 const ALL_COMMANDS = [
   "codeatlas.openOverview",

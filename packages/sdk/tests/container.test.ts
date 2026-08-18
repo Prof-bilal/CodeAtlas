@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type {
   CachePort,
   ContextBuilderPort,
@@ -6,12 +9,10 @@ import type {
   ProviderPort,
   ScannerPort,
   StoragePort,
+  // biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
   Symbol,
 } from "@atlas/core";
 import type { FilePath, SymbolId } from "@atlas/shared";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { Container, createProjectContainer } from "../src/container";
 

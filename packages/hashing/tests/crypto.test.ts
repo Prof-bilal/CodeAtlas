@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hashContent, SHA256_HEX_LENGTH } from "../src/crypto";
+import { SHA256_HEX_LENGTH, hashContent } from "../src/crypto";
 
 describe("hashContent", () => {
   it("matches the known SHA-256 vector for 'abc'", () => {

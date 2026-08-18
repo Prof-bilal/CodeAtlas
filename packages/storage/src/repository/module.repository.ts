@@ -1,14 +1,9 @@
-import type { DatabaseSync } from "node:sqlite";
 import type { PersistedModule } from "@atlas/core";
-import { colString, count, type Row } from "./row";
+import { type Row, colString, count } from "./row";
 import { StatementCache } from "./statement-cache";
 
 /** CRUD for the `Modules` table. */
 export class ModuleRepository extends StatementCache {
-  public constructor(db: DatabaseSync) {
-    super(db);
-  }
-
   /** Upsert a module by path. */
   public upsert(module: PersistedModule): void {
     this.prepare(

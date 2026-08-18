@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { ContextClient } from "../src/client";
 import { StatusBarController, statusBarModel } from "../src/status-bar";
-import { createEmptyFixture, createFixture, type Fixture } from "./fixture";
-import { fakeStatusBarItem, type FakeStatusBarItem } from "./fake-host";
+import { type FakeStatusBarItem, fakeStatusBarItem } from "./fake-host";
+import { type Fixture, createEmptyFixture, createFixture } from "./fixture";
 
 const fixtures: Fixture[] = [];
 afterEach(() => {

@@ -3,13 +3,13 @@ import { basename, join } from "node:path";
 import type { FilePath } from "@atlas/shared";
 import { describe, expect, it } from "vitest";
 import {
-  detectPackageManager,
-  generateManifest,
-  loadManifest,
   MANIFEST_DIR_NAME,
   MANIFEST_FILE_NAME,
   MANIFEST_VERSION,
   type ProjectManifest,
+  detectPackageManager,
+  generateManifest,
+  loadManifest,
 } from "../src/manifest";
 import { scanProject } from "../src/scanner.service";
 import { createTestProject } from "./helpers";

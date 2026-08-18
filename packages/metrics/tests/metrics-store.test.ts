@@ -1,9 +1,9 @@
-import { existsSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { describe, expect, it, afterEach } from "vitest";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
 import { MetricsStore } from "../src/metrics-store";
-import { createEmptySnapshot, METRICS_SCHEMA_VERSION } from "../src/types";
+import { METRICS_SCHEMA_VERSION, createEmptySnapshot } from "../src/types";
 
 function tmpDir(): string {
   const dir = join(tmpdir(), `metrics-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);

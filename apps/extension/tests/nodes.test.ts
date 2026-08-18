@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import type { DependencyContext, ModuleContext, ProjectOverview, Summary } from "@atlas/sdk";
+import { describe, expect, it } from "vitest";
 import type { EditorSymbol } from "../src/client";
 import {
   dependencyEdgeNodes,

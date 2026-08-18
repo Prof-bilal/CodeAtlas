@@ -1,15 +1,10 @@
-import type { DatabaseSync } from "node:sqlite";
 import type { PersistedDependency } from "@atlas/core";
 import type { NodeId } from "@atlas/shared";
-import { colNumber, colString, count, metadataFromRow, type Row } from "./row";
+import { type Row, colNumber, colString, count, metadataFromRow } from "./row";
 import { StatementCache } from "./statement-cache";
 
 /** CRUD for the `Dependencies` table (code-dependency edges). */
 export class DependencyRepository extends StatementCache {
-  public constructor(db: DatabaseSync) {
-    super(db);
-  }
-
   /** Upsert a dependency edge (deduped by source, target, kind). */
   public upsert(dependency: PersistedDependency): void {
     this.prepare(

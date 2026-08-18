@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import type { ProjectScan } from "@atlas/core";
 import { VERSION } from "@atlas/shared";
-import { fail, ok, type Result } from "@atlas/shared";
+import { type Result, fail, ok } from "@atlas/shared";
 
 /** Schema version of the manifest. Bump when the shape changes. */
 export const MANIFEST_VERSION = 1;

@@ -1,5 +1,5 @@
-import { accessSync, constants } from "node:fs";
-import { delimiter, join, isAbsolute, basename, extname } from "node:path";
+import { constants, accessSync } from "node:fs";
+import { basename, delimiter, extname, isAbsolute, join } from "node:path";
 
 /**
  * Resolve an executable name to an absolute path by scanning `PATH`, honoring

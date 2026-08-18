@@ -1,8 +1,8 @@
+import { CacheService } from "@atlas/cache";
 import type { ProviderPort, ProviderRequest, SourceFile, TokenUsage } from "@atlas/core";
+import { HashService } from "@atlas/hashing";
 import type { FilePath } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
-import { CacheService } from "@atlas/cache";
-import { HashService } from "@atlas/hashing";
 import { describe, expect, it } from "vitest";
 import { SummaryParseError } from "../src/json";
 import { SummaryService } from "../src/summary.service";

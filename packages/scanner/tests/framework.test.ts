@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectFramework, type FrameworkSignals } from "../src/framework";
+import { type FrameworkSignals, detectFramework } from "../src/framework";
 
 const base: FrameworkSignals = {
   packageJson: null,

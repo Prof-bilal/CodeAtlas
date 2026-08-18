@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it } from "vitest";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
 import { resolveAtlasCli, runAtlas } from "../src/atlas-cli";
 
 afterEach(() => {
-  delete process.env["ATLAS_CLI_JS"];
+  process.env["ATLAS_CLI_JS"] = undefined;
 });
 
 describe("resolveAtlasCli", () => {

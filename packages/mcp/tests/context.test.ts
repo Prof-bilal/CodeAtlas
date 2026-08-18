@@ -1,9 +1,9 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { describe, expect, it } from "vitest";
 import { createProjectContainer } from "@atlas/sdk";
 import type { FilePath } from "@atlas/shared";
+import { describe, expect, it } from "vitest";
 import { CodeAtlasContext, resolveContextConfig } from "../src/context";
 import { ToolDomainError } from "../src/validation";
 
@@ -89,12 +89,12 @@ describe("CodeAtlasContext", () => {
 
 function restoreEnv(previousRoot: string | undefined, previousDb: string | undefined): void {
   if (previousRoot === undefined) {
-    delete process.env["ATLAS_ROOT"];
+    process.env["ATLAS_ROOT"] = undefined;
   } else {
     process.env["ATLAS_ROOT"] = previousRoot;
   }
   if (previousDb === undefined) {
-    delete process.env["ATLAS_DB"];
+    process.env["ATLAS_DB"] = undefined;
   } else {
     process.env["ATLAS_DB"] = previousDb;
   }

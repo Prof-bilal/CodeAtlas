@@ -1,6 +1,6 @@
 import js from "@eslint/js";
-import tseslint from "typescript-eslint";
 import importPlugin from "eslint-plugin-import";
+import tseslint from "typescript-eslint";
 import "eslint-import-resolver-typescript";
 
 // The layered dependency graph enforced by ESLint.

@@ -1,9 +1,9 @@
-import { join } from "node:path";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { mkdirSync, rmSync, readFileSync } from "node:fs";
-import { describe, expect, it, afterEach } from "vitest";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { exportCsv, exportJson } from "../src/metrics-exporter";
 import { MetricsService } from "../src/metrics.service";
-import { exportJson, exportCsv } from "../src/metrics-exporter";
 
 function tmpMetricsPath(): string {
   const dir = join(tmpdir(), `metrics-export-${Date.now()}-${Math.random().toString(36).slice(2)}`);

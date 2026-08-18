@@ -1,10 +1,10 @@
-import type { SessionPort } from "@atlas/core";
 import {
-  SessionManager,
   type AgentAdapter,
   type ExecutableResolver,
   type ProcessRunner,
+  SessionManager,
 } from "@atlas/agents";
+import type { SessionPort } from "@atlas/core";
 
 /** Options for {@link createSessionManager}. */
 export interface CreateSessionManagerOptions {

@@ -1,15 +1,10 @@
-import type { DatabaseSync } from "node:sqlite";
 import type { PersistedRelationship } from "@atlas/core";
 import type { NodeId } from "@atlas/shared";
-import { colString, count, metadataFromRow, type Row } from "./row";
+import { type Row, colString, count, metadataFromRow } from "./row";
 import { StatementCache } from "./statement-cache";
 
 /** CRUD for the `Relationships` table (generic entity links). */
 export class RelationshipRepository extends StatementCache {
-  public constructor(db: DatabaseSync) {
-    super(db);
-  }
-
   /** Upsert a relationship (deduped by type, source, target). */
   public upsert(relationship: PersistedRelationship): void {
     this.prepare(

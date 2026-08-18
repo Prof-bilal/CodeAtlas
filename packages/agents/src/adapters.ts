@@ -1,4 +1,4 @@
-import { createAgentAdapter, type AgentAdapter } from "./adapter";
+import { type AgentAdapter, createAgentAdapter } from "./adapter";
 
 /**
  * The built-in AI CLI adapters. Each is a thin, provider-specific configuration

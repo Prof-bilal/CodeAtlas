@@ -1,6 +1,6 @@
+import type { SymbolLocation } from "@atlas/core";
 import { Node } from "ts-morph";
 import type { Node as MorphNode, SourceFile as MorphSourceFile } from "ts-morph";
-import type { SymbolLocation } from "@atlas/core";
 
 /**
  * Compute a 1-based source span for a node. `startColumn` is inclusive and

@@ -1,7 +1,7 @@
-import { Node, SyntaxKind } from "ts-morph";
-import type { Identifier, SourceFile as MorphSourceFile } from "ts-morph";
 import type { Reference, ReferenceKind } from "@atlas/core";
 import type { FilePath } from "@atlas/shared";
+import { Node, SyntaxKind } from "ts-morph";
+import type { Identifier, SourceFile as MorphSourceFile } from "ts-morph";
 import { locationOf } from "../position";
 
 /**

@@ -1,13 +1,8 @@
-import type { DatabaseSync } from "node:sqlite";
-import { colString, count, type Row } from "./row";
+import { type Row, colString, count } from "./row";
 import { StatementCache } from "./statement-cache";
 
 /** CRUD for the `Hashes` table (path → SHA-256 digest). */
 export class HashRepository extends StatementCache {
-  public constructor(db: DatabaseSync) {
-    super(db);
-  }
-
   /** Upsert a path's hash. */
   public upsert(path: string, hash: string): void {
     this.prepare(

@@ -1,10 +1,11 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+// biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
 import type { ContextData, SourceFile, Summary, Symbol } from "@atlas/core";
-import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
 import { createProjectContainer } from "@atlas/sdk";
-import { createLogger, type Logger } from "../src/log";
+import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
+import { type Logger, createLogger } from "../src/log";
 
 export interface Fixture {
   readonly root: string;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createEmptySnapshot, validateSnapshot, METRICS_SCHEMA_VERSION } from "../src/types";
+import { METRICS_SCHEMA_VERSION, createEmptySnapshot, validateSnapshot } from "../src/types";
 
 describe("createEmptySnapshot", () => {
   it("creates a valid empty snapshot", () => {

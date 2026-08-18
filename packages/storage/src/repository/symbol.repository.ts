@@ -1,16 +1,12 @@
-import type { DatabaseSync } from "node:sqlite";
+// biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
 import type { Symbol, SymbolKind, Visibility } from "@atlas/core";
 import type { FilePath, SymbolId } from "@atlas/shared";
-import { colBoolean, colNumber, colString, count, parseJsonArray, type Row } from "./row";
+import { type Row, colBoolean, colNumber, colString, count, parseJsonArray } from "./row";
 import { StatementCache } from "./statement-cache";
 
 /** CRUD for the `Symbols` table, joined with `Files` so rehydrated `Symbol`s
  * carry their `filePath`. */
 export class SymbolRepository extends StatementCache {
-  public constructor(db: DatabaseSync) {
-    super(db);
-  }
-
   /** Upsert a symbol bound to a file row id. */
   public upsert(symbol: Symbol, fileId: number): void {
     this.prepare(

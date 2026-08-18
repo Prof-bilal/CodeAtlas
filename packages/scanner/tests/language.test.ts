@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectLanguageByName, extensionOf, LANGUAGE_BY_EXTENSION } from "../src/language";
+import { LANGUAGE_BY_EXTENSION, detectLanguageByName, extensionOf } from "../src/language";
 
 describe("extensionOf", () => {
   it("extracts the lowercased extension after the last dot", () => {

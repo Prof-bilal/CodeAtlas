@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { ContextClient } from "../src/client";
-import { childrenOf, ViewTreeProvider, TREE_VIEWS } from "../src/providers";
-import { createEmptyFixture, createFixture, type Fixture } from "./fixture";
+import { TREE_VIEWS, ViewTreeProvider, childrenOf } from "../src/providers";
+import { type Fixture, createEmptyFixture, createFixture } from "./fixture";
 
 const fixtures: Fixture[] = [];
 afterEach(() => {

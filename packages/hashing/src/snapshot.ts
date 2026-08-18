@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { BuildSnapshotOptions, HashSnapshot } from "@atlas/core";
-import { DEFAULT_CONCURRENCY, mapWithConcurrency, type Result, fail, ok } from "@atlas/shared";
+import { DEFAULT_CONCURRENCY, type Result, fail, mapWithConcurrency, ok } from "@atlas/shared";
 import { hashContent } from "./crypto";
 
 /** Schema version of the on-disk hash snapshot. Bump on shape changes. */

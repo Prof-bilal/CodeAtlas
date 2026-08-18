@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { ContextClient } from "../src/client";
-import { registerCommands, type AtlasRunner, type CommandContext } from "../src/commands";
+import { type AtlasRunner, type CommandContext, registerCommands } from "../src/commands";
 import type { VscodeApi } from "../src/vscode-host";
-import { createEmptyFixture, createFixture, type Fixture } from "./fixture";
-import { createFakeHost, type FakeHostRecords } from "./fake-host";
+import { type FakeHostRecords, createFakeHost } from "./fake-host";
+import { type Fixture, createEmptyFixture, createFixture } from "./fixture";
 
 const ALL_COMMANDS = [
   "codeatlas.openOverview",
@@ -50,7 +50,14 @@ function makeHarness(root: string): Harness {
       return { ok: true, summary: `done ${action}` };
     },
   };
-  const ctx: CommandContext = { client, host, runner, refreshAll: () => (refreshes += 1) };
+  const ctx: CommandContext = {
+    client,
+    host,
+    runner,
+    refreshAll: () => {
+      refreshes += 1;
+    },
+  };
   registerCommands(ctx);
   return { client, host, records, actions, refreshCount: () => refreshes };
 }

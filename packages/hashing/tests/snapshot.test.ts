@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { hashContent } from "../src/crypto";
-import { buildSnapshot, loadSnapshot, saveSnapshot, SNAPSHOT_VERSION } from "../src/snapshot";
+import { SNAPSHOT_VERSION, buildSnapshot, loadSnapshot, saveSnapshot } from "../src/snapshot";
 import { createTempDir, writeFile } from "./helpers";
 
 describe("buildSnapshot", () => {

@@ -1,13 +1,8 @@
-import type { DatabaseSync } from "node:sqlite";
-import { colString, count, type Row } from "./row";
+import { type Row, colString, count } from "./row";
 import { StatementCache } from "./statement-cache";
 
 /** CRUD for the `Metadata` table (string key/value store). */
 export class MetadataRepository extends StatementCache {
-  public constructor(db: DatabaseSync) {
-    super(db);
-  }
-
   public set(key: string, value: string): void {
     this.prepare(
       `INSERT INTO Metadata (key, value) VALUES (?, ?)

@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  type CacheKey,
-  type EdgeId,
-  type FilePath,
-  type NodeId,
-  type ProjectId,
-  type SymbolId,
-} from "../src/types/brand";
+import type { CacheKey, EdgeId, FilePath, NodeId, ProjectId, SymbolId } from "../src/types/brand";
 
 describe("branded types", () => {
   it("are structurally compatible with their primitive", () => {

@@ -1,3 +1,6 @@
+// biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
+import type { Symbol, SymbolKind, Visibility } from "@atlas/core";
+import type { FilePath, SymbolId } from "@atlas/shared";
 import { Node } from "ts-morph";
 import type {
   ClassDeclaration,
@@ -13,8 +16,6 @@ import type {
   TypeAliasDeclaration,
   VariableStatement,
 } from "ts-morph";
-import type { Symbol, SymbolKind, Visibility } from "@atlas/core";
-import type { FilePath, SymbolId } from "@atlas/shared";
 import { documentationOf, locationOf } from "../position";
 import { createSymbolId } from "../symbol-id";
 
@@ -292,6 +293,7 @@ function extractClass(
 function extractConstructor(
   sourceFile: MorphSourceFile,
   filePath: FilePath,
+  // biome-ignore lint/suspicious/noShadowRestrictedNames: parameter name is descriptive
   constructor: ConstructorDeclaration,
   classSymbol: Symbol,
   symbols: Symbol[],

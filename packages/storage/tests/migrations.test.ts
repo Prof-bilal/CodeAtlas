@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ContextStore } from "../src/context-store";
 import { openDatabase } from "../src/db";
-import { runMigrations, type Migration } from "../src/migrations";
+import { type Migration, runMigrations } from "../src/migrations";
 
 describe("migrations", () => {
   it("applies the built-in schema and reports the version", () => {

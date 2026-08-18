@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createIgnoreMatcher, DEFAULT_IGNORED_DIRECTORIES } from "../src/ignore";
+import { DEFAULT_IGNORED_DIRECTORIES, createIgnoreMatcher } from "../src/ignore";
 
 describe("ignore rules", () => {
   it("ignores every default directory", () => {
