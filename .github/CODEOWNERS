@@ -1,0 +1,8 @@
+# Default owner for everything in the repo
+* @Prof-bilal
+
+# MCP package (owned by mcp maintainers when they join)
+packages/mcp/ @Prof-bilal
+
+# Extension
+apps/extension/ @Prof-bilal

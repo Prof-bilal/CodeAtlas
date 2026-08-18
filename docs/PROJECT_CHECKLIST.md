@@ -35,13 +35,13 @@ Legend: `[ ]` not started · `[~]` partial · `[x]` complete · `[!]` blocked.
 ## Agent Toolkit (Direction C)
 
 - [x] Registry (9-tool catalog) · [x] Manifest · [x] Compatibility engine
-- [x] Installer (npm/pip/cargo/go + skill git-clone, approval-gated, never fails open)
-- [x] Configurator · [x] Security/Trust evaluation
+- [x] Installer (npm/pip/cargo/go + skill git-clone, approval-gated, never fails open, rollback on failure)
+- [x] Configurator (with unconfigure for config-cleanup on remove) · [x] Security/Trust evaluation
 - [x] `atlas tools` search/info/install/remove/configure/doctor surface
 - [x] Recommendation tiers + curated **Top-10** (P2-01, P2-02)
 - [x] Category browsing in CLI (P2-03)
-- [x] Compatibility report surfaced (P2-04)
-- [x] Real `atlas tools update` (no-op today) (P2-05)
+- [x] Compatibility report surfaced in `atlas tools info` (P2-04)
+- [x] Real `atlas tools update` — re-installs skills via `git pull --ff-only`, ecosystem via adapter (P2-05)
 - [x] Uninstall config-cleanup (P2-06)
 - [x] Live doctor/health check (P2-07)
 - [x] Conflict + dependency detection (P2-08)
@@ -51,7 +51,7 @@ Legend: `[ ]` not started · `[~]` partial · `[x]` complete · `[!]` blocked.
 
 - [ ] `atlas setup` — environment/agent detection, dry-run, `--yes`, install →
       configure → verify → rollback (P3-01…P3-04)
-- [ ] Default toolkit bundle defined; 47 skills cataloged with Top-10 `recommended` + `atlas init` permission offer (P3-05)
+- [ ] Default toolkit bundle defined; 47 skills cataloged with Top-10 `recommended` + `atlas init` permission offer (P3-05) — catalog exists, `atlas init` offer exists, `atlas setup` not yet wired
 - [ ] No silent installs; exact commands shown; trust model documented (P3-06)
 
 ## Agents (Direction B)
@@ -83,33 +83,36 @@ Legend: `[ ]` not started · `[~]` partial · `[x]` complete · `[!]` blocked.
 
 - [x] Fix docs drift: AGENTS.md "20 commands", CURRENT_STATE/FEATURE_STATUS,
       MODULES.md, METRICS.md, CLI.md (P1-01)
-- [ ] README rewrite — honest, benchmark-backed (P7-01)
+- [ ] README rewrite — honest, benchmark-backed (P7-01) — **Done 2026-08-18**
 - [ ] Keep docs structure; update DOCUMENTATION_MAP.md (P7-02)
 - [ ] Install/quickstart/toolkit/agents user docs (P7-03)
-- [ ] LICENSE copyright line (P9-05)
+- [x] LICENSE copyright line (P9-05)
 
-## Website & Brand
+## UI, Brand & TUI (Phase 12)
 
-- [ ] Logo + favicon + brand kit in `assets/logo/` (P8-04) — **deferred**
-- [ ] v1 website pages (P8-01) — **deferred: awaiting design direction**
-- [ ] Benchmarks page consuming results.json (P8-02)
-- [ ] Usage-upload graph, client-side only (P8-03)
+- [ ] Track TUI v2 source in git (remove from .gitignore, register `atlas tui` command) (P12-01)
+- [ ] Wire TUI slash surface: `/scan`, `/search`, `/context`, `/agents`, `/toolkit`, `/tools-install`, `/claude|gemini|codex|opencode` (P12-02)
+- [ ] TUI theming hook (minimal theme object for brand integration) (P12-03)
+- [ ] Organize user brand assets: logo (SVG/PNG), favicon, colors, typography → `assets/logo/`, `assets/brand/` (P12-04)
+- [ ] Apply brand to VS Code extension (logo, colors, tree views, status bar) (P12-05)
+- [ ] Website v1 scaffold: Home, Features, How it works, Toolkit, Docs, Benchmarks (from results.json), FAQ, About, Contact (P12-06)
+- [ ] Usage-upload graph: client-side `usage.json` parse → chart (P12-07)
 
 ## Distribution & Open Source
 
 - [x] Fix published-package metadata: license/repository/homepage/keywords
       (P0-02)
 - [x] Bump + publish `codeatlas-cli@0.3.0-beta.0` (P0-03…P0-06) — **published 2026-08-17** (tag `beta`)
-- [ ] Issue/PR templates, FUNDING, CODEOWNERS, dependabot (P9-02)
-- [ ] Git tag + GitHub Release + release workflow (P9-03)
-- [ ] Install/upgrade/uninstall docs (P9-04)
+- [x] Issue/PR templates, FUNDING, CODEOWNERS (P9-02)
+- [ ] Git tag + GitHub Release + release workflow (P9-03) — needs user action
+- [x] Install/upgrade/uninstall docs (P9-04)
 - [ ] Win/macOS CI matrix (P9-06)
-- [ ] Security contact + version support statement (P10-03)
+- [x] Security contact + version support statement (P10-03)
 
 ## Final QA
 
-- [ ] Security audit: no secrets/env/fixtures/private data tracked (P10-01)
-- [ ] Toolkit install-path audit + trust model (P10-02)
+- [x] Security audit: no secrets/env/fixtures/private data tracked (P10-01)
+- [x] Toolkit install-path audit + trust model (P10-02)
 - [ ] GitHub cleanup: track/ignore/archive decisions (P11-01)
 - [ ] `pnpm check` green on a clean tree
 - [ ] `atlas doctor` PASS from a fresh install

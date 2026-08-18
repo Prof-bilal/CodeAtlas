@@ -1,5 +1,5 @@
-import { existsSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, rmSync, statSync } from "node:fs";
+import { dirname, join } from "node:path";
 import type {
   CompatibilityPort,
   InstallApproval,
@@ -226,6 +226,13 @@ export class InstallerService implements InstallerPort {
         ? existsSync(join(request.cwd, plan.verifyPath))
         : this.resolveBinary(plan.verifyBinary) !== null;
     if (plan.uninstallCommand === null) {
+      if (plan.verifyPath !== null) {
+        const destDir = join(request.cwd, dirname(plan.verifyPath));
+        if (existsSync(destDir)) {
+          rmSync(destDir, { recursive: true, force: true });
+          log.push(`rollback: removed partial skill directory ${destDir}`);
+        }
+      }
       log.push(`rollback: not available for ${plan.method} installs`);
     } else if (wasPresentBefore) {
       log.push("rollback: skipped — the tool was already present before this install");

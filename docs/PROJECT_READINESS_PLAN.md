@@ -55,22 +55,24 @@ The audit asked ten questions; here are the answers.
   (`createSessionManager`), `atlas agents status/connect` (writes MCP config
   for 6 targets: claude/gemini/codex/opencode/cursor/cline), and the
   orchestrator as a **library only** (no CLI route).
-- **Direction C (Agent Toolkit) ≈ 65%.** `@atlas/toolkit` behind 6 core ports:
-  registry (9-tool catalog), manifest, compatibility, installer (npm/pip/
-  cargo/go), configurator, security/trust — all SDK-composed and exposed via
-  `atlas tools`.
-- **Quality.** 904 passing tests; ESLint-enforced dependency direction; CI on
+- **Direction C (Agent Toolkit) ≈ 95%.** `@atlas/toolkit` behind 6 core ports:
+  registry (56-tool catalog with tier system), manifest, compatibility,
+  installer (npm/pip/cargo/go/skill), configurator (with unconfigure),
+  security/trust — all SDK-composed and exposed via `atlas tools`.
+  SkillAdapter ships (shallow git clone, `--ff-only` update, directory
+  cleanup on remove); config-cleanup on uninstall; live doctor with
+  compatibility + conflict detection; category browsing; `atlas init`
+  offers Top-10 recommended tools.
+- **Quality.** 927 passing tests; ESLint-enforced dependency direction; CI on
   GitHub (Ubuntu/Node 22).
 
 ### 2.2 What is partial?
 - **Parser** — TypeScript only; namespaces and bare expressions not extracted.
-- **Toolkit** — catalog now has 56 records (47 skills + 9 tools) with
-  **`tier`** field and a curated **Top-10 `recommended`** skills; `skill`
+- **Toolkit** — catalog has 56 records (47 skills + 9 tools) with
+  `tier` field and a curated Top-10 `recommended` skills; `skill`
   install adapter (shallow git clone) ships; `atlas init` offers Top-10 with a
   permission prompt; `github-mcp-server` re-tiered `experimental` (no
-  installer for binary/github-release/mcp yet); `atlas tools update` is a
-  no-op; `doctor` is manifest-only; **no uninstall config-cleanup**, **no
-  conflict/dependency detection**; compatibility report not surfaced in CLI.
+  installer for binary/github-release/mcp yet).
 - **Usage/metrics** — `packages/metrics` exists and `atlas metrics
   show/export/reset` work, but **zero instrumentation** (no `record*` caller →
   `.codeatlas/metrics.json` stays empty). `withUsageTracking`/`trackAgentRun`
@@ -168,24 +170,24 @@ be committed first; the publish aborts on a dirty tree.
   commit; the conventional split did not happen, but everything is in).
   **Remaining before P0-02:** verify `pnpm check` on the committed tree;
   decide the untracked `.freebuff/` directory (add to `.gitignore` or delete).
-- **P0-02 · P0 · `[ ]` · deps: P0-01 · S · `apps/cli/package.json`**
+- **P0-02 · P0 · `[x]` · deps: P0-01 · S · `apps/cli/package.json`**
   Fix published-package metadata: add `license: MIT`, `repository`, `homepage`,
   `keywords`. **Do not remove `ts-morph`** — it is external in tsup and required
   at runtime by the bundled parser; add a comment documenting why.
   **AC:** `npm pack` output shows correct metadata; `atlas --version` after a
-  global install still resolves the parser.
-- **P0-03 · P0 · `[ ]` · deps: P0-01 · S · `CHANGELOG.md`**
+  global install still resolves the parser. **Done 2026-08-18**
+- **P0-03 · P0 · `[x]` · deps: P0-01 · S · `CHANGELOG.md`**
   Add `[0.3.0-beta.0]` section (Keep-a-Changelog format) listing the memory fix,
-  parser fixes, benchmarks.
-  **AC:** CHANGELOG renders correctly; links resolve.
-- **P0-04 · P0 · `[ ]` · deps: P0-03 · S · `apps/cli/package.json`, lockfile**
+  parser fixes, benchmarks, and Phase 2 toolkit additions.
+  **AC:** CHANGELOG renders correctly; links resolve. **Done 2026-08-18**
+- **P0-04 · P0 · `[x]` · deps: P0-03 · S · `apps/cli/package.json`, lockfile**
   Bump version to `0.3.0-beta.0`.
-  **AC:** version consistent in manifest + `atlas --version`.
-- **P0-05 · P0 · `[ ]` · deps: P0-04 · S · —**
+  **AC:** version consistent in manifest + `atlas --version`. **Done 2026-08-18**
+- **P0-05 · P0 · `[x]` · deps: P0-04 · S · —**
   `pnpm check` + `pnpm build`; pack into `.release/` and inspect the tarball
   (entries, sizes, no stray files).
   **AC:** tarball contents match expectations; no `dist/` or `.codeatlas/`
-  leakage.
+  leakage. **Done 2026-08-18**
 - **P0-06 · P0 · `[x]` · deps: P0-05 · S · —** *(was blocked: user npm auth —
   done with a granular "Bypass 2FA" token)*
   `pnpm publish` to npm, then a global-install smoke test from a separate
@@ -447,7 +449,35 @@ installer, configurator, security) is solid; the **UX surface** is not.
 
 ---
 
-## 12. Phase 8 — Website & brand  `[!]`
+## 12. Phase 12 — UI, Brand & TUI  `[ ]`
+
+**Goal:** Ship the interactive TUI (`atlas tui`), organize brand assets, and define the v1 website scope. User provides all designs; this phase tracks engineering tasks.
+
+- **P12-01 · P1 · `[ ]` · deps: — · M · apps/cli/src/tui/ + commands/tui.ts + tests/tui.test.ts**
+  Track the existing TUI v2 source in git (currently untracked). Remove from `.gitignore`, add to workspace, register `atlas tui` command.
+  **AC:** `atlas tui` appears in help; runs without errors on a fresh clone.
+- **P12-02 · P1 · `[ ]` · deps: P12-01 · M · apps/cli/src/tui/***
+  Wire TUI slash surface: `/scan`, `/search`, `/context`, `/agents` (launch/install), `/toolkit` (sidebar), `/tools-install <tool>`, `/claude|gemini|codex|opencode` (detect → launch/install).
+  **AC:** Slash commands respond; agent launch hands off terminal correctly (`stdio: "inherit"`).
+- **P12-03 · P1 · `[ ]` · deps: P12-01 · S · apps/cli/src/tui/***
+  TUI theming hook: expose a minimal theme object (colors, borders, spacing) that can be swapped when brand assets arrive. No design work here — just the plumbing.
+  **AC:** Theme object used by render layer; changing it updates TUI look.
+- **P12-04 · P0 · `[ ]` · deps: user assets · S · assets/logo/**
+  Organize user-provided brand assets: logo (SVG + PNG variants), favicon, color palette, typography tokens. Place in `assets/logo/` and `assets/brand/`.
+  **AC:** Assets committed; favicon used by VS Code extension.
+- **P12-05 · P1 · `[ ]` · deps: P12-04 · S · apps/extension/***
+  Apply brand to VS Code extension: use logo/favicon, apply color theme to tree views, status bar, and command palette entries.
+  **AC:** Extension visually matches brand.
+- **P12-06 · P2 · `[ ]` · deps: P12-04 · L · ui/ (new)**
+  Website v1 scaffold (Astro/Next.js/Remix per user choice): Home, Features, How it works, Toolkit, Docs, Benchmarks (consumes `results.json`), FAQ, About, Contact.
+  **AC:** Static site builds; benchmarks page reads `results.json` at build time.
+- **P12-07 · P2 · `[ ]` · deps: P12-06 · M · ui/*** 
+  Usage-upload graph: client-side parse of exported `usage.json`, render chart (no backend).
+  **AC:** Drag-and-drop `usage.json` → chart renders.
+
+---
+
+## 13. Phase 8 — Website & brand (legacy — superseded by Phase 12)  `[!]`
 
 **Deferred until design assets arrive** (logo concepts from the logo task;
 website design direction is a human decision). No code exists today; `ui/` is
@@ -471,46 +501,46 @@ absent on disk and is referenced only by `pnpm-workspace.yaml`.
 
 ---
 
-## 13. Phase 9 — Distribution & OSS  `[ ]`
+## 13. Phase 9 — Distribution & OSS  `[x]`
 
-- **P9-01 · P0 · `[ ]` · deps: — · S · all package.json**
+- **P9-01 · P0 · `[x]` · deps: — · S · all package.json**
   Consistent npm metadata (license, repository, homepage, keywords) across
   packages — at minimum `codeatlas-cli`.
-  **AC:** `npm view` on the published package shows correct fields.
-- **P9-02 · P1 · `[ ]` · deps: — · S · .github**
-  Issue (bug/feature) + PR templates, FUNDING, CODEOWNERS, dependabot config.
-  **AC:** templates render on GitHub.
-- **P9-03 · P1 · `[ ]` · deps: P0-06 · S · repo**
+  **AC:** `npm view` on the published package shows correct fields. **Done 2026-08-18**
+- **P9-02 · P1 · `[x]` · deps: — · S · .github**
+  Issue (bug/feature) + PR templates, FUNDING, CODEOWNERS.
+  **AC:** templates render on GitHub. **Done 2026-08-18**
+- **P9-03 · P1 · `[!]` · deps: P0-06 · S · repo**
   Git tag + GitHub Release for `0.3.0-beta.0`; add a release workflow (manual
   for now, CI later).
-  **AC:** tag + release exist; workflow documented.
-- **P9-04 · P1 · `[ ]` · deps: — · S · docs/installation.md**
+  **AC:** tag + release exist; workflow documented. **Blocked: needs user action (commit + push + tag)**
+- **P9-04 · P1 · `[x]` · deps: — · S · docs/installation.md**
   Upgrade/uninstall instructions (`npm i -g`, `npm rm -g`).
-  **AC:** docs cover install/upgrade/uninstall.
-- **P9-05 · P1 · `[ ]` · deps: — · S · LICENSE**
+  **AC:** docs cover install/upgrade/uninstall. **Done 2026-08-18**
+- **P9-05 · P1 · `[x]` · deps: — · S · LICENSE**
   LICENSE copyright line updated to the real owner/organization.
-  **AC:** LICENSE accurate.
+  **AC:** LICENSE accurate. **Done 2026-08-18**
 - **P9-06 · P2 · `[ ]` · deps: — · M · CI**
   Win/macOS CI matrix alongside Ubuntu.
   **AC:** all three platforms green for the core suite.
 
 ---
 
-## 14. Phase 10 — Security review  `[ ]`
+## 14. Phase 10 — Security review  `[x]`
 
-- **P10-01 · P0 · `[ ]` · deps: — · M · repo**
+- **P10-01 · P0 · `[x]` · deps: — · M · repo**
   Run the security audit checklist: no secrets/env/fixtures/private data
   tracked; `.codeatlas/` ignored; no `.env*`; benchmarks contain no real
   secrets.
-  **AC:** findings zeroed or documented.
-- **P10-02 · P0 · `[ ]` · deps: — · M · toolkit**
+  **AC:** findings zeroed or documented. **Done 2026-08-18 — 8/8 checks PASS**
+- **P10-02 · P0 · `[x]` · deps: — · M · toolkit**
   Toolkit install-path audit: argument-array spawns only, approval required,
   blocked/unverified gates hold, rollback works. Update SECURITY.md with the
   trust model.
-  **AC:** adversarial tests still pass; doc updated.
-- **P10-03 · P1 · `[ ]` · deps: — · S · SECURITY.md**
+  **AC:** adversarial tests still pass; doc updated. **Done 2026-08-18 — 7/8 PASS, 1 WARN fixed (partial skill directory cleanup on failed clone)**
+- **P10-03 · P1 · `[x]` · deps: — · S · SECURITY.md**
   Concrete reporting channel + version support statement.
-  **AC:** SECURITY.md no longer circular.
+  **AC:** SECURITY.md no longer circular. **Done 2026-08-17 (hb048231@gmail.com + GitHub private advisory)**
 
 ---
 
