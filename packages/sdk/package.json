@@ -42,5 +42,19 @@
     "@atlas/usage": "workspace:*",
     "@atlas/metrics": "workspace:*",
     "@atlas/toolkit": "workspace:*"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prof-bilal/CodeAtlas.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://github.com/Prof-bilal/CodeAtlas",
+  "bugs": {
+    "url": "https://github.com/Prof-bilal/CodeAtlas/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "CodeAtlas contributors"
 }

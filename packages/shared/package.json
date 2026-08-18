@@ -24,5 +24,19 @@
   },
   "engines": {
     "node": ">=22.5.0"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prof-bilal/CodeAtlas.git",
+    "directory": "packages/shared"
+  },
+  "homepage": "https://github.com/Prof-bilal/CodeAtlas",
+  "bugs": {
+    "url": "https://github.com/Prof-bilal/CodeAtlas/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "CodeAtlas contributors"
 }

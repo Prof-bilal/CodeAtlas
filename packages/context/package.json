@@ -28,5 +28,19 @@
   "dependencies": {
     "@atlas/core": "workspace:*",
     "@atlas/shared": "workspace:*"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prof-bilal/CodeAtlas.git",
+    "directory": "packages/context"
+  },
+  "homepage": "https://github.com/Prof-bilal/CodeAtlas",
+  "bugs": {
+    "url": "https://github.com/Prof-bilal/CodeAtlas/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "CodeAtlas contributors"
 }

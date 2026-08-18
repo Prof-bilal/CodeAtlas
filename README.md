@@ -52,22 +52,18 @@ LLMs work best with *relevant, fresh context*, not whole repositories:
 
 ## Status
 
-[IMPLEMENTED] Core pipeline (scanner, hashing, manifest, parser, graph, storage,
-search, summaries, cache, providers), Context SDK, MCP, VS Code extension, agent
-connection layer + session manager, usage tracking, context integration, the
-Agent Toolkit (registry/manifest/compatibility/installer/configurator/security),
-and the SDK-backed CLI (`atlas search|scan|sessions|usage|tools|context|mcp`,
-`atlas init/build/update`).
+**[IMPLEMENTED]** Core pipeline (scanner, hashing, manifest, parser, graph,
+storage, search, summaries, cache, providers), Context SDK, MCP (7 tools),
+VS Code extension, agent connection layer + session manager, usage tracking,
+context integration, and the full Agent Toolkit (56-tool catalog with tier
+system, skill adapter, compatibility engine, approval-gated installer,
+configurator, security/trust assessor, category browsing, config-cleanup on
+remove, live doctor, conflict detection).
 
-[PARTIAL] Parser handles TypeScript only (renamed imports and
+**[PARTIAL]** Parser handles TypeScript only (renamed imports and
 `export default <expr>` do not resolve cross-file).
 
-[IMPLEMENTED] `@atlas/context` (context ranking/assembly) — a deterministic
-rank-and-assemble step (ADR-001) that ranks search hits and resolves them to
-source-file `ContextItem`s. The CLI `atlas explain`/`atlas doctor` and the
-`atlas sessions` token-impact reporting are wired.
-
-[PLANNED] The `/tools` and `/context` slash surfaces, `atlas setup`, the
+**[PLANNED]** The `/tools` and `/context` slash surfaces, `atlas setup`, the
 standalone agent router, and the Agent Orchestrator.
 
 Ground truth: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) and
@@ -247,6 +243,33 @@ linting, formatting, typing, and commit conventions on every change. See
 
 Report vulnerabilities privately — see [SECURITY.md](SECURITY.md) and
 [docs/SECURITY.md](docs/SECURITY.md).
+
+## Benchmarks
+
+CodeAtlas indexes real repositories locally. Here are honest numbers from the
+[extreme stress benchmark](benchmarks/extreme/) on a shared 7.2 GiB machine
+(1,000 generated TypeScript files, 5 M lines, 251 MB source):
+
+| Metric | Value |
+|--------|-------|
+| Peak RSS | 1,698 MB |
+| Minimum available memory | 1,361 MB |
+| Wall time (build) | 188 s |
+| Symbols indexed | 78,904 |
+| Dependencies indexed | 139,408 |
+| Index size on disk | 353 MB |
+
+A prior native-memory leak (statement-per-row preparation) caused 4,274 MB
+peak RSS / 23 MB minimum available on the same corpus — that is fixed
+([CHANGELOG](CHANGELOG.md)). The 5,000-file corpus (25 M lines, 1.2 GB
+source) exceeds available memory on this machine and is a known limitation.
+
+**Honesty note:** these are *worst-case* generated corpora, not typical
+repositories. Real-world projects with mixed languages and fewer files will
+use less memory. We do not claim specific token-savings percentages — the
+context engine delivers *bounded, relevant* context, not magic.
+
+Full results: [`benchmarks/extreme/results.json`](benchmarks/extreme/results.json).
 
 ## License
 

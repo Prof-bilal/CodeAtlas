@@ -31,5 +31,19 @@
   "dependencies": {
     "@atlas/sdk": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prof-bilal/CodeAtlas.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://github.com/Prof-bilal/CodeAtlas",
+  "bugs": {
+    "url": "https://github.com/Prof-bilal/CodeAtlas/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "CodeAtlas contributors"
 }

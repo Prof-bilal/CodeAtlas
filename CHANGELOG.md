@@ -11,6 +11,35 @@ npm versions.
 
 ### Added
 
+- **Agent Toolkit tier system** — `ToolTier` type (`recommended` / `optional` /
+  `experimental` / `incompatible`) on every registry record; schema version 2;
+  Top-10 executive recommendation in the catalog.
+- **Catalog expanded to 56 tools** — 47 deduplicated Agent-Toolkit skills + 9
+  foundational tools; all validated against schema version 2.
+- **Skill adapter** — `skill` install type: shallow `git clone` of the canonical
+  repository into `.codeatlas/skills/<name>/`, `verifyPath` post-install check,
+  `git pull --ff-only` update, directory deletion on remove.
+- **`atlas init` recommended-tools offer** — interactive prompt to install the
+  Top-10 recommended tools; `--tools all|none|1,2,3` flag; injectable prompt
+  for testing.
+- **Category browsing** — `atlas tools categories` lists all tool categories;
+  `--category <cat>` filter on `atlas tools` overview and `atlas tools search`.
+- **Compatibility report in `atlas tools info`** — per-check ✓/✗/? verdict
+  for OS, runtimes, AI agents, architecture, and permissions.
+- **Real `atlas tools update`** — skills updated via `git pull --ff-only`;
+  ecosystem tools re-installed through the approved adapter; `--approve` flag
+  for blanket approval; per-tool status reporting.
+- **Uninstall config-cleanup** — `atlas tools remove` calls
+  `configurator.unconfigure()` to strip tool entries from agent config files
+  (Claude, Gemini, Codex, OpenCode, MCP, VS Code).
+- **Live doctor/health check** — `atlas tools doctor` runs the compatibility
+  engine on each installed tool and reports the overall verdict.
+- **Conflict detection** — `atlas tools doctor` detects installed tools sharing
+  a package id and lists conflicts.
+- **Dependencies and categories in `atlas tools info`** — surfaces declared
+  dependencies and category tags.
+- **User guide** — `docs/AGENT_TOOLKIT.md` §10 rewritten as a complete CLI
+  reference with real commands, examples, and the Top-10 list.
 - **Statement caching in SQLite repositories** — `@atlas/storage` and
   `@atlas/usage` now reuse one prepared statement per SQL via a shared
   `StatementCache` base class instead of `db.prepare()` per row. `node:sqlite`
@@ -36,6 +65,12 @@ npm versions.
 - `apps/cli/package.json` now ships full npm metadata (description, author,
   license, repository, homepage, bugs, keywords).
 - `@atlas/search` index building is more memory-efficient for large snapshots.
+- `atlas tools info` now shows compatibility report, dependencies, and
+  categories.
+- `atlas tools doctor` now runs live compatibility checks and detects conflicts.
+- `atlas tools remove` now cleans up agent configuration entries.
+- `atlas tools update` now re-installs installed tools (skills via git pull,
+  ecosystem via package manager) instead of reporting counts.
 
 ### Fixed
 
