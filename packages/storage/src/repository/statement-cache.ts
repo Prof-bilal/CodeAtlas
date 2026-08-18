@@ -15,7 +15,7 @@ import type { DatabaseSync, StatementSync } from "node:sqlite";
 export abstract class StatementCache {
   private readonly statements = new Map<string, StatementSync>();
 
-  protected constructor(protected readonly db: DatabaseSync) {}
+  public constructor(protected readonly db: DatabaseSync) {}
 
   protected prepare(sql: string): StatementSync {
     let statement = this.statements.get(sql);
