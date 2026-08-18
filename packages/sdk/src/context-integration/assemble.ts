@@ -1,5 +1,6 @@
 import { sep as pathSep } from "node:path";
 import type { Summary } from "@atlas/core";
+import { estimateTokens } from "@atlas/shared";
 import { InvalidQueryError } from "../context/errors";
 import type {
   DependencyContext,
@@ -8,7 +9,7 @@ import type {
   SymbolContext,
 } from "../context/models";
 import type { ContextSDK } from "../context/sdk";
-import { DEFAULT_CONTEXT_BUDGET, applyBudget, estimateTokens } from "./budget";
+import { DEFAULT_CONTEXT_BUDGET, applyBudget } from "./budget";
 import { type DenyFilterResult, denyFilter } from "./deny";
 import { type ProjectInstruction, collectInstructions } from "./instructions";
 import type {

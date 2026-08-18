@@ -11,9 +11,9 @@ scanner/MCP input, an unsafe process invocation, an injection risk, or a
 bypass of the toolkit's security/trust gates:
 
 - **Do not open a public issue.**
-- Report it privately to the maintainers (see
-  [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) §8 for the current contact
-  channel).
+- Report it privately to the maintainers — email
+  **hb048231@gmail.com** (and optionally CC the
+  [GitHub private vulnerability reporting](https://github.com/Prof-bilal/CodeAtlas/security/advisories/new)).
 - Include a minimal reproduction and the affected version if you can.
 
 We aim to acknowledge reports promptly and to coordinate a fix before public

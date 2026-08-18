@@ -1,4 +1,4 @@
-export { UnsupportedLanguageError } from "./errors";
+export { SymbolNotIndexedError, UnsupportedLanguageError } from "./errors";
 export type { LanguageParser } from "./language-parser";
 export type { ParseBatch, ParsedFile, SkippedFile } from "./parsed-file";
 export { ParserRegistry } from "./parser-registry";

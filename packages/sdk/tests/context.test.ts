@@ -1,17 +1,18 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
-import type { ContextData, SourceFile, Summary, Symbol } from "@atlas/core";
+// biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
+import type { ContextData, MetricsPort, SourceFile, Summary, Symbol } from "@atlas/core";
 import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
+import { describe, expect, it } from "vitest";
 import {
-  createContextSDK,
+  type ContextSDK,
   ContextUnavailableError,
   FileNotFoundError,
   InvalidQueryError,
   SymbolNotFoundError,
-  type ContextSDK,
+  createContextSDK,
 } from "../src/index";
 
 function fixtureFile(path: string, content: string, language = "typescript"): SourceFile {
@@ -298,6 +299,50 @@ describe("Context SDK — search", () => {
       expect(symbols.some((hit) => hit.kind === "module")).toBe(true);
       expect(() => sdk.search.search("  ")).toThrow(InvalidQueryError);
     });
+  });
+});
+
+describe("Context SDK — metrics recording", () => {
+  it("records search, read-range, and context requests when a metrics port is wired", () => {
+    const recorded: string[] = [];
+    const metrics: MetricsPort = {
+      snapshot: () => ({}) as never,
+      recordScan: () => recorded.push("scan"),
+      recordSearch: () => recorded.push("search"),
+      recordContextRequest: () => recorded.push("context"),
+      recordMcpRequest: () => recorded.push("mcp"),
+      recordFileRead: () => recorded.push("read"),
+      recordFileModified: () => recorded.push("modified"),
+      recordTokenEstimate: () => recorded.push("tokens"),
+      flush: () => undefined,
+      reset: () => undefined,
+      close: () => undefined,
+    };
+    const sdk = createContextSDK({
+      contextDb: new ContextStore({ filePath: ":memory:" }),
+      metrics,
+    });
+    try {
+      sdk.write.save(standardData());
+      sdk.search.search("double");
+      sdk.files.readRange("/src/math.ts", { startLine: 1, endLine: 1 });
+      sdk.getRelevantContext("math");
+    } finally {
+      sdk.close();
+    }
+    expect(recorded).toContain("search");
+    expect(recorded).toContain("read");
+    expect(recorded).toContain("context");
+  });
+
+  it("records nothing when no metrics port is wired", () => {
+    const sdk = createContextSDK({ contextDb: new ContextStore({ filePath: ":memory:" }) });
+    try {
+      sdk.write.save(standardData());
+      expect(() => sdk.search.search("double")).not.toThrow();
+    } finally {
+      sdk.close();
+    }
   });
 });
 

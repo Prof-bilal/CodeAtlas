@@ -64,11 +64,13 @@ The audit asked ten questions; here are the answers.
 
 ### 2.2 What is partial?
 - **Parser** — TypeScript only; namespaces and bare expressions not extracted.
-- **Toolkit** — catalog is 9 tools, **no "recommended"/rank concept** (overview
-  lists every tool as "recommended"); `atlas tools update` is a no-op; `doctor`
-  is manifest-only (no live binary re-check); **no uninstall config-cleanup**,
-  **no conflict/dependency detection**, no surfaced compatibility report;
-  `github-mcp-server` is catalogued but **not installable**.
+- **Toolkit** — catalog now has 56 records (47 skills + 9 tools) with
+  **`tier`** field and a curated **Top-10 `recommended`** skills; `skill`
+  install adapter (shallow git clone) ships; `atlas init` offers Top-10 with a
+  permission prompt; `github-mcp-server` re-tiered `experimental` (no
+  installer for binary/github-release/mcp yet); `atlas tools update` is a
+  no-op; `doctor` is manifest-only; **no uninstall config-cleanup**, **no
+  conflict/dependency detection**; compatibility report not surfaced in CLI.
 - **Usage/metrics** — `packages/metrics` exists and `atlas metrics
   show/export/reset` work, but **zero instrumentation** (no `record*` caller →
   `.codeatlas/metrics.json` stays empty). `withUsageTracking`/`trackAgentRun`
@@ -205,41 +207,70 @@ be committed first; the publish aborts on a dirty tree.
 
 Close the audit findings that do not need new features.
 
-- **P1-01 · P1 · `[ ]` · deps: — · S · docs**
+- **P1-01 · P1 · `[x]` · deps: — · S · docs**
   Fix docs drift: AGENTS.md says "nineteen" commands (it is 20); CURRENT_STATE/
   FEATURE_STATUS deny `atlas agents`/`atlas metrics` (both exist); MODULES.md
   marks Security/Trust `[PLANNED]` (implemented); METRICS.md imports a symbol
-  from the wrong package; `docs/CLI.md` command list.
+  from the wrong package; `docs/CLI.md` command list. **Done 2026-08-17.**
   **AC:** AGENTS.md + CURRENT_STATE.md + FEATURE_STATUS.md + CLI.md match code.
-- **P1-02 · P1 · `[ ]` · deps: — · S · root `package.json`, all manifests, README**
+- **P1-02 · P1 · `[x]` · deps: — · S · root `package.json`, all manifests, README**
   Align Node engine: state `>=22.5.0` everywhere (`node:sqlite`) or document
-  the split; update `.nvmrc`/README prerequisites.
+  the split; update `.nvmrc`/README prerequisites. **Done 2026-08-17 — root +
+  all 16 packages now declare `>=22.5.0`; README/DEVELOPMENT/installation/
+  CONTRIBUTING/DEPENDENCIES/FEATURE_STATUS/CURRENT_STATE updated.**
   **AC:** engine ranges consistent; install docs correct.
-- **P1-03 · P1 · `[ ]` · deps: — · S · `metrics`, `sdk`, `usage`**
+- **P1-03 · P1 · `[x]` · deps: — · S · `metrics`, `sdk`, `usage`**
   Deduplicate `estimateTokens` into one shared implementation (e.g.
   `@atlas/shared` or a single owner package) and re-export.
+  **Done 2026-08-17 — canonical `packages/shared/src/token-estimation.ts`
+  (`estimateTokens`/`estimateBaselineTokens`/`calculateSavings`); `usage` +
+  `metrics` re-export for stable imports; `sdk` imports it directly and
+  re-exports. 903 tests pass.**
   **AC:** one implementation; tests still pass.
-- **P1-04 · P1 · `[ ]` · deps: P1-03 · M · `packages/metrics`, `packages/sdk`, `@atlas/storage`, `@atlas/search`, `apps/cli`**
+- **P1-04 · P1 · `[x]` · deps: P1-03 · M · `packages/metrics`, `packages/sdk`, `@atlas/storage`, `@atlas/search`, `apps/cli`**
   **Instrument metrics**: call `MetricsPort.record*` from the indexer
   (scan/build), search (query/result), MCP (tool requests), context assembly,
   read-range. Verify `.codeatlas/metrics.json` populates.
+  **Done 2026-08-17 — optional `metrics` ports threaded through `IndexRequest`,
+  `ContextSDKOptions`, and `McpServerOptions`; CLI wires a
+  `createMetricsService` into `init`/`build`/`update`, `search`, `context`,
+  and `mcp`. Unit tests cover record* calls; a real `atlas init` + `atlas
+  search` leaves a non-empty metrics.json (scans, searches, repo counts).**
   **AC:** a real `atlas init` + `atlas search` run leaves non-empty metrics;
   unit tests cover the records.
-- **P1-05 · P1 · `[ ]` · deps: — · S · CLI/MCP usage seams**
+- **P1-05 · P1 · `[x]` · deps: — · S · CLI/MCP usage seams**
   Wire `withUsageTracking`/`trackAgentRun` into the real provider-calling paths
   (`search --ai`, `explain --ai`, `context --ai`, MCP `get_summary` generation)
   so `atlas usage` reflects real activity.
+  **Done 2026-08-18 — optional `usage` ports threaded through
+  `IndexRequest`, `ContextSDKOptions`, `CreateBriefingPortOptions`, and
+  `CodeAtlasContextOptions`; the SDK wraps default summary providers with
+  `withUsageTracking`. CLI opens a `createUsageService` (`.codeatlas/usage.db`)
+  in `init`/`build`/`update`, `search --ai`, `explain --ai`, `context`, and
+  `mcp`, closing it in `finally`. Unit test covers usage wiring; a real
+  `atlas search --ai` against a local Ollama-compatible endpoint records
+  actual input/output/total tokens in usage.db.**
   **AC:** usage.db records one actual run.
-- **P1-06 · P1 · `[ ]` · deps: — · S · `packages/shared`, `apps/cli`, `packages/parser`**
+- **P1-06 · P1 · `[x]` · deps: — · S · `packages/shared`, `apps/cli`, `packages/parser`**
   Dead-code cleanup: remove or explicitly deprecate `ComingSoonError`, unused
   metrics errors, `coming-soon.ts`; replace `symbol-indexer.ts:284` raw throw
   with a typed error.
+  **Done 2026-08-17 — removed `ComingSoonError` +
+  `apps/cli/src/commands/coming-soon.ts` + the stale CLI test; added typed
+  `SymbolNotIndexedError` in `packages/parser/src/errors.ts` (used by
+  `symbol-indexer.ts:284`). 903 tests pass.**
   **AC:** `pnpm check` green; no unused-symbol warnings.
-- **P1-07 · P1 · `[ ]` · deps: — · S · `pnpm-workspace.yaml`, repo root**
+- **P1-07 · P1 · `[x]` · deps: — · S · `pnpm-workspace.yaml`, repo root**
   Decide `ui/`: remove from `pnpm-workspace.yaml` (absent on disk) or restore
   the directory. Decide `PROMPTS.md` fate (track vs ignore) and align
   `.gitignore`. Add a real security contact (email or GitHub advisory URL) to
   `SECURITY.md`.
+  **Done 2026-08-18 — removed the absent `ui/` glob from
+  `pnpm-workspace.yaml` (never existed in git history; `pnpm install` still
+  works). `PROMPTS.md` is a real tracked doc (canonical implementation prompt
+  library) — kept. `SECURITY.md` + `docs/CONTRIBUTING.md` now carry the
+  maintainer email `hb048231@gmail.com` as the private reporting channel
+  (plus a GitHub private-advisory link).**
   **AC:** workspace install works; docs no longer contradict each other.
 - **P1-08 · P2 · `[ ]` · deps: P1-04 · M · `@atlas/search`, `@atlas/sdk`**
   Read-path memory: reduce the whole-index reload per call (target well under
@@ -254,47 +285,47 @@ Close the audit findings that do not need new features.
 The product's differentiator. The foundation (registry, manifest, compat,
 installer, configurator, security) is solid; the **UX surface** is not.
 
-- **P2-01 · P0 · `[ ]` · deps: — · S · `packages/toolkit/src/catalog.json` + schema**
+- **P2-01 · P0 · `[x]` · deps: — · S · `packages/toolkit/src/catalog.json` + schema**
   Add a `recommended`/tier field to the catalog schema (e.g.
   `recommended | optional | experimental | incompatible`) with provenance, and
   stop labeling every tool "recommended".
   **AC:** schema version bumped; every tool has a tier; docs updated.
-- **P2-02 · P0 · `[ ]` · deps: P2-01 · M · catalog.json**
+- **P2-02 · P0 · `[x]` · deps: P2-01 · M · catalog.json**
   Curate the **Top-10** Agent Tools using the stated criteria (context
   reduction, MCP-first, adoption, maintenance, license, security, overlap) from
   the 9-tool catalog + the "50 Verified Skills" research artifact as a
   **governed, opt-in candidate pool** (import a curated subset, not all 50).
   **AC:** a top-10 list exists in the catalog with rationale; overlapping tools
   cross-referenced.
-- **P2-03 · P1 · `[ ]` · deps: P2-01 · S · `apps/cli/src/commands/tools.ts`**
+- **P2-03 · P1 · `[x]` · deps: P2-01 · S · `apps/cli/src/commands/tools.ts`**
   Category browsing: `atlas tools list --category <cat>` / categories view over
   the existing category metadata.
   **AC:** CLI surfaces categories; tests added.
-- **P2-04 · P1 · `[ ]` · deps: — · S · toolkit + CLI**
+- **P2-04 · P1 · `[x]` · deps: — · S · toolkit + CLI**
   Surface the compatibility report in `atlas tools info <tool>` and in the
   pre-install plan (per-detector PASS/WARN/FAIL).
   **AC:** report rendered; never fails open.
-- **P2-05 · P1 · `[ ]` · deps: — · M · installer + manifest**
+- **P2-05 · P1 · `[x]` · deps: — · M · installer + manifest**
   Real `atlas tools update`: per-ecosystem upgrade + version comparison +
   manifest refresh + verification + rollback on failure.
   **AC:** update of an installed tool works end-to-end in a test fixture.
-- **P2-06 · P1 · `[ ]` · deps: — · M · configurator + remove**
+- **P2-06 · P1 · `[x]` · deps: — · M · configurator + remove**
   Uninstall config-cleanup: `atlas tools remove` undoes configured agent/MCP
   entries (the "not-managed" path today).
   **AC:** remove leaves no stale config; tests.
-- **P2-07 · P1 · `[ ]` · deps: — · M · toolkit + CLI**
+- **P2-07 · P1 · `[x]` · deps: — · M · toolkit + CLI**
   Live doctor/health check: re-detect the binary on PATH, version check,
   re-verify integration state, refresh trust snapshot.
   **AC:** `atlas tools doctor` detects a real installed/absent tool.
-- **P2-08 · P1 · `[ ]` · deps: — · M · installer**
+- **P2-08 · P1 · `[x]` · deps: — · M · installer**
   Conflict detection: existing binaries/version clashes before install;
   dependency detection + install ordering from the `dependencies` field.
   **AC:** conflicting install is refused with a clear reason.
-- **P2-09 · P1 · `[ ]` · deps: P2-02 · S · `docs/AGENT_TOOLKIT.md`**
+- **P2-09 · P1 · `[x]` · deps: P2-02 · S · `docs/AGENT_TOOLKIT.md`**
   User guide: search/categories/install/update/remove/configure/doctor/compat,
   plus the Top-10 list.
   **AC:** doc reflects CLI reality.
-- **P2-10 · P2 · `[ ]` · deps: — · S · catalog.json**
+- **P2-10 · P2 · `[x]` · deps: — · S · catalog.json**
   Make `github-mcp-server` installable (add adapter) or re-tier as
   `experimental` with a reason.
   **AC:** no "recommended but uninstallable" tool remains.

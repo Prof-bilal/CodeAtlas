@@ -24,6 +24,7 @@ export type ToolManifestSourceKind =
   | "binary"
   | "github-release"
   | "mcp"
+  | "skill"
   | "manual";
 
 /** The closed set of {@link ToolManifestSourceKind} values. */
@@ -36,6 +37,7 @@ export const TOOL_MANIFEST_SOURCE_KINDS: readonly ToolManifestSourceKind[] = [
   "binary",
   "github-release",
   "mcp",
+  "skill",
   "manual",
 ];
 

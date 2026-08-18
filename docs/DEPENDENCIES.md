@@ -115,4 +115,4 @@ Do **not** install packages simply because they are popular.
 - Audit new transitive packages (`pnpm why`, lockfile review) — supply-chain
   hygiene matters on a developer tool that runs on users' machines.
 - Pin major versions deliberately; keep engine ranges compatible with
-  `>=20.19.0` (storage caveat: `node:sqlite` needs `>=22.5.0`).
+  `>=22.5.0` (`node:sqlite` sets the shared floor).

@@ -1,5 +1,3 @@
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
 import {
   type AssembleOptions,
   type ContextIntegration,
@@ -8,14 +6,14 @@ import {
   createContextIntegration,
   createContextSDK,
   createSessionManager,
-  createUsageService,
   renderContextBriefing,
   renderContextExplanation,
   renderContextPackage,
 } from "@atlas/sdk";
 import type { Command } from "commander";
+import { openMetrics } from "./metrics";
 import { contextDbPath, resolveProjectRoot } from "./search";
-import { usageDbPath } from "./usage";
+import { openUsage } from "./usage";
 
 export interface ContextCommandOptions {
   readonly integration?: ContextIntegration;
@@ -267,11 +265,21 @@ async function withIntegration(
     return;
   }
   const root = repositoryPath ?? resolveProjectRoot();
-  const context = createContextSDK({ dbPath: contextDbPath(root), repositoryPath: root });
+  const metrics = openMetrics(root);
+  const usage = openUsage(root);
+  const context = createContextSDK({
+    dbPath: contextDbPath(root),
+    repositoryPath: root,
+    metrics,
+    usage,
+  });
   try {
-    await action(createContextIntegration({ context, sessions: createSessionManager() }));
+    await action(createContextIntegration({ context, sessions: createSessionManager(), usage }));
   } finally {
     context.close();
+    metrics.flush();
+    metrics.close();
+    usage.close();
   }
 }
 
@@ -283,9 +291,7 @@ async function withIntegration(
 function recordSessionUsage(root: string, session: Session): Promise<void> {
   return (async () => {
     try {
-      const dbPath = usageDbPath(root);
-      mkdirSync(dirname(dbPath), { recursive: true });
-      const usage = createUsageService({ filePath: dbPath });
+      const usage = openUsage(root);
       try {
         await usage.record({
           source: "session",

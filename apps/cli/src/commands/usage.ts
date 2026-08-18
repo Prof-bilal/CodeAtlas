@@ -18,6 +18,16 @@ export function usageDbPath(root: string): string {
   return join(root, ".codeatlas", "usage.db");
 }
 
+/**
+ * Open a usage service for a project root, creating `.codeatlas/` if needed.
+ * Used by the usage commands and by other commands to record AI activity.
+ */
+export function openUsage(root: string): UsagePort {
+  const dbPath = usageDbPath(root);
+  mkdirSync(dirname(dbPath), { recursive: true });
+  return createUsageService({ filePath: dbPath });
+}
+
 /** Render a measured quantity: value + provenance, or `unknown`. */
 export function formatMeasured(value: MeasuredQuantity): string {
   if (value.value === null) {

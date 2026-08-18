@@ -6,6 +6,7 @@ import type {
   ContextDatabasePort,
   ContextDeleteTarget,
   ContextSnapshot,
+  MetricsPort,
   PersistedDependency,
   Symbol as PersistedSymbol,
   SearchRequest,
@@ -15,12 +16,14 @@ import type {
   SummaryKind,
   SummaryOptions,
   SummaryPort,
+  UsagePort,
 } from "@atlas/core";
 import { HashService, hashContent } from "@atlas/hashing";
 import { SearchService } from "@atlas/search";
 import { type FilePath, type Result, type SymbolId, fail } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { SummaryService } from "@atlas/summary";
+import { withUsageTracking } from "@atlas/usage";
 import { type IndexResult, indexProject } from "../indexing/indexer";
 import { scanProjectOverview } from "../indexing/scan";
 import { createProviderService } from "../providers/index";
@@ -63,6 +66,13 @@ export interface ContextSDKOptions {
   readonly contextDb?: ContextDatabasePort;
   /** Summary generation port (AI-optional); fails cleanly when absent. */
   readonly summary?: SummaryPort;
+  /** Optional metrics port; reads/searches/context requests are recorded. */
+  readonly metrics?: MetricsPort;
+  /**
+   * Optional usage port; AI provider calls made by the default summary/briefing
+   * services are recorded with actual (or honestly `unknown`) token usage.
+   */
+  readonly usage?: UsagePort;
 }
 
 /** Resolved SDK configuration. */
@@ -273,16 +283,23 @@ class ContextSDKFacade implements ContextSDK {
     private readonly port: ContextDatabasePort | null,
     config: ContextSDKConfig,
     summary: SummaryPort | undefined,
+    private readonly metrics: MetricsPort | undefined,
+    usage: UsagePort | undefined,
   ) {
     this.config = config;
     // AI summaries are optional; without a wired port or configured provider the
     // generation methods fail cleanly instead of crashing. The default provider
     // is built from the environment + user provider settings, so a connected
     // Ollama (or a keyed cloud provider) powers summaries with no code change.
+    // When a usage port is wired, provider completions are recorded (actual
+    // tokens from the response, `unknown` when the provider reports none).
     this.summary =
       summary ??
       new SummaryService({
-        provider: createProviderService(),
+        provider:
+          usage === undefined
+            ? createProviderService()
+            : withUsageTracking(createProviderService(), usage),
         cache: new CacheService(),
         hash: new HashService(),
       });
@@ -302,7 +319,7 @@ class ContextSDKFacade implements ContextSDK {
   public static open(options: ContextSDKOptions): ContextSDKFacade {
     const config = resolveContextConfig(options);
     const port = options.contextDb ?? openStore(config.dbPath);
-    return new ContextSDKFacade(port, config, options.summary);
+    return new ContextSDKFacade(port, config, options.summary, options.metrics, options.usage);
   }
 
   public get isAvailable(): boolean {
@@ -355,7 +372,9 @@ class ContextSDKFacade implements ContextSDK {
   ): readonly SearchResult[] {
     this.requireSearchable(query);
     this.rebuildSearch();
+    const startedAt = performance.now();
     const hits = this.searchService.search(query, options);
+    this.metrics?.recordSearch({ latencyMs: Math.round(performance.now() - startedAt) });
     const kind = options?.kind;
     if (kind === undefined) {
       return hits;
@@ -397,6 +416,7 @@ class ContextSDKFacade implements ContextSDK {
     },
     readRange: (path, request: ReadRangeRequest): ReadRangeResult => {
       this.requireAvailable();
+      this.metrics?.recordFileRead({ filePath: path });
       const lookupPath = isAbsolute(path) ? path : join(this.config.repositoryPath, path);
       const source = this.reads.getFile(lookupPath as FilePath);
       const disk = readWorkingFile(source.path);
@@ -638,7 +658,10 @@ class ContextSDKFacade implements ContextSDK {
     search: (query: string, options?: SearchRequest): readonly SearchResult[] => {
       this.requireSearchable(query);
       this.rebuildSearch();
-      return this.searchService.search(query, options);
+      const startedAt = performance.now();
+      const hits = this.searchService.search(query, options);
+      this.metrics?.recordSearch({ latencyMs: Math.round(performance.now() - startedAt) });
+      return hits;
     },
   };
 
@@ -758,6 +781,7 @@ class ContextSDKFacade implements ContextSDK {
       repositoryPath: this.config.repositoryPath,
       dbPath: this.config.dbPath,
       mode: "update",
+      ...(this.metrics === undefined ? {} : { metrics: this.metrics }),
     });
     if (result.ok) {
       // The incremental indexer wrote through its own connection; mark the
@@ -773,6 +797,7 @@ class ContextSDKFacade implements ContextSDK {
       throw new InvalidQueryError("Query must not be empty.");
     }
     this.rebuildSearch();
+    const startedAt = performance.now();
 
     const fileHits = this.searchService.search(query, { types: ["file"], limit: 5 });
     const symbolHits = this.searchService.search(query, { types: ["symbol"], limit: 10 });
@@ -824,6 +849,8 @@ class ContextSDKFacade implements ContextSDK {
       .listDependencies()
       .filter(({ edge }) => relevantNodes.has(edge.from) || relevantNodes.has(edge.to))
       .map(toDependencyContext);
+
+    this.metrics?.recordContextRequest({ latencyMs: Math.round(performance.now() - startedAt) });
 
     return {
       query,

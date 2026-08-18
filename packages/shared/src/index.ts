@@ -1,16 +1,20 @@
 export { NAME, VERSION } from "./constants/version";
-export { ComingSoonError } from "./errors/coming-soon";
-export {
-  type Brand,
-  type CacheKey,
-  type EdgeId,
-  type FilePath,
-  type NodeId,
-  type ProjectId,
-  type SymbolId,
+export type {
+  Brand,
+  CacheKey,
+  EdgeId,
+  FilePath,
+  NodeId,
+  ProjectId,
+  SymbolId,
 } from "./types/brand";
 export { fail, isOk, ok, type Result } from "./types/result";
 export {
   DEFAULT_CONCURRENCY,
   mapWithConcurrency,
 } from "./types/concurrency";
+export {
+  calculateSavings,
+  estimateBaselineTokens,
+  estimateTokens,
+} from "./token-estimation";

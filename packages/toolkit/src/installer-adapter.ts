@@ -14,6 +14,13 @@ export interface AdapterPlan {
   readonly effect: string;
   readonly dangerous: readonly string[];
   readonly verifyBinary: string;
+  /**
+   * Optional post-install verification for non-binary artifacts: a path
+   * relative to `request.cwd` that must exist after install (e.g.
+   * `.codeatlas/skills/<name>/SKILL.md`). When set, it takes precedence over
+   * `verifyBinary`.
+   */
+  readonly verifyPath?: string | null;
 }
 
 /**

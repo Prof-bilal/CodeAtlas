@@ -48,6 +48,16 @@ export interface ConfiguratorPort {
     request: ConfiguratorRequest,
     options?: { readonly dryRun?: boolean },
   ): Promise<Result<ConfigureOutcome>>;
+
+  /**
+   * Remove a previously configured tool from all applicable targets.
+   * Reads the existing config, removes the tool's entry, and writes back.
+   * No-op when the tool is not configured. Returns the list of files cleaned.
+   */
+  unconfigure(
+    toolName: string,
+    options?: { readonly configHome?: string },
+  ): Promise<Result<readonly string[]>>;
 }
 
 /** The configuration targets the Toolkit can wire a tool into. */

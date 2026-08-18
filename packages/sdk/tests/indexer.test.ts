@@ -1,7 +1,14 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { SourceFile, Summary, SummaryPort } from "@atlas/core";
+import type {
+  MetricsPort,
+  SourceFile,
+  Summary,
+  SummaryPort,
+  UsageEventInput,
+  UsagePort,
+} from "@atlas/core";
 import { fail, ok } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { afterEach, describe, expect, it } from "vitest";
@@ -46,6 +53,48 @@ function fakeSummaryPort(overrides: Partial<SummaryPort> = {}): SummaryPort & {
     summarizeModule: async () => fail(new Error("not used")),
     summarizeProject: async () => fail(new Error("not used")),
     ...overrides,
+  };
+}
+
+/** A no-op metrics port that records which record* methods were called. */
+function fakeMetricsPort(): MetricsPort & { readonly events: string[] } {
+  const events: string[] = [];
+  return {
+    events,
+    snapshot: () => ({}) as never,
+    recordScan: (event) =>
+      events.push(`scan:${event.files}:${event.symbols}:${event.dependencies}`),
+    recordSearch: () => events.push("search"),
+    recordContextRequest: () => events.push("context"),
+    recordMcpRequest: () => events.push("mcp"),
+    recordFileRead: () => events.push("read"),
+    recordFileModified: () => events.push("modified"),
+    recordTokenEstimate: () => events.push("tokens"),
+    flush: () => undefined,
+    reset: () => undefined,
+    close: () => undefined,
+  };
+}
+
+/** A usage port that records every submitted event. */
+function fakeUsagePort(): UsagePort & { readonly events: readonly UsageEventInput[] } {
+  const events: UsageEventInput[] = [];
+  return {
+    events,
+    record: async (event) => {
+      events.push(event);
+      return ok({ id: `u-${events.length}`, occurredAt: new Date().toISOString() } as never);
+    },
+    getUsage: () => undefined,
+    listUsage: () => [],
+    statistics: () => ({}) as never,
+    listBudgets: () => [],
+    setBudget: () => ok({} as never),
+    budgetStatus: () => undefined,
+    setLimit: () => ok({} as never),
+    checkLimit: () => ok({} as never),
+    listLimits: () => [],
+    close: () => undefined,
   };
 }
 
@@ -175,5 +224,33 @@ describe("indexProject", () => {
     } finally {
       store.close();
     }
+  });
+
+  it("records a scan event with counts when a metrics port is wired", async () => {
+    const root = await makeProject();
+    const metrics = fakeMetricsPort();
+
+    const result = await indexProject({ repositoryPath: root, mode: "build", metrics });
+    expect(result.ok).toBe(true);
+
+    expect(metrics.events).toHaveLength(1);
+    expect(metrics.events[0]).toMatch(/^scan:\d+:\d+:\d+$/);
+  });
+
+  it("accepts a usage port without breaking indexing", async () => {
+    const root = await makeProject();
+    const usage = fakeUsagePort();
+
+    const result = await indexProject({
+      repositoryPath: root,
+      mode: "build",
+      summaries: true,
+      usage,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // No provider is configured, so no provider usage is recorded — the run
+    // must still succeed and the usage port must remain usable.
+    expect(result.value.summariesFailed).toBe(2);
   });
 });

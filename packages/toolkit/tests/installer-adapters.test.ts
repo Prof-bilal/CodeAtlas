@@ -1,8 +1,15 @@
+import { join } from "node:path";
 import type { ToolInstallRequest } from "@atlas/core";
 import type { Result } from "@atlas/shared";
 import { describe, expect, it } from "vitest";
 import { baseBinaryName, validateSourceUrl } from "../src/installer-adapter";
-import { CargoAdapter, GoAdapter, NpmAdapter, PipAdapter } from "../src/installer-adapters";
+import {
+  CargoAdapter,
+  GoAdapter,
+  NpmAdapter,
+  PipAdapter,
+  SkillAdapter,
+} from "../src/installer-adapters";
 import { InstallInvalidRequestError } from "../src/installer-errors";
 
 /**
@@ -168,6 +175,95 @@ describe("GoAdapter", () => {
     expect(result.ok && result.value.command.args).toEqual(["install", "fixture-tool@latest"]);
   });
 });
+describe("SkillAdapter", () => {
+  function skillRequest(overrides: Partial<ToolInstallRequest> = {}): ToolInstallRequest {
+    return request({
+      installation: {
+        ...request().installation,
+        type: "skill",
+        package: "https://github.com/anthropics/skills",
+      },
+      ...overrides,
+    });
+  }
+
+  it("builds a shallow git clone into .codeatlas/skills/<name> (argument array, no shell)", () => {
+    const result = new SkillAdapter().build(skillRequest());
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    expect(result.value.command).toEqual({
+      binary: "git",
+      args: [
+        "clone",
+        "--depth",
+        "1",
+        "https://github.com/anthropics/skills",
+        join("C:\\work", ".codeatlas", "skills", "fixture-tool"),
+      ],
+      cwd: "C:\\work",
+    });
+    // No ecosystem uninstall exists; rollback is honestly unsupported.
+    expect(result.value.uninstallCommand).toBeNull();
+    expect(result.value.verifyBinary).toBe("fixture-tool");
+    expect(result.value.verifyPath).toBe(".codeatlas/skills/fixture-tool/SKILL.md");
+    expect(result.value.dangerous).toContain("network access");
+    expect(result.value.dangerous).toContain("clones third-party code into the project");
+  });
+
+  it("verifies a nested skill through its note sub-path", () => {
+    const result = new SkillAdapter().build(
+      skillRequest({
+        installation: { ...skillRequest().installation, note: "skills/mcp-builder" },
+      }),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    expect(result.value.verifyPath).toBe(
+      ".codeatlas/skills/fixture-tool/skills/mcp-builder/SKILL.md",
+    );
+  });
+
+  it("rejects a non-http(s) package", () => {
+    const result = new SkillAdapter().build(
+      skillRequest({
+        installation: { ...skillRequest().installation, package: "git@github.com:org/repo.git" },
+      }),
+    );
+    expect(result.ok).toBe(false);
+    expect(failureOf(result)).toBeInstanceOf(InstallInvalidRequestError);
+  });
+
+  it("rejects a hostile note sub-path (traversal, absolute, whitespace)", () => {
+    for (const hostile of [
+      "../evil",
+      "/abs/evil",
+      "skills/..",
+      "skills/ evil",
+      "a\\b",
+      "evil\u0000x",
+    ]) {
+      const result = new SkillAdapter().build(
+        skillRequest({ installation: { ...skillRequest().installation, note: hostile } }),
+      );
+      expect(result.ok).toBe(false);
+    }
+  });
+
+  it("rejects a hostile tool name that would escape the skills directory", () => {
+    const result = new SkillAdapter().build(skillRequest({ name: "../../evil" }));
+    expect(result.ok).toBe(false);
+  });
+
+  it("accepts a repo-root skill without a note", () => {
+    const result = new SkillAdapter().build(skillRequest());
+    expect(result.ok && result.value.verifyPath).toBe(".codeatlas/skills/fixture-tool/SKILL.md");
+  });
+});
+
 describe("adversarial input validation", () => {
   it("rejects a flag-like package (leading dash) before anything can run", () => {
     const result = new NpmAdapter().build(

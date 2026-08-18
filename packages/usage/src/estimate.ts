@@ -3,7 +3,8 @@
  * token). This is a **documented heuristic** — quantities derived from it must
  * carry `estimated` provenance, never `actual` (see `docs/USAGE.md`). It is
  * opt-in at the collection seam; CodeAtlas never silently guesses.
+ *
+ * Canonical implementation lives in `@atlas/shared`; this module re-exports it
+ * so existing `@atlas/usage` consumers keep a stable import path.
  */
-export function estimateTokens(text: string): number {
-  return Math.ceil(text.length / 4);
-}
+export { estimateTokens } from "@atlas/shared";

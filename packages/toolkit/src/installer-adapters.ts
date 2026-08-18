@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import type { InstallPlanCommand, ToolInstallMethodType, ToolInstallRequest } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 import {
@@ -6,9 +7,11 @@ import {
   adapterProblems,
   baseBinaryName,
   validateInstallArg,
+  validateSourceUrl,
   validateVersionArg,
 } from "./installer-adapter";
 import { InstallInvalidRequestError } from "./installer-errors";
+import { MANIFEST_DIR_NAME, isValidToolName } from "./manifest";
 
 /**
  * A plain, exact semantic version (`1.2.3`, `v1.2.3`) — the only shape `cargo
@@ -222,4 +225,86 @@ export class GoAdapter implements EcosystemAdapter {
       verifyBinary: baseBinaryName(pkg),
     };
   }
+}
+
+/**
+ * `git clone`-based skill install (Direction C, Task 22 extension). A skill is
+ * a self-contained `SKILL.md` (plus helpers) cloned shallowly into
+ * `<root>/.codeatlas/skills/<name>/`. `package` is the canonical **http(s)
+ * repository URL** (official distribution channel), `note` the optional
+ * sub-path of the skill inside that repo (`skills/mcp-builder`), or `null` for
+ * a repo-root skill.
+ *
+ * Verification is by file existence (`SKILL.md` under the clone) via
+ * `verifyPath`, never a PATH binary. Removal is a directory deletion handled by
+ * the SDK facade (no ecosystem uninstall command exists), so `uninstallCommand`
+ * is `null` and rollback is reported honestly.
+ */
+export class SkillAdapter implements EcosystemAdapter {
+  public readonly method: ToolInstallMethodType = "skill";
+
+  public build(request: ToolInstallRequest): Result<AdapterPlan> {
+    const problems: string[] = [];
+    adapterProblems(request, problems);
+    const pkg = request.installation.package;
+    if (pkg === null) {
+      return reject(problems.length > 0 ? problems : ["package (repository URL) is required"]);
+    }
+    const url = validateSourceUrl(pkg, "package", problems);
+    if (url === null) {
+      return reject(problems);
+    }
+    // `request.name` becomes a directory under `.codeatlas/skills/`, so it must
+    // be a safe file name even though the registry already constrains
+    // catalog/overlay names (installers treat requests as untrusted).
+    if (!isValidToolName(request.name)) {
+      return reject([`name "${request.name}" is not a safe file name for a skill directory`]);
+    }
+    const subpath = request.installation.note ?? null;
+    if (subpath !== null && !isSafeSkillSubpath(subpath)) {
+      problems.push(
+        `note "${subpath}" is not a safe repository sub-path (no leading/trailing slash, no "..", no whitespace or control characters)`,
+      );
+    }
+    if (problems.length > 0) {
+      return reject(problems);
+    }
+    const dest = join(request.cwd, MANIFEST_DIR_NAME, "skills", request.name);
+    return ok({
+      command: command("git", ["clone", "--depth", "1", url, dest], request.cwd),
+      uninstallCommand: null,
+      effect: `Clone skill repository "${url}" (shallow, depth 1) into ${dest} — the exact command is shown below before you approve it.`,
+      dangerous: [
+        "network access",
+        "clones third-party code into the project",
+        "requires git on PATH",
+      ],
+      verifyBinary: request.name,
+      verifyPath:
+        subpath === null
+          ? `${MANIFEST_DIR_NAME}/skills/${request.name}/SKILL.md`
+          : `${MANIFEST_DIR_NAME}/skills/${request.name}/${subpath}/SKILL.md`,
+    });
+  }
+}
+
+/** A safe skill sub-path: relative, single-slash-separated, no traversal. */
+function isSafeSkillSubpath(value: string): boolean {
+  if (value.length === 0 || value.length > 256) return false;
+  if (value.startsWith("/") || value.endsWith("/")) return false;
+  if (value.includes("\\")) return false;
+  if (/\s/.test(value) || containsControlCharacters(value)) return false;
+  const segments = value.split("/");
+  return segments.every((segment) => /^[A-Za-z0-9._-]+$/.test(segment) && segment !== "..");
+}
+
+/** Whether `value` contains C0 control characters (U+0000–U+001F) or DEL (U+007F). */
+function containsControlCharacters(value: string): boolean {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code < 0x20 || code === 0x7f) {
+      return true;
+    }
+  }
+  return false;
 }

@@ -176,7 +176,7 @@ const snapshot = metrics.snapshot();
 console.log(snapshot.tokens.savingsPercent);
 
 // Export
-import { exportMetricsJson } from "@atlas/metrics";
+import { exportMetricsJson } from "@atlas/sdk";
 exportMetricsJson(snapshot, { outputPath: "export.json" });
 
 metrics.close();

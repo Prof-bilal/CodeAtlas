@@ -1,5 +1,5 @@
 import { UnknownSessionError } from "@atlas/agents";
-import type { Session, SessionPort } from "@atlas/core";
+import type { Session, SessionPort, UsagePort } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 import type { ContextSDK } from "../context/sdk";
 import { type AssembleOptions, assembleContextPackage } from "./assemble";
@@ -22,11 +22,7 @@ export {
   type AssembleInput,
   type AssembleOptions,
 } from "./assemble";
-export {
-  applyBudget,
-  DEFAULT_CONTEXT_BUDGET,
-  estimateTokens,
-} from "./budget";
+export { applyBudget, DEFAULT_CONTEXT_BUDGET } from "./budget";
 export { denyFilter, type DenyFilterResult } from "./deny";
 export { ContextAttachUnsupportedError, ContextPackageError } from "./errors";
 export {
@@ -89,6 +85,8 @@ export interface ContextIntegrationOptions {
   readonly sessions: SessionPort;
   /** AI briefing port for `brief` (defaults to a provider-backed port). */
   readonly ai?: BriefingPort;
+  /** Optional usage port; AI briefings are recorded with actual tokens. */
+  readonly usage?: UsagePort;
 }
 
 /**
@@ -127,7 +125,8 @@ export interface ContextIntegration {
 /** Create the Context → Agent integration façade. */
 export function createContextIntegration(options: ContextIntegrationOptions): ContextIntegration {
   const { context, sessions } = options;
-  const ai = options.ai ?? createBriefingPort();
+  const ai =
+    options.ai ?? createBriefingPort(options.usage === undefined ? {} : { usage: options.usage });
 
   return {
     async buildPackage(input: BuildPackageInput): Promise<ContextPackage> {

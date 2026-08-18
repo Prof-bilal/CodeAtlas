@@ -1,14 +1,11 @@
 import { mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import type { MetricsPort, MetricsSnapshot } from "@atlas/sdk";
-import { createMetricsService, exportMetricsJson, exportMetricsCsv } from "@atlas/sdk";
+import { createMetricsService, exportMetricsCsv, exportMetricsJson } from "@atlas/sdk";
 import type { Command } from "commander";
-import { resolveProjectRoot } from "./search";
+import { metricsPath, resolveProjectRoot } from "./search";
 
-/** Path of the on-disk metrics file for a project root. */
-export function metricsPath(root: string): string {
-  return join(root, ".codeatlas", "metrics.json");
-}
+export { metricsPath } from "./search";
 
 /** Render a compact number with K/M suffixes. */
 function compactNumber(n: number): string {
@@ -97,14 +94,22 @@ export function registerMetrics(program: Command): void {
 
 function withMetrics(fn: (metrics: MetricsPort) => void): void {
   const root = resolveProjectRoot();
-  const mPath = metricsPath(root);
-  mkdirSync(dirname(mPath), { recursive: true });
-  const svc = createMetricsService({ filePath: mPath });
+  const svc = openMetrics(root);
   try {
     fn(svc);
   } finally {
     svc.close();
   }
+}
+
+/**
+ * Open a metrics service for a project root, creating `.codeatlas/` if needed.
+ * Used by the metrics commands and by other commands to record activity.
+ */
+export function openMetrics(root: string): MetricsPort {
+  const mPath = metricsPath(root);
+  mkdirSync(dirname(mPath), { recursive: true });
+  return createMetricsService({ filePath: mPath });
 }
 
 async function showMetrics(options: { json?: boolean }): Promise<void> {

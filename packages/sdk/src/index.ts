@@ -1,5 +1,6 @@
 export { VERSION } from "@atlas/shared";
 export type { FilePath, Result } from "@atlas/shared";
+export { estimateTokens } from "@atlas/shared";
 export type {
   ContextSnapshot,
   PersistedDependency,
@@ -189,7 +190,6 @@ export {
   type AssembleOptions,
   applyBudget,
   DEFAULT_CONTEXT_BUDGET,
-  estimateTokens,
   denyFilter,
   type DenyFilterResult,
   collectInstructions,
@@ -309,6 +309,7 @@ export type {
   ToolRegistrySource,
   ToolSecurityStatus,
   ToolSecurityStatusValue,
+  ToolTier,
   ToolTrustLevel,
 } from "@atlas/core";
 export type {

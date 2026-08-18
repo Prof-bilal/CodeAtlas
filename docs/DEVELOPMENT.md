@@ -13,7 +13,7 @@ reporting format) — this file is about **tooling and commands**.
 
 | Tool | Version | Notes |
 | ---- | ------- | ----- |
-| Node.js | `>=20.19.0` (root) · `>=22.5.0` for `@atlas/storage` **and `@atlas/usage`** | `node:sqlite` needs Node `>=22.5.0`; `.nvmrc` pins **22**. Use 22 for everyday work. |
+| Node.js | `>=22.5.0` | `node:sqlite` needs Node `>=22.5.0`; `.nvmrc` pins **22**. Use 22 for everyday work. |
 | pnpm | `9.15.0` | `packageManager` field / `pnpm-workspace.yaml`. Enable via Corepack. |
 | Git | any recent | the repository is a git repo (branch `main`). |
 

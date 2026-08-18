@@ -10,7 +10,9 @@ import type {
 } from "@atlas/sdk";
 import { createContextSDK } from "@atlas/sdk";
 import type { Command } from "commander";
+import { openMetrics } from "./metrics";
 import { contextDbPath, resolveProjectRoot } from "./search";
+import { openUsage } from "./usage";
 
 /** Parsed `atlas explain` CLI options. */
 export interface ExplainCliOptions {
@@ -72,7 +74,9 @@ async function runExplain(target: string, options: ExplainCliOptions): Promise<v
     return;
   }
 
-  const context = createContextSDK({ repositoryPath: root, dbPath });
+  const metrics = openMetrics(root);
+  const usage = openUsage(root);
+  const context = createContextSDK({ repositoryPath: root, dbPath, metrics, usage });
   try {
     const data = resolveExplain(context, root, target);
     const output = options.ai === true ? await applyAi(context, data) : data;
@@ -83,6 +87,9 @@ async function runExplain(target: string, options: ExplainCliOptions): Promise<v
     }
   } finally {
     context.close();
+    metrics.flush();
+    metrics.close();
+    usage.close();
   }
 }
 

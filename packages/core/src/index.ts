@@ -41,6 +41,7 @@ export type {
   ToolRegistrySource,
   ToolSecurityStatus,
   ToolSecurityStatusValue,
+  ToolTier,
   ToolTrustLevel,
 } from "./ports/tool-registry.port";
 export type { CachePort } from "./ports/cache.port";

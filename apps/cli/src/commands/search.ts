@@ -2,15 +2,19 @@ import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
   type ContextSDK,
+  type MetricsPort,
   type SearchHitKind,
   type SearchRequest,
   type SearchResult,
   type Summary,
   type SummaryPort,
+  type UsagePort,
   createContextSDK,
 } from "@atlas/sdk";
 import { InvalidArgumentError } from "commander";
 import type { Command } from "commander";
+import { openMetrics } from "./metrics";
+import { openUsage } from "./usage";
 
 /** The result kinds `atlas search --type` accepts. */
 const SEARCH_KINDS: readonly SearchHitKind[] = [
@@ -28,6 +32,10 @@ export const AI_SUMMARY_LIMIT = 5;
 export interface SearchCommandOptions {
   /** Summary generation port override (defaults to the SDK's provider-backed port). */
   readonly summary?: SummaryPort;
+  /** Metrics port override (defaults to a `.codeatlas/metrics.json` service). */
+  readonly metrics?: MetricsPort;
+  /** Usage port override (defaults to a `.codeatlas/usage.db` service). */
+  readonly usage?: UsagePort;
 }
 
 /** Parsed `atlas search` CLI options (Commander's camel-cased values). */
@@ -48,6 +56,11 @@ export function resolveProjectRoot(): string {
 /** Path of the on-disk context database for a project root. */
 export function contextDbPath(root: string): string {
   return join(root, ".codeatlas", "context.db");
+}
+
+/** Path of the on-disk metrics file for a project root. */
+export function metricsPath(root: string): string {
+  return join(root, ".codeatlas", "metrics.json");
 }
 
 /** Render ranked hits as human-readable text (used by the command and tests). */
@@ -162,8 +175,12 @@ async function runSearch(
     return;
   }
 
+  const metrics = commandOptions.metrics ?? openMetrics(root);
+  const usage = commandOptions.usage ?? openUsage(root);
   const context = createContextSDK({
     dbPath,
+    metrics,
+    usage,
     ...(commandOptions.summary === undefined ? {} : { summary: commandOptions.summary }),
   });
   try {
@@ -193,6 +210,9 @@ async function runSearch(
   } finally {
     // Release the SQLite file handle (WAL) so the on-disk index can be replaced.
     context.close();
+    metrics.flush();
+    metrics.close();
+    usage.close();
   }
 }
 

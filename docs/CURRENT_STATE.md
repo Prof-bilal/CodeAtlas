@@ -21,7 +21,7 @@
 | **Description** | Open-source **AI Context Engine** (+ future Unified AI CLI Orchestrator) |
 | **License** | MIT |
 | **Monorepo** | pnpm workspaces (`pnpm-workspace.yaml`, pnpm `9.15.0`) |
-| **Runtime** | Node.js `>=20.19.0` (exceptions: `@atlas/storage` + `@atlas/usage` need `>=22.5.0`, see §5) |
+| **Runtime** | Node.js `>=22.5.0` (all packages share the same floor — `node:sqlite`; see §5) |
 | **Language** | TypeScript, strict mode, ESM (`"type": "module"`) |
 | **Package manager** | pnpm |
 | **Git** | **Is a git repository** (branch `main`, remote `github.com/Prof-bilal/CodeAtlas.git`). `.gitignore`, `.husky`, and `commitlint` are configured. |
@@ -261,11 +261,12 @@ examples/        # README placeholder only (no runnable examples)
 
 ### CLI (`apps/cli`) — **[IMPLEMENTED]**
 
-- Commander.js program `atlas`, **19 top-level commands** — `init`, `build`,
-  `update`, `scan`, `search`, `sessions`, `usage`, `explain`, `doctor`, `mcp`,
-  `context`, `tools`, `providers`, `agents`, `ollama`, and the standalone agent
-  launchers `claude`/`gemini`/`codex`/`opencode` (sugar over `atlas context
-  launch --provider <agent>`; the future slash router remains planned).
+- Commander.js program `atlas`, **20 top-level commands** — `init`, `build`,
+  `update`, `scan`, `search`, `sessions`, `usage`, `metrics`, `explain`,
+  `doctor`, `mcp`, `context`, `tools`, `providers`, `agents`, `ollama`, and the
+  standalone agent launchers `claude`/`gemini`/`codex`/`opencode` (sugar over
+  `atlas context launch --provider <agent>`; the future slash router remains
+  planned).
   **`search` is wired
   to the Context SDK**: it opens `.codeatlas/context.db` (via `ATLAS_ROOT` or
   cwd) with `createContextSDK`, runs `context.search.search(...)`, and prints
@@ -476,8 +477,12 @@ examples/        # README placeholder only (no runnable examples)
   wrappers over `atlas context launch --provider <agent>`, sharing the same
   context-assembly, `--ai` briefing, and rendering path
   (`apps/cli/src/commands/context.ts`).
+- **`atlas agents` is implemented**: `atlas agents status` shows each AI coding
+  tool (claude, gemini, codex, opencode, cursor, cline) and whether the
+  CodeAtlas MCP server is registered for it; `atlas agents connect` registers
+  the MCP server for installed, supported agents.
   There is still **no agent router** for the plan-executing
-  orchestrator (Direction B) and no standalone `atlas agents` CLI command.
+  orchestrator (Direction B) — the slash-command surface remains planned.
 
 ### Agent Toolkit (Direction C) — **[PARTIAL]**
 
@@ -642,10 +647,9 @@ absent.
 
 ## 5. Cross-cutting facts & known inconsistencies
 
-1. **Engine version drift.** `packages/storage` and `packages/usage` require
-   Node `>=22.5.0` (both use `node:sqlite`); every other package requires
-   `>=20.19.0`. The root engine is `>=20.19.0`. Running on Node <22.5 breaks
-   `storage` and `usage`.
+1. **Engine floor.** All packages and the root require Node `>=22.5.0`
+   (`node:sqlite` in `storage`/`usage`). Running on Node <22.5 breaks the
+   storage layer and anything that reads the context database.
 2. **Provider default model ids are best-effort current values** — verified
     against vendor docs as of 2026-08 (`claude-sonnet-5`, `gemini-2.5-pro`,
     `gpt-5.6`, `deepseek-v4-flash`, `llama3.2`), not live-checked; always

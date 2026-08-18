@@ -83,9 +83,9 @@ describe("loadRegistry fail-loudly contract", () => {
   });
 
   it("throws on a malformed catalog", () => {
-    expect(() => loadRegistry({ catalogData: { schemaVersion: 1, tools: "nope" } })).toThrow(
-      RegistryValidationError,
-    );
+    expect(() =>
+      loadRegistry({ catalogData: { schemaVersion: REGISTRY_SCHEMA_VERSION, tools: "nope" } }),
+    ).toThrow(RegistryValidationError);
   });
 
   it("throws on a schema version mismatch", () => {

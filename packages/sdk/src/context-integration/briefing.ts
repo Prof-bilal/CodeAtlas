@@ -1,5 +1,11 @@
 import { CacheService } from "@atlas/cache";
-import type { ProviderPort, ProviderRequest, SummaryContent, SummaryMetadata } from "@atlas/core";
+import type {
+  ProviderPort,
+  ProviderRequest,
+  SummaryContent,
+  SummaryMetadata,
+  UsagePort,
+} from "@atlas/core";
 import { HashService } from "@atlas/hashing";
 import type { CacheKey, Result } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
@@ -9,6 +15,7 @@ import {
   render,
   truncateContent,
 } from "@atlas/summary";
+import { withUsageTracking } from "@atlas/usage";
 import { createProviderService } from "../providers/index";
 
 /** Default prompt: turn the assembled context package into a task briefing. */
@@ -128,12 +135,18 @@ export interface CreateBriefingPortOptions {
   readonly cache?: CacheService;
   /** Content hasher (defaults to the shared hashing service). */
   readonly hash?: HashService;
+  /** Optional usage port; provider calls are recorded with actual tokens. */
+  readonly usage?: UsagePort;
 }
 
 /** Build the default provider-backed {@link BriefingPort}. */
 export function createBriefingPort(options: CreateBriefingPortOptions = {}): BriefingPort {
   return new BriefingService({
-    provider: options.provider ?? createProviderService(),
+    provider:
+      options.provider ??
+      (options.usage === undefined
+        ? createProviderService()
+        : withUsageTracking(createProviderService(), options.usage)),
     cache: options.cache ?? new CacheService(),
     hash: options.hash ?? new HashService(),
   });

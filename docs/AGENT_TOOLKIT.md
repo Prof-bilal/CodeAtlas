@@ -250,12 +250,14 @@ is actually present.
 
 > **Implemented (Task 22):** `InstallerPort` in `core` + `InstallerService` in
 > `@atlas/toolkit`, composed via `createInstaller()` in `@atlas/sdk`. Adapters
-> ship for the **safe MVP subset** (`npm`, `pip`, `cargo`, `go`); `binary`,
-> `github-release`, and `mcp` are declared by the port but not yet executable —
-> adding one is a **new small adapter**, never a fork. Every command is an
-> argument-array spawn (`shell:false`), approval is mandatory, `blocked` tools
-> fail closed, verification reports `verified`/`unverified`/`failed` honestly,
-> and a Tool Manifest (Task 20) records provenance with best-effort rollback.
+> ship for the **safe MVP subset** (`npm`, `pip`, `cargo`, `go`) plus a new
+> **`skill`** adapter that shallow-clones a skill repository (see below);
+> `binary`, `github-release`, and `mcp` are declared by the port but not yet
+> executable — adding one is a **new small adapter**, never a fork. Every
+> command is an argument-array spawn (`shell:false`), approval is mandatory,
+> `blocked` tools fail closed, verification reports
+> `verified`/`unverified`/`failed` honestly, and a Tool Manifest (Task 20)
+> records provenance with best-effort rollback.
 > See [CURRENT_STATE.md](./CURRENT_STATE.md) and the
 > `packages/toolkit/tests/installer-*.test.ts` suite (incl. adversarial tests).
 
@@ -282,6 +284,14 @@ Verify
 
 - `npm` / `pip` / `cargo` / `go` — the ecosystem's package manager,
   installing the **official package**, never a tarball from a random URL.
+- `skill` — a self-contained `SKILL.md` (plus helper files) installed by
+  shallow-cloning its **canonical http(s) repository** into
+  `<root>/.codeatlas/skills/<name>/`. The `installMethods[].note` field carries
+  the skill's sub-path inside the repo (`skills/mcp-builder`), or is omitted
+  for repo-root skills. Verification is by **file existence** (`SKILL.md` under
+  the clone via `verifyPath`), never a PATH binary; removal is a directory
+  deletion handled by the SDK facade (there is no ecosystem uninstall command,
+  so rollback is reported honestly). Compatibility requires `git` on PATH.
 - `binary` — official release asset, with checksum verification.
 - `github-release` — official release artifact with checksum/signature checks.
 - `mcp` — an MCP server package (npm/pip) installed as a tool that CodeAtlas
@@ -466,68 +476,170 @@ keys come from user config).
 
 ---
 
-## 10. CLI / Slash-Command UX
+## 10. CLI User Guide
 
-### Planned CLI surface (`apps/cli`, delegates to the SDK)
+> **Status: implemented.** All commands below are wired through the SDK and
+> tested. Every `--json` flag produces machine-readable output.
 
-```bash
-codeatlas tools                    # overview: recommended + installed
-codeatlas tools search <query>     # search the registry
-codeatlas tools install <tool>     # install (approval flow)
-codeatlas tools remove <tool>      # uninstall + remove config
-codeatlas tools update             # update installed tools / registry
-codeatlas tools doctor             # reconcile installed vs manifest vs env
-```
+### Top-10 recommended tools
 
-### Planned slash-command surface
+The registry curates a **Top-10 executive recommendation** (`tier: recommended`).
+These are the tools CodeAtlas suggests installing first:
 
-Consistent with the planned orchestrator (`/claude`, `/gemini`, …):
+| # | Tool | Category | What it does |
+|---|------|----------|-------------|
+| 1 | `mcp-builder` | MCP | Build and validate MCP servers |
+| 2 | `systematic-debugging` | AI Quality | Force root-cause tracing before patching |
+| 3 | `verification-before-completion` | AI Quality | Prevent unsupported "done" claims |
+| 4 | `trail-of-bits-security-skills` | AI Quality | Security-oriented analysis from Trail of Bits |
+| 5 | `deep-research` | AI Quality | Research-before-editing with provenance |
+| 6 | `webapp-testing` | Testing | Exercise rendered apps, verify behavior |
+| 7 | `writing-plans` | Developer Productivity | Convert vague work into sequenced packets |
+| 8 | `executing-plans` | Developer Productivity | Run plans with checkpoints and criteria |
+| 9 | `using-git-worktrees` | Developer Productivity | Isolate parallel agent changes |
+| 10 | `react-best-practices` | AI Coding | Keep React changes aligned with conventions |
 
-```text
-/      → /tools · /context · /search · /claude · /gemini · /codex · /opencode
-```
+All other tools are `optional` or `experimental`. See `atlas tools categories`
+for the full category list.
 
-```text
-/tools
-────────────────────────
-Recommended
-  Token Optimization
-  Context Engine
-  Code Review
-  MCP Tools
+### `atlas tools` — overview
 
-Installed
-────────────────────────
-  ✓ Tool A
-  ✓ Tool B
-```
-
-Selecting a tool offers: **View · Install · Configure · Update · Remove ·
-Doctor**.
-
-### Planned one-command setup
+Shows recommended tools and installed tools:
 
 ```bash
-codeatlas setup
+atlas tools                    # recommended + installed
+atlas tools --json             # machine-readable
+atlas tools --category MCP     # filter overview by category
 ```
 
-```
-Detect environment
-  ↓
-Detect installed AI CLIs
-  ↓
-Detect CodeAtlas capabilities
-  ↓
-Recommend tools
-  ↓
-User selects tools
-  ↓
-Install → Configure → Verify
+### `atlas tools search <query>` — search the registry
+
+```bash
+atlas tools search mcp          # search by name/description
+atlas tools search debug --category AI Quality   # combine search + category
+atlas tools search react --json
 ```
 
-**No automatic install without explicit user approval**, unless the user
-enables an explicit automation mode. `setup` is a guided flow, never a
-blanket installer.
+### `atlas tools categories` — list all categories
+
+```bash
+atlas tools categories          # prints: Agent Tools, AI Quality, MCP, ...
+atlas tools categories --json
+```
+
+### `atlas tools info <tool>` — inspect a tool
+
+Shows registry metadata, trust level, security status, install methods,
+categories, dependencies, and the compatibility report:
+
+```bash
+atlas tools info mcp-builder
+atlas tools info deep-research --json
+```
+
+Output includes a per-check compatibility verdict (✓/✗/?) for OS, runtimes,
+AI agents, architecture, and permissions.
+
+### `atlas tools install <tool>` — install a tool
+
+Two-step flow: **plan** → **approve**:
+
+```bash
+# Step 1: review the plan
+atlas tools install mcp-builder
+
+# Step 2: approve and install
+atlas tools install mcp-builder --yes
+atlas tools install mcp-builder --yes --note "needed for MCP work"
+```
+
+Without `--yes`, the plan is printed and nothing is installed. The plan shows
+the exact command, compatibility verdict, security assessment, and dangerous
+flags. Skills are installed by shallow-cloning their canonical repository;
+ecosystem tools are installed through their official package manager.
+
+### `atlas tools remove <tool>` — uninstall a tool
+
+Removes the installed tool and cleans up any agent configuration entries
+(Claude, Gemini, Codex, OpenCode, MCP, VS Code) that were written during
+`configure`:
+
+```bash
+atlas tools remove mcp-builder
+atlas tools remove mcp-builder --json
+```
+
+Skills are removed by deleting the cloned directory. Ecosystem tools are
+removed through their package manager.
+
+### `atlas tools update` — update installed tools
+
+Updates all installed tools. Skills are updated via `git pull --ff-only`;
+ecosystem tools are re-installed through the approved adapter:
+
+```bash
+atlas tools update              # updates skills only (no approval for ecosystem)
+atlas tools update --approve    # also re-installs ecosystem tools
+atlas tools update --json
+```
+
+Reports per-tool status: `updated`, `unchanged`, or `error`.
+
+### `atlas tools configure <tool>` — wire into agents
+
+After installing a tool, configure it for the AI agents on your machine:
+
+```bash
+atlas tools configure mcp-builder --dry-run    # preview changes
+atlas tools configure mcp-builder              # apply
+atlas tools configure mcp-builder --json
+```
+
+The configurator detects which agents are installed (Claude, Gemini, Codex,
+OpenCode, Cursor, Cline, VS Code, MCP) and writes the appropriate config
+entries. Existing config is **merged, never clobbered**; a backup is created
+before any write.
+
+### `atlas tools doctor` — health check
+
+Reconciles installed tools against their manifests, runs compatibility
+checks, and detects conflicts (tools sharing a package id):
+
+```bash
+atlas tools doctor
+atlas tools doctor --json
+```
+
+Output per tool: manifest status, integration state, trust level,
+compatibility overall verdict, and any conflicts with other installed tools.
+
+### `atlas init` — recommended tools offer
+
+When initializing a project, `atlas init` offers to install the Top-10
+recommended tools:
+
+```bash
+atlas init                     # interactive: prompts to install Top-10
+atlas init --tools all         # install all Top-10 without prompting
+atlas init --tools none        # skip the offer
+atlas init --tools 1,3,5       # install specific tools by index
+```
+
+### Summary of all commands
+
+| Command | Description |
+|---------|-------------|
+| `atlas tools` | Overview: recommended + installed |
+| `atlas tools --category <cat>` | Filter overview by category |
+| `atlas tools search <query>` | Search the curated registry |
+| `atlas tools categories` | List all tool categories |
+| `atlas tools info <tool>` | Inspect a tool (metadata + compat) |
+| `atlas tools install <tool>` | Plan + approve + install |
+| `atlas tools remove <tool>` | Uninstall + clean config |
+| `atlas tools update` | Update all installed tools |
+| `atlas tools configure <tool>` | Wire tool into agents |
+| `atlas tools doctor` | Health check + conflict detection |
+| `atlas init --tools <sel>` | Init project + offer Top-10 install |
 
 ---
 
@@ -609,11 +721,11 @@ outputs, high churn) feed the **future** Recommendation Engine — see
 | Tool catalog | `@atlas/toolkit` Registry — **implemented** (Task 19) |
 | Installed-tool state | Tool Manifest in `.codeatlas/tools/` — **implemented** (Task 20) |
 | Compatibility | `@atlas/toolkit` Compatibility Engine — **implemented** (Task 21) |
-| Installers | `InstallerPort` + per-ecosystem adapters — **implemented** (Task 22, MVP subset `npm`/`pip`/`cargo`/`go`) |
+| Installers | `InstallerPort` + per-ecosystem adapters — **implemented** (Task 22, MVP subset `npm`/`pip`/`cargo`/`go` + `skill` git-clone) |
 | Configuration | `ConfiguratorPort` + per-target adapters — **implemented** (Task 23) |
 | Security / trust | `SecurityPort` + offline `SecurityAssessor` — **implemented** (Task 24); hard installer gate |
 | AI-CLI detection | `@atlas/agents` (`AgentPort`) — **implemented** |
-| CLI surface | `atlas tools` overview/search/info/install/remove/update/configure/doctor — **implemented**; the `atlas tui` slash surface adding `/toolkit` (installed + recommended sidebar) and `/tools-install <tool>` (plan → confirm → install) is **v2 / not shipped** (untracked); `atlas setup` and a standalone `/tools` slash command remain planned |
+| CLI surface | `atlas tools` overview/search/info/install/remove/update/configure/doctor — **implemented**; `atlas init` ends with a **recommended-tools permission offer** (the curated Top-10 skills; interactive prompt or `--tools all\|none\|1,2,3`) — **implemented**; the `atlas tui` slash surface adding `/toolkit` (installed + recommended sidebar) and `/tools-install <tool>` (plan → confirm → install) is **v2 / not shipped** (untracked); `atlas setup` and a standalone `/tools` slash command remain planned |
 | AI-CLI catalog | the four npm-installable AI CLIs (`claude`, `gemini`, `codex`, `opencode`) ship as curated Registry entries with official npm install methods, so a missing agent can be installed through the same approval-gated installer (via `atlas tools` or the v2 TUI) |
 | Recommendation | separate future module (planned) |
 | Benchmarking | separate future subsystem (planned) |

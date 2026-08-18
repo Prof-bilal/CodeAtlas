@@ -13,7 +13,7 @@ docs when you reach that step.
 ## 1. Getting started
 
 1. Follow [DEVELOPMENT.md](./DEVELOPMENT.md) to install and run `pnpm check`
-   from the repo root (Node ≥ 20.19.0; use Node 22 for `node:sqlite`).
+   from the repo root (Node ≥ 22.5.0 — the shared `node:sqlite` floor).
 2. Read the docs navigation map: [DOCUMENTATION_MAP.md](./DOCUMENTATION_MAP.md).
 3. Read [CURRENT_STATE.md](./CURRENT_STATE.md) before touching code — know what
    is implemented, partial, stubbed, or planned.
@@ -86,5 +86,6 @@ implicit uploads (see [PRIVACY.md](./PRIVACY.md)).
 
 If you find a security issue (a provider key leak, a path traversal in the
 scanner/MCP input, an unsafe process invocation, an injection risk), do **not**
-open a public issue. Email the maintainers privately — see the responsible
-disclosure guidance in [SECURITY.md](./SECURITY.md).
+open a public issue. Email the maintainers privately at
+**hb048231@gmail.com** (or use GitHub private vulnerability reporting) — see
+the responsible disclosure guidance in [SECURITY.md](./SECURITY.md).

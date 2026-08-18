@@ -114,9 +114,20 @@ curated — it is never auto-approved.**
 ## 5. Catalog + local overlay
 
 - **Shipped catalog:** `packages/toolkit/src/catalog.json` — a versioned
-  (`schemaVersion`) data file bundled with the package. It is the curated,
-  authoritative layer. Currently seeds the initial category set with a small
-  set of well-known tools (biome, ripgrep, uv, semgrep, github-mcp-server).
+  (`schemaVersion`, currently **2**) data file bundled with the package. It is
+  the curated, authoritative layer. It ships the 9 foundational tools (biome,
+  ripgrep, uv, semgrep, github-mcp-server, claude, gemini, codex, opencode)
+  plus the **47 deduplicated Agent-Toolkit skills** from the 50-skill research
+  artifact, each with a `skill` install method (a shallow git clone of the
+  canonical repository; `note` carries the skill's sub-path inside the repo).
+  Every record declares a **tier** (`recommended` | `optional` |
+  `experimental` | `incompatible`, default `optional`): the curated **Top-10**
+  skills are `recommended` (mcp-builder, systematic-debugging,
+  verification-before-completion, Trail of Bits Security Skills, deep-research,
+  webapp-testing, writing-plans, executing-plans, using-git-worktrees,
+  react-best-practices), `github-mcp-server` is `experimental` (its declared
+  binary/github-release/mcp install methods are not yet implemented), and
+  everything else is `optional`.
 - **Local overlay:** users add private/community tools via an overlay JSON file
   (same schema) without editing the shipped catalog. Overlay records are merged
   by name — **the user's record wins**, and the curated catalog is never
@@ -137,7 +148,7 @@ registry.listTools();          // readonly ToolRegistryRecord[]
 registry.getTool("biome");     // ToolRegistryRecord | undefined
 registry.listCategories();     // extensible category set
 registry.recordSource("x");    // "catalog" | "overlay" | undefined
-registry.schemaVersion;        // 1
+registry.schemaVersion;        // 2
 ```
 
 `createToolRegistry()` validates eagerly: a malformed overlay or version

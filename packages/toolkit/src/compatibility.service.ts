@@ -9,7 +9,7 @@ import type {
   ToolInstallMethodType,
 } from "@atlas/core";
 import { type Result, ok } from "@atlas/shared";
-import { EnvironmentDetector } from "./environment";
+import { EnvironmentDetector, findExecutable } from "./environment";
 import { CompatibilityError } from "./errors";
 import type { ToolManifest } from "./manifest-schema";
 import { extractVersion, satisfiesVersionRange } from "./version-range";
@@ -282,13 +282,17 @@ export class CompatibilityEngineService implements CompatibilityPort {
   private checkPackageManager(installMethod: ToolInstallMethodType): CompatibilityCheck | null {
     // binary / github-release installs fetch an artifact (no package manager);
     // mcp packages install through their own ecosystem's manager (npm/pip),
-    // which the declared installation method does not yet name.
+    // which the declared installation method does not yet name; skill installs
+    // clone a repository with git (checked separately).
     if (
       installMethod === "binary" ||
       installMethod === "github-release" ||
       installMethod === "mcp"
     ) {
       return null;
+    }
+    if (installMethod === "skill") {
+      return this.checkSkillRuntime();
     }
     const info = this.environment.findPackageManager(installMethod);
     return {
@@ -298,6 +302,18 @@ export class CompatibilityEngineService implements CompatibilityPort {
       detail: info.available
         ? `found ${info.binary} on PATH`
         : `package manager '${info.binary}' not found on PATH (required for ${installMethod} installs)`,
+      advisory: false,
+    };
+  }
+
+  private checkSkillRuntime(): CompatibilityCheck {
+    const git = findExecutable("git");
+    return {
+      id: "package-manager",
+      label: "git",
+      state: git === null ? "incompatible" : "compatible",
+      detail:
+        git === null ? "git not found on PATH (required for skill installs)" : "found git on PATH",
       advisory: false,
     };
   }

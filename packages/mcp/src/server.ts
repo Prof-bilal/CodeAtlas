@@ -111,6 +111,7 @@ async function runTool(
   logger: Logger,
   args: unknown,
 ): Promise<CallToolResult> {
+  const startedAt = performance.now();
   logger.debug(`tool call: ${tool.name}`);
   // Detect stale index state before serving reads: refresh incrementally when
   // the working tree has drifted, and report the outcome to the client.
@@ -120,11 +121,13 @@ async function runTool(
   try {
     const result = await handler(hctx, args as ToolArgs);
     const enriched = enrichFreshness(result, freshness);
+    context.recordMcpRequest(Math.round(performance.now() - startedAt));
     return {
       content: [{ type: "text", text: JSON.stringify(enriched, null, 2) }],
       structuredContent: enriched as Record<string, unknown>,
     };
   } catch (error) {
+    context.recordMcpRequest(Math.round(performance.now() - startedAt));
     return toErrorResult(tool.name, error, logger);
   }
 }

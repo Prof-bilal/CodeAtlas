@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { type ContextSDK, createContextSDK } from "@atlas/sdk";
+import { type ContextSDK, type MetricsPort, type UsagePort, createContextSDK } from "@atlas/sdk";
 import { FreshnessController, type FreshnessReport } from "./freshness";
 import { ToolDomainError } from "./validation";
 
@@ -19,6 +19,10 @@ export interface CodeAtlasContextOptions {
    * on every read so external edits are reflected immediately.
    */
   readonly autoRefreshIntervalMs?: number;
+  /** Optional metrics port; tool reads/search are recorded. */
+  readonly metrics?: MetricsPort;
+  /** Optional usage port; AI summary generation is recorded with actual tokens. */
+  readonly usage?: UsagePort;
 }
 
 export interface ResolvedContextConfig {
@@ -53,11 +57,15 @@ export class CodeAtlasContext {
   public readonly dbPath: string;
   private sdk: ContextSDK | null = null;
   private readonly freshness: FreshnessController;
+  private readonly metrics: MetricsPort | undefined;
+  private readonly usage: UsagePort | undefined;
 
   public constructor(options: CodeAtlasContextOptions = {}) {
     const config = resolveContextConfig(options);
     this.root = config.root;
     this.dbPath = config.dbPath;
+    this.metrics = options.metrics;
+    this.usage = options.usage;
     this.freshness = new FreshnessController({
       autoRefresh: options.autoRefresh ?? true,
       intervalMs: options.autoRefreshIntervalMs ?? 0,
@@ -80,7 +88,12 @@ export class CodeAtlasContext {
     if (!this.isReady) {
       return null;
     }
-    this.sdk ??= createContextSDK({ dbPath: this.dbPath, repositoryPath: this.root });
+    this.sdk ??= createContextSDK({
+      dbPath: this.dbPath,
+      repositoryPath: this.root,
+      ...(this.metrics === undefined ? {} : { metrics: this.metrics }),
+      ...(this.usage === undefined ? {} : { usage: this.usage }),
+    });
     return this.sdk;
   }
 
@@ -93,6 +106,11 @@ export class CodeAtlasContext {
       );
     }
     return sdk;
+  }
+
+  /** Record an MCP tool request when a metrics port is wired. */
+  public recordMcpRequest(latencyMs: number): void {
+    this.metrics?.recordMcpRequest({ latencyMs });
   }
 
   /** Close the SDK's SQLite handle; a later `open()` re-opens it. */

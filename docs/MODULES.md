@@ -254,9 +254,11 @@ install, configure, and verify high-quality developer/AI-agent tools. See
   per target (Claude/Gemini/Codex/OpenCode/MCP/VS Code); AgentPort-backed
   detection, safe user-config merge/backup/rollback/verification, dry-run, and
   SDK `createConfigurator` composition.
-- **Security / Trust** — **[PLANNED]** — security status
-  (`verified`/`reviewed`/`community`/`unverified`/`blocked`), trust hierarchy,
-  and the approval gate.
+- **Security / Trust** — **[IMPLEMENTED]** — `SecurityPort` + `SecurityAssessor`
+  (Task 24): offline per-check risk assessment, exact five trust states
+  (`verified`/`reviewed`/`community`/`unverified`/`blocked`), hostile-input
+  rejection, fail-closed installer gating, and explicit unverified-override
+  recording. See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §6.
 - Must **NOT**: import feature packages directly (core + shared only), bundle or
   fork third-party tools into the repository, auto-install without explicit
   user approval, or execute arbitrary `install.sh`. Configuration writes to

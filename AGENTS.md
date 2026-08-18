@@ -38,9 +38,9 @@ Non-obvious facts (verified as of 2026-08-14):
   `ContextBuilderPort`, ADR-001): it ranks search hits and resolves them to
   source-file `ContextItem`s — no AI. Do not add AI gating or revert it to a
   stub.
-- The CLI has **nineteen** top-level subcommands. `atlas search`, `atlas mcp`,
-  `atlas sessions`, `atlas usage`, the full SDK-backed `atlas tools`,
-  `atlas context`, `atlas explain`, and `atlas doctor`
+- The CLI has **twenty** top-level subcommands. `atlas search`, `atlas mcp`,
+  `atlas sessions`, `atlas usage`, `atlas agents`, `atlas metrics`, the full
+  SDK-backed `atlas tools`, `atlas context`, `atlas explain`, and `atlas doctor`
   command surface are wired
   (through the **Context SDK**,
   `@atlas/mcp`, `createSessionManager()`, and `createUsageService()`
@@ -113,8 +113,8 @@ Non-obvious facts (verified as of 2026-08-14):
   parser (TypeScript only — **[PARTIAL]**), graph, SQLite storage, search,
   summaries, cache, providers. Parser known gaps: renamed imports and
   `export default <expr>` do not resolve cross-file.
-- Storage uses `node:sqlite` (needs Node `>=22.5.0`); every other package
-  targets `>=20.19.0`.
+- Storage uses `node:sqlite` (needs Node `>=22.5.0`); **all** packages and the
+  root share this engine floor (`>=22.5.0`).
 - Git metadata is present in the workspace. Husky/commitlint are configured but
   may be inactive in environments that do not install hooks.
 

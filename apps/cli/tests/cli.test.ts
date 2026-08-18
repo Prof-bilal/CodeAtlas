@@ -9,6 +9,7 @@ import type {
   InstallPlan,
   Session,
   SourceFile,
+  ToolRegistryRecord,
   UsageRecord,
   UsageStatistics,
 } from "@atlas/core";
@@ -34,8 +35,8 @@ import { ContextStore } from "@atlas/storage";
 import { describe, expect, it, vi } from "vitest";
 import pkg from "../package.json";
 import { createCli } from "../src/cli";
-import { comingSoonMessage } from "../src/commands/coming-soon";
 import { type DoctorServices, renderDoctorReport } from "../src/commands/doctor";
+import { parseToolSelection } from "../src/commands/indexing";
 import { renderOverview } from "../src/commands/scan";
 import {
   AI_SUMMARY_LIMIT,
@@ -104,6 +105,7 @@ function fakeToolkit(overrides: Partial<ToolkitSDK> = {}): ToolkitSDK {
     registry: {} as ToolkitSDK["registry"],
     overview: async () => ({ ok: true, value: { recommended: [], installed: [] } }),
     search: () => [],
+    listByCategory: () => [],
     info: async () => ({ ok: false, error: new Error("fixture not found") }),
     planInstall: async () => ({ ok: false, error: new Error("fixture not found") }),
     install: async () => ({ ok: false, error: new Error("fixture not found") }),
@@ -112,7 +114,7 @@ function fakeToolkit(overrides: Partial<ToolkitSDK> = {}): ToolkitSDK {
       ok: true,
       value: { registryTools: 0, installedTools: 0, note: "fixture" },
     }),
-    doctor: async () => ({ ok: true, value: [] }),
+    doctor: async () => ({ ok: true as const, value: [] }),
     configure: async () => ({ ok: false, error: new Error("fixture not found") }),
     ...overrides,
   } as ToolkitSDK;
@@ -345,6 +347,14 @@ function fileHit(path: string): SearchResult {
   return { kind: "file", title: path, path: path as FilePath, targetId: null, score: 10 };
 }
 
+/** A throwaway project root for `init` end-to-end tests (no indexing side effects). */
+function createTempFixtureRoot(): string {
+  const root = mkdtempSync(join(tmpdir(), "atlas-init-"));
+  const dotAtlas = join(root, ".codeatlas");
+  mkdirSync(dotAtlas, { recursive: true });
+  return root;
+}
+
 function fakeSearchContext(
   summaries: {
     stored?: (path: string) => Summary | undefined;
@@ -385,6 +395,277 @@ describe("atlas CLI", () => {
       "update",
       "usage",
     ]);
+  });
+
+  it("parses the recommended-tools selection for the post-init offer", () => {
+    expect(parseToolSelection("all", 10)).toEqual({
+      ok: true,
+      value: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    });
+    expect(parseToolSelection("none", 10)).toEqual({ ok: true, value: [] });
+    expect(parseToolSelection("1,2,3", 10)).toEqual({ ok: true, value: [0, 1, 2] });
+    expect(parseToolSelection(" 2 , 5 ", 10)).toEqual({ ok: true, value: [1, 4] });
+    expect(parseToolSelection("1,1", 10)).toEqual({ ok: true, value: [0] }); // deduped
+    expect(parseToolSelection("11", 10).ok).toBe(false);
+    expect(parseToolSelection("0", 10).ok).toBe(false);
+    expect(parseToolSelection("x", 10).ok).toBe(false);
+    expect(parseToolSelection("", 10).ok).toBe(false);
+  });
+
+  it("installs the selected recommended tools after init without a prompt when --tools is given", async () => {
+    const toolkit = fakeToolkit({
+      overview: async () => ({
+        ok: true,
+        value: {
+          recommended: [
+            { name: "mcp-builder" },
+            { name: "systematic-debugging" },
+          ] as unknown as Awaited<ReturnType<ToolkitSDK["overview"]>> extends { ok: true }
+            ? Awaited<ReturnType<ToolkitSDK["overview"]>> extends { ok: true; value: infer V }
+              ? V extends { recommended: readonly unknown[] }
+                ? V["recommended"]
+                : never
+              : never
+            : never,
+          installed: [],
+        },
+      }),
+      planInstall: async (toolName) => ({
+        ok: true,
+        value: {
+          toolName,
+          method: "skill",
+          command: { binary: "git", args: ["clone", toolName], cwd: null },
+          uninstallCommand: null,
+          effect: `install ${toolName}`,
+          dangerous: [],
+          verifyBinary: toolName,
+          verifyPath: null,
+          security: {
+            toolName,
+            checks: [],
+            risk: "medium",
+            status: "unverified",
+            trust: "unverified",
+            note: "fixture",
+            assessedAt: "2026-08-13T00:00:00.000Z",
+            overrideRequired: true,
+          },
+        },
+      }),
+      install: async () => ({
+        ok: true,
+        value: {
+          plan: { security: { trust: "unverified" } } as InstallOutcome["plan"],
+          verification: "verified",
+          verificationNote: "found SKILL.md",
+          exitCode: 0,
+          rollback: "none" as const,
+          recordedAt: "2026-08-13T00:00:00.000Z",
+          log: [],
+          manifestPath: null,
+        },
+      }),
+    });
+    const installSpy = vi.spyOn(toolkit, "install");
+    const program = createCli({ toolkit });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "init",
+        "--repo",
+        createTempFixtureRoot(),
+        "--tools",
+        "1,2",
+      ]);
+      expect(installSpy).toHaveBeenCalledTimes(2);
+      expect(installSpy).toHaveBeenCalledWith("mcp-builder", { granted: true });
+      expect(installSpy).toHaveBeenCalledWith("systematic-debugging", { granted: true });
+      expect(log.mock.calls.join(" ")).toContain("Installed");
+    } finally {
+      log.mockRestore();
+      installSpy.mockRestore();
+    }
+  });
+
+  it("does not install anything when the user declines (--tools none)", async () => {
+    const toolkit = fakeToolkit({
+      overview: async () => ({
+        ok: true,
+        value: {
+          recommended: [{ name: "mcp-builder" }] as unknown as Awaited<
+            ReturnType<ToolkitSDK["overview"]>
+          > extends { ok: true }
+            ? Awaited<ReturnType<ToolkitSDK["overview"]>> extends { ok: true; value: infer V }
+              ? V extends { recommended: readonly unknown[] }
+                ? V["recommended"]
+                : never
+              : never
+            : never,
+          installed: [],
+        },
+      }),
+    });
+    const installSpy = vi.spyOn(toolkit, "install");
+    const program = createCli({ toolkit });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "init",
+        "--repo",
+        createTempFixtureRoot(),
+        "--tools",
+        "none",
+      ]);
+      expect(installSpy).not.toHaveBeenCalled();
+      expect(log.mock.calls.join(" ")).toContain("Skipped installing recommended tools");
+    } finally {
+      log.mockRestore();
+      installSpy.mockRestore();
+    }
+  });
+
+  it("lists tool categories via atlas tools categories", async () => {
+    const toolkit = fakeToolkit({
+      registry: {
+        listCategories: () => ["MCP", "Agent Tools", "Developer Productivity"],
+      } as unknown as ToolkitSDK["registry"],
+    });
+    const program = createCli({ toolkit });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync(["node", "atlas", "tools", "categories"]);
+      expect(log.mock.calls.join("\n")).toContain("MCP");
+      expect(log.mock.calls.join("\n")).toContain("Agent Tools");
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("filters tools by category via atlas tools --category", async () => {
+    const toolkit = fakeToolkit({
+      listByCategory: (cat: string) => {
+        if (cat === "MCP") {
+          return [
+            {
+              name: "mcp-builder",
+              description: "Build MCP servers",
+              tier: "recommended",
+              categories: ["MCP"],
+            },
+          ] as unknown as ReturnType<ToolkitSDK["listByCategory"]>;
+        }
+        return [];
+      },
+    });
+    const program = createCli({ toolkit });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync(["node", "atlas", "tools", "--category", "MCP"]);
+      expect(log.mock.calls.join(" ")).toContain("mcp-builder");
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("surfaces compatibility report in atlas tools info", async () => {
+    const toolkit = fakeToolkit({
+      info: async (name: string) => ({
+        ok: true as const,
+        value: {
+          tool: {
+            name,
+            description: "Test tool",
+            version: "1.0.0",
+            trust: "verified" as const,
+            security: { status: "clean" as const },
+            installMethods: [{ type: "npm" as const }],
+            repository: null,
+            website: null,
+            documentation: null,
+            license: "MIT",
+            supportedOs: [],
+            supportedAgents: [],
+            categories: [],
+            dependencies: [],
+            maintainer: null,
+            lastUpdate: null,
+            stars: null,
+            tier: "optional" as const,
+            provenance: { type: "catalog", source: "test" },
+          } as unknown as ToolRegistryRecord,
+          manifest: null,
+          compatibility: {
+            overall: "compatible" as const,
+            toolName: name,
+            toolVersion: "1.0.0",
+            notInstallable: false,
+            checks: [
+              {
+                id: "os",
+                label: "OS",
+                state: "compatible" as const,
+                detail: "linux",
+                advisory: false,
+              },
+              {
+                id: "runtime:node",
+                label: "Node",
+                state: "compatible" as const,
+                detail: ">=22.5.0",
+                advisory: false,
+              },
+            ],
+          },
+        },
+      }),
+    });
+    const program = createCli({ toolkit });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync(["node", "atlas", "tools", "info", "test-tool"]);
+      const output = log.mock.calls.join("\n");
+      expect(output).toContain("Compatibility: compatible");
+      expect(output).toContain("✓ OS: compatible");
+      expect(output).toContain("✓ Node: compatible");
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("runs atlas tools update and reports per-tool outcomes", async () => {
+    const updateSpy = vi.fn(async () => ({
+      ok: true as const,
+      value: {
+        registryTools: 56,
+        installedTools: 2,
+        updated: [
+          { name: "npm-builder", status: "updated" as const, note: "Re-installed successfully." },
+          {
+            name: "mcp-builder",
+            status: "unchanged" as const,
+            note: "Approval required; re-run with approval to update.",
+          },
+        ],
+        note: "Updated 1 of 2 installed tools.",
+      },
+    }));
+    const toolkit = fakeToolkit({ update: updateSpy });
+    const program = createCli({ toolkit });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync(["node", "atlas", "tools", "update", "--approve"]);
+      expect(updateSpy).toHaveBeenCalledWith({ granted: true });
+      const output = log.mock.calls.join("\n");
+      expect(output).toContain("✓ npm-builder: Re-installed successfully.");
+      expect(output).toContain("– mcp-builder: Approval required");
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it("delegates context build, explain, launch, and attach through the SDK integration", async () => {
@@ -446,6 +727,7 @@ describe("atlas CLI", () => {
   it("registers the complete thin Toolkit command surface", () => {
     const tools = createCli().commands.find((command) => command.name() === "tools");
     expect(tools?.commands.map((command) => command.name()).sort()).toEqual([
+      "categories",
       "configure",
       "doctor",
       "info",
@@ -714,6 +996,7 @@ describe("atlas CLI", () => {
       effect: "install fixture",
       dangerous: [],
       verifyBinary: "fixture",
+      verifyPath: null,
       security: {
         toolName: "fixture",
         checks: [],
@@ -783,6 +1066,8 @@ describe("atlas CLI", () => {
           manifest: "present" as const,
           integration: "installed",
           trust: "unverified",
+          compatibility: null,
+          conflicts: [],
         },
       ],
     }));
@@ -908,10 +1193,6 @@ describe("atlas CLI", () => {
   it("reports the CLI package version", () => {
     const program = createCli();
     expect(program.version()).toBe(pkg.version);
-  });
-
-  it("prints a Coming Soon placeholder message", () => {
-    expect(comingSoonMessage("init")).toContain("Coming Soon");
   });
 
   it("resolves the project root and the context database path", () => {

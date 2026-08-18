@@ -72,6 +72,10 @@ export interface ToolInstallInstruction {
   readonly checksum: string | null;
   /** Semver range the install must satisfy, or `null`. */
   readonly versionRange: string | null;
+  /** Extra info — for `skill` installs this is the sub-path of the skill
+   *  inside the cloned repo (e.g. `skills/mcp-builder`), or `null`/absent for
+   *  a repo-root skill. */
+  readonly note?: string | null;
 }
 
 /** The input to the installer — everything needed to gate, plan, execute, and
@@ -129,6 +133,13 @@ export interface InstallPlan {
   readonly dangerous: readonly string[];
   /** The tool binary name the post-install verification looks for on PATH. */
   readonly verifyBinary: string;
+  /**
+   * Optional post-install verification for artifacts that are not a PATH binary
+   * (e.g. a cloned skill): a path **relative to `cwd`** that must exist after
+   * install. When set, verification checks that file/directory instead of
+   * resolving `verifyBinary`. `null` = binary-style verification.
+   */
+  readonly verifyPath: string | null;
   readonly security: SecurityAssessment;
 }
 

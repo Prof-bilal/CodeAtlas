@@ -21,32 +21,37 @@ Legend: `[ ]` not started · `[~]` partial · `[x]` complete · `[!]` blocked.
 - [x] Context SDK (`createContextSDK`) as the only read path
 - [x] MCP server (7 tools) · [x] VS Code extension
 - [x] Usage/credits (`atlas usage`)
-- [~] Metrics implemented but **not instrumented** (empty `metrics.json`) (P1-04)
-- [~] Usage tracking wiring (`withUsageTracking`) — dead code today (P1-05)
+- [x] Metrics implemented **and instrumented** — `record*` wired into indexer,
+      search, context, read-range, MCP; real `init`+`search` populates metrics.json (P1-04)
+- [x] Usage tracking wiring (`withUsageTracking`) — wired into CLI/MCP seams;
+      real `search --ai` records actual tokens in usage.db (P1-05)
 - [~] Read-path memory: whole-index reload ~738 MB (P1-08)
-- [~] Node engine: storage/usage `>=22.5`, root claims `>=20.19` (P1-02)
+- [x] Node engine: all packages + root aligned to `>=22.5.0` (P1-02)
+- [x] Dedup `estimateTokens` into `@atlas/shared` (P1-03)
+- [x] Dead code removed: `ComingSoonError`, `coming-soon.ts`, stale test (P1-06)
+- [x] Repo hygiene: dropped absent `ui/` from workspace; PROMPTS.md kept;
+      real security contact added (P1-07)
 
 ## Agent Toolkit (Direction C)
 
 - [x] Registry (9-tool catalog) · [x] Manifest · [x] Compatibility engine
-- [x] Installer (npm/pip/cargo/go, approval-gated, never fails open)
+- [x] Installer (npm/pip/cargo/go + skill git-clone, approval-gated, never fails open)
 - [x] Configurator · [x] Security/Trust evaluation
 - [x] `atlas tools` search/info/install/remove/configure/doctor surface
-- [ ] Recommendation tiers + curated **Top-10** (P2-01, P2-02)
-- [ ] Category browsing in CLI (P2-03)
-- [ ] Compatibility report surfaced (P2-04)
-- [ ] Real `atlas tools update` (no-op today) (P2-05)
-- [ ] Uninstall config-cleanup (P2-06)
-- [ ] Live doctor/health check (P2-07)
-- [ ] Conflict + dependency detection (P2-08)
-- [ ] `github-mcp-server` installable or re-tiered (P2-10)
+- [x] Recommendation tiers + curated **Top-10** (P2-01, P2-02)
+- [x] Category browsing in CLI (P2-03)
+- [x] Compatibility report surfaced (P2-04)
+- [x] Real `atlas tools update` (no-op today) (P2-05)
+- [x] Uninstall config-cleanup (P2-06)
+- [x] Live doctor/health check (P2-07)
+- [x] Conflict + dependency detection (P2-08)
+- [x] `github-mcp-server` re-tiered as `experimental` (P2-10)
 
 ## Auto Installer
 
 - [ ] `atlas setup` — environment/agent detection, dry-run, `--yes`, install →
       configure → verify → rollback (P3-01…P3-04)
-- [ ] Default toolkit bundle defined; 50-skills file = governed, opt-in only
-      (P3-05)
+- [ ] Default toolkit bundle defined; 47 skills cataloged with Top-10 `recommended` + `atlas init` permission offer (P3-05)
 - [ ] No silent installs; exact commands shown; trust model documented (P3-06)
 
 ## Agents (Direction B)
@@ -76,7 +81,7 @@ Legend: `[ ]` not started · `[~]` partial · `[x]` complete · `[!]` blocked.
 
 ## Documentation
 
-- [ ] Fix docs drift: AGENTS.md "20 commands", CURRENT_STATE/FEATURE_STATUS,
+- [x] Fix docs drift: AGENTS.md "20 commands", CURRENT_STATE/FEATURE_STATUS,
       MODULES.md, METRICS.md, CLI.md (P1-01)
 - [ ] README rewrite — honest, benchmark-backed (P7-01)
 - [ ] Keep docs structure; update DOCUMENTATION_MAP.md (P7-02)

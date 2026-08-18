@@ -16,10 +16,12 @@ export type { LoadRegistryOptions, ToolRegistryServiceOptions } from "./registry
 export {
   DEFAULT_CATEGORIES,
   DEFAULT_SECURITY,
+  DEFAULT_TIER,
   DEFAULT_TRUST,
   INSTALL_METHOD_TYPES,
   REGISTRY_SCHEMA_VERSION,
   SECURITY_STATUSES,
+  TIERS,
   TRUST_LEVELS,
   validateCatalog,
   validateOverlay,
@@ -124,6 +126,7 @@ export {
   GoAdapter,
   NpmAdapter,
   PipAdapter,
+  SkillAdapter,
 } from "./installer-adapters";
 export { InstallerProcess, nodeSpawnFn } from "./installer-process";
 export type {

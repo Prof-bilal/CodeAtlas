@@ -1,3 +1,4 @@
+import { estimateTokens } from "@atlas/shared";
 import type { BudgetRecord, ContextBudget, ContextPackageItem } from "./models";
 
 /** The default budget for a context package (overridable per call). */
@@ -6,14 +7,6 @@ export const DEFAULT_CONTEXT_BUDGET: ContextBudget = {
   maxTokensPerItem: 2000,
   maxTokensTotal: 12000,
 };
-
-/**
- * Deterministic, dependency-free token estimate: one token per ~4 characters.
- * Used only to *cap* a package — it is a heuristic, not a real tokenizer.
- */
-export function estimateTokens(text: string): number {
-  return Math.ceil(text.length / 4);
-}
 
 /**
  * Apply the budget to an ordered list of items and return the surviving items

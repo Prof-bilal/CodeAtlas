@@ -19,6 +19,8 @@ import {
   FsConfigWriter,
   applyConfigurationChange,
   buildConfigurationChange,
+  isConfigObject,
+  parseConfigDocument,
 } from "./configurator-adapter";
 import { builtinConfigurationAdapters } from "./configurator-adapters";
 import { ConfiguratorRequestError } from "./configurator-errors";
@@ -163,6 +165,55 @@ export class ConfiguratorService implements ConfiguratorPort {
       skippedTargets: skipped,
       failedTargets: failed,
     });
+  }
+
+  public async unconfigure(
+    toolName: string,
+    options: { readonly configHome?: string } = {},
+  ): Promise<Result<readonly string[]>> {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(toolName)) {
+      return fail(new ConfiguratorRequestError("toolName must be a safe tool name, not a path"));
+    }
+    const configHome = options.configHome ?? this.configHome;
+    const cleaned: string[] = [];
+    for (const adapter of this.adapters) {
+      const ctx: ConfigurationContext = {
+        toolName,
+        toolVersion: null,
+        mcp: false,
+        configHome,
+        timestamp: this.now().toISOString(),
+      };
+      const filePath = adapter.configPath(ctx);
+      const existing = await this.writer.read(filePath);
+      if (!existing.ok) continue;
+      if (existing.value === null) continue;
+      const parsed = parseConfigDocument(existing.value, adapter.format);
+      if (!parsed.ok) continue;
+      const document = parsed.value;
+      if (!isConfigObject(document)) continue;
+      const rootKey = adapter.rootKey(ctx);
+      let changed = false;
+      if (rootKey === null) {
+        if (toolName in document) {
+          const { [toolName]: _, ...rest } = document;
+          Object.assign(document, rest);
+          changed = true;
+        }
+      } else {
+        const section = document[rootKey];
+        if (isConfigObject(section) && toolName in section) {
+          const { [toolName]: _, ...rest } = section as Record<string, unknown>;
+          (document as Record<string, unknown>)[rootKey] = rest;
+          changed = true;
+        }
+      }
+      if (changed) {
+        const writeResult = await this.writer.write(filePath, JSON.stringify(document, null, 2));
+        if (writeResult.ok) cleaned.push(filePath);
+      }
+    }
+    return ok(cleaned);
   }
 }
 

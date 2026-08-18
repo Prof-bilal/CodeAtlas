@@ -217,7 +217,7 @@ describe("InstallerService.plan (build gates, nothing executes)", () => {
   });
 
   it("exposes only the implemented (safe MVP) install types", () => {
-    expect(service().implementedTypes).toEqual(["npm", "pip", "cargo", "go"]);
+    expect(service().implementedTypes).toEqual(["npm", "pip", "cargo", "go", "skill"]);
   });
 
   it("blocks an incompatible tool (fail-closed) before anything runs", async () => {
@@ -516,6 +516,126 @@ describe("InstallerService.install — rollback & adversarial", () => {
       const joined = result.value.log.join("\n");
       expect(joined).toContain("redacted");
       expect(joined).not.toContain("supersecretvalue");
+    } finally {
+      c.temp.cleanup();
+    }
+  });
+});
+
+describe("InstallerService.install — skill (git clone) installs", () => {
+  it("plans a skill install as a shallow git clone with a verifyPath", async () => {
+    const calls: SpawnCall[] = [];
+    const svc = service({ calls });
+    const c = ctx({
+      installation: {
+        ...request().installation,
+        type: "skill",
+        package: "https://github.com/anthropics/skills",
+        note: "skills/mcp-builder",
+      },
+    });
+    try {
+      const result = await svc.plan(c.req());
+      expect(result.ok).toBe(true);
+      if (!result.ok) {
+        return;
+      }
+      expect(result.value.command).toEqual({
+        binary: "git",
+        args: [
+          "clone",
+          "--depth",
+          "1",
+          "https://github.com/anthropics/skills",
+          join(c.temp.root, ".codeatlas", "skills", "fixture-tool"),
+        ],
+        cwd: c.temp.root,
+      });
+      expect(result.value.verifyPath).toBe(
+        ".codeatlas/skills/fixture-tool/skills/mcp-builder/SKILL.md",
+      );
+      expect(calls.length).toBe(0); // plan never executes
+    } finally {
+      c.temp.cleanup();
+    }
+  });
+
+  it("verifies a cloned skill by file existence under the project root", async () => {
+    const calls: SpawnCall[] = [];
+    const svc = service({ calls });
+    const c = ctx({
+      installation: {
+        ...request().installation,
+        type: "skill",
+        package: "https://github.com/anthropics/skills",
+        note: null,
+      },
+    });
+    try {
+      const { mkdirSync, writeFileSync } = await import("node:fs");
+      const skillDir = join(c.temp.root, ".codeatlas", "skills", "fixture-tool");
+      mkdirSync(skillDir, { recursive: true });
+      writeFileSync(join(skillDir, "SKILL.md"), "# Fixture skill\n", "utf8");
+      const result = await svc.install(c.req(), { granted: true });
+      expect(result.ok).toBe(true);
+      if (!result.ok) {
+        return;
+      }
+      expect(result.value.verification).toBe("verified");
+      expect(result.value.verificationNote).toContain("SKILL.md");
+      expect(calls[0]).toMatchObject({ command: "git", shell: false });
+    } finally {
+      c.temp.cleanup();
+    }
+  });
+
+  it("reports a failed skill verification when SKILL.md is missing", async () => {
+    const calls: SpawnCall[] = [];
+    const svc = service({ calls });
+    const c = ctx({
+      installation: {
+        ...request().installation,
+        type: "skill",
+        package: "https://github.com/anthropics/skills",
+        note: null,
+      },
+    });
+    try {
+      const result = await svc.install(c.req(), { granted: true });
+      expect(result.ok).toBe(true); // clone exited 0
+      if (!result.ok) {
+        return;
+      }
+      expect(result.value.verification).toBe("failed");
+      expect(result.value.verificationNote).toContain("not found");
+    } finally {
+      c.temp.cleanup();
+    }
+  });
+
+  it("skips rollback for a failed skill clone (no ecosystem uninstall exists)", async () => {
+    const calls: SpawnCall[] = [];
+    const svc = service({
+      calls,
+      behavior: () => ({ exitCode: 1 }),
+    });
+    const c = ctx({
+      installation: {
+        ...request().installation,
+        type: "skill",
+        package: "https://github.com/anthropics/skills",
+        note: null,
+      },
+    });
+    try {
+      const result = await svc.install(c.req(), { granted: true });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const err = result.error as InstallFailedError;
+        expect(err.rollback).toBe("none");
+        expect(err.log.join("\n")).toContain("rollback: not available");
+      }
+      expect(calls.length).toBe(1); // only the clone ran
     } finally {
       c.temp.cleanup();
     }

@@ -31,17 +31,55 @@ export function registerTools(program: Command, options: ToolsCommandOptions = {
     .command("tools")
     .description("Discover, install, configure, and inspect toolkit tools");
 
-  tools.action(async (commandOptions: CommonOptions) => {
-    await run(toolkit.overview(), commandOptions, renderOverview);
-  });
+  tools
+    .option("--category <cat>", "filter overview to tools in a category")
+    .action(async (commandOptions: CommonOptions & { readonly category?: string }) => {
+      if (commandOptions.category !== undefined) {
+        const matches = toolkit.listByCategory(commandOptions.category);
+        return emit(
+          {
+            tools: matches.map((t) => ({
+              name: t.name,
+              description: t.description,
+              tier: t.tier,
+              categories: t.categories,
+            })),
+          },
+          commandOptions,
+          renderCategoryTools,
+        );
+      }
+      await run(toolkit.overview(), commandOptions, renderOverview);
+    });
 
   tools
     .command("search <query>")
     .description("Search the curated tool registry")
     .option("--json", "print results as JSON")
-    .action((query: string, commandOptions: CommonOptions) =>
-      emit(toolkit.search(query), commandOptions, renderTools),
-    );
+    .option("--category <cat>", "filter results to tools in a category")
+    .action((query: string, commandOptions: CommonOptions & { readonly category?: string }) => {
+      if (commandOptions.category !== undefined) {
+        const matches = toolkit.listByCategory(commandOptions.category);
+        const filtered = matches.filter(
+          (tool) =>
+            tool.name.toLowerCase().includes(query.toLowerCase()) ||
+            tool.description.toLowerCase().includes(query.toLowerCase()),
+        );
+        return emit(filtered, commandOptions, renderTools);
+      }
+      return emit(toolkit.search(query), commandOptions, renderTools);
+    });
+
+  tools
+    .command("categories")
+    .description("List all tool categories")
+    .option("--json", "print results as JSON")
+    .action((commandOptions: CommonOptions) => {
+      const cats = toolkit.registry.listCategories();
+      emit(cats, commandOptions, (value) =>
+        value.length === 0 ? "No categories." : value.join("\n"),
+      );
+    });
 
   tools
     .command("info <tool>")
@@ -98,11 +136,13 @@ export function registerTools(program: Command, options: ToolsCommandOptions = {
 
   tools
     .command("update")
-    .description("Refresh the local registry view and report installed tools")
+    .description("Update all installed tools to their latest versions")
     .option("--json", "print the result as JSON")
-    .action(async (commandOptions: CommonOptions) =>
-      run(toolkit.update(), commandOptions, (value) => renderSimple(value)),
-    );
+    .option("--approve", "skip the per-tool approval prompt")
+    .action(async (commandOptions: CommonOptions & { readonly approve?: boolean }) => {
+      const approval: InstallApproval = { granted: commandOptions.approve === true };
+      await run(toolkit.update(approval), commandOptions, renderUpdate);
+    });
 
   tools
     .command("configure <tool>")
@@ -161,6 +201,19 @@ function renderOverview(value: {
   ].join("\n");
 }
 
+function renderCategoryTools(value: {
+  readonly tools: readonly {
+    readonly name: string;
+    readonly description: string;
+    readonly tier: string;
+    readonly categories: readonly string[];
+  }[];
+}): string {
+  return value.tools.length === 0
+    ? "No tools found in this category."
+    : value.tools.map((tool) => `  ${tool.name} [${tool.tier}] — ${tool.description}`).join("\n");
+}
+
 function renderTools(
   value: readonly { readonly name: string; readonly description: string; readonly trust: string }[],
 ): string {
@@ -177,20 +230,46 @@ function renderInfo(value: {
     readonly trust: string;
     readonly security: { readonly status: string };
     readonly installMethods: readonly { readonly type: string }[];
+    readonly dependencies: readonly { readonly name: string }[];
+    readonly categories: readonly string[];
   };
   readonly manifest: {
     readonly toolVersion: string;
     readonly security: { readonly trust: string };
   } | null;
+  readonly compatibility: {
+    readonly overall: string;
+    readonly checks: readonly {
+      readonly label: string;
+      readonly state: string;
+      readonly detail: string | null;
+    }[];
+  } | null;
 }): string {
-  return [
+  const lines = [
     `${value.tool.name} ${value.tool.version}`,
     value.tool.description,
     `Trust: ${value.tool.trust}`,
     `Security: ${value.tool.security.status}`,
     `Install methods: ${value.tool.installMethods.map((method) => method.type).join(", ")}`,
+    `Categories: ${value.tool.categories.join(", ") || "none"}`,
     `Installed: ${value.manifest === null ? "no" : `yes (${value.manifest.security.trust})`}`,
-  ].join("\n");
+  ];
+
+  if (value.tool.dependencies.length > 0) {
+    lines.push(`Dependencies: ${value.tool.dependencies.map((dep) => dep.name).join(", ")}`);
+  }
+
+  if (value.compatibility !== null) {
+    lines.push(`\nCompatibility: ${value.compatibility.overall}`);
+    for (const check of value.compatibility.checks) {
+      const icon = check.state === "compatible" ? "✓" : check.state === "incompatible" ? "✗" : "?";
+      const detail = check.detail !== null ? ` — ${check.detail}` : "";
+      lines.push(`  ${icon} ${check.label}: ${check.state}${detail}`);
+    }
+  }
+
+  return lines.join("\n");
 }
 
 function renderInstallPlan(value: {
@@ -219,21 +298,42 @@ function renderInstallOutcome(value: {
   return `Installed with trust ${value.plan.security.trust}; verification: ${value.verification}; manifest: ${value.manifestPath ?? "not recorded"}`;
 }
 
+function renderUpdate(value: {
+  readonly registryTools: number;
+  readonly installedTools: number;
+  readonly updated: readonly {
+    readonly name: string;
+    readonly status: string;
+    readonly note: string;
+  }[];
+  readonly note: string;
+}): string {
+  if (value.updated.length === 0) return "No installed tools to update.";
+  return [
+    ...value.updated.map((entry) => {
+      const icon = entry.status === "updated" ? "✓" : entry.status === "error" ? "✗" : "–";
+      return `  ${icon} ${entry.name}: ${entry.note}`;
+    }),
+    "",
+    value.note,
+  ].join("\n");
+}
+
 function renderSimple(value: object): string {
   return JSON.stringify(value, null, 2);
 }
-
 function renderDoctor(value: readonly ToolkitDoctorEntry[]): string {
-  return value.length === 0
-    ? "No installed tools."
-    : value
-        .map(
-          (entry) =>
-            `${entry.name}: manifest=${entry.manifest}, integration=${entry.integration}, trust=${entry.trust}`,
-        )
-        .join("\n");
+  if (value.length === 0) return "No installed tools.";
+  return value
+    .map((entry) => {
+      const compat =
+        entry.compatibility !== null ? ` [compatibility: ${entry.compatibility.overall}]` : "";
+      const conflicts =
+        entry.conflicts.length > 0 ? ` [conflicts with: ${entry.conflicts.join(", ")}]` : "";
+      return `${entry.name}: manifest=${entry.manifest}, integration=${entry.integration}, trust=${entry.trust}${compat}${conflicts}`;
+    })
+    .join("\n");
 }
-
 export function renderConfigureOutcome(outcome: ConfigureOutcome): string {
   const lines = [outcome.dryRun ? "Configuration dry run" : "Configuration complete"];
   if (outcome.appliedTargets.length > 0)

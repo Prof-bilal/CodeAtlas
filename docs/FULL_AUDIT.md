@@ -197,7 +197,7 @@ synonym gap ("authentication" vs "auth") requires the planned embedding scorer.
 
 ## 6. CLI
 
-19 top-level commands, **all registered and wired to real SDK seams** — no
+20 top-level commands, **all registered and wired to real SDK seams** — no
 "coming soon" surface is reachable (`printComingSoon` is never called;
 `registerTui` is never registered). Verified live: `doctor` (all PASS),
 `search`, `context` (build/json), `explain`, `tools` (9-tool catalog),

@@ -82,6 +82,7 @@ export interface ToolProvenance {
   readonly maintainer: FieldProvenance;
   readonly lastUpdate: FieldProvenance;
   readonly stars: FieldProvenance;
+  readonly tier: FieldProvenance;
 }
 
 /** A provenance map key (the `ToolProvenance` fields). */
@@ -95,7 +96,8 @@ export type ToolInstallMethodType =
   | "go"
   | "binary"
   | "github-release"
-  | "mcp";
+  | "mcp"
+  | "skill";
 
 /** One way a tool can be installed. Declared here, executed by Task 22. */
 export interface InstallMethod {
@@ -137,6 +139,19 @@ export interface ToolSecurityStatus {
 export type ToolTrustLevel = "verified" | "reviewed" | "community" | "unverified" | "blocked";
 
 /**
+ * The curation tier of a registry record (P2-01):
+ * - **recommended** — the curated Top-N (context reduction, MCP-first,
+ *   adoption, maintenance, license, security, overlap). What `atlas tools`
+ *   surfaces as the default view and what onboarding offers to install.
+ * - **optional** — curated and installable, but not in the Top-N.
+ * - **experimental** — real but not yet verified/hardened (or installable only
+ *   through an unimplemented adapter); shown with a caveat.
+ * - **incompatible** — curated but not installable on this platform / by the
+ *   current build; surfaced so users never chase a dead end.
+ */
+export type ToolTier = "recommended" | "optional" | "experimental" | "incompatible";
+
+/**
  * One curated registry record — the metadata shape for a tool. The
  * install/compatibility/security fields are **declared and validated** here
  * but **evaluated** by later tasks (Compatibility = Task 21, Installer =
@@ -176,6 +191,9 @@ export interface ToolRegistryRecord {
   readonly lastUpdate: string | null;
   /** Weak popularity signal only — never a trust basis. */
   readonly stars: number | null;
+  /** Curation tier (P2-01): `recommended`, `optional`, `experimental`, or
+   *  `incompatible`. Defaults to `optional` when not declared. */
+  readonly tier: ToolTier;
   /** Origin of every field, so the record is auditable. */
   readonly provenance: ToolProvenance;
 }

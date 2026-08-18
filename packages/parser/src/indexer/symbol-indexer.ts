@@ -1,6 +1,8 @@
+import { dirname } from "node:path";
+// biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
 import type { Reference, Symbol, SymbolKind } from "@atlas/core";
 import type { FilePath, SymbolId } from "@atlas/shared";
-import { dirname } from "node:path";
+import { SymbolNotIndexedError } from "../errors";
 import type { ParsedFile } from "../parsed-file";
 import type { IndexedSymbol } from "./indexed-symbol";
 
@@ -281,7 +283,7 @@ export class SymbolIndexer {
   private toIndexed(id: SymbolId): IndexedSymbol {
     const symbol = this.symbols.get(id);
     if (symbol === undefined) {
-      throw new Error(`Symbol not in index: ${id}`);
+      throw new SymbolNotIndexedError(id);
     }
     return {
       ...symbol,

@@ -9,13 +9,17 @@ import type {
   ToolRegistryRecord,
   ToolSecurityStatus,
   ToolSecurityStatusValue,
+  ToolTier,
   ToolTrustLevel,
 } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 import { RegistrySchemaVersionError, RegistryValidationError } from "./errors";
 
-/** Current version of the registry schema. Bump when the record shape changes. */
-export const REGISTRY_SCHEMA_VERSION = 1;
+/**
+ * Current version of the registry schema. Bump when the record shape changes —
+ * version 2 adds the `tier` curation field (P2-01).
+ */
+export const REGISTRY_SCHEMA_VERSION = 2;
 
 /**
  * The **suggested** starting categories. Categories are deliberately NOT a
@@ -43,6 +47,15 @@ export const INSTALL_METHOD_TYPES: readonly ToolInstallMethodType[] = [
   "binary",
   "github-release",
   "mcp",
+  "skill",
+];
+
+/** Closed set of curation tiers (P2-01). */
+export const TIERS: readonly ToolTier[] = [
+  "recommended",
+  "optional",
+  "experimental",
+  "incompatible",
 ];
 
 /** Closed set of security statuses (evaluated by Task 24). */
@@ -73,6 +86,9 @@ export const DEFAULT_SECURITY: ToolSecurityStatus = {
 
 export const DEFAULT_TRUST: ToolTrustLevel = "unverified";
 
+/** The default curation tier: curated and installable, but not Top-N. */
+export const DEFAULT_TIER: ToolTier = "optional";
+
 /** A validated, versioned collection of registry records. */
 export interface ToolRegistryCatalog {
   readonly schemaVersion: number;
@@ -98,6 +114,7 @@ const TOOL_FIELD_KEYS: readonly ToolField[] = [
   "maintainer",
   "lastUpdate",
   "stars",
+  "tier",
 ];
 
 /**
@@ -137,6 +154,7 @@ export function validateToolRecord(
   const maintainer = optionalString(input["maintainer"], "maintainer", problems);
   const lastUpdate = optionalIsoDate(input["lastUpdate"], "lastUpdate", problems);
   const stars = optionalNonNegativeInteger(input["stars"], "stars", problems);
+  const tier = optionalEnum(input["tier"], TIERS, "tier", problems) ?? DEFAULT_TIER;
   const provenanceOverrides = optionalProvenance(input["provenance"], problems);
 
   if (problems.length > 0) {
@@ -161,6 +179,7 @@ export function validateToolRecord(
     maintainer,
     lastUpdate,
     stars,
+    tier,
     provenance: buildProvenance(defaultSource, provenanceOverrides),
   });
 }
@@ -513,5 +532,6 @@ function buildProvenance(
     maintainer: field("maintainer"),
     lastUpdate: field("lastUpdate"),
     stars: field("stars"),
+    tier: field("tier"),
   };
 }

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "tools": [
     {
       "name": "biome",
@@ -13,9 +13,18 @@
       "supportedOs": ["win32", "linux", "darwin"],
       "supportedAgents": [],
       "installMethods": [
-        { "type": "npm", "packageId": "@biomejs/biome" },
-        { "type": "binary", "note": "prebuilt platform binaries from GitHub releases" },
-        { "type": "github-release", "packageId": "biomejs/biome" }
+        {
+          "type": "npm",
+          "packageId": "@biomejs/biome"
+        },
+        {
+          "type": "binary",
+          "note": "prebuilt platform binaries from GitHub releases"
+        },
+        {
+          "type": "github-release",
+          "packageId": "biomejs/biome"
+        }
       ],
       "dependencies": [],
       "security": {
@@ -48,7 +57,8 @@
           "source": "curated",
           "note": "Community trust; not individually audited by CodeAtlas"
         }
-      }
+      },
+      "tier": "optional"
     },
     {
       "name": "ripgrep",
@@ -62,9 +72,18 @@
       "supportedOs": ["win32", "linux", "darwin"],
       "supportedAgents": [],
       "installMethods": [
-        { "type": "binary", "note": "prebuilt binaries from GitHub releases" },
-        { "type": "github-release", "packageId": "BurntSushi/ripgrep" },
-        { "type": "cargo", "packageId": "ripgrep" }
+        {
+          "type": "binary",
+          "note": "prebuilt binaries from GitHub releases"
+        },
+        {
+          "type": "github-release",
+          "packageId": "BurntSushi/ripgrep"
+        },
+        {
+          "type": "cargo",
+          "packageId": "ripgrep"
+        }
       ],
       "dependencies": [],
       "security": {
@@ -97,7 +116,8 @@
           "source": "curated",
           "note": "Community trust; not individually audited by CodeAtlas"
         }
-      }
+      },
+      "tier": "optional"
     },
     {
       "name": "uv",
@@ -111,10 +131,22 @@
       "supportedOs": ["win32", "linux", "darwin"],
       "supportedAgents": [],
       "installMethods": [
-        { "type": "binary", "note": "standalone installer / prebuilt binaries" },
-        { "type": "github-release", "packageId": "astral-sh/uv" },
-        { "type": "pip", "packageId": "uv" },
-        { "type": "cargo", "packageId": "uv" }
+        {
+          "type": "binary",
+          "note": "standalone installer / prebuilt binaries"
+        },
+        {
+          "type": "github-release",
+          "packageId": "astral-sh/uv"
+        },
+        {
+          "type": "pip",
+          "packageId": "uv"
+        },
+        {
+          "type": "cargo",
+          "packageId": "uv"
+        }
       ],
       "dependencies": [],
       "security": {
@@ -147,7 +179,8 @@
           "source": "curated",
           "note": "Community trust; not individually audited by CodeAtlas"
         }
-      }
+      },
+      "tier": "optional"
     },
     {
       "name": "semgrep",
@@ -161,10 +194,22 @@
       "supportedOs": ["win32", "linux", "darwin"],
       "supportedAgents": [],
       "installMethods": [
-        { "type": "pip", "packageId": "semgrep" },
-        { "type": "binary", "note": "prebuilt binaries from GitHub releases" },
-        { "type": "github-release", "packageId": "semgrep/semgrep" },
-        { "type": "npm", "packageId": "@semgrep/cli" }
+        {
+          "type": "pip",
+          "packageId": "semgrep"
+        },
+        {
+          "type": "binary",
+          "note": "prebuilt binaries from GitHub releases"
+        },
+        {
+          "type": "github-release",
+          "packageId": "semgrep/semgrep"
+        },
+        {
+          "type": "npm",
+          "packageId": "@semgrep/cli"
+        }
       ],
       "dependencies": [],
       "security": {
@@ -197,7 +242,8 @@
           "source": "curated",
           "note": "Community trust; not individually audited by CodeAtlas"
         }
-      }
+      },
+      "tier": "optional"
     },
     {
       "name": "github-mcp-server",
@@ -211,15 +257,24 @@
       "supportedOs": ["win32", "linux", "darwin"],
       "supportedAgents": ["claude", "gemini", "codex", "opencode"],
       "installMethods": [
-        { "type": "binary", "note": "prebuilt binaries from GitHub releases" },
-        { "type": "github-release", "packageId": "github/github-mcp-server" },
-        { "type": "mcp", "note": "register as an MCP server for MCP-compatible agents" }
+        {
+          "type": "binary",
+          "note": "prebuilt binaries from GitHub releases"
+        },
+        {
+          "type": "github-release",
+          "packageId": "github/github-mcp-server"
+        },
+        {
+          "type": "mcp",
+          "note": "register as an MCP server for MCP-compatible agents"
+        }
       ],
       "dependencies": [],
       "security": {
         "status": "unverified",
         "lastReview": null,
-        "note": "Not yet reviewed by CodeAtlas."
+        "note": "Not installable by the current build (binary/github-release/mcp adapters are not yet implemented)."
       },
       "trust": "community",
       "maintainer": "github",
@@ -246,7 +301,8 @@
           "source": "curated",
           "note": "Community trust; not individually audited by CodeAtlas"
         }
-      }
+      },
+      "tier": "experimental"
     },
     {
       "name": "claude",
@@ -259,7 +315,12 @@
       "categories": ["Agent Tools", "AI Coding", "Developer Productivity"],
       "supportedOs": ["win32", "linux", "darwin"],
       "supportedAgents": ["claude"],
-      "installMethods": [{ "type": "npm", "packageId": "@anthropic-ai/claude-code" }],
+      "installMethods": [
+        {
+          "type": "npm",
+          "packageId": "@anthropic-ai/claude-code"
+        }
+      ],
       "dependencies": [],
       "security": {
         "status": "unverified",
@@ -286,7 +347,8 @@
           "source": "curated",
           "note": "Community trust; not individually audited by CodeAtlas"
         }
-      }
+      },
+      "tier": "optional"
     },
     {
       "name": "gemini",
@@ -299,7 +361,12 @@
       "categories": ["Agent Tools", "AI Coding", "Developer Productivity"],
       "supportedOs": ["win32", "linux", "darwin"],
       "supportedAgents": ["gemini"],
-      "installMethods": [{ "type": "npm", "packageId": "@google/gemini-cli" }],
+      "installMethods": [
+        {
+          "type": "npm",
+          "packageId": "@google/gemini-cli"
+        }
+      ],
       "dependencies": [],
       "security": {
         "status": "unverified",
@@ -326,7 +393,8 @@
           "source": "curated",
           "note": "Community trust; not individually audited by CodeAtlas"
         }
-      }
+      },
+      "tier": "optional"
     },
     {
       "name": "codex",
@@ -339,7 +407,12 @@
       "categories": ["Agent Tools", "AI Coding", "Developer Productivity"],
       "supportedOs": ["win32", "linux", "darwin"],
       "supportedAgents": ["codex"],
-      "installMethods": [{ "type": "npm", "packageId": "@openai/codex" }],
+      "installMethods": [
+        {
+          "type": "npm",
+          "packageId": "@openai/codex"
+        }
+      ],
       "dependencies": [],
       "security": {
         "status": "unverified",
@@ -366,7 +439,8 @@
           "source": "curated",
           "note": "Community trust; not individually audited by CodeAtlas"
         }
-      }
+      },
+      "tier": "optional"
     },
     {
       "name": "opencode",
@@ -379,7 +453,12 @@
       "categories": ["Agent Tools", "AI Coding", "Developer Productivity"],
       "supportedOs": ["win32", "linux", "darwin"],
       "supportedAgents": ["opencode"],
-      "installMethods": [{ "type": "npm", "packageId": "opencode-ai" }],
+      "installMethods": [
+        {
+          "type": "npm",
+          "packageId": "opencode-ai"
+        }
+      ],
       "dependencies": [],
       "security": {
         "status": "unverified",
@@ -397,6 +476,2621 @@
         "lastUpdate": {
           "source": "external",
           "note": "npm registry activity — a weak maintenance signal"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      },
+      "tier": "optional"
+    },
+    {
+      "name": "csv-data-summarizer-claude-skill",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/coffeefuelbump/csv-data-summarizer-claude-skill",
+      "repository": "https://github.com/coffeefuelbump/csv-data-summarizer-claude-skill",
+      "website": null,
+      "documentation": "https://github.com/coffeefuelbump/csv-data-summarizer-claude-skill",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/coffeefuelbump/csv-data-summarizer-claude-skill"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "coffeefuelbump",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "video-prompting-skill",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/Square-Zero-Labs/video-prompting-skill",
+      "repository": "https://github.com/Square-Zero-Labs/video-prompting-skill",
+      "website": null,
+      "documentation": "https://github.com/Square-Zero-Labs/video-prompting-skill",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/Square-Zero-Labs/video-prompting-skill"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "Square-Zero-Labs",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "claude-skills",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/jeffallan/claude-skills",
+      "repository": "https://github.com/jeffallan/claude-skills",
+      "website": null,
+      "documentation": "https://github.com/jeffallan/claude-skills",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/jeffallan/claude-skills"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "jeffallan",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "claude-starter",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/raintree-technology/claude-starter",
+      "repository": "https://github.com/raintree-technology/claude-starter",
+      "website": null,
+      "documentation": "https://github.com/raintree-technology/claude-starter",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/raintree-technology/claude-starter"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "raintree-technology",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "ffuf_claude_skill",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/jthack/ffuf_claude_skill",
+      "repository": "https://github.com/jthack/ffuf_claude_skill",
+      "website": null,
+      "documentation": "https://github.com/jthack/ffuf_claude_skill",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/jthack/ffuf_claude_skill"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "jthack",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "claude-scientific-skills",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/K-Dense-AI/claude-scientific-skills",
+      "repository": "https://github.com/K-Dense-AI/claude-scientific-skills",
+      "website": null,
+      "documentation": "https://github.com/K-Dense-AI/claude-scientific-skills",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["AI Quality", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/K-Dense-AI/claude-scientific-skills"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "K-Dense-AI",
+      "lastUpdate": "2026-08-01",
+      "stars": 5747,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "claude-cookbooks-skills",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/anthropics/claude-cookbooks/tree/main/skills",
+      "repository": "https://github.com/anthropics/claude-cookbooks/tree/main/skills",
+      "website": null,
+      "documentation": "https://github.com/anthropics/claude-cookbooks/tree/main/skills",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/anthropics/claude-cookbooks",
+          "note": "skills"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "anthropics",
+      "lastUpdate": "2026-08-01",
+      "stars": 5747,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "linear-claude-skill",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/wrsmith108/linear-claude-skill",
+      "repository": "https://github.com/wrsmith108/linear-claude-skill",
+      "website": null,
+      "documentation": "https://github.com/wrsmith108/linear-claude-skill",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/wrsmith108/linear-claude-skill"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "wrsmith108",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "claude-ally-health",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/huifer/Claude-Ally-Health",
+      "repository": "https://github.com/huifer/Claude-Ally-Health",
+      "website": null,
+      "documentation": "https://github.com/huifer/Claude-Ally-Health",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/huifer/Claude-Ally-Health"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "huifer",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "pypict-claude-skill",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/omkamal/pypict-claude-skill",
+      "repository": "https://github.com/omkamal/pypict-claude-skill",
+      "website": null,
+      "documentation": "https://github.com/omkamal/pypict-claude-skill",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/omkamal/pypict-claude-skill"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "omkamal",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "claude-code-terminal-title",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/bluzername/claude-code-terminal-title",
+      "repository": "https://github.com/bluzername/claude-code-terminal-title",
+      "website": null,
+      "documentation": "https://github.com/bluzername/claude-code-terminal-title",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/bluzername/claude-code-terminal-title"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "bluzername",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "statsmodels",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/statsmodels",
+      "repository": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/statsmodels",
+      "website": null,
+      "documentation": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/statsmodels",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/K-Dense-AI/claude-scientific-skills",
+          "note": "scientific-skills/statsmodels"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "K-Dense-AI",
+      "lastUpdate": "2026-08-01",
+      "stars": 6888,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "claude-d3js-skill",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/chrisvoncsefalvay/claude-d3js-skill",
+      "repository": "https://github.com/chrisvoncsefalvay/claude-d3js-skill",
+      "website": null,
+      "documentation": "https://github.com/chrisvoncsefalvay/claude-d3js-skill",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["AI Quality", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/chrisvoncsefalvay/claude-d3js-skill"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "chrisvoncsefalvay",
+      "lastUpdate": "2026-08-01",
+      "stars": 5747,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "claude-epub-skill",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/smerchek/claude-epub-skill",
+      "repository": "https://github.com/smerchek/claude-epub-skill",
+      "website": null,
+      "documentation": "https://github.com/smerchek/claude-epub-skill",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/smerchek/claude-epub-skill"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "smerchek",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "varlock-claude-skill",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/wrsmith108/varlock-claude-skill",
+      "repository": "https://github.com/wrsmith108/varlock-claude-skill",
+      "website": null,
+      "documentation": "https://github.com/wrsmith108/varlock-claude-skill",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/wrsmith108/varlock-claude-skill"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "wrsmith108",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "mcp-builder",
+      "description": "Build and validate MCP servers as first-class harness capabilities. Source: https://github.com/anthropics/skills/tree/main/skills/mcp-builder",
+      "repository": "https://github.com/anthropics/skills/tree/main/skills/mcp-builder",
+      "website": null,
+      "documentation": "https://github.com/anthropics/skills/tree/main/skills/mcp-builder",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["MCP", "Agent Tools"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/anthropics/skills",
+          "note": "skills/mcp-builder"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "anthropics",
+      "lastUpdate": "2026-08-01",
+      "stars": 50184,
+      "tier": "recommended",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "linear-cli-skill",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/Valian/linear-cli-skill",
+      "repository": "https://github.com/Valian/linear-cli-skill",
+      "website": null,
+      "documentation": "https://github.com/Valian/linear-cli-skill",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/Valian/linear-cli-skill"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "Valian",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "slack-gif-creator",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/anthropics/skills/tree/main/skills/slack-gif-creator",
+      "repository": "https://github.com/anthropics/skills/tree/main/skills/slack-gif-creator",
+      "website": null,
+      "documentation": "https://github.com/anthropics/skills/tree/main/skills/slack-gif-creator",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/anthropics/skills",
+          "note": "skills/slack-gif-creator"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "anthropics",
+      "lastUpdate": "2026-08-01",
+      "stars": 50184,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "deep-research",
+      "description": "Support provenance-carrying research-before-editing. Source: https://github.com/sanjay3290/ai-skills/tree/main/skills/deep-research",
+      "repository": "https://github.com/sanjay3290/ai-skills/tree/main/skills/deep-research",
+      "website": null,
+      "documentation": "https://github.com/sanjay3290/ai-skills/tree/main/skills/deep-research",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Context", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/sanjay3290/ai-skills",
+          "note": "skills/deep-research"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "sanjay3290",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "recommended",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "perplexity-search",
+      "description": "Add search-backed evidence retrieval where configured. Source: https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/perplexity-search",
+      "repository": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/perplexity-search",
+      "website": null,
+      "documentation": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/perplexity-search",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/K-Dense-AI/claude-scientific-skills",
+          "note": "scientific-skills/perplexity-search"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "K-Dense-AI",
+      "lastUpdate": "2026-08-01",
+      "stars": 6888,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "content-research-writer",
+      "description": "Assemble research into durable project docs. Source: https://github.com/ComposioHQ/awesome-claude-skills/tree/master/content-research-writer",
+      "repository": "https://github.com/ComposioHQ/awesome-claude-skills/tree/master/content-research-writer",
+      "website": null,
+      "documentation": "https://github.com/ComposioHQ/awesome-claude-skills/tree/master/content-research-writer",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Context", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/ComposioHQ/awesome-claude-skills",
+          "note": "content-research-writer"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "ComposioHQ",
+      "lastUpdate": "2026-08-01",
+      "stars": 24469,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "move-code-quality-skill",
+      "description": "Apply domain-specific static quality checks. Source: https://github.com/1NickPappas/move-code-quality-skill",
+      "repository": "https://github.com/1NickPappas/move-code-quality-skill",
+      "website": null,
+      "documentation": "https://github.com/1NickPappas/move-code-quality-skill",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/1NickPappas/move-code-quality-skill"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "1NickPappas",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "trail-of-bits-security-skills",
+      "description": "Add security-oriented analysis to the execution gate. Source: https://github.com/trailofbits/skills",
+      "repository": "https://github.com/trailofbits/skills",
+      "website": null,
+      "documentation": "https://github.com/trailofbits/skills",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Code Analysis", "AI Quality"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/trailofbits/skills"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "trailofbits",
+      "lastUpdate": "2026-08-01",
+      "stars": 5747,
+      "tier": "recommended",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "plugin-authoring",
+      "description": "Create governed skills and plugins for the toolkit itself. Source: https://github.com/ivan-magda/claude-code-plugin-template/tree/main/plugins/plugin-development/skills/plugin-authoring",
+      "repository": "https://github.com/ivan-magda/claude-code-plugin-template/tree/main/plugins/plugin-development/skills/plugin-authoring",
+      "website": null,
+      "documentation": "https://github.com/ivan-magda/claude-code-plugin-template/tree/main/plugins/plugin-development/skills/plugin-authoring",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/ivan-magda/claude-code-plugin-template",
+          "note": "plugins/plugin-development/skills/plugin-authoring"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "ivan-magda",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "doc-coauthoring",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/anthropics/skills/tree/main/skills/doc-coauthoring",
+      "repository": "https://github.com/anthropics/skills/tree/main/skills/doc-coauthoring",
+      "website": null,
+      "documentation": "https://github.com/anthropics/skills/tree/main/skills/doc-coauthoring",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/anthropics/skills",
+          "note": "skills/doc-coauthoring"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "anthropics",
+      "lastUpdate": "2026-08-01",
+      "stars": 50184,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "scholar-evaluation",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scholar-evaluation",
+      "repository": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scholar-evaluation",
+      "website": null,
+      "documentation": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scholar-evaluation",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/K-Dense-AI/claude-scientific-skills",
+          "note": "scientific-skills/scholar-evaluation"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "K-Dense-AI",
+      "lastUpdate": "2026-08-01",
+      "stars": 6888,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "changelog-generator",
+      "description": "Turn verified change history into release evidence. Source: https://github.com/ComposioHQ/awesome-claude-skills/tree/master/changelog-generator",
+      "repository": "https://github.com/ComposioHQ/awesome-claude-skills/tree/master/changelog-generator",
+      "website": null,
+      "documentation": "https://github.com/ComposioHQ/awesome-claude-skills/tree/master/changelog-generator",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/ComposioHQ/awesome-claude-skills",
+          "note": "changelog-generator"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "ComposioHQ",
+      "lastUpdate": "2026-08-01",
+      "stars": 24469,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "webapp-testing",
+      "description": "Exercise rendered apps and verify behavior instead of trusting generated code. Source: https://github.com/anthropics/skills/tree/main/skills/webapp-testing",
+      "repository": "https://github.com/anthropics/skills/tree/main/skills/webapp-testing",
+      "website": null,
+      "documentation": "https://github.com/anthropics/skills/tree/main/skills/webapp-testing",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Testing", "Developer Productivity", "AI Quality"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/anthropics/skills",
+          "note": "skills/webapp-testing"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "anthropics",
+      "lastUpdate": "2026-08-01",
+      "stars": 50184,
+      "tier": "recommended",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "systematic-debugging",
+      "description": "Force root-cause tracing before patching. Source: https://github.com/obra/superpowers/tree/main/skills/systematic-debugging",
+      "repository": "https://github.com/obra/superpowers/tree/main/skills/systematic-debugging",
+      "website": null,
+      "documentation": "https://github.com/obra/superpowers/tree/main/skills/systematic-debugging",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Testing", "Developer Productivity", "AI Quality"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/obra/superpowers",
+          "note": "skills/systematic-debugging"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "obra",
+      "lastUpdate": "2026-08-01",
+      "stars": 33858,
+      "tier": "recommended",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "test-driven-development",
+      "description": "Turn requirements into failing tests before implementation. Source: https://github.com/obra/superpowers/tree/main/skills/test-driven-development",
+      "repository": "https://github.com/obra/superpowers/tree/main/skills/test-driven-development",
+      "website": null,
+      "documentation": "https://github.com/obra/superpowers/tree/main/skills/test-driven-development",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Testing", "Developer Productivity", "AI Quality"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/obra/superpowers",
+          "note": "skills/test-driven-development"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "obra",
+      "lastUpdate": "2026-08-01",
+      "stars": 33858,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "verification-before-completion",
+      "description": "Prevent unsupported “done” claims. Source: https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
+      "repository": "https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
+      "website": null,
+      "documentation": "https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Testing", "Developer Productivity", "AI Quality"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/obra/superpowers",
+          "note": "skills/verification-before-completion"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "obra",
+      "lastUpdate": "2026-08-01",
+      "stars": 33858,
+      "tier": "recommended",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "root-cause-tracing",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/obra/superpowers/tree/main/skills/root-cause-tracing",
+      "repository": "https://github.com/obra/superpowers/tree/main/skills/root-cause-tracing",
+      "website": null,
+      "documentation": "https://github.com/obra/superpowers/tree/main/skills/root-cause-tracing",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/obra/superpowers",
+          "note": "skills/root-cause-tracing"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "obra",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "review-implementing",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/mhattingpete/claude-skills-marketplace/tree/main/engineering-workflow-plugin/skills/review-implementing",
+      "repository": "https://github.com/mhattingpete/claude-skills-marketplace/tree/main/engineering-workflow-plugin/skills/review-implementing",
+      "website": null,
+      "documentation": "https://github.com/mhattingpete/claude-skills-marketplace/tree/main/engineering-workflow-plugin/skills/review-implementing",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Context", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/mhattingpete/claude-skills-marketplace",
+          "note": "engineering-workflow-plugin/skills/review-implementing"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "mhattingpete",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "literature-review",
+      "description": "Structure multi-source evidence collection. Source: https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/literature-review",
+      "repository": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/literature-review",
+      "website": null,
+      "documentation": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/literature-review",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Context", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/K-Dense-AI/claude-scientific-skills",
+          "note": "scientific-skills/literature-review"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "K-Dense-AI",
+      "lastUpdate": "2026-08-01",
+      "stars": 6888,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "peer-review",
+      "description": "Introduce an adversarial review pass. Source: https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/peer-review",
+      "repository": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/peer-review",
+      "website": null,
+      "documentation": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/peer-review",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Context", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/K-Dense-AI/claude-scientific-skills",
+          "note": "scientific-skills/peer-review"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "K-Dense-AI",
+      "lastUpdate": "2026-08-01",
+      "stars": 6888,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "citation-management",
+      "description": "Track source provenance and citation hygiene. Source: https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/citation-management",
+      "repository": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/citation-management",
+      "website": null,
+      "documentation": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/citation-management",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Context", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/K-Dense-AI/claude-scientific-skills",
+          "note": "scientific-skills/citation-management"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "K-Dense-AI",
+      "lastUpdate": "2026-08-01",
+      "stars": 6888,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "scientific-critical-thinking",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scientific-critical-thinking",
+      "repository": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scientific-critical-thinking",
+      "website": null,
+      "documentation": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scientific-critical-thinking",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["AI Quality", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/K-Dense-AI/claude-scientific-skills",
+          "note": "scientific-skills/scientific-critical-thinking"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "K-Dense-AI",
+      "lastUpdate": "2026-08-01",
+      "stars": 6888,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "scientific-writing",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scientific-writing",
+      "repository": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scientific-writing",
+      "website": null,
+      "documentation": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scientific-writing",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["AI Quality", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/K-Dense-AI/claude-scientific-skills",
+          "note": "scientific-skills/scientific-writing"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "K-Dense-AI",
+      "lastUpdate": "2026-08-01",
+      "stars": 6888,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "scientific-visualization",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scientific-visualization",
+      "repository": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scientific-visualization",
+      "website": null,
+      "documentation": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/scientific-visualization",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["AI Quality", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/K-Dense-AI/claude-scientific-skills",
+          "note": "scientific-skills/scientific-visualization"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "K-Dense-AI",
+      "lastUpdate": "2026-08-01",
+      "stars": 6888,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "writing-plans",
+      "description": "Convert vague work into sequenced, reviewable packets. Source: https://github.com/obra/superpowers/tree/main/skills/writing-plans",
+      "repository": "https://github.com/obra/superpowers/tree/main/skills/writing-plans",
+      "website": null,
+      "documentation": "https://github.com/obra/superpowers/tree/main/skills/writing-plans",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Developer Productivity", "Agent Tools"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/obra/superpowers",
+          "note": "skills/writing-plans"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "obra",
+      "lastUpdate": "2026-08-01",
+      "stars": 33858,
+      "tier": "recommended",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "executing-plans",
+      "description": "Run plans with checkpoints and explicit completion criteria. Source: https://github.com/obra/superpowers/tree/main/skills/executing-plans",
+      "repository": "https://github.com/obra/superpowers/tree/main/skills/executing-plans",
+      "website": null,
+      "documentation": "https://github.com/obra/superpowers/tree/main/skills/executing-plans",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Developer Productivity", "Agent Tools"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/obra/superpowers",
+          "note": "skills/executing-plans"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "obra",
+      "lastUpdate": "2026-08-01",
+      "stars": 33858,
+      "tier": "recommended",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "plannotator",
+      "description": "Make plans inspectable before execution. Source: https://github.com/backnotprop/plannotator",
+      "repository": "https://github.com/backnotprop/plannotator",
+      "website": null,
+      "documentation": "https://github.com/backnotprop/plannotator",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Developer Productivity", "Agent Tools"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/backnotprop/plannotator"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "backnotprop",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "using-git-worktrees",
+      "description": "Isolate parallel agent changes and reduce cross-task contamination. Source: https://github.com/obra/superpowers/tree/main/skills/using-git-worktrees",
+      "repository": "https://github.com/obra/superpowers/tree/main/skills/using-git-worktrees",
+      "website": null,
+      "documentation": "https://github.com/obra/superpowers/tree/main/skills/using-git-worktrees",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Developer Productivity", "Agent Tools"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/obra/superpowers",
+          "note": "skills/using-git-worktrees"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "obra",
+      "lastUpdate": "2026-08-01",
+      "stars": 33858,
+      "tier": "recommended",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "react-best-practices",
+      "description": "Keep generated React changes aligned with framework conventions. Source: https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices",
+      "repository": "https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices",
+      "website": null,
+      "documentation": "https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["AI Quality", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/vercel-labs/agent-skills",
+          "note": "skills/react-best-practices"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "vercel-labs",
+      "lastUpdate": "2026-08-01",
+      "stars": 15610,
+      "tier": "recommended",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "git-pushing",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/mhattingpete/claude-skills-marketplace/tree/main/engineering-workflow-plugin/skills/git-pushing",
+      "repository": "https://github.com/mhattingpete/claude-skills-marketplace/tree/main/engineering-workflow-plugin/skills/git-pushing",
+      "website": null,
+      "documentation": "https://github.com/mhattingpete/claude-skills-marketplace/tree/main/engineering-workflow-plugin/skills/git-pushing",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Developer Productivity", "Agent Tools"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/mhattingpete/claude-skills-marketplace",
+          "note": "engineering-workflow-plugin/skills/git-pushing"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "mhattingpete",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "charles-proxy-extract",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/wannabehero/charles-proxy-extract-skill",
+      "repository": "https://github.com/wannabehero/charles-proxy-extract-skill",
+      "website": null,
+      "documentation": "https://github.com/wannabehero/charles-proxy-extract-skill",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/wannabehero/charles-proxy-extract-skill"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "wannabehero",
+      "lastUpdate": "2026-08-01",
+      "stars": 4155,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "protocolsio-integration",
+      "description": "Potentially useful specialist capability; activate only when the task profile requires it. Source: https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/protocolsio-integration",
+      "repository": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/protocolsio-integration",
+      "website": null,
+      "documentation": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills/protocolsio-integration",
+      "license": "See repository",
+      "version": "1.0.0",
+      "categories": ["Agent Tools", "Developer Productivity"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "skill",
+          "packageId": "https://github.com/K-Dense-AI/claude-scientific-skills",
+          "note": "scientific-skills/protocolsio-integration"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "community",
+      "maintainer": "K-Dense-AI",
+      "lastUpdate": "2026-08-01",
+      "stars": 6888,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+        },
+        "license": {
+          "source": "external",
+          "note": "License not verified by CodeAtlas; see the source repository"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",

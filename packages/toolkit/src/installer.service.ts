@@ -1,10 +1,11 @@
-import { statSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
+import { join } from "node:path";
 import type {
   CompatibilityPort,
   InstallApproval,
   InstallOutcome,
-  InstallRemovalOutcome,
   InstallPlan,
+  InstallRemovalOutcome,
   InstallRollbackStatus,
   InstallVerificationStatus,
   InstallerPort,
@@ -16,7 +17,13 @@ import type {
 import { type Result, fail, ok } from "@atlas/shared";
 import { defaultReadVersion, findExecutable } from "./environment";
 import type { EcosystemAdapter } from "./installer-adapter";
-import { CargoAdapter, GoAdapter, NpmAdapter, PipAdapter } from "./installer-adapters";
+import {
+  CargoAdapter,
+  GoAdapter,
+  NpmAdapter,
+  PipAdapter,
+  SkillAdapter,
+} from "./installer-adapters";
 import {
   InstallApprovalDeniedError,
   InstallBlockedError,
@@ -63,6 +70,7 @@ const DEFAULT_ADAPTERS: readonly EcosystemAdapter[] = [
   new PipAdapter(),
   new CargoAdapter(),
   new GoAdapter(),
+  new SkillAdapter(),
 ];
 
 /**
@@ -141,6 +149,7 @@ export class InstallerService implements InstallerPort {
       effect: `${built.value.effect} Compatibility: ${gates.value.overall}.`,
       dangerous: built.value.dangerous,
       verifyBinary: built.value.verifyBinary,
+      verifyPath: built.value.verifyPath ?? null,
       security: gates.value.security,
     };
     return ok(plan);
@@ -212,7 +221,10 @@ export class InstallerService implements InstallerPort {
     // Failure — best-effort rollback, never automatic when the tool was already
     // present (an upgrade must not uninstall the previous version blindly).
     let rollback: InstallRollbackStatus = "none";
-    const wasPresentBefore = this.resolveBinary(plan.verifyBinary) !== null;
+    const wasPresentBefore =
+      plan.verifyPath !== null
+        ? existsSync(join(request.cwd, plan.verifyPath))
+        : this.resolveBinary(plan.verifyBinary) !== null;
     if (plan.uninstallCommand === null) {
       log.push(`rollback: not available for ${plan.method} installs`);
     } else if (wasPresentBefore) {
@@ -345,6 +357,19 @@ export class InstallerService implements InstallerPort {
   }
 
   private verifyTool(request: ToolInstallRequest, plan: InstallPlan): InstallVerificationDetails {
+    // Non-binary artifacts (e.g. a cloned skill) verify by file existence
+    // under the project root rather than by a PATH binary.
+    if (plan.verifyPath !== null) {
+      const full = join(request.cwd, plan.verifyPath);
+      if (existsSync(full)) {
+        return { status: "verified", note: `found ${full}`, path: full };
+      }
+      return {
+        status: "failed",
+        note: `expected '${plan.verifyPath}' not found under ${request.cwd} after install`,
+        path: null,
+      };
+    }
     const binary = plan.verifyBinary;
     const path = this.resolveBinary(binary);
     if (path === null) {

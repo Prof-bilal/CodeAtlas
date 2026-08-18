@@ -45,11 +45,11 @@ Single source of truth for what each feature is — **verified against the code*
 | VS Code integration | **[IMPLEMENTED]** | `@atlas/extension` (in `apps/extension`): Activity Bar + 5 tree views (project/symbols/modules/summaries/dependencies), `codeatlas.*` palette commands, status-bar indicator; reads only through the Context SDK (`createContextSDK`); `atlas build`/`update` shell out to the working CLI indexer; read-only context viewer |
 | JetBrains / other editor integrations | **[PLANNED]** | No code |
 | Agent Toolkit subsystem (`@atlas/toolkit`) | **[PARTIAL]** | Tasks 19–25 implemented: Registry, Tool Manifest, Compatibility Engine, Tool Installer, Tool Configurator, Security/Trust, and the thin SDK-backed Toolkit CLI; `/tools` slash integration and `atlas setup` remain planned |
-| Tool Registry | **[IMPLEMENTED]** | `@atlas/toolkit` behind `ToolRegistryPort` in `core`, composed via `createToolRegistry()` in `@atlas/sdk`: curated, schema-validated, provenance-auditable catalog (`packages/toolkit/src/catalog.json`) + local overlay merged by name (user wins, catalog never mutated); per-field provenance (curated/external/user/unknown — external never trusted blindly); extensible categories; fail-loud validation; install/compat/config/security fields declared and evaluated by Tasks 21–24. See docs/TOOL_REGISTRY.md |
+| Tool Registry | **[IMPLEMENTED]** | `@atlas/toolkit` behind `ToolRegistryPort` in `core`, composed via `createToolRegistry()` in `@atlas/sdk`: curated, schema-validated (schemaVersion **2**), provenance-auditable catalog (`packages/toolkit/src/catalog.json`) — 9 foundational tools + 47 deduplicated Agent-Toolkit skills (Top-10 `recommended`), every record has a `tier` field (`recommended`/`optional`/`experimental`/`incompatible`); `skill` install type uses shallow git clone of the canonical repository with sub-path in `note`; local overlay merged by name (user wins, catalog never mutated); per-field provenance (curated/external/user/unknown — external never trusted blindly); extensible categories; fail-loud validation; install/compat/config/security fields declared and evaluated by Tasks 21–24. See docs/TOOL_REGISTRY.md |
 | Tool Manifest System | **[IMPLEMENTED]** | `@atlas/toolkit` (`manifest-schema.ts` + `manifest.ts`): versioned (`TOOL_MANIFEST_SCHEMA_VERSION=1`), validated (load + before write, every problem listed), extensible (unknown fields preserved) per-installed-tool state; `.codeatlas/tools/<name>.json` (Scanner manifest merge policy); declares all 7 install ecosystems, executes nothing; untrusted-input safe (typed errors, `__proto__` inert, 1 MiB bound, path-safe names); manifest persistence remains toolkit-internal while higher-level services are SDK-composed. See docs/TOOL_MANIFEST.md |
 | Tool Discovery (`atlas tools` search/list) | **[IMPLEMENTED]** | SDK-backed `atlas tools` overview and registry search with text/JSON output |
 | Tool Compatibility Engine | **[IMPLEMENTED]** | `@atlas/toolkit` (`compatibility.service.ts` + `environment.ts` + `version-range.ts` + `render.ts`) behind `CompatibilityPort` in `core`, composed via `createCompatibilityEngine()` in `@atlas/sdk` (Task 21): evaluates a tool's declared requirements (OS/architecture/runtimes/package manager/AI CLIs via `AgentPort`/MCP/permissions) against the detected environment and returns one of four states with per-check evidence; `incompatible` ⇒ not installable here (**never fails open**), `unknown` flagged never guessed; offline + read-only, never installs. See docs/AGENT_TOOLKIT.md §6 |
-| Tool Installer (`InstallerPort` + adapters) | **[IMPLEMENTED]** | `@atlas/toolkit` behind `InstallerPort` in `core`, composed via `createInstaller()` and `createToolkitSDK()` in `@atlas/sdk`: safe MVP subset, approval-gated argument-array spawns, verification, Tool Manifest provenance, rollback, and CLI rendering of trust/plan before `--yes` execution |
+| Tool Installer (`InstallerPort` + adapters) | **[IMPLEMENTED]** | `@atlas/toolkit` behind `InstallerPort` in `core`, composed via `createInstaller()` and `createToolkitSDK()` in `@atlas/sdk`: safe MVP subset (`npm`/`pip`/`cargo`/`go` + `skill` git-clone), approval-gated argument-array spawns, `verifyPath` for non-binary artifacts (skill SKILL.md file-existence check), Tool Manifest provenance, rollback, and CLI rendering of trust/plan before `--yes` execution |
 | Tool Configurator | **[IMPLEMENTED]** | `ConfiguratorPort` + Claude/Gemini/Codex/OpenCode/MCP/VS Code adapters; AgentPort-backed installed-target detection; safe merge, backup, rollback, verification, dry-run; SDK `createConfigurator`; `atlas tools configure` |
 | Tool Security / Trust System | **[IMPLEMENTED]** | `SecurityPort` + `SecurityAssessor` perform offline license/source/dependency/command/permission/maintainer/provenance/repository checks, produce per-check verdicts and risk, map only documented reviews to `reviewed`/`verified`, default to `unverified`, reject hostile metadata, and hard-gate installation. `blocked` cannot be overridden |
 | Tool CLI / Slash Commands (`atlas tools`, `/tools`, `atlas setup`) | **[PARTIAL]** | `atlas tools` overview/search/info/install/remove/update/configure/doctor are SDK-backed; the `atlas tui` surface adding `/toolkit` and `/tools-install <tool>` is **v2 / not shipped**; `atlas setup` remains planned |
@@ -66,7 +66,7 @@ Single source of truth for what each feature is — **verified against the code*
 
 - Parser/graph: namespaces and bare expressions are not extracted.
 - Providers: no streaming; transport errors return `Result` (fixed).
-- Storage: engine `>=22.5.0` vs monorepo `>=20.19.0` (node:sqlite).
+- Storage: engine `>=22.5.0` — now the shared floor for all packages (node:sqlite).
 - CLI: `atlas search`, `atlas mcp`, `atlas sessions`, `atlas usage`, all
   `atlas tools` commands, `atlas context`, `atlas explain`, `atlas doctor`, and
   `atlas init/build/update` are wired through SDK seams; `atlas tui` is v2 /
@@ -75,8 +75,8 @@ Single source of truth for what each feature is — **verified against the code*
   `captureOutput`/`getSessionOutput` **and** interactive `stdio: "inherit"`
   launches); the SDK composes it for sessions (`createSessionManager`) and the
   multi-agent orchestrator (`createOrchestrator`, which drives `SessionPort`),
-  but the **plan-executing orchestrator router** and a standalone `atlas agents`
-  CLI command remain planned.
+  but the **plan-executing orchestrator router** remains planned; the standalone
+  `atlas agents` CLI command (`status`/`connect`) is **implemented**.
 - Agent Toolkit: **registry (Task 19), Tool Manifest (Task 20), Compatibility
   Engine (Task 21), Installer (Task 22), Configurator (Task 23), Security/Trust
   (Task 24), and the SDK-backed CLI (Task 25)** are

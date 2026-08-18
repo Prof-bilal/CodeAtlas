@@ -76,7 +76,8 @@ Ground truth: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) and
 ## Installation
 
 Requirements: **Node.js `>=22.5.0`** (the storage layer uses the built-in
-`node:sqlite`; other packages target `>=20.19.0`). The quickest path is the
+`node:sqlite`; all packages share the same engine floor). The quickest path is
+the
 published global CLI:
 
 ```bash

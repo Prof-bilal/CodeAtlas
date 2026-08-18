@@ -3,27 +3,30 @@ import { dirname, join, relative, resolve } from "node:path";
 import { CacheService } from "@atlas/cache";
 import type {
   ContextData,
+  MetricsPort,
   PersistedDependency,
   PersistedModule,
   Symbol as PersistedSymbol,
   SourceFile,
   Summary,
   SummaryPort,
+  UsagePort,
 } from "@atlas/core";
 import { GraphService } from "@atlas/graph";
 import { HashService } from "@atlas/hashing";
 import { ParserService } from "@atlas/parser";
 import { ScannerService, generateManifest } from "@atlas/scanner";
 import {
+  DEFAULT_CONCURRENCY,
   type FilePath,
   type Result,
-  DEFAULT_CONCURRENCY,
   fail,
   mapWithConcurrency,
   ok,
 } from "@atlas/shared";
 import { ContextStore } from "@atlas/storage";
 import { SummaryService } from "@atlas/summary";
+import { withUsageTracking } from "@atlas/usage";
 import { fileNodeId, symbolNodeId } from "../context/nodes";
 import { createProviderService } from "../providers/index";
 
@@ -38,6 +41,10 @@ export interface IndexRequest {
   readonly summaries?: boolean;
   /** Summary port override (defaults to a provider-backed service). */
   readonly summary?: SummaryPort;
+  /** Optional metrics port; a scan event is recorded when indexing succeeds. */
+  readonly metrics?: MetricsPort;
+  /** Optional usage port; AI summary generation is recorded with actual tokens. */
+  readonly usage?: UsagePort;
 }
 
 export interface IndexResult {
@@ -86,6 +93,7 @@ const USAGE_EDGE_KINDS = new Set([
  * store is merged via `updateContext` rather than replaced wholesale.
  */
 export async function indexProject(request: IndexRequest): Promise<Result<IndexResult>> {
+  const startedAt = performance.now();
   const repositoryPath = resolve(request.repositoryPath);
   const dbPath = resolve(request.dbPath ?? join(repositoryPath, ".codeatlas", "context.db"));
   const scanner = new ScannerService();
@@ -271,7 +279,10 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       const summaryPort =
         request.summary ??
         new SummaryService({
-          provider: createProviderService(),
+          provider:
+            request.usage === undefined
+              ? createProviderService()
+              : withUsageTracking(createProviderService(), request.usage),
           cache: new CacheService(),
           hash: new HashService(),
         });
@@ -310,7 +321,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       store.saveContext(data);
     }
 
-    return ok({
+    const result: IndexResult = {
       repositoryPath,
       dbPath,
       mode,
@@ -326,7 +337,20 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       manifestPath: manifest.value.path,
       summaries: summaries.length,
       summariesFailed,
-    });
+    };
+    if (request.metrics !== undefined) {
+      request.metrics.recordScan({
+        files: sourceFiles.length,
+        lines: totalLines(sourceFiles),
+        symbols: mergedSymbols.length,
+        dependencies: dependencies.length,
+        languages: languageCounts(scan.value.languages),
+        repositoryName: scan.value.name,
+        latencyMs: Math.round(performance.now() - startedAt),
+      });
+    }
+
+    return ok(result);
   } catch (error) {
     return fail(error instanceof Error ? error : new Error(String(error)));
   } finally {
@@ -350,4 +374,24 @@ function buildModules(root: string, paths: readonly string[]): PersistedModule[]
     }
   }
   return modules;
+}
+
+/** Total line count across the given source files. */
+function totalLines(files: readonly SourceFile[]): number {
+  let lines = 0;
+  for (const file of files) {
+    lines += file.content.split("\n").length;
+  }
+  return lines;
+}
+
+/** Count of files per detected language, for the metrics scan event. */
+function languageCounts(
+  languages: readonly { readonly name: string; readonly fileCount: number }[],
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const language of languages) {
+    counts[language.name] = language.fileCount;
+  }
+  return counts;
 }
