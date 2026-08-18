@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resolveAtlasCli, runAtlas } from "../src/atlas-cli";
 
 afterEach(() => {
-  process.env["ATLAS_CLI_JS"] = undefined;
+  // biome-ignore lint/performance/noDelete: must fully remove env var, not set to "undefined"
+  delete process.env["ATLAS_CLI_JS"];
 });
 
 describe("resolveAtlasCli", () => {

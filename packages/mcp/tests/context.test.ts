@@ -89,12 +89,14 @@ describe("CodeAtlasContext", () => {
 
 function restoreEnv(previousRoot: string | undefined, previousDb: string | undefined): void {
   if (previousRoot === undefined) {
-    process.env["ATLAS_ROOT"] = undefined;
+    // biome-ignore lint/performance/noDelete: must fully remove env var, not set to "undefined"
+    delete process.env["ATLAS_ROOT"];
   } else {
     process.env["ATLAS_ROOT"] = previousRoot;
   }
   if (previousDb === undefined) {
-    process.env["ATLAS_DB"] = undefined;
+    // biome-ignore lint/performance/noDelete: must fully remove env var, not set to "undefined"
+    delete process.env["ATLAS_DB"];
   } else {
     process.env["ATLAS_DB"] = previousDb;
   }
