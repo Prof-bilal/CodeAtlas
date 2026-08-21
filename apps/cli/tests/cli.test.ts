@@ -96,6 +96,8 @@ function session(overrides: Partial<Session> = {}): Session {
     endedAt: undefined,
     exitCode: undefined,
     error: undefined,
+    model: undefined,
+    tokenUsage: undefined,
     ...overrides,
   };
 }
@@ -243,6 +245,7 @@ function fakeContextIntegration(overrides: Partial<ContextIntegration> = {}): Co
       ok: false as const,
       error: new Error("brief not configured for this fake"),
     })),
+    getSessionOutput: vi.fn(() => undefined),
     ...overrides,
   };
 }

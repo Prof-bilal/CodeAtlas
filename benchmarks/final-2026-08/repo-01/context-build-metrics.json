@@ -1,0 +1,356 @@
+[
+  {
+    "taskId": "R1-T01",
+    "durationMs": 507,
+    "exitCode": 0,
+    "itemCount": 19,
+    "kinds": {
+      "instructions": 2,
+      "overview": 1,
+      "file": 4,
+      "symbol": 4,
+      "dependency": 8
+    },
+    "estimatedTokens": 5693,
+    "budgetExceeded": null,
+    "budgetRecord": {
+      "budget": {
+        "maxItems": 20,
+        "maxTokensPerItem": 2000,
+        "maxTokensTotal": 12000
+      },
+      "itemsRequested": 19,
+      "itemsIncluded": 19,
+      "tokensEstimated": 5694,
+      "itemsDroppedByCount": [],
+      "itemsTruncated": [],
+      "droppedByTokens": [],
+      "budgetExceeded": false
+    },
+    "stderr": ""
+  },
+  {
+    "taskId": "R1-T02",
+    "durationMs": 467,
+    "exitCode": 0,
+    "itemCount": 20,
+    "kinds": {
+      "instructions": 2,
+      "overview": 1,
+      "symbol": 12,
+      "file": 2,
+      "dependency": 3
+    },
+    "estimatedTokens": 3869,
+    "budgetExceeded": null,
+    "budgetRecord": {
+      "budget": {
+        "maxItems": 20,
+        "maxTokensPerItem": 2000,
+        "maxTokensTotal": 12000
+      },
+      "itemsRequested": 30,
+      "itemsIncluded": 20,
+      "tokensEstimated": 3871,
+      "itemsDroppedByCount": [
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/config/index.d.ts",
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts",
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#logger@3:5",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts#logform@8:13",
+        "dep:n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#loggerOptions@22:7::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#winston@1:13",
+        "dep:n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#logger@3:5::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#winston@1:13",
+        "dep:n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#container@41:5::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#loggerOptions@22:7",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#winston@116:15",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#export=@117:1"
+      ],
+      "itemsTruncated": [],
+      "droppedByTokens": [],
+      "budgetExceeded": false
+    },
+    "stderr": ""
+  },
+  {
+    "taskId": "R1-T03",
+    "durationMs": 504,
+    "exitCode": 0,
+    "itemCount": 20,
+    "kinds": {
+      "instructions": 2,
+      "overview": 1,
+      "symbol": 11,
+      "file": 2,
+      "dependency": 4
+    },
+    "estimatedTokens": 3888,
+    "budgetExceeded": null,
+    "budgetRecord": {
+      "budget": {
+        "maxItems": 20,
+        "maxTokensPerItem": 2000,
+        "maxTokensTotal": 12000
+      },
+      "itemsRequested": 30,
+      "itemsIncluded": 20,
+      "tokensEstimated": 3890,
+      "itemsDroppedByCount": [
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/config/index.d.ts",
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts",
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#winston@116:15",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#export=@117:1",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#Agent@6:10",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#logger@3:5",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts#logform@8:13",
+        "dep:n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#loggerOptions@22:7::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#winston@1:13",
+        "dep:n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#logger@3:5::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#winston@1:13"
+      ],
+      "itemsTruncated": [],
+      "droppedByTokens": [],
+      "budgetExceeded": false
+    },
+    "stderr": ""
+  },
+  {
+    "taskId": "R1-T04",
+    "durationMs": 480,
+    "exitCode": 0,
+    "itemCount": 20,
+    "kinds": {
+      "instructions": 2,
+      "overview": 1,
+      "symbol": 10,
+      "file": 4,
+      "dependency": 3
+    },
+    "estimatedTokens": 5662,
+    "budgetExceeded": null,
+    "budgetRecord": {
+      "budget": {
+        "maxItems": 20,
+        "maxTokensPerItem": 2000,
+        "maxTokensTotal": 12000
+      },
+      "itemsRequested": 26,
+      "itemsIncluded": 20,
+      "tokensEstimated": 5664,
+      "itemsDroppedByCount": [
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts::references::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#Agent@6:10",
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/config/index.d.ts",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts#winston@1:7",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts#wLogger@25:7",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts#config@3:7",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts::exports::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts#default@109:1"
+      ],
+      "itemsTruncated": [],
+      "droppedByTokens": [],
+      "budgetExceeded": false
+    },
+    "stderr": ""
+  },
+  {
+    "taskId": "R1-T05",
+    "durationMs": 477,
+    "exitCode": 0,
+    "itemCount": 20,
+    "kinds": {
+      "instructions": 2,
+      "overview": 1,
+      "symbol": 11,
+      "file": 2,
+      "dependency": 4
+    },
+    "estimatedTokens": 3888,
+    "budgetExceeded": null,
+    "budgetRecord": {
+      "budget": {
+        "maxItems": 20,
+        "maxTokensPerItem": 2000,
+        "maxTokensTotal": 12000
+      },
+      "itemsRequested": 30,
+      "itemsIncluded": 20,
+      "tokensEstimated": 3890,
+      "itemsDroppedByCount": [
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/config/index.d.ts",
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts",
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#winston@116:15",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#export=@117:1",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#Agent@6:10",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#logger@3:5",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts#logform@8:13",
+        "dep:n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#loggerOptions@22:7::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#winston@1:13",
+        "dep:n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#logger@3:5::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#winston@1:13"
+      ],
+      "itemsTruncated": [],
+      "droppedByTokens": [],
+      "budgetExceeded": false
+    },
+    "stderr": ""
+  },
+  {
+    "taskId": "R1-T06",
+    "durationMs": 469,
+    "exitCode": 0,
+    "itemCount": 20,
+    "kinds": {
+      "instructions": 2,
+      "overview": 1,
+      "symbol": 9,
+      "file": 5,
+      "dependency": 3
+    },
+    "estimatedTokens": 6295,
+    "budgetExceeded": null,
+    "budgetRecord": {
+      "budget": {
+        "maxItems": 20,
+        "maxTokensPerItem": 2000,
+        "maxTokensTotal": 12000
+      },
+      "itemsRequested": 39,
+      "itemsIncluded": 20,
+      "tokensEstimated": 6295,
+      "itemsDroppedByCount": [
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#winston@1:13",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#err@11:5",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#container@41:5",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#winston@116:15",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#export=@117:1",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#Transport@8:13",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#Agent@6:10",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/config/index.d.ts#winston@98:15",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/config/index.d.ts#export=@99:1",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts#export=@208:1",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts#Transports@12:13",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts#Transport@9:13",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts#NodeJSStream@6:13",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts#Config@11:13",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts::writes::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#logger@3:5",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#logger@3:5",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts#logform@8:13",
+        "dep:n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#loggerOptions@22:7::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#winston@1:13",
+        "dep:n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#logger@3:5::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#winston@1:13"
+      ],
+      "itemsTruncated": [],
+      "droppedByTokens": [],
+      "budgetExceeded": false
+    },
+    "stderr": ""
+  },
+  {
+    "taskId": "R1-T07",
+    "durationMs": 451,
+    "exitCode": 0,
+    "itemCount": 20,
+    "kinds": {
+      "instructions": 2,
+      "overview": 1,
+      "symbol": 11,
+      "file": 3,
+      "dependency": 3
+    },
+    "estimatedTokens": 4309,
+    "budgetExceeded": null,
+    "budgetRecord": {
+      "budget": {
+        "maxItems": 20,
+        "maxTokensPerItem": 2000,
+        "maxTokensTotal": 12000
+      },
+      "itemsRequested": 33,
+      "itemsIncluded": 20,
+      "tokensEstimated": 4310,
+      "itemsDroppedByCount": [
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/config/index.d.ts",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#container@41:5",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts#winston@1:7",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts#wLogger@25:7",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts#config@3:7",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts::exports::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts#default@109:1",
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/index.d.ts",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#winston@116:15",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#export=@117:1",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts#Agent@6:10",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#winston@1:13",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#logger@3:5",
+        "symbol:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#level@48:7"
+      ],
+      "itemsTruncated": [],
+      "droppedByTokens": [],
+      "budgetExceeded": false
+    },
+    "stderr": ""
+  },
+  {
+    "taskId": "R1-T08",
+    "durationMs": 455,
+    "exitCode": 0,
+    "itemCount": 25,
+    "kinds": {
+      "instructions": 2,
+      "overview": 1,
+      "symbol": 11,
+      "file": 3,
+      "dependency": 8
+    },
+    "estimatedTokens": 5404,
+    "budgetExceeded": null,
+    "budgetRecord": {
+      "budget": {
+        "maxItems": 20,
+        "maxTokensPerItem": 2000,
+        "maxTokensTotal": 12000
+      },
+      "itemsRequested": 27,
+      "itemsIncluded": 25,
+      "tokensEstimated": 5405,
+      "itemsDroppedByCount": [
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts",
+        "file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/lib/winston/transports/index.d.ts"
+      ],
+      "itemsTruncated": [],
+      "droppedByTokens": [],
+      "budgetExceeded": false
+    },
+    "stderr": ""
+  },
+  {
+    "taskId": "R1-T09",
+    "durationMs": 461,
+    "exitCode": 0,
+    "itemCount": 20,
+    "kinds": {
+      "instructions": 2,
+      "overview": 1,
+      "file": 4,
+      "symbol": 11,
+      "dependency": 2
+    },
+    "estimatedTokens": 5682,
+    "budgetExceeded": null,
+    "budgetRecord": {
+      "budget": {
+        "maxItems": 20,
+        "maxTokensPerItem": 2000,
+        "maxTokensTotal": 12000
+      },
+      "itemsRequested": 26,
+      "itemsIncluded": 20,
+      "tokensEstimated": 5682,
+      "itemsDroppedByCount": [
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts::writes::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#container@41:5",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#logger@3:5",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#err@11:5",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/test/typescript-definitions.ts#container@41:5",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts#winston@1:7",
+        "dep:n:file:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts::reads::n:/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/examples/ready-to-use-pattern.ts#wLogger@25:7"
+      ],
+      "itemsTruncated": [],
+      "droppedByTokens": [],
+      "budgetExceeded": false
+    },
+    "stderr": ""
+  }
+]

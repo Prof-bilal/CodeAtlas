@@ -7,6 +7,31 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Releases are cut from the published `codeatlas-cli`; the changelog tracks the
 npm versions.
 
+## [0.3.0] - 2026-08-18
+
+### Added
+
+- **First npm publication of the `@atlas/*` workspace packages** — all 18
+  packages (core, shared, toolkit, sdk, parser, search, storage, …) are now
+  published to the npm registry at `0.0.0`, so `@atlas/toolkit`,
+  `@atlas/sdk`, and the rest are installable on their own.
+- **Incremental no-op fast path** — `atlas update` with no changes now reads
+  only the persisted hash table for change detection and skips the parse,
+  graph rebuild, and database rewrite entirely (a single saved-at metadata
+  row is refreshed). A full `build` no longer reads the previous snapshot
+  either.
+- **Conditional VACUUM** — `ContextStore.compact()` only runs `VACUUM` when
+  free pages are a meaningful share (≥20%) of the database file, so
+  steady-state updates no longer pay a full file rewrite every run.
+- **Bounded search index** — the `@atlas/search` index retains at most
+  `MAX_INDEXED_CONTENT_CHARS` (2,000) of file content per entry instead of
+  the full body, capping index memory on huge files; winning hits fetch the
+  full body from the database on demand.
+
+### Changed
+
+- `codeatlas-cli` promoted from `0.3.0-beta.0` to stable `0.3.0`.
+
 ## [0.3.0-beta.0] - 2026-08-17
 
 ### Added

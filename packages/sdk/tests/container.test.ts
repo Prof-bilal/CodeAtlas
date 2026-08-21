@@ -50,7 +50,16 @@ describe("Container", () => {
 
   it("honors custom implementations for any port", () => {
     const customProvider: ProviderPort = {
-      complete: async () => ({ ok: true, value: { provider: "custom", content: "", model: "x" } }),
+      complete: async () => ({
+        ok: true,
+        value: {
+          provider: "custom",
+          content: "",
+          model: "x",
+          usage: undefined,
+          toolCalls: undefined,
+        },
+      }),
     };
     const container = Container.create({ provider: customProvider });
     expect(container.getProvider()).toBe(customProvider);

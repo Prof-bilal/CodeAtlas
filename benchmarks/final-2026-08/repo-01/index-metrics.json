@@ -1,0 +1,24 @@
+{
+  "durationMs": 658,
+  "exitCode": 0,
+  "stdout": "{\n  \"repositoryPath\": \"/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01\",\n  \"dbPath\": \"/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/.codeatlas/context.db\",\n  \"mode\": \"build\",\n  \"files\": 5,\n  \"parsedFiles\": 5,\n  \"skippedFiles\": 0,\n  \"symbols\": 23,\n  \"dependencies\": 34,\n  \"added\": 116,\n  \"changed\": 0,\n  \"deleted\": 0,\n  \"unchanged\": 0,\n  \"manifestPath\": \"/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/.codeatlas/manifest.json\",\n  \"summaries\": 0,\n  \"summariesFailed\": 0\n}\nSkipped installing recommended tools.\n",
+  "stderr": "",
+  "parsed": {
+    "repositoryPath": "/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01",
+    "dbPath": "/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/.codeatlas/context.db",
+    "mode": "build",
+    "files": 5,
+    "parsedFiles": 5,
+    "skippedFiles": 0,
+    "symbols": 23,
+    "dependencies": 34,
+    "added": 116,
+    "changed": 0,
+    "deleted": 0,
+    "unchanged": 0,
+    "manifestPath": "/home/abdullah/CodeAtlas/benchmarks/final-2026-08/repos/repo-01/.codeatlas/manifest.json",
+    "summaries": 0,
+    "summariesFailed": 0
+  },
+  "indexSizeBytes": 263774
+}

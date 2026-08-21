@@ -1,4 +1,5 @@
 import type { Brand, Result } from "@atlas/shared";
+import type { TokenUsage } from "./provider.port";
 
 /**
  * A typed identifier for an agent inside a session. Today the session manager
@@ -32,6 +33,10 @@ export interface Session {
   readonly exitCode: number | null | undefined;
   /** Safe, human-readable failure detail — never secrets, keys, or env. */
   readonly error: string | undefined;
+  /** Model identifier that last answered the prompt (when provider is a chat agent). */
+  readonly model: string | undefined;
+  /** Exact token usage reported by the provider, when available. */
+  readonly tokenUsage: TokenUsage | undefined;
 }
 
 /** What {@link SessionPort.createSession} needs. */
@@ -78,6 +83,50 @@ export interface SessionLaunchRequest {
 export interface SessionOutput {
   readonly stdout: string;
   readonly stderr: string;
+}
+
+/**
+ * A provider-backed chat agent session — does not spawn an external process
+ * but instead makes a single provider call (via ProviderPort) and returns the
+ * model's answer.
+ *
+ * Used when `provider` is not one of the built-in CLI adapters (e.g. `"ollama"`).
+ * The session lifecycle is managed by the same `SessionPort` machinery; the
+ * runner returns its result as the captured output so callers can render it.
+ */
+export interface ChatAgentPort {
+  /** Provider ids this runner can execute, e.g. `["ollama"]`. */
+  readonly providers: readonly string[];
+  /** Whether the given provider is handled by this runner. */
+  handles(provider: string): boolean;
+  /** Run one non-interactive chat turn for the given provider.
+   *
+   * The prompt is sent to the provider (via its `complete`/`chatCompletion` path)
+   * and the model's reply content is captured as `stdout` in the result.
+   */
+  run(request: ChatAgentRequest): Promise<Result<ChatAgentResult>>;
+}
+
+/** Arguments for one chat-agent run. */
+export interface ChatAgentRequest {
+  /** Provider id, e.g. `"ollama"`. Must be listed in the runner's `providers`. */
+  readonly provider: string;
+  /** Prompt / task text forwarded to the model. */
+  readonly prompt: string;
+  /** Optional repository path context; supplied by the session manager. */
+  readonly repositoryPath: string;
+}
+
+/** Result of one chat-agent run. */
+export interface ChatAgentResult {
+  /** Model identifier that answered the prompt. */
+  readonly model: string | undefined;
+  /** The model's reply content. */
+  readonly content: string;
+  /** Wall-clock duration of the turn, in milliseconds. */
+  readonly durationMs: number;
+  /** Exact token usage reported by the provider, when available. */
+  readonly tokenUsage: TokenUsage | undefined;
 }
 
 /**

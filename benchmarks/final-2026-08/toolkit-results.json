@@ -1,0 +1,82 @@
+[
+  {
+    "command": "atlas tools overview --json",
+    "args": [
+      "tools",
+      "overview",
+      "--json"
+    ],
+    "durationMs": 380,
+    "exitCode": 1,
+    "stdoutPreview": ""
+  },
+  {
+    "command": "atlas tools categories --json",
+    "args": [
+      "tools",
+      "categories",
+      "--json"
+    ],
+    "durationMs": 382,
+    "exitCode": 0,
+    "stdoutPreview": "[\n  \"AI Quality\",\n  \"Developer Productivity\",\n  \"Code Analysis\",\n  \"CLI Utilities\",\n  \"Testing\",\n  \"MCP\",\n  \"Agent Tools\",\n  \"AI Coding\",\n  \"Context\"\n]\n"
+  },
+  {
+    "command": "atlas tools search formatter --json",
+    "args": [
+      "tools",
+      "search",
+      "formatter",
+      "--json"
+    ],
+    "durationMs": 382,
+    "exitCode": 0,
+    "stdoutPreview": "[\n  {\n    \"name\": \"biome\",\n    \"description\": \"A fast linter and formatter for JavaScript and TypeScript with import sorting, organization, and first-class editor integration.\",\n    \"license\": \"MIT\",\n    \"version\": \"1.9.4\",\n    \"categories\": [\n      \"AI Quality\",\n      \"Developer Productivity\",\n      \"Code Analysis\"\n    ],\n    \"repository\": \"https://github.com/biomejs/biome\",\n    \"website\": \"https://biomejs.dev\",\n    \"documentation\": \"https://biomejs.dev/guides/getting-started/\",\n    \"supportedOs\": [\n      \"win32\",\n      \"linux\",\n      \"darwin\"\n    ],\n    \"supportedAgents\": [],\n    \"installMet"
+  },
+  {
+    "command": "atlas tools search linter --json",
+    "args": [
+      "tools",
+      "search",
+      "linter",
+      "--json"
+    ],
+    "durationMs": 395,
+    "exitCode": 0,
+    "stdoutPreview": "[\n  {\n    \"name\": \"biome\",\n    \"description\": \"A fast linter and formatter for JavaScript and TypeScript with import sorting, organization, and first-class editor integration.\",\n    \"license\": \"MIT\",\n    \"version\": \"1.9.4\",\n    \"categories\": [\n      \"AI Quality\",\n      \"Developer Productivity\",\n      \"Code Analysis\"\n    ],\n    \"repository\": \"https://github.com/biomejs/biome\",\n    \"website\": \"https://biomejs.dev\",\n    \"documentation\": \"https://biomejs.dev/guides/getting-started/\",\n    \"supportedOs\": [\n      \"win32\",\n      \"linux\",\n      \"darwin\"\n    ],\n    \"supportedAgents\": [],\n    \"installMet"
+  },
+  {
+    "command": "atlas tools info ripgrep --json",
+    "args": [
+      "tools",
+      "info",
+      "ripgrep",
+      "--json"
+    ],
+    "durationMs": 409,
+    "exitCode": 0,
+    "stdoutPreview": "{\n  \"tool\": {\n    \"name\": \"ripgrep\",\n    \"description\": \"A line-oriented, regex-based recursive search tool that respects gitignore rules and is extremely fast on large trees.\",\n    \"license\": \"MIT OR Unlicense\",\n    \"version\": \"14.1.1\",\n    \"categories\": [\n      \"Code Analysis\",\n      \"CLI Utilities\"\n    ],\n    \"repository\": \"https://github.com/BurntSushi/ripgrep\",\n    \"website\": null,\n    \"documentation\": \"https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md\",\n    \"supportedOs\": [\n      \"win32\",\n      \"linux\",\n      \"darwin\"\n    ],\n    \"supportedAgents\": [],\n    \"installMethods\": [\n   "
+  },
+  {
+    "command": "atlas tools doctor --json",
+    "args": [
+      "tools",
+      "doctor",
+      "--json"
+    ],
+    "durationMs": 393,
+    "exitCode": 0,
+    "stdoutPreview": "[]\n"
+  },
+  {
+    "command": "atlas agents status --json",
+    "args": [
+      "agents",
+      "status",
+      "--json"
+    ],
+    "durationMs": 1616,
+    "exitCode": 0,
+    "stdoutPreview": "{\n  \"entries\": [\n    {\n      \"target\": \"claude\",\n      \"label\": \"Claude\",\n      \"available\": true,\n      \"filePath\": \"/home/abdullah/.claude.json\",\n      \"configured\": false,\n      \"detail\": \"agent detected (2.1.233)\"\n    },\n    {\n      \"target\": \"gemini\",\n      \"label\": \"Gemini\",\n      \"available\": false,\n      \"filePath\": \"/home/abdullah/.gemini/settings.json\",\n      \"configured\": false,\n      \"detail\": \"agent is not installed or could not be detected\"\n    },\n    {\n      \"target\": \"codex\",\n      \"label\": \"Codex\",\n      \"available\": false,\n      \"filePath\": \"/home/abdullah/.codex/config.toml\""
+  }
+]

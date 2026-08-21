@@ -111,6 +111,8 @@ function createFakeSessions(): FakeSessions {
         endedAt: undefined,
         exitCode: undefined,
         error: undefined,
+        model: undefined,
+        tokenUsage: undefined,
       };
       sessions.set(session.id, session);
       return ok(session);
@@ -217,6 +219,9 @@ function createFakeIntegration(): FakeIntegration {
     },
     async brief() {
       return fail(new Error("unused in orchestrator tests"));
+    },
+    getSessionOutput() {
+      return undefined;
     },
   };
   return { port, buildInputs };

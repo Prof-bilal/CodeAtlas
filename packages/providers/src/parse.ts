@@ -1,4 +1,4 @@
-import type { TokenUsage } from "@atlas/core";
+import type { TokenUsage, ToolCall } from "@atlas/core";
 
 /** True for 2xx HTTP status codes. */
 export function isOkStatus(status: number): boolean {
@@ -56,4 +56,31 @@ export function chatCompletionContent(root: Record<string, unknown> | null): str
 export function chatCompletionUsage(root: Record<string, unknown> | null): TokenUsage | null {
   const usage = asObject(root?.["usage"]);
   return usageFrom(getNumber(usage, "prompt_tokens"), getNumber(usage, "completion_tokens"));
+}
+
+/** Extract tool calls from an OpenAI-compatible chat response. */
+export function chatCompletionToolCalls(root: Record<string, unknown> | null): readonly ToolCall[] {
+  const choicesValue = root?.["choices"];
+  const choices = Array.isArray(choicesValue) ? choicesValue : [];
+  const first = asObject(choices[0]);
+  const message = asObject(first?.["message"]);
+  const toolCalls = message?.["tool_calls"];
+  if (!Array.isArray(toolCalls)) {
+    return [];
+  }
+  return toolCalls
+    .map((tc) => asObject(tc))
+    .filter((tc): tc is Record<string, unknown> => tc !== null)
+    .map((tc) => {
+      const id = getString(tc, "id") ?? "";
+      const type = getString(tc, "type");
+      const fn = asObject(tc["function"]);
+      const name = getString(fn, "name") ?? "";
+      const arguments_ = getString(fn, "arguments") ?? "{}";
+      if (type === "function" && id && name) {
+        return { id, type: "function" as const, function: { name, arguments: arguments_ } };
+      }
+      return null;
+    })
+    .filter((tc): tc is ToolCall => tc !== null);
 }

@@ -1,6 +1,8 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import type { ChatAgentPort, ChatAgentResult } from "@atlas/core";
+import type { Result } from "@atlas/shared";
 import { afterEach, describe, expect, it } from "vitest";
 import { AgentCliNotFoundError, UnknownAgentError } from "../src/errors";
 import { ProcessRunner } from "../src/process";
@@ -22,6 +24,7 @@ interface ManagerOptions {
   readonly killGraceMs?: number;
   readonly maxRetainedSessions?: number;
   readonly resolveExecutable?: (binary: string) => string | null;
+  readonly chatAgents?: readonly ChatAgentPort[];
 }
 
 function makeManager(options: ManagerOptions = {}): {
@@ -39,6 +42,7 @@ function makeManager(options: ManagerOptions = {}): {
     ...(options.maxRetainedSessions !== undefined
       ? { maxRetainedSessions: options.maxRetainedSessions }
       : {}),
+    ...(options.chatAgents !== undefined ? { chatAgents: options.chatAgents } : {}),
   });
   return { manager, fake };
 }
@@ -623,3 +627,105 @@ function expectOk<T>(result: { ok: true; value: T } | { ok: false; error: unknow
   }
   return result.value;
 }
+
+/** Create a fake ChatAgentPort that returns fixed content for handled providers. */
+function fakeChatAgent(providers: readonly string[], response?: ChatAgentResult): ChatAgentPort {
+  return {
+    providers,
+    handles(provider: string): boolean {
+      return providers.includes(provider);
+    },
+    async run(): Promise<Result<ChatAgentResult>> {
+      return {
+        ok: true as const,
+        value: response ?? {
+          model: "test-model",
+          content: "test response",
+          durationMs: 42,
+          tokenUsage: undefined,
+        },
+      };
+    },
+  };
+}
+
+describe("SessionManager — chat agent dispatch", () => {
+  it("createSession accepts a chat-agent provider", () => {
+    const repo = makeRepo();
+    const manager = new SessionManager({
+      chatAgents: [fakeChatAgent(["ollama"])],
+      resolveExecutable: installedResolver(),
+    });
+    const result = manager.createSession({ provider: "ollama", repositoryPath: repo });
+    expect(result.ok).toBe(true);
+  });
+
+  it("startSession dispatches to chat agent and returns terminal session with output", async () => {
+    const repo = makeRepo();
+    const chatContent = "The answer is 42.";
+    const chatAgent = fakeChatAgent(["ollama"], {
+      model: "llama3.2",
+      content: chatContent,
+      durationMs: 100,
+      tokenUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+    });
+    const manager = new SessionManager({
+      chatAgents: [chatAgent],
+      resolveExecutable: installedResolver(),
+    });
+    const created = expectOk(manager.createSession({ provider: "ollama", repositoryPath: repo }));
+    const session = await manager.startSession(created.id, { prompt: "What is the meaning?" });
+    expect(session.ok).toBe(true);
+    if (session.ok) {
+      expect(session.value.status).toBe("STOPPED");
+      expect(session.value.model).toBe("llama3.2");
+      expect(session.value.exitCode).toBe(0);
+      expect(session.value.tokenUsage).toEqual({
+        inputTokens: 10,
+        outputTokens: 5,
+        totalTokens: 15,
+      });
+      const output = manager.getSessionOutput(session.value.id);
+      expect(output?.stdout).toBe(chatContent);
+      expect(output?.stderr).toBe("");
+    }
+  });
+
+  it("startSession reports failure when chat agent returns error", async () => {
+    const repo = makeRepo();
+    const failingAgent: ChatAgentPort = {
+      providers: ["ollama"],
+      handles: (p) => p === "ollama",
+      async run() {
+        return { ok: false as const, error: new Error("model not found") };
+      },
+    };
+    const manager = new SessionManager({
+      chatAgents: [failingAgent],
+      resolveExecutable: installedResolver(),
+    });
+    const created = expectOk(manager.createSession({ provider: "ollama", repositoryPath: repo }));
+    const session = await manager.startSession(created.id);
+    expect(session.ok).toBe(false);
+  });
+
+  it("startSession falls through to process path when no chat agent handles provider", async () => {
+    const repo = makeRepo();
+    const { manager } = makeManager({
+      resolveExecutable: installedResolver(),
+      chatAgents: [fakeChatAgent(["ollama"])],
+    });
+    const created = expectOk(manager.createSession({ provider: "claude", repositoryPath: repo }));
+    // startSession will try to resolve the claude binary (found via installedResolver),
+    // then attempt to spawn (which will fail because the process runner's spawn doesn't
+    // produce a real process), but the important thing is it does NOT dispatch to the chat agent.
+    const session = await manager.startSession(created.id);
+    // The session either starts (process path) or fails (no real CLI), but it does NOT
+    // dispatch to the chat agent. If it went through the chat agent, it would be STOPPED
+    // with the chat agent's output.
+    if (session.ok) {
+      // Process path was taken: session is RUNNING (or terminal from fast exit)
+      expect(session.value.status).not.toBe("STOPPED");
+    }
+  });
+});

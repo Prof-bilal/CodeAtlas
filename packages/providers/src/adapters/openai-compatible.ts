@@ -9,7 +9,6 @@ import {
   chatCompletionUsage,
   getString,
   isOkStatus,
-  withUsage,
 } from "../parse";
 import type { HttpResponse, HttpTransport } from "../transport";
 
@@ -50,6 +49,7 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
       ...(request.maxTokens !== undefined ? { max_tokens: request.maxTokens } : {}),
       ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
       ...(request.json === true ? { response_format: { type: "json_object" } } : {}),
+      // Note: tools and toolChoice are OpenAI-specific; omitted for generic compat
     };
     let response: HttpResponse;
     try {
@@ -65,11 +65,13 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
       return fail(new ProviderRequestError(this.name, response.status, response.json));
     }
     const root = asObject(response.json);
+    const usage = chatCompletionUsage(root);
     return ok({
       provider: this.name,
       content: chatCompletionContent(root),
       model: getString(root, "model") ?? model,
-      ...withUsage(chatCompletionUsage(root)),
+      usage: usage ?? undefined,
+      toolCalls: undefined,
     });
   }
 }

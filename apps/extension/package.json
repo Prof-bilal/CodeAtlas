@@ -1,6 +1,7 @@
 {
   "name": "@atlas/extension",
   "displayName": "CodeAtlas",
+  "private": true,
   "description": "AI context for your codebase, right in the editor. Search symbols, explore dependencies, view summaries, and run atlas build/update.",
   "version": "0.0.0",
   "publisher": "codeatlas",

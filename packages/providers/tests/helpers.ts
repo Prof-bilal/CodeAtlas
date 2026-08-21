@@ -34,6 +34,12 @@ export function createFakeTransport(responses: readonly HttpResponse[]): {
         calls.push({ url, headers, body: undefined });
         return next();
       },
+      async postStream(url, headers, body, onChunk) {
+        calls.push({ url, headers, body });
+        // For testing, just call onChunk with a final chunk
+        onChunk({ text: "", toolCalls: [], usage: null, done: true });
+        return next();
+      },
     },
     calls,
   };

@@ -1,0 +1,112 @@
+{
+  "repository": "repo-04",
+  "name": "rxjs",
+  "version": "7.8.2",
+  "files": 1288,
+  "tasks": [
+    {
+      "id": "R4-T01",
+      "category": "repository-understanding",
+      "prompt": "Explain the architecture of this repository and identify the major modules (core Observable, Subject variants, operators, creation functions, schedulers). Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "src/internal/Observable.ts",
+        "src/internal/Subject.ts",
+        "src/internal/operators/index.ts",
+        "src/internal/scheduler/index.ts",
+        "src/index.ts"
+      ],
+      "expected_concepts": ["Observable", "Subject", "operators", "creation functions", "Scheduler", "Subscription"],
+      "evaluation_method": "Manual review. Score 2 if Observable/Subject/operators/creation/schedulers modules are correctly identified. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R4-T02",
+      "category": "file-discovery",
+      "prompt": "Find where Subject is implemented and explain how it multicasts values to multiple observers. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "src/internal/Subject.ts",
+        "src/internal/Subscription.ts",
+        "src/internal/Observable.ts"
+      ],
+      "expected_concepts": ["Subject", "observers", "next", "multicast", "subscribe", "teardown"],
+      "evaluation_method": "Manual review. Score 2 if Subject's observer list and next/subscribe behavior are correctly described. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R4-T03",
+      "category": "dependency-tracing",
+      "prompt": "Trace how a value flows from an observable created with of() that is piped through map(), down to a subscriber's next callback, including subscription and teardown. Identify the important files and functions. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "src/internal/observable/of.ts",
+        "src/internal/operators/map.ts",
+        "src/internal/Subscriber.ts",
+        "src/internal/Subscription.ts",
+        "src/internal/operators/OperatorSubscriber.ts"
+      ],
+      "expected_concepts": ["subscribe", "operator chain", "Subscriber", "lift", "pipe", "teardown"],
+      "evaluation_method": "Manual review. Score 2 if of -> map operator -> Subscriber.next chain is correctly traced. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R4-T04",
+      "category": "bug-investigation",
+      "prompt": "A user reports that switchMap does not cancel the previous inner observable when a new value arrives, causing old requests to still complete. Investigate the switchMap implementation and identify what controls inner subscription cancellation and where a bug could hide. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "src/internal/operators/switchMap.ts",
+        "src/internal/Subscriber.ts",
+        "src/internal/Subscription.ts",
+        "src/internal/operators/OperatorSubscriber.ts"
+      ],
+      "expected_concepts": ["switchMap", "inner subscription", "innerSub", "unsubscribe", "outerNext"],
+      "evaluation_method": "Manual review. Score 2 if switchMap and inner-subscription cancellation mechanics are correctly identified. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R4-T05",
+      "category": "feature-planning",
+      "prompt": "Plan how to add a new operator (for example a 'pluck' operator that emits a nested property of each value) to this library. Identify the files, types, and tests that would need to change or be added. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "src/internal/operators/map.ts",
+        "src/internal/operators/index.ts",
+        "src/operators/index.ts",
+        "spec/operators/map-spec.ts"
+      ],
+      "expected_concepts": ["operator function", "OperatorFunction", "map", "export", "spec test"],
+      "evaluation_method": "Manual review. Score 2 if the plan identifies operator implementation, exports, and a spec file. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R4-T06",
+      "category": "code-modification",
+      "prompt": "Write the exact code for a new creation function rangeOf(start, count) that emits count numbers starting at start, following the conventions of existing creation functions. Identify precisely which files implement creation functions and where it would be exported, and provide the exact code. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "src/internal/observable/range.ts",
+        "src/internal/observable/of.ts",
+        "src/index.ts",
+        "spec/observables/range-spec.ts"
+      ],
+      "expected_concepts": ["creation function", "range", "subscriber", "export", "subscribe"],
+      "evaluation_method": "Manual review. Score 2 if creation-function conventions are identified and the implementation is plausible. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R4-T07",
+      "category": "testing",
+      "prompt": "Find the existing tests for the debounceTime operator and explain what behavior they cover, including any test scheduler usage. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific test files you inspected.",
+      "expected_files": [
+        "spec/operators/debounceTime-spec.ts",
+        "src/internal/operators/debounceTime.ts",
+        "src/internal/testing/TestScheduler.ts"
+      ],
+      "expected_concepts": ["debounceTime", "marble tests", "TestScheduler", "hot", "cold", "scheduler"],
+      "evaluation_method": "Manual review. Score 2 if the debounceTime spec and TestScheduler usage are correctly described. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R4-T08",
+      "category": "cross-file-reasoning",
+      "prompt": "Explain how BehaviorSubject differs from Subject and ReplaySubject in how they buffer and replay values to late subscribers. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "src/internal/Subject.ts",
+        "src/internal/BehaviorSubject.ts",
+        "src/internal/ReplaySubject.ts",
+        "src/internal/AsyncSubject.ts"
+      ],
+      "expected_concepts": ["BehaviorSubject", "current value", "ReplaySubject", "buffer", "replay", "_value"],
+      "evaluation_method": "Manual review. Score 2 if the buffering/replay differences are correctly explained. 1 if partial. 0 if wrong."
+    }
+  ]
+}

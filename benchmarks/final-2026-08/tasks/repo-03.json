@@ -1,0 +1,115 @@
+{
+  "repository": "repo-03",
+  "name": "axios",
+  "version": "1.20.0",
+  "files": 466,
+  "tasks": [
+    {
+      "id": "R3-T01",
+      "category": "repository-understanding",
+      "prompt": "Explain the architecture of this repository and identify the major modules (core, adapters, helpers, platform, defaults) and how a request flows through them. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/axios.js",
+        "lib/core/Axios.js",
+        "lib/adapters/adapters.js",
+        "lib/defaults/index.js",
+        "lib/platform/node/index.js"
+      ],
+      "expected_concepts": ["Axios", "adapter", "interceptors", "dispatchRequest", "defaults", "platform"],
+      "evaluation_method": "Manual review. Score 2 if core/adapters/platform modules and the request flow are correctly described. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R3-T02",
+      "category": "file-discovery",
+      "prompt": "Find where the HTTP adapter is selected and implemented for Node.js, and explain how it builds and sends a request. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/adapters/adapters.js",
+        "lib/adapters/http.js",
+        "lib/platform/node/index.js"
+      ],
+      "expected_concepts": ["getAdapter", "http adapter", "dispatchRequest", "http/https module", "settle"],
+      "evaluation_method": "Manual review. Score 2 if adapter selection and the http adapter flow are correctly described. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R3-T03",
+      "category": "dependency-tracing",
+      "prompt": "Trace how a request flows from calling axios.get(url) to the actual HTTP request and back to a resolved response, including the interceptor chain and response transformation. Identify the important files and functions. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/axios.js",
+        "lib/core/Axios.js",
+        "lib/core/dispatchRequest.js",
+        "lib/core/InterceptorManager.js",
+        "lib/adapters/http.js",
+        "lib/core/settle.js",
+        "lib/core/transformData.js"
+      ],
+      "expected_concepts": ["request()", "interceptor chain", "dispatchRequest", "adapter", "settle", "transformResponse"],
+      "evaluation_method": "Manual review. Score 2 if the full chain get -> interceptors -> dispatchRequest -> adapter -> settle is traced with correct files. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R3-T04",
+      "category": "bug-investigation",
+      "prompt": "A user reports that a 204 No Content response causes a JSON parse error in their Node.js app. Investigate how response data is transformed and where empty responses are handled. Identify the files and functions most likely responsible and what the likely cause is. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/core/settle.js",
+        "lib/core/transformData.js",
+        "lib/adapters/http.js",
+        "lib/helpers/validator.js"
+      ],
+      "expected_concepts": ["transformResponse", "empty response", "responseType", "JSON.parse", "status 204"],
+      "evaluation_method": "Manual review. Score 2 if transformData/settle and empty-body handling are identified with a plausible cause. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R3-T05",
+      "category": "feature-planning",
+      "prompt": "Plan how to add support for a custom adapter (for example a mock/in-memory adapter). Identify the files, interfaces, and configuration points that would need to change. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/adapters/adapters.js",
+        "lib/core/Axios.js",
+        "lib/core/dispatchRequest.js",
+        "lib/defaults/index.js"
+      ],
+      "expected_concepts": ["adapter", "config.adapter", "adapter contract", "dispatchRequest", "defaults"],
+      "evaluation_method": "Manual review. Score 2 if the plan identifies the adapter selection point and contract. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R3-T06",
+      "category": "code-modification",
+      "prompt": "Write the exact code change needed to add a default request header 'X-Client-Version' sent with every request. Identify precisely which files define default headers and provide the exact code you would modify. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/defaults/index.js",
+        "lib/core/AxiosHeaders.js"
+      ],
+      "expected_concepts": ["defaults.headers", "headers.common", "AxiosHeaders", "default headers"],
+      "evaluation_method": "Manual review. Score 2 if defaults/index.js and headers.common are identified and the code change is plausible. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R3-T07",
+      "category": "testing",
+      "prompt": "Find the existing tests that cover request cancellation/aborting and explain what behavior is covered. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific test files you inspected.",
+      "expected_files": [
+        "tests/unit/cancel/canceledError.test.js",
+        "tests/unit/cancel/isCancel.test.js",
+        "tests/unit/helpers/composeSignals.test.js",
+        "lib/cancel/CanceledError.js",
+        "lib/cancel/CancelToken.js",
+        "lib/cancel/isCancel.js"
+      ],
+      "expected_concepts": ["cancel", "AbortController", "signal", "CanceledError", "CancelToken"],
+      "evaluation_method": "Manual review. Score 2 if cancel tests and the cancel implementation files are identified and coverage summarized. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R3-T08",
+      "category": "cross-file-reasoning",
+      "prompt": "Explain how AxiosHeaders and InterceptorManager cooperate during a request: how headers are normalized before dispatch and how interceptors wrap the request/response chain. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/core/AxiosHeaders.js",
+        "lib/core/InterceptorManager.js",
+        "lib/core/Axios.js",
+        "lib/core/mergeConfig.js"
+      ],
+      "expected_concepts": ["AxiosHeaders", "normalization", "InterceptorManager", "promise chain", "use()"],
+      "evaluation_method": "Manual review. Score 2 if headers normalization and the interceptor promise chain are correctly explained. 1 if partial. 0 if wrong."
+    }
+  ]
+}

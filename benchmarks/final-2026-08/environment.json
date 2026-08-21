@@ -1,0 +1,20 @@
+{
+  "capturedAt": "2026-08-20T16:52:03.748Z",
+  "os": {
+    "platform": "linux",
+    "release": "6.14.0-37-generic",
+    "kernel": "6.14.0-37-generic"
+  },
+  "cpu": {
+    "model": "AMD Ryzen 5 7430U with Radeon Graphics",
+    "cores": 12
+  },
+  "ram": "7.17 GiB",
+  "node": "v24.19.0",
+  "opencode": "1.18.19",
+  "codeatlas_cli": "0.3.0",
+  "git": "git version 2.43.0",
+  "go": "N/A",
+  "model": "opencode/deepseek-v4-flash-free",
+  "provider": "opencode"
+}

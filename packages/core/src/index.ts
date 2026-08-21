@@ -10,6 +10,9 @@ export type {
 } from "./ports/agent-mcp.port";
 export type {
   AgentId,
+  ChatAgentPort,
+  ChatAgentRequest,
+  ChatAgentResult,
   Session,
   SessionCreateRequest,
   SessionLaunchRequest,
@@ -97,6 +100,8 @@ export type {
   ProviderRequest,
   ProviderResponse,
   TokenUsage,
+  ToolDefinition,
+  ToolCall,
 } from "./ports/provider.port";
 export type {
   Summary,

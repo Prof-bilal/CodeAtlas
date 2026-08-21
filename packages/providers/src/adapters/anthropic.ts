@@ -3,7 +3,7 @@ import type { Result } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
 import type { ProviderAdapter, ProviderConfig } from "../adapter";
 import { ProviderNetworkError, ProviderRequestError } from "../errors";
-import { asObject, getNumber, getString, isOkStatus, usageFrom, withUsage } from "../parse";
+import { asObject, getNumber, getString, isOkStatus, usageFrom } from "../parse";
 import type { HttpResponse, HttpTransport } from "../transport";
 
 /**
@@ -33,6 +33,7 @@ export class ClaudeAdapter implements ProviderAdapter {
       messages: [{ role: "user", content: request.prompt }],
       ...(request.system !== undefined ? { system: request.system } : {}),
       ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
+      // Anthropic doesn't support tools/stream/json in the same way yet
     };
     let response: HttpResponse;
     try {
@@ -52,11 +53,13 @@ export class ClaudeAdapter implements ProviderAdapter {
       return fail(new ProviderRequestError(this.name, response.status, response.json));
     }
     const root = asObject(response.json);
+    const usage = anthropicUsage(root);
     return ok({
       provider: this.name,
       content: anthropicText(root),
       model: getString(root, "model") ?? model,
-      ...withUsage(anthropicUsage(root)),
+      usage: usage ?? undefined,
+      toolCalls: undefined,
     });
   }
 }

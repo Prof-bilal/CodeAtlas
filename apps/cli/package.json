@@ -1,6 +1,6 @@
 {
   "name": "codeatlas-cli",
-  "version": "0.3.0-beta.0",
+  "version": "0.3.0",
   "description": "CodeAtlas CLI — a local-first AI context engine that scans, parses, and indexes a source tree into a queryable context database for developer tools and AI agents.",
   "author": "CodeAtlas contributors",
   "license": "MIT",

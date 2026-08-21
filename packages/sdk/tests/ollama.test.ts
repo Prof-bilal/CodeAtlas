@@ -23,6 +23,9 @@ function fakeTransport(responses: readonly HttpResponse[]): {
         calls.push({ url });
         return next();
       },
+      async postStream() {
+        return { status: 200, json: {} };
+      },
     },
     calls,
   };

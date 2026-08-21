@@ -211,8 +211,12 @@ async function runLaunch(
           reportContextError(result.error);
           return;
         }
-        await recordSessionUsage(root, result.value);
         emit(result.value, options.json === true, renderSession);
+        const output = integration.getSessionOutput(result.value.id);
+        if (output?.stdout) {
+          console.log(output.stdout);
+        }
+        await recordSessionUsage(root, result.value);
       } catch (error) {
         reportContextError(error);
       }
@@ -249,6 +253,10 @@ async function runAttach(
         return;
       }
       emit(result.value, options.json === true, renderSession);
+      const output = integration.getSessionOutput(result.value.id);
+      if (output?.stdout) {
+        console.log(output.stdout);
+      }
     } catch (error) {
       reportContextError(error);
     }
@@ -284,22 +292,39 @@ async function withIntegration(
 }
 
 /**
- * Best-effort: record a `source: "session"` usage event so the launched session
- * shows up in `.codeatlas/usage.db` and `atlas sessions stop` can report its
- * token impact. Never fails the launch — usage recording is observational.
+ * Best-effort: record a usage event so the launched session shows up in
+ * `.codeatlas/usage.db` and `atlas sessions stop` can report its token impact.
+ * When the session has actual token data (from a chat agent like Ollama), a
+ * `source: "provider"` event is recorded with the exact counts. Otherwise a
+ * `source: "session"` event is recorded. Never fails the launch.
  */
 function recordSessionUsage(root: string, session: Session): Promise<void> {
   return (async () => {
     try {
       const usage = openUsage(root);
       try {
-        await usage.record({
-          source: "session",
-          provider: session.provider,
-          agent: session.provider,
-          sessionId: session.id,
-          requestCount: 1,
-        });
+        if (session.tokenUsage !== undefined) {
+          await usage.record({
+            source: "provider",
+            provider: session.provider,
+            model: session.model ?? "unknown",
+            agent: session.provider,
+            sessionId: session.id,
+            requestCount: 1,
+            latencyMs: 0,
+            inputTokens: session.tokenUsage.inputTokens,
+            outputTokens: session.tokenUsage.outputTokens,
+            totalTokens: session.tokenUsage.totalTokens,
+          });
+        } else {
+          await usage.record({
+            source: "session",
+            provider: session.provider,
+            agent: session.provider,
+            sessionId: session.id,
+            requestCount: 1,
+          });
+        }
       } finally {
         usage.close();
       }

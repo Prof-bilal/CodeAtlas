@@ -1,5 +1,11 @@
-export type { AgentAdapter, AgentAdapterConfig, AgentName } from "./adapter";
+export type {
+  AgentAdapter,
+  AgentAdapterConfig,
+  AgentName,
+} from "./adapter";
 export { createAgentAdapter } from "./adapter";
+export { ProviderChatAgent } from "./chat-agent-runner";
+export type { ChatAgentPort, ChatAgentRequest, ChatAgentResult } from "@atlas/core";
 export { AgentService, type AgentServiceOptions, type ExecutableResolver } from "./agent.service";
 export { builtinAdapters } from "./adapters";
 export { SessionManager, type SessionManagerOptions } from "./session-manager";

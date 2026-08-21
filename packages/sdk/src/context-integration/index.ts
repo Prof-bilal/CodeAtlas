@@ -1,5 +1,5 @@
 import { UnknownSessionError } from "@atlas/agents";
-import type { Session, SessionPort, UsagePort } from "@atlas/core";
+import type { Session, SessionOutput, SessionPort, UsagePort } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 import type { ContextSDK } from "../context/sdk";
 import { type AssembleOptions, assembleContextPackage } from "./assemble";
@@ -120,6 +120,13 @@ export interface ContextIntegration {
    * configured. Consumers that do not want AI can ignore this method.
    */
   brief(input: BuildPackageInput): Promise<Result<ContextBriefing>>;
+  /**
+   * Retrieve the captured stdout/stderr of a session launched with
+   * `captureOutput: true`, or `undefined` when the session is unknown or did
+   * not capture output. The output stays available after the session reaches
+   * a terminal state.
+   */
+  getSessionOutput(sessionId: string): SessionOutput | undefined;
 }
 
 /** Create the Context → Agent integration façade. */
@@ -189,6 +196,10 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
         metadata: generated.value.metadata,
         package: pkg,
       });
+    },
+
+    getSessionOutput(sessionId: string): SessionOutput | undefined {
+      return sessions.getSessionOutput(sessionId);
     },
   };
 }

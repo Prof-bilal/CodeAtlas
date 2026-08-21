@@ -24,4 +24,12 @@ export { ProviderNetworkError, ProviderRequestError, UnknownProviderError } from
 export { ProviderService } from "./provider.service";
 export type { ModelListingAdapter, ProviderServiceOptions } from "./provider.service";
 export { fetchTransport } from "./transport";
-export type { HttpTransport, HttpResponse } from "./transport";
+export type { HttpTransport, HttpResponse, StreamChunk } from "./transport";
+export { withRetry, isRetryableNetworkError, type RetryOptions } from "./retry";
+export type {
+  TokenUsage,
+  ToolDefinition,
+  ToolCall,
+  ProviderRequest,
+  ProviderResponse,
+} from "@atlas/core";

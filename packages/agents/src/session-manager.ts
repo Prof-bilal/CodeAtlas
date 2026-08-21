@@ -3,6 +3,8 @@ import { statSync } from "node:fs";
 import { resolve } from "node:path";
 import type {
   AgentId,
+  ChatAgentPort,
+  ChatAgentRequest,
   Session,
   SessionCreateRequest,
   SessionLaunchRequest,
@@ -31,6 +33,8 @@ export interface SessionManagerOptions {
   readonly processRunner?: ProcessRunner;
   /** Provider used by the connection layer when a request omits one. */
   readonly defaultProvider?: string;
+  /** Chat agents for providers that are not built-in CLI adapters (e.g. `"ollama"`). */
+  readonly chatAgents?: readonly ChatAgentPort[];
   /**
    * Cap on how many already-finished sessions are retained in memory before the
    * oldest terminal entries are pruned (default 100). Live sessions are never
@@ -65,6 +69,7 @@ export class SessionManager implements SessionPort {
   private readonly agentService: AgentService;
   private readonly runner: ProcessRunner;
   private readonly maxRetained: number;
+  private readonly chatAgents: readonly ChatAgentPort[];
   /** Live session records, created to terminal, keyed by session id. */
   private readonly sessions = new Map<string, Session>();
   /** Live process handles for RUNNING/STOPPING sessions. */
@@ -87,13 +92,17 @@ export class SessionManager implements SessionPort {
         : {}),
     });
     this.maxRetained = options.maxRetainedSessions ?? DEFAULT_MAX_RETAINED;
+    this.chatAgents = options.chatAgents ?? [];
   }
 
   // ── session lifecycle ────────────────────────────────────────────────────
 
   public createSession(request: SessionCreateRequest): Result<Session> {
     if (!this.agentService.hasAgent(request.provider)) {
-      return fail(new UnknownAgentError(request.provider));
+      const handledByChat = this.chatAgents.some((ca) => ca.handles(request.provider));
+      if (!handledByChat) {
+        return fail(new UnknownAgentError(request.provider));
+      }
     }
     if (!isDirectory(request.repositoryPath)) {
       return fail(new InvalidRepositoryPathError(request.repositoryPath));
@@ -111,6 +120,8 @@ export class SessionManager implements SessionPort {
       endedAt: undefined,
       exitCode: undefined,
       error: undefined,
+      model: undefined,
+      tokenUsage: undefined,
     };
     this.sessions.set(id, session);
     return ok(session);
@@ -141,6 +152,36 @@ export class SessionManager implements SessionPort {
       );
     }
     this.update(sessionId, { status: "STARTING", error: undefined });
+
+    // Check if the provider is handled by a chat agent (e.g. `"ollama"`).
+    // If so, run the chat turn synchronously and finalize the session.
+    const chatAgent = this.chatAgents.find((ca) => ca.handles(session.provider));
+    if (chatAgent !== undefined) {
+      const request: ChatAgentRequest = {
+        provider: session.provider,
+        prompt: launch?.prompt ?? "",
+        repositoryPath: session.repositoryPath,
+      };
+      const result = await chatAgent.run(request);
+      if (result.ok) {
+        const output: SessionOutput = {
+          stdout: result.value.content,
+          stderr: "",
+        };
+        this.outputs.set(sessionId, output);
+        return ok(
+          this.update(sessionId, {
+            status: "STOPPED",
+            endedAt: Date.now(),
+            exitCode: 0,
+            model: result.value.model,
+            tokenUsage: result.value.tokenUsage,
+          }) as Session,
+        );
+      }
+      this.failSession(sessionId, result.error.message);
+      return fail(new Error(result.error.message));
+    }
 
     // Resolve the CLI binary provider-aware (no process is spawned for this).
     const binary = this.agentService.resolveBinary(session.provider);

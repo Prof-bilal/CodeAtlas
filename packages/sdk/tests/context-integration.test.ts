@@ -586,6 +586,8 @@ function fakeSessions(options: { running?: boolean } = {}): {
         endedAt: undefined,
         exitCode: undefined,
         error: undefined,
+        model: undefined,
+        tokenUsage: undefined,
       };
       sessions.push(session);
       return ok(session);

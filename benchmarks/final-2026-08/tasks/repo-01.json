@@ -1,0 +1,120 @@
+{
+  "repository": "repo-01",
+  "name": "winston",
+  "version": "3.19.0",
+  "files": 116,
+  "tasks": [
+    {
+      "id": "R1-T01",
+      "category": "repository-understanding",
+      "prompt": "Explain the architecture of this repository and identify the major modules. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/winston.js",
+        "lib/winston/create-logger.js",
+        "lib/winston/logger.js",
+        "lib/winston/container.js",
+        "lib/winston/transports/index.js",
+        "lib/winston/config/npm.js"
+      ],
+      "expected_concepts": ["createLogger", "transports", "formats", "logging levels", "Container"],
+      "evaluation_method": "Manual review of final answer. Score 2 if the answer correctly identifies the entry point, logger, transports, formats, and levels as modules. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R1-T02",
+      "category": "file-discovery",
+      "prompt": "Find where logging transports are implemented and explain how the Console transport writes log entries. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/winston/transports/console.js",
+        "lib/winston/transports/index.js"
+      ],
+      "expected_concepts": ["Console transport", "Transport base class", "log method", "level filtering"],
+      "evaluation_method": "Manual review. Score 2 if the Console transport file is found and the write/log flow is described correctly. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R1-T03",
+      "category": "dependency-tracing",
+      "prompt": "Trace how a log message flows from calling logger.info('hello') to the transport that writes it out. Identify the important files and functions involved in the chain. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/winston/logger.js",
+        "lib/winston/create-logger.js",
+        "lib/winston/transports/index.js",
+        "lib/winston/transports/console.js"
+      ],
+      "expected_concepts": ["log()", "info method", "transport.write", "_info", "log messages", "write"],
+      "evaluation_method": "Manual review. Score 2 if the full chain logger.info -> format -> transport.write is traced with correct files/functions. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R1-T04",
+      "category": "bug-investigation",
+      "prompt": "A user reports that when using the 'exceptions' handler together with a File transport, uncaught process exceptions are not written to the file. Investigate how exception handling is wired in this library and identify the files and functions most likely involved, and what could cause the file write to be skipped. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/winston/exception-handler.js",
+        "lib/winston/exception-stream.js",
+        "lib/winston/transports/file.js",
+        "lib/winston/logger.js"
+      ],
+      "expected_concepts": ["handleExceptions", "exception-stream", "uncaughtException", "exitOnError", "File transport"],
+      "evaluation_method": "Manual review. Score 2 if exception-handler and exception-stream are identified with a plausible cause. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R1-T05",
+      "category": "feature-planning",
+      "prompt": "Plan how to add a new 'statsd' transport that sends log events over UDP. Identify the files, classes, interfaces, and tests that would need to change or be added. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/winston/transports/console.js",
+        "lib/winston/transports/file.js",
+        "lib/winston/transports/index.js",
+        "test/unit/winston/transports/console.test.js"
+      ],
+      "expected_concepts": ["Transport subclass", "log method", "transport registry", "write", "test file"],
+      "evaluation_method": "Manual review. Score 2 if the plan names the Transport base, a new transport file, export in transports/index.js, and a new test. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R1-T06",
+      "category": "code-modification",
+      "prompt": "Write the exact code change needed to add a new log level called 'verbose2' (sitting between 'verbose' and 'debug'). Identify precisely which files define the log levels and provide the exact code you would modify. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/winston/config/npm.js",
+        "lib/winston/config/index.js",
+        "lib/winston/config/syslog.js"
+      ],
+      "expected_concepts": ["levels object", "npm levels", "numeric level value", "colors", "config"],
+      "evaluation_method": "Manual review. Score 2 if the correct levels map is identified and the code change is plausible and correctly placed. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R1-T07",
+      "category": "testing",
+      "prompt": "Find the existing tests that cover the File transport and explain what behavior is currently covered (options, rotation, createDir, etc.). Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific test files you inspected.",
+      "expected_files": [
+        "test/unit/winston/transports/file.test.js",
+        "test/unit/winston/transports/file-create-dir.test.js"
+      ],
+      "expected_concepts": ["File transport", "createDir", "filename option", "maxsize", "test coverage"],
+      "evaluation_method": "Manual review. Score 2 if the File transport test files are found and their coverage is summarized accurately. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R1-T08",
+      "category": "cross-file-reasoning",
+      "prompt": "Explain how winston.Container and createLogger() relate to each other: how does a Container create a new logger, and how does the default createLogger() export differ from using a Container? Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/winston/container.js",
+        "lib/winston/create-logger.js",
+        "lib/winston/logger.js",
+        "lib/winston.js"
+      ],
+      "expected_concepts": ["Container", "loggers map", "get(id)", "createLogger", "default export"],
+      "evaluation_method": "Manual review. Score 2 if the Container/get(logger) mechanism and the createLogger() default export are correctly contrasted. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R1-T09",
+      "category": "testing",
+      "prompt": "Look at the integration tests in this repository and explain what end-to-end behavior they cover. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific test files you inspected.",
+      "expected_files": [
+        "test/integration/logger.test.js",
+        "test/integration/formats.test.js"
+      ],
+      "expected_concepts": ["integration tests", "logger", "formats", "end-to-end"],
+      "evaluation_method": "Manual review. Score 2 if integration test files are found and their purpose summarized correctly. 1 if partial. 0 if wrong."
+    }
+  ]
+}

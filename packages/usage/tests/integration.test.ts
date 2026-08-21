@@ -26,6 +26,7 @@ describe("integration: collector → store → service", () => {
             model: "claude-sonnet-5",
             content: "ok",
             usage: { inputTokens: 1_000, outputTokens: 2_000, totalTokens: 3_000 },
+            toolCalls: undefined,
           });
         },
       };
@@ -54,7 +55,13 @@ describe("integration: collector → store → service", () => {
     const usage = serviceFor(":memory:");
     const provider: ProviderPort = {
       async complete() {
-        return ok({ provider: "openai", model: "gpt-4o", content: "no usage data" });
+        return ok({
+          provider: "openai",
+          model: "gpt-4o",
+          content: "no usage data",
+          usage: undefined,
+          toolCalls: undefined,
+        });
       },
     };
     const wrapped = withUsageTracking(provider, usage);
@@ -78,6 +85,7 @@ describe("integration: collector → store → service", () => {
           model: "claude-sonnet-5",
           content: "done",
           usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+          toolCalls: undefined,
         });
       },
     };

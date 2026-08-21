@@ -1,0 +1,100 @@
+{
+  "$comment": "CodeAtlas Final Benchmark (2026-08) — configuration. All cost figures in this benchmark come from the actual `cost` field reported by OpenCode per step (`step_finish` events) for the configured provider/model. No external pricing table is hardcoded or invented.",
+  "benchmark": {
+    "id": "final-2026-08",
+    "date": "2026-08-20",
+    "runs_per_task": 1,
+    "repeat_note": "Single-run per task per mode. Rule 5 of the spec allows single-run when repeated runs are too expensive; 64 agent runs were executed and the full event stream for each was preserved in runs/*.jsonl."
+  },
+  "agent": {
+    "tool": "opencode",
+    "version_command": "opencode --version",
+    "run_command": "opencode run --format json",
+    "provider": "opencode",
+    "provider_note": "OpenCode Zen gateway (the only authenticated provider on this machine; see ~/.local/share/opencode/auth.json).",
+    "model": "opencode/deepseek-v4-flash-free",
+    "model_note": "Free-tier model. OpenCode reports cost 0 for every step. Cost savings are therefore measured from provider-reported cost (0) and token savings is the primary economic metric.",
+    "pricing": {
+      "source": "provider-reported cost field in opencode step_finish events",
+      "input_per_1m_tokens": 0,
+      "output_per_1m_tokens": 0,
+      "cached_input_per_1m_tokens": 0,
+      "note": "Free tier as reported by the provider (cost=0 on every step). If a paid model is substituted, cost figures must be recomputed from that model's real pricing."
+    },
+    "temperature_configuration": "opencode default (not overridden); identical for baseline and CodeAtlas runs"
+  },
+  "modes": {
+    "baseline": {
+      "description": "opencode run with the CodeAtlas MCP disabled; the agent has only opencode's built-in file/grep/glob tools",
+      "mcp_enabled": false
+    },
+    "codeatlas": {
+      "description": "opencode run with the CodeAtlas MCP server enabled (per-repo opencode.json, ATLAS_ROOT points at the indexed repo); the agent can call codeatlas_* tools",
+      "mcp_enabled": true
+    }
+  },
+  "codeatlas": {
+    "cli": "/home/abdullah/CodeAtlas/node_modules/.bin/atlas",
+    "mcp_bin": "/home/abdullah/CodeAtlas/node_modules/.bin/codeatlas-mcp",
+    "mcp_tools": [
+      "codeatlas",
+      "explain_module",
+      "get_dependencies",
+      "get_summary",
+      "project_overview",
+      "read_file_range",
+      "search_files",
+      "search_symbols"
+    ],
+    "toolkit_commands": [
+      "atlas tools overview --json",
+      "atlas tools categories --json",
+      "atlas tools search <query> --json",
+      "atlas tools info <tool> --json",
+      "atlas tools doctor --json",
+      "atlas agents status --json"
+    ]
+  },
+  "repositories": [
+    {
+      "id": "repo-01",
+      "name": "winston",
+      "url": "https://github.com/winstonjs/winston",
+      "commit": "ff0b79de8562bb322c390fbc82fe71c11f373428",
+      "target_files": 100,
+      "actual_files": 116,
+      "language": "JavaScript",
+      "framework": "Node.js logging library"
+    },
+    {
+      "id": "repo-02",
+      "name": "commander.js",
+      "url": "https://github.com/tj/commander.js",
+      "commit": "ba6d13ddb4243e5913367734f8c159089ffe7834",
+      "target_files": 250,
+      "actual_files": 216,
+      "language": "JavaScript",
+      "framework": "Node.js CLI framework"
+    },
+    {
+      "id": "repo-03",
+      "name": "axios",
+      "url": "https://github.com/axios/axios",
+      "commit": "84a9f3b9a4f3244b8c8e818f557d64c7b964fb25",
+      "target_files": 500,
+      "actual_files": 466,
+      "language": "JavaScript",
+      "framework": "Promise-based HTTP client"
+    },
+    {
+      "id": "repo-04",
+      "name": "rxjs",
+      "url": "https://github.com/ReactiveX/rxjs",
+      "commit": "e5351d02e225e275ac0e497c7b66eaa5f0c88791",
+      "target_files": 1000,
+      "actual_files": 1288,
+      "language": "TypeScript",
+      "framework": "Reactive extensions library"
+    }
+  ]
+}

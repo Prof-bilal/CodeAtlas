@@ -3,7 +3,7 @@ import type { Result } from "@atlas/shared";
 import { fail, ok } from "@atlas/shared";
 import type { ProviderAdapter, ProviderConfig } from "../adapter";
 import { ProviderNetworkError, ProviderRequestError } from "../errors";
-import { asObject, getNumber, getString, isOkStatus, usageFrom, withUsage } from "../parse";
+import { asObject, getNumber, getString, isOkStatus, usageFrom } from "../parse";
 import type { HttpResponse, HttpTransport } from "../transport";
 
 /** Gemini adapter for the `generateContent` REST API. */
@@ -49,11 +49,13 @@ export class GeminiAdapter implements ProviderAdapter {
       return fail(new ProviderRequestError(this.name, response.status, response.json));
     }
     const root = asObject(response.json);
+    const usage = geminiUsage(root);
     return ok({
       provider: this.name,
       content: geminiText(root),
       model,
-      ...withUsage(geminiUsage(root)),
+      usage: usage ?? undefined,
+      toolCalls: undefined,
     });
   }
 }

@@ -16,6 +16,9 @@ const offlineTransport: HttpTransport = {
   async get() {
     throw new Error("ECONNREFUSED: connection refused");
   },
+  async postStream() {
+    throw new Error("ECONNREFUSED: connection refused");
+  },
 };
 
 describe("ProviderService", () => {
@@ -60,7 +63,13 @@ describe("ProviderService", () => {
       name: "echo",
       defaultModel: "echo-1",
       async complete(request): Promise<Result<ProviderResponse>> {
-        return ok({ provider: "echo", content: `echo:${request.prompt}`, model: "echo-1" });
+        return ok({
+          provider: "echo",
+          content: `echo:${request.prompt}`,
+          model: "echo-1",
+          usage: undefined,
+          toolCalls: undefined,
+        });
       },
     };
     service.register(echo);
@@ -84,7 +93,13 @@ describe("ProviderService", () => {
       name: "ollama",
       defaultModel: "llama3.2",
       async complete() {
-        return ok({ provider: "ollama", content: "", model: "llama3.2" });
+        return ok({
+          provider: "ollama",
+          content: "",
+          model: "llama3.2",
+          usage: undefined,
+          toolCalls: undefined,
+        });
       },
     });
 

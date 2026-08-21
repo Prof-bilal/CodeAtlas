@@ -1,0 +1,119 @@
+{
+  "repository": "repo-02",
+  "name": "commander.js",
+  "version": "15.0.0",
+  "files": 216,
+  "tasks": [
+    {
+      "id": "R2-T01",
+      "category": "repository-understanding",
+      "prompt": "Explain the architecture of this repository and identify the major modules/classes and how they fit together. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "index.js",
+        "lib/command.js",
+        "lib/option.js",
+        "lib/argument.js",
+        "lib/help.js",
+        "lib/error.js"
+      ],
+      "expected_concepts": ["Command", "Option", "Argument", "parse", "action", "help"],
+      "evaluation_method": "Manual review. Score 2 if Command/Option/Argument/help classes and the parse flow are correctly identified. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R2-T02",
+      "category": "file-discovery",
+      "prompt": "Find where command-line options are defined and parsed, and explain how an option's value ends up stored on the command. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/option.js",
+        "lib/command.js"
+      ],
+      "expected_concepts": ["Option class", "flags", "parseOption", "store option value", "_optionValues"],
+      "evaluation_method": "Manual review. Score 2 if Option and Command parsing are correctly described. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R2-T03",
+      "category": "dependency-tracing",
+      "prompt": "Trace what happens when program.parse(process.argv) is called, from raw arguments to the action callback execution. Identify the important functions and files involved. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "index.js",
+        "lib/command.js",
+        "lib/option.js"
+      ],
+      "expected_concepts": ["parse", "parseOptions", "parseOptionsHook", "dispatch", "action handler", "runCommand"],
+      "evaluation_method": "Manual review. Score 2 if parse -> parseOptions -> dispatch/action chain is correctly traced. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R2-T04",
+      "category": "bug-investigation",
+      "prompt": "A user reports that passing an unknown option to a command throws an error, but the message only says 'unknown option' without any hint. Investigate where unknown options are detected and how the suggestion mechanism works. Identify the files and functions that control this behavior and what could make the suggestion appear or disappear. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/command.js",
+        "lib/error.js",
+        "lib/suggestSimilar.js",
+        "lib/option.js"
+      ],
+      "expected_concepts": ["unknown option", "unknownOption", "suggestSimilar", "CommanderError", "fuzzy match"],
+      "evaluation_method": "Manual review. Score 2 if unknown-option detection and suggestSimilar are correctly identified with a plausible cause. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R2-T05",
+      "category": "feature-planning",
+      "prompt": "Plan how to add a new feature: allow options to read their default value from an environment variable (e.g. --port falling back to $PORT). Identify the files, classes, and tests that would need to change. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/option.js",
+        "lib/command.js",
+        "typings/index.d.ts",
+        "tests/options.default.test.js"
+      ],
+      "expected_concepts": ["Option", "default value", "env var", "attribute", "typings", "test"],
+      "evaluation_method": "Manual review. Score 2 if the plan names Option changes, Command wiring, typings, and tests. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R2-T06",
+      "category": "code-modification",
+      "prompt": "Write the exact code change needed to make a required option throw an error when the user omits it. Identify precisely which files implement required-option handling and the missing-argument error, and provide the exact code. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/option.js",
+        "lib/command.js",
+        "lib/error.js"
+      ],
+      "expected_concepts": ["required option", "missing argument", "optionMissingArgument", "error", "exitOverride"],
+      "evaluation_method": "Manual review. Score 2 if required/missing-argument handling is located and the code change is plausible. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R2-T07",
+      "category": "testing",
+      "prompt": "Find the existing tests that cover help output generation and explain what behavior is covered (help text, options listing, subcommand help, help option). Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific test files you inspected.",
+      "expected_files": [
+        "tests/command.help.test.js",
+        "tests/command.helpOption.test.js",
+        "tests/command.addHelpText.test.js"
+      ],
+      "expected_concepts": ["help", "helpOption", "addHelpText", "help text", "test coverage"],
+      "evaluation_method": "Manual review. Score 2 if help-related test files are found and coverage summarized accurately. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R2-T08",
+      "category": "cross-file-reasoning",
+      "prompt": "Explain how the Option class and the Command class interact when a variadic option is declared (e.g. --item <value...>), including how the values are parsed and stored. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/option.js",
+        "lib/command.js",
+        "tests/options.variadic.test.js"
+      ],
+      "expected_concepts": ["variadic", "Option", "parseOptionValue", "array value", "attribute"],
+      "evaluation_method": "Manual review. Score 2 if variadic option parsing/storage is correctly explained across Option and Command. 1 if partial. 0 if wrong."
+    },
+    {
+      "id": "R2-T09",
+      "category": "file-discovery",
+      "prompt": "Find how commander detects and runs executable subcommands (standalone .js subcommands) versus in-memory action-based subcommands. Explain the difference. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "lib/command.js",
+        "tests/command.executableSubcommand.test.js"
+      ],
+      "expected_concepts": ["executable subcommand", "_executeSubCommand", "action handler", "find executable", "spawn"],
+      "evaluation_method": "Manual review. Score 2 if executable-subcommand detection and execution are correctly explained. 1 if partial. 0 if wrong."
+    }
+  ]
+}

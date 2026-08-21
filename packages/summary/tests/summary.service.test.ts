@@ -24,7 +24,8 @@ class FakeProvider implements ProviderPort {
       provider: "claude",
       model: "fake-model",
       content: this.content,
-      ...(this.usage !== null ? { usage: this.usage } : {}),
+      usage: this.usage ?? undefined,
+      toolCalls: undefined,
     });
   }
 }

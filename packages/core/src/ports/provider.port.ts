@@ -7,6 +7,26 @@ export interface TokenUsage {
   readonly totalTokens: number;
 }
 
+/** A tool definition for function calling. */
+export interface ToolDefinition {
+  readonly type: "function";
+  readonly function: {
+    readonly name: string;
+    readonly description?: string;
+    readonly parameters: Record<string, unknown>;
+  };
+}
+
+/** A tool call returned by the model. */
+export interface ToolCall {
+  readonly id: string;
+  readonly type: "function";
+  readonly function: {
+    readonly name: string;
+    readonly arguments: string;
+  };
+}
+
 /** Input for a single completion request to a language model. */
 export interface ProviderRequest {
   /** Provider adapter to use (e.g. `"claude"`); defaults to the service default. */
@@ -19,6 +39,15 @@ export interface ProviderRequest {
   readonly temperature?: number;
   /** Ask the model to respond with structured JSON. */
   readonly json?: boolean;
+  /** Tool definitions for function calling. */
+  readonly tools?: readonly ToolDefinition[];
+  /** Tool choice control: "none", "auto", or specific function name. */
+  readonly toolChoice?:
+    | "none"
+    | "auto"
+    | { readonly type: "function"; readonly function: { readonly name: string } };
+  /** Enable streaming response (NDJSON). */
+  readonly stream?: boolean;
 }
 
 /** A completion returned by a language model. */
@@ -27,7 +56,9 @@ export interface ProviderResponse {
   readonly provider: string;
   readonly content: string;
   readonly model: string;
-  readonly usage?: TokenUsage;
+  readonly usage: TokenUsage | undefined;
+  /** Tool calls requested by the model (empty when none). */
+  readonly toolCalls: readonly ToolCall[] | undefined;
 }
 
 /** Unified adapter over AI model APIs so providers can be swapped freely. */

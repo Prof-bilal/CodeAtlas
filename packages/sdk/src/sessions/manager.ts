@@ -1,10 +1,13 @@
 import {
   type AgentAdapter,
+  type ChatAgentPort,
   type ExecutableResolver,
   type ProcessRunner,
+  ProviderChatAgent,
   SessionManager,
 } from "@atlas/agents";
 import type { SessionPort } from "@atlas/core";
+import { createProviderService } from "../providers/service";
 
 /** Options for {@link createSessionManager}. */
 export interface CreateSessionManagerOptions {
@@ -18,6 +21,8 @@ export interface CreateSessionManagerOptions {
   readonly defaultProvider?: string;
   /** Retained-terminal-session cap before pruning (memory guard). */
   readonly maxRetainedSessions?: number;
+  /** Chat agents for providers that are not built-in CLI adapters. */
+  readonly chatAgents?: readonly ChatAgentPort[];
 }
 
 /**
@@ -27,7 +32,16 @@ export interface CreateSessionManagerOptions {
  * track, inspect, stop, and terminate external AI CLI sessions. Providers are
  * resolved through the existing adapter/connection layer — no provider-specific
  * logic lives here.
+ *
+ * When `chatAgents` is not provided, a default `ProviderChatAgent` wrapping
+ * `createProviderService()` is used, so the selected Ollama model (read from
+ * persisted config) is automatically honored.
  */
 export function createSessionManager(options: CreateSessionManagerOptions = {}): SessionPort {
-  return new SessionManager(options);
+  const defaultChatAgent = new ProviderChatAgent(createProviderService(), ["ollama"]);
+  const chatAgents = options.chatAgents ?? [defaultChatAgent];
+  return new SessionManager({
+    ...options,
+    chatAgents,
+  });
 }

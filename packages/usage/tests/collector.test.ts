@@ -14,7 +14,8 @@ function fakeProvider(
         provider: response.provider ?? "claude",
         content: response.content,
         model: response.model ?? "claude-sonnet-5",
-        ...(usage === undefined ? {} : { usage }),
+        usage,
+        toolCalls: undefined,
       };
       return ok(value);
     },
