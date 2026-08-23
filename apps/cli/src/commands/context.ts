@@ -1,3 +1,4 @@
+import { createContextToolSourceFromSDK } from "@atlas/mcp";
 import {
   type AssembleOptions,
   type ContextIntegration,
@@ -282,7 +283,15 @@ async function withIntegration(
     usage,
   });
   try {
-    await action(createContextIntegration({ context, sessions: createSessionManager(), usage }));
+    await action(
+      createContextIntegration({
+        context,
+        sessions: createSessionManager({
+          contextToolSource: createContextToolSourceFromSDK(context),
+        }),
+        usage,
+      }),
+    );
   } finally {
     context.close();
     metrics.flush();

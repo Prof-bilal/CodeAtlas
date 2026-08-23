@@ -8,6 +8,11 @@
       "environment": {
         "ATLAS_ROOT": "/home/abdullah/CodeAtlas"
       }
+    },
+    "typeui": {
+      "type": "remote",
+      "url": "https://mcp.typeui.sh/mcp",
+      "enabled": true
     }
   }
 }

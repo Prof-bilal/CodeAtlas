@@ -1,6 +1,6 @@
 export { VERSION } from "@atlas/shared";
 export type { FilePath, Result } from "@atlas/shared";
-export { estimateTokens } from "@atlas/shared";
+export { estimateTokens, fail, ok } from "@atlas/shared";
 export type {
   ContextSnapshot,
   PersistedDependency,
@@ -34,7 +34,7 @@ export {
 export { indexProject } from "./indexing/indexer";
 export type { IndexRequest, IndexResult } from "./indexing/indexer";
 export { scanProjectOverview } from "./indexing/scan";
-export type { FileTreeNode, ProjectScan } from "@atlas/core";
+export type { FileTreeNode, ProjectScan, ToolDefinition } from "@atlas/core";
 export {
   createContextSDK,
   resolveContextConfig,
@@ -83,6 +83,8 @@ export {
 } from "./context/errors";
 export { ReadRepositories, WriteRepositories } from "./context/repositories";
 export { createSessionManager, type CreateSessionManagerOptions } from "./sessions/index";
+export type { ContextToolSource } from "./context-tools/index";
+export { ToolUsingChatAgent, MAX_TOOL_ROUNDS, MAX_TOOL_RESULT_CHARS } from "./context-tools/index";
 export {
   createAgentService,
   buildInteractiveArgs,
@@ -340,3 +342,28 @@ export {
   calculateSavings,
   createEmptySnapshot,
 } from "@atlas/metrics";
+export { createBenchmarkService } from "./benchmark";
+export type { CreateBenchmarkServiceOptions } from "./benchmark";
+export type {
+  BenchmarkAgent,
+  BenchmarkConfig,
+  BenchmarkEvaluation,
+  BenchmarkEvaluationEntry,
+  BenchmarkMode,
+  BenchmarkPort,
+  BenchmarkReport,
+  BenchmarkRunRequest,
+  BenchmarkStatus,
+  BenchmarkSuite,
+  BenchmarkSuiteResult,
+  BenchmarkSuiteRunRequest,
+  BenchmarkTaskResult,
+  ReportOptions,
+  ReportSection,
+  SuiteStatus,
+  TaskCategory,
+  TaskDefinition,
+  TaskFile,
+  TokenMetrics,
+  ToolCallRecord,
+} from "@atlas/core";

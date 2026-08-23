@@ -24,6 +24,7 @@ const ALL_PACKAGES = [
   "@atlas/metrics",
   "@atlas/toolkit",
   "@atlas/mcp",
+  "@atlas/benchmark",
 ];
 
 /** Which @atlas/* packages each package is allowed to depend on. */
@@ -61,10 +62,12 @@ const DEPENDENCY_MATRIX = {
     "@atlas/usage",
     "@atlas/metrics",
     "@atlas/toolkit",
+    "@atlas/benchmark",
   ],
-  "apps/cli": ["@atlas/sdk", "@atlas/mcp"],
+  "apps/cli": ["@atlas/sdk", "@atlas/mcp", "@atlas/benchmark"],
   "apps/extension": ["@atlas/sdk"],
   "packages/mcp": ["@atlas/sdk"],
+  "packages/benchmark": ["@atlas/core", "@atlas/shared", "@atlas/agents", "@atlas/usage"],
 };
 
 /** Build per-package `no-restricted-imports` blocks from the matrix. */

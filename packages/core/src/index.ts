@@ -97,6 +97,7 @@ export type { HashPort } from "./ports/hash.port";
 export type { ParserPort } from "./ports/parser.port";
 export type {
   ProviderPort,
+  ProviderMessage,
   ProviderRequest,
   ProviderResponse,
   TokenUsage,
@@ -165,3 +166,29 @@ export type {
   MetricsTokenEvent,
   MetricsTokens,
 } from "./ports/metrics.port";
+export type {
+  BenchmarkAgent,
+  BenchmarkConfig,
+  BenchmarkEvaluation,
+  BenchmarkEvaluationEntry,
+  BenchmarkMode,
+  BenchmarkPort,
+  BenchmarkReport,
+  BenchmarkRunRequest,
+  BenchmarkRunner,
+  BenchmarkStatus,
+  BenchmarkSuite,
+  BenchmarkSuiteResult,
+  BenchmarkSuiteRunRequest,
+  BenchmarkTaskResult,
+  ReportOptions,
+  ReportSection,
+  RunnerRequest,
+  RunnerResult,
+  SuiteStatus,
+  TaskCategory,
+  TaskDefinition,
+  TaskFile,
+  TokenMetrics,
+  ToolCallRecord,
+} from "./ports/benchmark.port";

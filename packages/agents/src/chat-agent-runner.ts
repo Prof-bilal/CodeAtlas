@@ -5,8 +5,8 @@ import { type Result, fail, ok } from "@atlas/shared";
  * A provider-backed chat agent runner that implements `ChatAgentPort`.
  *
  * Wraps a `ProviderPort` and exposes it as a `ChatAgentPort`. When `run()`
- * is called, it sends the prompt to the provider's `complete` method and
- * returns the model's reply as the chat result.
+ * is called, it sends the prompt (or conversation history) to the provider's
+ * `complete` method and returns the model's reply as the chat result.
  *
  * The provider must be listed in the runner's `providers` array (default:
  * `["ollama"]`). Provider adapters themselves handle model selection and
@@ -37,6 +37,7 @@ export class ProviderChatAgent implements ChatAgentPort {
     try {
       const result = await this.provider.complete({
         prompt: request.prompt,
+        ...(request.messages !== undefined ? { messages: request.messages } : {}),
       });
 
       if (!result.ok) {

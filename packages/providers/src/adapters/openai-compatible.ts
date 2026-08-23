@@ -39,10 +39,7 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
 
   public async complete(request: ProviderRequest): Promise<Result<ProviderResponse>> {
     const model = request.model ?? this.defaultModel;
-    const messages: unknown[] = [
-      ...(request.system !== undefined ? [{ role: "system", content: request.system }] : []),
-      { role: "user", content: request.prompt },
-    ];
+    const messages = buildOpenAIMessages(request);
     const body: Record<string, unknown> = {
       model,
       messages,
@@ -88,4 +85,19 @@ export class DeepSeekAdapter extends OpenAICompatibleAdapter {
   public constructor(config: ProviderConfig, transport: HttpTransport) {
     super("deepseek", "deepseek-v4-flash", "https://api.deepseek.com/v1", config, transport);
   }
+}
+
+/** Build the messages array for the request. Uses `messages` when present, falls back to prompt. */
+function buildOpenAIMessages(request: ProviderRequest): unknown[] {
+  if (request.messages !== undefined && request.messages.length > 0) {
+    return request.messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+      ...(m.tool_call_id !== undefined ? { tool_call_id: m.tool_call_id } : {}),
+    }));
+  }
+  return [
+    ...(request.system !== undefined ? [{ role: "system", content: request.system }] : []),
+    { role: "user", content: request.prompt },
+  ];
 }

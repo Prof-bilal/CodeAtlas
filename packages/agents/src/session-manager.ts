@@ -161,6 +161,7 @@ export class SessionManager implements SessionPort {
         provider: session.provider,
         prompt: launch?.prompt ?? "",
         repositoryPath: session.repositoryPath,
+        ...(launch?.messages !== undefined ? { messages: launch.messages } : {}),
       };
       const result = await chatAgent.run(request);
       if (result.ok) {

@@ -1,7 +1,7 @@
 {
-  "name": "@atlas/sdk",
+  "name": "@atlas/benchmark",
   "version": "0.0.0",
-  "description": "Public programmatic API and composition root for CodeAtlas.",
+  "description": "Benchmark harness for CodeAtlas — declarative evaluation of context quality against baseline, with automated scoring and Markdown reporting.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -26,29 +26,16 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@atlas/agents": "workspace:*",
-    "@atlas/cache": "workspace:*",
-    "@atlas/context": "workspace:*",
     "@atlas/core": "workspace:*",
-    "@atlas/graph": "workspace:*",
-    "@atlas/hashing": "workspace:*",
-    "@atlas/parser": "workspace:*",
-    "@atlas/providers": "workspace:*",
-    "@atlas/scanner": "workspace:*",
-    "@atlas/search": "workspace:*",
     "@atlas/shared": "workspace:*",
-    "@atlas/storage": "workspace:*",
-    "@atlas/summary": "workspace:*",
-    "@atlas/usage": "workspace:*",
-    "@atlas/metrics": "workspace:*",
-    "@atlas/toolkit": "workspace:*",
-    "@atlas/benchmark": "workspace:*"
+    "@atlas/agents": "workspace:*",
+    "@atlas/usage": "workspace:*"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Prof-bilal/CodeAtlas.git",
-    "directory": "packages/sdk"
+    "directory": "packages/benchmark"
   },
   "homepage": "https://github.com/Prof-bilal/CodeAtlas",
   "bugs": {

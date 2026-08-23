@@ -54,3 +54,4 @@ PERFORMANCE_CHECKPOINT.md
 
 # Final benchmark (2026-08) — pinned repository checkouts (own .git dirs)
 benchmarks/final-2026-08/repos/
+opencode.json/

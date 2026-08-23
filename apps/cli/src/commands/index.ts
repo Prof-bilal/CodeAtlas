@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import { type AgentsCommandOptions, registerAgents } from "./agents";
+import { registerBenchmark } from "./benchmark";
 import { type ContextCommandOptions, registerAgentRouter, registerContext } from "./context";
 import { type DoctorCommandOptions, registerDoctor } from "./doctor";
 import { registerExplain } from "./explain";
@@ -50,4 +51,5 @@ export function registerCommands(
   registerExplain(program);
   registerDoctor(program, options.doctor === undefined ? {} : { doctor: options.doctor });
   registerMcp(program);
+  registerBenchmark(program);
 }

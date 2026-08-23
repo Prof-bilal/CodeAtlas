@@ -7,6 +7,7 @@ import {
   SessionManager,
 } from "@atlas/agents";
 import type { SessionPort } from "@atlas/core";
+import { type ContextToolSource, ToolUsingChatAgent } from "../context-tools";
 import { createProviderService } from "../providers/service";
 
 /** Options for {@link createSessionManager}. */
@@ -23,6 +24,14 @@ export interface CreateSessionManagerOptions {
   readonly maxRetainedSessions?: number;
   /** Chat agents for providers that are not built-in CLI adapters. */
   readonly chatAgents?: readonly ChatAgentPort[];
+  /**
+   * Context tool source for the Ollama tool loop. When provided, the default
+   * chat agent for `"ollama"` is replaced with a `ToolUsingChatAgent` that
+   * can execute context tools (search, read, dependencies, etc.) via the
+   * MCP handler bridge. When absent, the simple single-turn `ProviderChatAgent`
+   * is used.
+   */
+  readonly contextToolSource?: ContextToolSource;
 }
 
 /**
@@ -33,13 +42,25 @@ export interface CreateSessionManagerOptions {
  * resolved through the existing adapter/connection layer — no provider-specific
  * logic lives here.
  *
- * When `chatAgents` is not provided, a default `ProviderChatAgent` wrapping
- * `createProviderService()` is used, so the selected Ollama model (read from
- * persisted config) is automatically honored.
+ * When `contextToolSource` is provided, the default chat agent for Ollama is
+ * replaced with a `ToolUsingChatAgent` that supports the tool loop (the model
+ * can request repository context mid-turn). When absent, a simple single-turn
+ * `ProviderChatAgent` is used.
  */
 export function createSessionManager(options: CreateSessionManagerOptions = {}): SessionPort {
-  const defaultChatAgent = new ProviderChatAgent(createProviderService(), ["ollama"]);
-  const chatAgents = options.chatAgents ?? [defaultChatAgent];
+  const providerService = createProviderService();
+
+  let chatAgents: readonly ChatAgentPort[];
+  if (options.chatAgents !== undefined) {
+    chatAgents = options.chatAgents;
+  } else if (options.contextToolSource !== undefined) {
+    // Wire the tool loop agent for Ollama
+    chatAgents = [new ToolUsingChatAgent(providerService, options.contextToolSource, ["ollama"])];
+  } else {
+    // Default: single-turn chat agent (no tool loop)
+    chatAgents = [new ProviderChatAgent(providerService, ["ollama"])];
+  }
+
   return new SessionManager({
     ...options,
     chatAgents,

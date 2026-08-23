@@ -1,5 +1,5 @@
 import type { Brand, Result } from "@atlas/shared";
-import type { TokenUsage } from "./provider.port";
+import type { ProviderMessage, TokenUsage } from "./provider.port";
 
 /**
  * A typed identifier for an agent inside a session. Today the session manager
@@ -77,6 +77,12 @@ export interface SessionLaunchRequest {
    * is inherited).
    */
   readonly interactive?: boolean;
+  /**
+   * Full conversation history for multi-turn/tool-loop requests. When present,
+   * this is forwarded to chat agents as the message list instead of a single
+   * user prompt.
+   */
+  readonly messages?: readonly ProviderMessage[];
 }
 
 /** The captured stdout/stderr of a session launched with `captureOutput`. */
@@ -115,6 +121,11 @@ export interface ChatAgentRequest {
   readonly prompt: string;
   /** Optional repository path context; supplied by the session manager. */
   readonly repositoryPath: string;
+  /**
+   * Full conversation history for multi-turn/tool-loop requests. When present,
+   * the agent sends this as the message list instead of a single user prompt.
+   */
+  readonly messages?: readonly ProviderMessage[];
 }
 
 /** Result of one chat-agent run. */
@@ -127,6 +138,12 @@ export interface ChatAgentResult {
   readonly durationMs: number;
   /** Exact token usage reported by the provider, when available. */
   readonly tokenUsage: TokenUsage | undefined;
+  /**
+   * Full conversation history after the run (including all tool calls and
+   * results). Callers can pass this as `messages` in the next request for
+   * multi-turn continuity.
+   */
+  readonly messages?: readonly ProviderMessage[];
 }
 
 /**

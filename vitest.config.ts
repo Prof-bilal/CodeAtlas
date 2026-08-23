@@ -26,6 +26,7 @@ const atlasAliases: Record<string, string> = {
   "@atlas/metrics": repoPath("packages/metrics/src/index.ts"),
   "@atlas/toolkit": repoPath("packages/toolkit/src/index.ts"),
   "@atlas/mcp": repoPath("packages/mcp/src/index.ts"),
+  "@atlas/benchmark": repoPath("packages/benchmark/src/index.ts"),
 };
 
 export default defineConfig({

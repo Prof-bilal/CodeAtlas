@@ -371,6 +371,14 @@ examples/        # README placeholder only (no runnable examples)
   The SDK composes it (`createSessionManager()`) and the CLI exposes
   `atlas sessions list` / `info` / `stop`. See `docs/AGENT_SESSIONS.md` +
   ADR-007.
+- **`ProviderChatAgent`** wraps `ProviderPort` as `ChatAgentPort` for
+  single-turn non-interactive chat (e.g. Ollama without tool loop). Supports
+  `messages` for conversation history forwarding.
+- **`ToolUsingChatAgent`** (`@atlas/sdk`, `context-tools/tool-loop.ts`) wraps
+  `ProviderPort` + `ContextToolSource` as `ChatAgentPort` with a bounded tool
+  loop: model calls tools → execute against `ContextToolSource` → feed results
+  back → repeat until final answer or max rounds. Wired by `createSessionManager()`
+  when `contextToolSource` is provided.
 - **Wired into the CLI for standalone launches**: `atlas context launch`
   and the `atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` commands
   deliver a Context Package through this port. **Not yet wired for *plan*
@@ -422,6 +430,74 @@ examples/        # README placeholder only (no runnable examples)
   router remains separate. Tests: `packages/sdk/tests/context-integration.test.ts`
   and `apps/cli/tests/cli.test.ts`.
   See ADR-008.
+
+### Ollama Tool Loop (Phase 3) — **[IMPLEMENTED]**
+
+- **Conversation history support** (`ProviderMessage` type, `ProviderRequest.messages`):
+  All providers (`OllamaAdapter`, `OpenAICompatibleAdapter`) accept an optional
+  `messages` array for multi-turn/tool-loop requests. When present, adapters use
+  `messages` instead of constructing a single user message from `prompt`. Fully
+  backward-compatible — absent `messages` falls back to the existing behavior.
+- **`ContextToolSource` interface** (`@atlas/sdk`, `context-tools/types.ts`):
+  Provider-independent seam for executable context tools: `listTools()` returns
+  `ToolDefinition[]` (JSON Schema parameters) and `execute(name, args)` returns
+  tool results. Dependency-inverted — `@atlas/sdk` defines the interface;
+  `@atlas/mcp` implements it. No duplicate tool registry.
+- **`ToolUsingChatAgent`** (`@atlas/sdk`, `context-tools/tool-loop.ts`):
+  Implements `ChatAgentPort` with a bounded tool loop (max 10 rounds). When the
+  model responds with `tool_calls`, executes them against the `ContextToolSource`,
+  feeds results back as `role: "tool"` messages, and re-calls the provider.
+  Per-result budget cap (20K chars), unknown tool names → error result, provider
+  failure → propagated error.
+- **MCP tool bridge** (`@atlas/mcp`, `tool-bridge.ts`): `createContextToolSource()`
+  and `createContextToolSourceFromSDK()` — implements `ContextToolSource` using
+  the existing `TOOLS` + `HANDLERS` from `mcp/src/tools.ts` and
+  `mcp/src/handlers.ts`. Zero duplication: the 7 MCP tool definitions remain the
+  single source of truth for both the MCP server and the Ollama tool loop.
+- **Zod-to-JSON-schema converter** (`@atlas/mcp`, `zod-to-json-schema.ts`):
+  Minimal, dependency-free converter for the zod subset used in `tools.ts`
+  (string, number, boolean, enum, array, object, record, optional, nullable,
+  describe, int/min/max). Avoids adding `zod-to-json-schema` as a direct
+  dependency.
+- **Session manager wiring** (`@atlas/sdk`, `sessions/manager.ts`):
+  `createSessionManager()` accepts `contextToolSource` option; when provided,
+  replaces the default single-turn `ProviderChatAgent` with `ToolUsingChatAgent`.
+- **CLI wiring** (`apps/cli`, `commands/context.ts`): `withIntegration()` passes
+  `createContextToolSourceFromSDK(context)` from `@atlas/mcp` into
+  `createSessionManager()`, enabling the tool loop for all `atlas context launch`
+  and `atlas <agent>` commands targeting Ollama.
+- Tests: `packages/sdk/tests/context-tools.test.ts` (tool loop agent),
+  `packages/mcp/tests/tool-bridge.test.ts` (MCP bridge),
+  `packages/mcp/tests/zod-to-json-schema.test.ts` (schema converter),
+  `packages/providers/tests/ollama-adapter.test.ts` (adapter messages support).
+  See ADR-011.
+
+### Benchmark Framework (Phase 4) — **[IMPLEMENTED]**
+
+- **`BenchmarkPort` in core** (`packages/core/src/ports/benchmark.port.ts`):
+  Full contract with suite lifecycle types (`BenchmarkConfig`, `BenchmarkSuite`,
+  `TaskDefinition`, `TaskFile`, `BenchmarkTaskResult`, `TokenMetrics`,
+  `ToolCallRecord`, `BenchmarkEvaluation`, `BenchmarkSuiteResult`, `BenchmarkStatus`,
+  `ReportOptions`, `BenchmarkReport`, `BenchmarkRunner`, `RunnerRequest`,
+  `RunnerResult`).
+- **`@atlas/benchmark` package** — JSON-backed persistence (`BenchmarkStore`),
+  suite/task scaffolding (`scaffoldSuite`, `scaffoldTaskFile`), two runners
+  (`OpenCodeRunner` for `opencode run --format json`, `OllamaRunner` using
+  `ChatAgentPort` in-process), automated evaluator (file/concept hit scoring),
+  Markdown report generator (`renderReport`/`renderSummary`), and metrics
+  capture via `MetricsPort`/`UsagePort`. `BenchmarkService` orchestrates the
+  full pipeline.
+- **SDK composition** (`packages/sdk/src/benchmark/index.ts`):
+  `createBenchmarkService()` wires store, runners, evaluator, metrics, and
+  reporter into the service.
+- **CLI command** (`atlas benchmark init/run/status/report`):
+  `init` scaffolds a benchmark suite; `run` executes all tasks in both modes
+  (baseline vs codeatlas); `status` shows progress; `report` generates
+  Markdown.
+- Tests: `packages/benchmark/tests/evaluator.test.ts` (11 tests),
+  `packages/benchmark/tests/store.test.ts` (7 tests),
+  `packages/benchmark/tests/reporter.test.ts` (2 tests).
+  See ADR-012.
 
 ### Multi-Agent Orchestrator (Task 17) — **[IMPLEMENTED]**
 
@@ -633,6 +709,8 @@ examples/        # README placeholder only (no runnable examples)
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking is deterministic (ADR-001, no AI); `search` + `mcp` are CLI-wired |
 | **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) are implemented; **standalone launch commands** (`atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` with `--ai` briefing) are implemented; the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) is **v2 / not shipped** (untracked); the plan-executing standalone router / `atlas agents` CLI remains planned |
 | **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~65% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, and the thin SDK-backed Toolkit CLI; `/tools` slash integration and `atlas setup` remain planned |
+| **Ollama Tool Loop** (Phase 3) | Implemented — `ToolUsingChatAgent` with bounded tool loop (max 10 rounds), `ContextToolSource` seam, MCP tool bridge (`createContextToolSource`), conversation history via `ProviderMessage`, per-result budget cap, deny filter on sensitive files. Wired through `createSessionManager({ contextToolSource })` and CLI `atlas context launch`. Tests pass. |
+| **Benchmark Framework** (Phase 4) | Implemented — `BenchmarkPort` in core, `@atlas/benchmark` package with JSON-backed `BenchmarkStore`, `scaffoldSuite`/`scaffoldTaskFile` scaffolding, two runners (`OpenCodeRunner` for `opencode run --format json`, `OllamaRunner` via `ChatAgentPort`), automated file/concept hit evaluator, Markdown report generator, metrics capture via `MetricsPort`/`UsagePort`. CLI `atlas benchmark init/run/status/report` wired. SDK composition via `createBenchmarkService()`. Tests pass. See ADR-012. |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
 at: (1) the **standalone router** of the orchestrator (the plan-executing

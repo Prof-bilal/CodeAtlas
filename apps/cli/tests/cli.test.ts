@@ -378,6 +378,7 @@ describe("atlas CLI", () => {
     const names = program.commands.map((command) => command.name()).sort();
     expect(names).toEqual([
       "agents",
+      "benchmark",
       "build",
       "claude",
       "codex",

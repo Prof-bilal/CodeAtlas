@@ -27,3 +27,5 @@ export {
   type FreshnessReport,
 } from "./freshness";
 export type { DependencyShape, HandlerContext, SummaryShape } from "./handlers";
+export { createContextToolSource, createContextToolSourceFromSDK } from "./tool-bridge";
+export { zodToJsonSchema } from "./zod-to-json-schema";
