@@ -7,14 +7,55 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Releases are cut from the published `codeatlas-cli`; the changelog tracks the
 npm versions.
 
-## [0.3.0] - 2026-08-18
+## [0.4.0-beta.0] - 2026-08-23
+
+First beta of the 0.4.0 line. Includes everything below plus the never-published
+0.3.0 work (see the corrected entry under 0.3.0).
 
 ### Added
 
-- **First npm publication of the `@atlas/*` workspace packages** — all 18
-  packages (core, shared, toolkit, sdk, parser, search, storage, …) are now
-  published to the npm registry at `0.0.0`, so `@atlas/toolkit`,
-  `@atlas/sdk`, and the rest are installable on their own.
+- **Ollama as a first-class agent** — the selected Ollama model
+  (`atlas ollama connect` / `atlas ollama use`) now runs inside the session
+  system: `atlas context launch --provider ollama` hosts the model, executes
+  its tool calls, and records actual token usage.
+- **Ollama context tool loop** — mid-turn tool calling over the same 7 MCP
+  context tools (`search_symbols`, `read_file_range`, …) through the
+  `ToolUsingChatAgent` bounded loop; no duplicate tool registry.
+- **`atlas benchmark` framework** — `init`/`run`/`status`/`report` for
+  baseline-vs-CodeAtlas context-quality evaluation: declarative task files,
+  OpenCode + Ollama runners, per-task timeout, resumable runs, automated
+  accuracy scoring, real token/cost/latency capture into `@atlas/usage`, and
+  Markdown/JSON/HTML reports. Suite results shipped in `docs/benchmark.md`
+  (rxjs, 1,288 files: **−22% tokens** vs baseline).
+- **Advisory tool-call policy** — `ToolCallPolicy` (allow/deny lists, call
+  budget, result-size cap) for the tool loop; denials are returned to the
+  model as error results and surfaced on the result, never silently dropped.
+- **Provider streaming + tool calling on `ProviderPort`** — `tools`/`stream`
+  on `ProviderRequest` (Ollama adapter: NDJSON streaming, `tool_calls`
+  parsing), `/api/version` health probe, retry/backoff.
+- **Ollama pricing** — local Ollama inference prices at $0/token via the
+  static pricing provider wildcard (cloud endpoints flagged as possibly
+  different).
+
+### Fixed
+
+- **Adapters dropped assistant `tool_calls`** when forwarding conversation
+  history — live servers rejected follow-up tool results whose call ids had
+  no matching assistant message. Ollama + OpenAI-compatible adapters now
+  forward them verbatim (regression-tested).
+- Chat agents now pass the requested provider id through to
+  `ProviderPort.complete` instead of relying on the service default.
+
+## [0.3.0] - 2026-08-18 (unpublished)
+
+> **Correction (2026-08-23):** this entry previously claimed `codeatlas-cli`
+> 0.3.0 and all 18 `@atlas/*` packages were published to npm. That publish
+> never completed — the registry's latest remains `0.3.0-beta.0` and the
+> `@atlas/*` packages return 404. The real changes below shipped in-repo and
+> are included in `0.4.0-beta.0`, the actual next npm release.
+
+### Added
+
 - **Incremental no-op fast path** — `atlas update` with no changes now reads
   only the persisted hash table for change detection and skips the parse,
   graph rebuild, and database rewrite entirely (a single saved-at metadata
@@ -27,10 +68,6 @@ npm versions.
   `MAX_INDEXED_CONTENT_CHARS` (2,000) of file content per entry instead of
   the full body, capping index memory on huge files; winning hits fetch the
   full body from the database on demand.
-
-### Changed
-
-- `codeatlas-cli` promoted from `0.3.0-beta.0` to stable `0.3.0`.
 
 ## [0.3.0-beta.0] - 2026-08-17
 

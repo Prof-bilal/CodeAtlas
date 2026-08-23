@@ -51,6 +51,12 @@ apps/cli/src/commands/tui.ts
 apps/cli/tests/tui.test.ts
 # Private working notes between maintainer and assistant — never commit.
 PERFORMANCE_CHECKPOINT.md
+plan.md
+PROMPTS.md
+CodeAtlas Agent Toolkit_ 50 Verified Skills and Reference Integrations.md
+
+# Local agent-session artifacts (ZCode)
+.zcode/
 
 # Final benchmark (2026-08) — pinned repository checkouts (own .git dirs)
 benchmarks/final-2026-08/repos/

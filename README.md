@@ -46,28 +46,54 @@ LLMs work best with *relevant, fresh context*, not whole repositories:
 - **Agent infrastructure** — AI CLI connection layer (`@atlas/agents`),
   agent sessions (`atlas sessions`), usage & credits (`atlas usage`), and
   Context → Agent integration (`createContextIntegration`).
+- **Ollama as a first-class agent** — the selected local model
+  (`atlas ollama connect` / `atlas ollama use`) runs inside the session
+  system with a mid-turn tool loop over the same 7 context tools
+  (`atlas context launch --provider ollama`).
 - **Agent Toolkit** (`atlas tools`) — curated tool registry, per-tool
   manifests, compatibility engine, approval-gated installer, configurator, and
   a security/trust assessor.
+- **Benchmark framework** (`atlas benchmark`) — baseline-vs-CodeAtlas
+  context-quality evaluation with OpenCode and Ollama runners, automated
+  accuracy scoring, and real token/cost/latency capture.
 
 ## Status
 
 **[IMPLEMENTED]** Core pipeline (scanner, hashing, manifest, parser, graph,
 storage, search, summaries, cache, providers), Context SDK, MCP (7 tools),
-VS Code extension, agent connection layer + session manager, usage tracking,
-context integration, and the full Agent Toolkit (56-tool catalog with tier
-system, skill adapter, compatibility engine, approval-gated installer,
-configurator, security/trust assessor, category browsing, config-cleanup on
-remove, live doctor, conflict detection).
+VS Code extension, agent connection layer + session manager + orchestrator
+core (`createOrchestrator`), usage tracking, context integration, Ollama
+provider + agent runtime with the context tool loop, the `atlas benchmark`
+framework, and the full Agent Toolkit (56-tool catalog with tier system,
+skill adapter, compatibility engine, approval-gated installer, configurator,
+security/trust assessor, category browsing, config-cleanup on remove, live
+doctor, conflict detection).
 
 **[PARTIAL]** Parser handles TypeScript only (renamed imports and
 `export default <expr>` do not resolve cross-file).
 
 **[PLANNED]** The `/tools` and `/context` slash surfaces, `atlas setup`, the
-standalone agent router, and the Agent Orchestrator.
+standalone agent router / slash commands, and streaming provider responses.
 
 Ground truth: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) and
 [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md).
+
+### Beta limitations
+
+This is a **beta** (`0.4.0-beta.0`). Known boundaries, by design or by work
+still ahead:
+
+- **TypeScript-only parsing** — other languages are indexed as files but not
+  parsed into symbols/dependencies.
+- **No streaming** — provider responses arrive complete; `stream` plumbing
+  exists on the port but the CLI renders final answers only.
+- **No interactive TUI / slash commands** — `atlas tui` and the `/claude`,
+  `/tools`, `/agents` surfaces are v2 and not shipped.
+- **MCP is tools-only** — no MCP resources or prompts yet.
+- **Search is lexical** — vector/embedding search is a planned seam
+  (`RelevanceScorer`), not wired.
+- **CI runs Ubuntu only**; Windows/macOS are used in development but not
+  exercised in CI.
 
 ## Installation
 
@@ -77,7 +103,7 @@ the
 published global CLI:
 
 ```bash
-npm install --global codeatlas-cli
+npm install --global codeatlas-cli@beta
 atlas --version
 ```
 
@@ -128,11 +154,16 @@ atlas search <query...> [-t <kind>] [-l <n>] [--json]
 atlas mcp [--root <path>]                Start the MCP server over stdio
 atlas sessions list|info|stop            Manage AI agent sessions
 atlas usage [summary|list|budgets]       Usage & credits
+atlas metrics [show|export|reset]        Token-efficiency snapshots
 atlas tools search|info|install|remove|update|configure|doctor
 atlas context <task> [--explain] [--json]
 atlas context launch|attach <task>       Launch/attach agent sessions with context
-atlas explain <target> [--ai]              Explain a symbol/file/module/concept
-atlas doctor [--json]                      Diagnose installation & project health
+atlas explain <target> [--ai]            Explain a symbol/file/module/concept
+atlas benchmark init|run|status|report   Baseline-vs-CodeAtlas context evaluation
+atlas agents [status|connect]            Detect AI CLIs; register the MCP server
+atlas ollama status|connect|models|use   Configure the Ollama provider
+atlas claude|gemini|codex|opencode        Launch that agent with context (sugar)
+atlas doctor [--json]                    Diagnose installation & project health
 ```
 
 Every data-returning command supports `--json` for machine-readable output.
@@ -246,7 +277,29 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md) and
 
 ## Benchmarks
 
-CodeAtlas indexes real repositories locally. Here are honest numbers from the
+### Agent context quality (`atlas benchmark`)
+
+The benchmark framework runs identical tasks twice per repository — once
+**baseline** (the agent alone) and once **CodeAtlas** (the agent with the
+context engine in the loop) — with provider-reported tokens and automated
+accuracy scoring. Results with `opencode/nemotron-3-ultra-free` (free tier,
+so cost is $0 everywhere; details in [docs/benchmark.md](docs/benchmark.md)):
+
+| Repository (files) | Tokens (baseline → CodeAtlas) | Accuracy (0–2) |
+|--------|--------|--------|
+| winston (~116) | 2.74M → 2.94M (+206K used) | 1.56 → 1.44 |
+| commander (~216) | 2.34M → 2.63M (+289K used) | 1.22 → 1.67 |
+| axios (~466) | 3.85M → 4.74M (+882K used) | 1.50 → 1.75 |
+| rxjs (~1,288) | 4.13M → 3.21M (**−911K, −22%**) | 1.63 → 1.25 |
+
+**Honest reading:** on smaller repositories with a free model there is no
+context-window pressure, so CodeAtlas context *adds* tokens while accuracy is
+flat-to-higher. At the 1,288-file scale the pattern flips: targeted context
+**saves 22% of the tokens** — the regime CodeAtlas is built for.
+
+### Indexing stress (extreme corpus)
+
+CodeAtlas indexes real repositories locally. Numbers from the
 [extreme stress benchmark](benchmarks/extreme/) on a shared 7.2 GiB machine
 (1,000 generated TypeScript files, 5 M lines, 251 MB source):
 
@@ -266,8 +319,7 @@ source) exceeds available memory on this machine and is a known limitation.
 
 **Honesty note:** these are *worst-case* generated corpora, not typical
 repositories. Real-world projects with mixed languages and fewer files will
-use less memory. We do not claim specific token-savings percentages — the
-context engine delivers *bounded, relevant* context, not magic.
+use less memory.
 
 Full results: [`benchmarks/extreme/results.json`](benchmarks/extreme/results.json).
 

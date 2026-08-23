@@ -21,7 +21,7 @@ atlas --version
 ```
 
 This installs a self-contained `atlas` binary (the bundled CLI reports its own
-published version, e.g. `0.3.0-beta.0`). No `@atlas/*` workspace packages are
+published version, e.g. `0.4.0-beta.0`). No `@atlas/*` workspace packages are
 needed or installed.
 
 ## Option B — from source (recommended for development)
@@ -47,7 +47,7 @@ node apps/cli/dist/index.js --help
 ## Verify the installation
 
 ```bash
-atlas --version    # published CLI reports its own version (e.g. 0.3.0-beta.0)
+atlas --version    # published CLI reports its own version (e.g. 0.4.0-beta.0)
 pnpm check         # typecheck + lint + format-check + test (from a source checkout)
 ```
 
