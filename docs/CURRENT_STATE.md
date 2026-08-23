@@ -261,12 +261,15 @@ examples/        # README placeholder only (no runnable examples)
 
 ### CLI (`apps/cli`) — **[IMPLEMENTED]**
 
-- Commander.js program `atlas`, **20 top-level commands** — `init`, `build`,
+- Commander.js program `atlas`, **21 top-level commands** — `init`, `build`,
   `update`, `scan`, `search`, `sessions`, `usage`, `metrics`, `explain`,
-  `doctor`, `mcp`, `context`, `tools`, `providers`, `agents`, `ollama`, and the
+  `doctor`, `mcp`, `context`, `tools`, `providers`, `agents`, `ollama`,
+  `benchmark`, and the
   standalone agent launchers `claude`/`gemini`/`codex`/`opencode` (sugar over
   `atlas context launch --provider <agent>`; the future slash router remains
-  planned).
+  planned). **`benchmark`** runs the context-quality evaluation framework
+  (`init`/`run`/`status`/`report`; see the Benchmark Framework section below
+  and `docs/benchmark.md`).
   **`search` is wired
   to the Context SDK**: it opens `.codeatlas/context.db` (via `ATLAS_ROOT` or
   cwd) with `createContextSDK`, runs `context.search.search(...)`, and prints
@@ -449,6 +452,18 @@ examples/        # README placeholder only (no runnable examples)
   feeds results back as `role: "tool"` messages, and re-calls the provider.
   Per-result budget cap (20K chars), unknown tool names → error result, provider
   failure → propagated error.
+- **Advisory tool-call policy** (`ToolCallPolicy` in `context-tools/types.ts`):
+  optional per-run restrictions for the tool loop — `allowedTools`/
+  `deniedTools` (deny wins; only allowed tools are *offered* to the model),
+  `maxToolCalls` budget, `maxResultChars`. Denied calls receive an error result
+  the model can react to (the run continues — never a silent drop) and the
+  denied call ids are surfaced on `ChatAgentResult.deniedToolCalls`. Default
+  (no policy) allows everything; `evaluateToolCallPolicy` is exported for
+  pre-checking.
+- **Message forwarding fix**: adapters forward assistant `tool_calls` verbatim
+  in `messages` history — servers reject `role: "tool"` messages whose
+  `tool_call_id` has no matching assistant tool call (regression-tested in
+  `packages/providers/tests/ollama-adapter.test.ts`).
 - **MCP tool bridge** (`@atlas/mcp`, `tool-bridge.ts`): `createContextToolSource()`
   and `createContextToolSourceFromSDK()` — implements `ContextToolSource` using
   the existing `TOOLS` + `HANDLERS` from `mcp/src/tools.ts` and
@@ -483,8 +498,10 @@ examples/        # README placeholder only (no runnable examples)
 - **`@atlas/benchmark` package** — JSON-backed persistence (`BenchmarkStore`),
   suite/task scaffolding (`scaffoldSuite`, `scaffoldTaskFile`), two runners
   (`OpenCodeRunner` for `opencode run --format json`, `OllamaRunner` using
-  `ChatAgentPort` in-process), automated evaluator (file/concept hit scoring),
-  Markdown report generator (`renderReport`/`renderSummary`), and metrics
+  `ChatAgentPort` in-process — mode-aware: plain chat for baseline, tool loop
+  for codeatlas, with per-task timeout and policy-denied call marking),
+  automated evaluator (file/concept hit scoring), Markdown/HTML report
+  generators (`renderReport`/`renderSummary`/`renderHtml`), and metrics
   capture via `MetricsPort`/`UsagePort`. `BenchmarkService` orchestrates the
   full pipeline.
 - **SDK composition** (`packages/sdk/src/benchmark/index.ts`):
@@ -492,11 +509,19 @@ examples/        # README placeholder only (no runnable examples)
   reporter into the service.
 - **CLI command** (`atlas benchmark init/run/status/report`):
   `init` scaffolds a benchmark suite; `run` executes all tasks in both modes
-  (baseline vs codeatlas); `status` shows progress; `report` generates
-  Markdown.
+  (baseline vs codeatlas) with resume (`--force` re-runs) and auto-indexing of
+  unindexed repos before codeatlas runs; both runners are registered
+  (opencode + ollama — the ollama runner composes `createProviderService`
+  with the MCP tool bridge so codeatlas mode uses the same 7 context tools);
+  `status` shows progress; `report` generates Markdown (default), JSON
+  (`--json`), or standalone HTML (`--format html`).
+- Ollama models price at $0/token via the `StaticPricingSource` provider
+  wildcard ("local inference" note; see `packages/usage/src/pricing.ts`).
 - Tests: `packages/benchmark/tests/evaluator.test.ts` (11 tests),
   `packages/benchmark/tests/store.test.ts` (7 tests),
-  `packages/benchmark/tests/reporter.test.ts` (2 tests).
+  `packages/benchmark/tests/reporter.test.ts` (4 tests),
+  `packages/benchmark/tests/runner-ollama.test.ts` (5 tests),
+  `packages/benchmark/tests/e2e-agents.test.ts` (5 e2e tests).
   See ADR-012.
 
 ### Multi-Agent Orchestrator (Task 17) — **[IMPLEMENTED]**

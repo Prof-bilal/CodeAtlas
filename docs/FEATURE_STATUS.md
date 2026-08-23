@@ -53,7 +53,7 @@ Single source of truth for what each feature is — **verified against the code*
 | Tool Configurator | **[IMPLEMENTED]** | `ConfiguratorPort` + Claude/Gemini/Codex/OpenCode/MCP/VS Code adapters; AgentPort-backed installed-target detection; safe merge, backup, rollback, verification, dry-run; SDK `createConfigurator`; `atlas tools configure` |
 | Tool Security / Trust System | **[IMPLEMENTED]** | `SecurityPort` + `SecurityAssessor` perform offline license/source/dependency/command/permission/maintainer/provenance/repository checks, produce per-check verdicts and risk, map only documented reviews to `reviewed`/`verified`, default to `unverified`, reject hostile metadata, and hard-gate installation. `blocked` cannot be overridden |
 | Tool CLI / Slash Commands (`atlas tools`, `/tools`, `atlas setup`) | **[PARTIAL]** | `atlas tools` overview/search/info/install/remove/update/configure/doctor are SDK-backed; the `atlas tui` surface adding `/toolkit` and `/tools-install <tool>` is **v2 / not shipped**; `atlas setup` remains planned |
-| Tool Benchmarking | **[PLANNED]** | Future subsystem; out of MVP |
+| Benchmark Framework (`atlas benchmark`) | **[IMPLEMENTED]** | `@atlas/benchmark` behind `BenchmarkPort` (ADR-012): `init/run/status/report` CLI, OpenCode + Ollama runners (baseline vs CodeAtlas modes, per-task timeout, resume), automated accuracy evaluation, real token/cost/latency capture via `@atlas/usage`/`MetricsPort`, Markdown/JSON/HTML reports. See `docs/benchmark.md` |
 | Tool Recommendation Engine | **[PLANNED]** | Future; separate from Registry; out of MVP |
 
 > **Never mark something implemented without checking the code.** If you are

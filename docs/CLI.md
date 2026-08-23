@@ -60,6 +60,11 @@ Options take precedence over environment/config where they overlap.
 | `atlas ollama disconnect` | **[implemented]** | Clear the saved Ollama connection (env keys kept). |
 | `atlas ollama models` | **[implemented]** | List models exposed by the Ollama server. `--json` supported. |
 | `atlas ollama use <model>` | **[implemented]** | Select the active Ollama model for context summarization. |
+| `atlas benchmark` | **[implemented]** parent command | Context-quality benchmark framework (`@atlas/benchmark` behind `BenchmarkPort`, ADR-012 — see [benchmark.md](./benchmark.md)). |
+| `atlas benchmark init` | **[implemented]** | Create a suite (`--id`, `--name`, `--agent opencode\|ollama`, `--model`, plus `--repo` for a starter task file or `--task-file` to import one). |
+| `atlas benchmark run <suite>` | **[implemented]** | Run tasks in baseline + codeatlas modes (`--repo` required; `--task`, `--mode`, `--force` optional). Resumes completed runs; auto-indexes unindexed repos before codeatlas runs. |
+| `atlas benchmark status <suite>` | **[implemented]** | Show suite progress (`completed/total`); `--json` supported. |
+| `atlas benchmark report <suite>` | **[implemented]** | Render the report — Markdown by default, `--format json\|html`, or `--json`. |
 | `atlas tools` | **[implemented]** parent command | Agent Toolkit commands (Direction C — see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)). |
 | `atlas tools search <query>` | **[implemented]** | Search the curated tool registry; `--json` supported. |
 | `atlas tools info <tool>` | **[implemented]** | Show registry, trust/security, and installed manifest state; `--json` supported. |

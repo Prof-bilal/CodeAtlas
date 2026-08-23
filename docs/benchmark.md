@@ -1,4 +1,94 @@
-# CodeAtlas MCP MVP — Benchmark Report
+# Benchmarking CodeAtlas — `atlas benchmark`
+
+**Status: [IMPLEMENTED]** (`packages/benchmark` behind `BenchmarkPort` in
+`@atlas/core`, composed in the CLI — ADR-012). The benchmark framework
+measures **agent context quality**: for each task, the same prompt runs twice —
+once **baseline** (the agent without CodeAtlas context) and once **codeatlas**
+(the agent with CodeAtlas in the loop) — with real token/cost/latency numbers
+and automated accuracy scoring.
+
+## Commands
+
+```
+atlas benchmark init --id <suite> --agent opencode|ollama --model <model> \
+                     [--repo <path> | --task-file <tasks.json>]
+atlas benchmark run <suite> --repo <path> [--task <id>] [--mode baseline|codeatlas|both] [--force]
+atlas benchmark status <suite> [--json]
+atlas benchmark report <suite> [--format markdown|json|html] [--json]
+```
+
+- **init** creates a suite (config persisted at
+  `.codeatlas/benchmarks/suites/<id>/suite.json`) and either imports a task
+  file or scaffolds a starter task file to edit.
+- **run** executes the suite. Omitting `--force` **resumes**: completed
+  task/mode results are reused, only missing ones run. When a CodeAtlas-mode
+  run is requested and the repo has no `.codeatlas/context.db`, the repo is
+  indexed first automatically.
+- **status** shows progress (`completed/total`).
+- **report** renders Markdown (default), JSON, or a standalone HTML document.
+
+## Agents (runners)
+
+| Runner | How it runs | Metrics source |
+|---|---|---|
+| `opencode` | spawns `opencode run --format json`, parses the JSONL event stream; registers the CodeAtlas MCP server globally for `codeatlas` mode | provider-reported `step_finish` tokens/cost (**actual**) |
+| `ollama` | in-process against the configured Ollama provider (`atlas ollama connect`/`use`); `codeatlas` mode uses the `ToolUsingChatAgent` tool loop over the same 7 MCP context tools; `baseline` mode is a plain chat call | provider-reported usage (**actual**) |
+
+The Ollama runner enforces the suite's per-task timeout and marks
+policy-denied tool calls as errors in results.
+
+## Task files
+
+Declarative JSON (`TaskFile`): one file per repository with `repository`,
+`name`, `version`, `files`, and `tasks[]`. Each task has an `id`, `category`
+(e.g. `repository-understanding`, `dependency-tracing`), `prompt`,
+`expected_files`, `expected_concepts`, and `evaluation_method`. Evaluation is
+automated (`packages/benchmark/src/evaluator.ts`): score 0–2 from file-ratio
+and concept-ratio hits plus on-disk citation checks.
+
+## Metrics & persistence
+
+- Token/cost/latency per task (real, tri-state-aware), tool-call records,
+  accuracy scores, and aggregate savings land as JSON under
+  `.codeatlas/benchmarks/suites/<id>/tasks/<task>-<mode>.json` plus a
+  `raw-results.json` aggregate.
+- Each task run feeds `MetricsPort.recordTokenEstimate` and `@atlas/usage`
+  (`latencyMs`, agent `benchmark:<suite>`).
+- Ollama models price at $0/token through the static pricing wildcard
+  ("local inference"; cloud-hosted endpoints may differ).
+
+## Suite results (2026-08)
+
+Run against the pinned clones in `benchmarks/final-2026-08/repos/` with
+`opencode/nemotron-3-ultra-free` (free tier — token savings is the economic
+metric; cost is $0 by provider report):
+
+| Suite | Repo (files) | Progress | Tokens (baseline → codeatlas) | Accuracy (baseline → codeatlas) |
+|---|---|---|---|---|
+| winston-bench | repo-01 (~116) | 18/18 | 2,735,932 → 2,941,986 (+206K used) | 1.56 → 1.44 (−0.11) |
+| commander-bench | repo-02 (~216) | 18/18 | 2,339,524 → 2,628,181 (+289K used) | 1.22 → 1.67 (**+0.44**) |
+| axios-bench | repo-03 (~466) | 16/16 | 3,854,613 → 4,736,871 (+882K used) | 1.50 → 1.75 (**+0.25**) |
+| rxjs-bench | repo-04 (~1288) | 16/16 | 4,125,016 → 3,214,095 (**−911K saved, −22%**) | 1.63 → 1.25 (−0.38) |
+
+> Honest reading: on the three smaller repos the free model has no
+> context-window pressure, so CodeAtlas MCP context *adds* tokens while
+> accuracy is flat-to-higher (commander +0.44, axios +0.25, winston −0.11).
+> On the largest repo (rxjs, ~1288 files) the pattern flips: targeted context
+> **saves 911K tokens (−22%)** — the regime CodeAtlas is built for — at some
+> accuracy cost with this free-tier model. Cost is $0 everywhere
+> (provider-reported). The framework reports numbers as measured; nothing is
+> massaged.
+
+Reproduce any suite: `atlas benchmark run <suite> --repo benchmarks/final-2026-08/repos/repo-0X`
+then `atlas benchmark report <suite>`. Task files are versioned inputs; model
+and modes are pinned in `suite.json`.
+
+Related: ADR-012 (`docs/decisions/ADR-012-benchmark-framework.md`),
+`benchmarks/README.md` (pre-framework harness scope).
+
+---
+
+# Historical: CodeAtlas MCP MVP — Benchmark Report (2026-08-15)
 
 Benchmark date: 2026-08-15
 Run: `pnpm exec vite-node tests/benchmarks/mcp-benchmark.ts`

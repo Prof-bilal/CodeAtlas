@@ -38,9 +38,11 @@ Non-obvious facts (verified as of 2026-08-14):
   `ContextBuilderPort`, ADR-001): it ranks search hits and resolves them to
   source-file `ContextItem`s — no AI. Do not add AI gating or revert it to a
   stub.
-- The CLI has **twenty** top-level subcommands. `atlas search`, `atlas mcp`,
+- The CLI has **twenty-one** top-level subcommands. `atlas search`, `atlas mcp`,
   `atlas sessions`, `atlas usage`, `atlas agents`, `atlas metrics`, the full
-  SDK-backed `atlas tools`, `atlas context`, `atlas explain`, and `atlas doctor`
+  SDK-backed `atlas tools`, `atlas context`, `atlas explain`, `atlas benchmark`
+  (init/run/status/report — `@atlas/benchmark` behind `BenchmarkPort`,
+  ADR-012), and `atlas doctor`
   command surface are wired
   (through the **Context SDK**,
   `@atlas/mcp`, `createSessionManager()`, and `createUsageService()`

@@ -43,6 +43,7 @@ README.md
 | `docs/CLI.md` | The `atlas` CLI contract, including the implemented SDK-backed Toolkit commands. |
 | `docs/MCP.md` | The MCP server: configuration + full tool reference. |
 | `docs/MCP_AUDIT.md` | MCP production-hardening audit: server hardening summary, the agent-registration matrix (claude/gemini/codex/opencode/cursor/cline), verification commands, test map, limitations. |
+| `docs/benchmark.md` | The `atlas benchmark` framework (ADR-012): suites, runners (OpenCode/Ollama), task files, metrics, reports; historical 2026-08-15 MVP report appended. |
 | `docs/VSCODE.md` | The VS Code extension (`@atlas/extension`): what it does and how it consumes the SDK. |
 | `docs/installation.md` | Installing CodeAtlas (published global CLI or from source). |
 | `docs/getting-started.md` | 10-minute end-to-end walkthrough against a real repository. |
