@@ -36,11 +36,42 @@ describe("StaticPricingSource", () => {
     }
   });
 
+  it("resolves arbitrary Ollama models through the provider wildcard at $0", async () => {
+    const source = new StaticPricingSource();
+    const result = await source.priceFor("ollama", "qwen2.5-coder:7b");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.inputPerMillion).toMatchObject({ source: "estimated", value: 0 });
+      expect(result.value.outputPerMillion).toMatchObject({ source: "estimated", value: 0 });
+      expect(result.value.inputPerMillion.note).toContain("local inference");
+    }
+  });
+
+  it("prefers an exact model entry over the provider wildcard", async () => {
+    const source = new StaticPricingSource({
+      custom: {
+        "custom-1": { currency: "USD", inputPerMillion: 2, outputPerMillion: 4 },
+        "*": { currency: "USD", inputPerMillion: 0, outputPerMillion: 0 },
+      },
+    });
+    const exact = await source.priceFor("custom", "custom-1");
+    expect(exact.ok).toBe(true);
+    if (exact.ok) {
+      expect(exact.value.inputPerMillion.value).toBe(2);
+    }
+    const wildcard = await source.priceFor("custom", "anything-else");
+    expect(wildcard.ok).toBe(true);
+    if (wildcard.ok) {
+      expect(wildcard.value.inputPerMillion.value).toBe(0);
+    }
+  });
+
   it("lists the providers it knows", () => {
     expect([...new StaticPricingSource().listProviders()].sort()).toEqual([
       "claude",
       "deepseek",
       "gemini",
+      "ollama",
       "openai",
     ]);
   });

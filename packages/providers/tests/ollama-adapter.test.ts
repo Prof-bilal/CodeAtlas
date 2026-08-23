@@ -51,9 +51,18 @@ describe("OllamaAdapter — messages support", () => {
     const messages = body["messages"] as Array<Record<string, unknown>>;
     expect(messages.length).toBe(4);
     expect(messages[0]).toEqual({ role: "user", content: "What is auth?" });
-    expect(messages[1]).toMatchObject({
+    // Assistant tool_calls must be forwarded — servers reject tool messages
+    // whose tool_call_id has no matching assistant tool call.
+    expect(messages[1]).toEqual({
       role: "assistant",
       content: "",
+      tool_calls: [
+        {
+          id: "c1",
+          type: "function",
+          function: { name: "search_symbols", arguments: '{"query":"auth"}' },
+        },
+      ],
     });
     expect(messages[2]).toEqual({ role: "tool", content: '{"hits":[]}', tool_call_id: "c1" });
     expect(messages[3]).toEqual({ role: "user", content: "Now show me the module." });

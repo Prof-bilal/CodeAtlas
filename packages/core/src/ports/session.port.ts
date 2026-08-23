@@ -144,6 +144,12 @@ export interface ChatAgentResult {
    * multi-turn continuity.
    */
   readonly messages?: readonly ProviderMessage[];
+  /**
+   * Tool call ids that were denied by the runner's tool-call policy (advisory
+   * security surface). Denials are returned to the model as error results and
+   * the run continues. Undefined/empty when no policy denied anything.
+   */
+  readonly deniedToolCalls?: readonly string[];
 }
 
 /**

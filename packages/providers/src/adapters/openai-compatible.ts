@@ -94,6 +94,9 @@ function buildOpenAIMessages(request: ProviderRequest): unknown[] {
       role: m.role,
       content: m.content,
       ...(m.tool_call_id !== undefined ? { tool_call_id: m.tool_call_id } : {}),
+      // Assistant tool_calls must be forwarded verbatim — tool results correlate
+      // to them by id, and servers reject `role: "tool"` messages otherwise.
+      ...(m.tool_calls !== undefined ? { tool_calls: m.tool_calls } : {}),
     }));
   }
   return [

@@ -36,6 +36,7 @@ export class ProviderChatAgent implements ChatAgentPort {
     const startMs = Date.now();
     try {
       const result = await this.provider.complete({
+        provider: request.provider,
         prompt: request.prompt,
         ...(request.messages !== undefined ? { messages: request.messages } : {}),
       });

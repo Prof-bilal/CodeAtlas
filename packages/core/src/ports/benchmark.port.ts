@@ -316,7 +316,7 @@ export interface BenchmarkStatus {
 /** Options for report generation. */
 export interface ReportOptions {
   /** Output format (default: "markdown"). */
-  readonly format?: "markdown" | "json";
+  readonly format?: "markdown" | "json" | "html";
   /** Sections to include (default: all). */
   readonly sections?: readonly ReportSection[];
 }
@@ -336,10 +336,10 @@ export type ReportSection =
 export interface BenchmarkReport {
   /** Suite identifier. */
   readonly suiteId: string;
-  /** Report content (Markdown text or JSON string). */
+  /** Report content (Markdown, JSON, or HTML text). */
   readonly content: string;
   /** Report format. */
-  readonly format: "markdown" | "json";
+  readonly format: "markdown" | "json" | "html";
   /** ISO timestamp of generation. */
   readonly generatedAt: string;
 }

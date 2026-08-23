@@ -5,7 +5,7 @@ import type {
   BenchmarkTaskResult,
 } from "@atlas/core";
 import { describe, expect, it } from "vitest";
-import { renderReport } from "../src/reporter";
+import { renderHtml, renderReport } from "../src/reporter";
 
 const baseConfig: BenchmarkConfig = {
   id: "test-suite",
@@ -108,5 +108,39 @@ describe("renderReport", () => {
 
     expect(report.content).toContain("Empty");
     expect(report.content).toContain("0/0 tasks");
+  });
+});
+
+describe("renderHtml", () => {
+  it("generates a standalone HTML document with the same data", () => {
+    const report = renderHtml({
+      suiteId: "test-suite",
+      config: baseConfig,
+      tasks: [makeTask("T01", "baseline", 1000, 5000), makeTask("T01", "codeatlas", 600, 3000)],
+      evaluations: [makeEval("T01", "baseline", 1), makeEval("T01", "codeatlas", 2)],
+      status: baseStatus,
+    });
+
+    expect(report.format).toBe("html");
+    expect(report.content).toContain("<!doctype html>");
+    expect(report.content).toContain("<title>Benchmark Report — Test Benchmark</title>");
+    expect(report.content).toContain("Token &amp; Cost Summary");
+    expect(report.content).toContain("Accuracy Summary");
+    expect(report.content).toContain("Task Results");
+    expect(report.content).toContain("T01");
+  });
+
+  it("escapes HTML-sensitive task content", () => {
+    const task = makeTask("<script>&quot;T01&quot;</script>", "baseline", 10, 10);
+    const report = renderHtml({
+      suiteId: "test-suite",
+      config: baseConfig,
+      tasks: [task],
+      evaluations: [],
+      status: baseStatus,
+    });
+
+    expect(report.content).not.toContain("<script>");
+    expect(report.content).toContain("&lt;script&gt;");
   });
 });

@@ -83,8 +83,20 @@ export {
 } from "./context/errors";
 export { ReadRepositories, WriteRepositories } from "./context/repositories";
 export { createSessionManager, type CreateSessionManagerOptions } from "./sessions/index";
-export type { ContextToolSource } from "./context-tools/index";
-export { ToolUsingChatAgent, MAX_TOOL_ROUNDS, MAX_TOOL_RESULT_CHARS } from "./context-tools/index";
+export type { ContextToolSource, ToolCallPolicy, ToolCallDecision } from "./context-tools/index";
+export {
+  ToolUsingChatAgent,
+  MAX_TOOL_ROUNDS,
+  MAX_TOOL_RESULT_CHARS,
+  evaluateToolCallPolicy,
+} from "./context-tools/index";
+export { ProviderChatAgent } from "@atlas/agents";
+export type {
+  ChatAgentPort,
+  ChatAgentRequest,
+  ChatAgentResult,
+  ProviderPort,
+} from "@atlas/core";
 export {
   createAgentService,
   buildInteractiveArgs,

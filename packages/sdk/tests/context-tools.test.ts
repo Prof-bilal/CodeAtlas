@@ -324,4 +324,189 @@ describe("ToolUsingChatAgent", () => {
     expect(agent.handles("ollama")).toBe(true);
     expect(agent.handles("claude")).toBe(false);
   });
+
+  it("passes the requested provider id through to the provider port", async () => {
+    const requests: Array<Record<string, unknown>> = [];
+    const provider: ProviderPort = {
+      complete: async (request) => {
+        requests.push(request as unknown as Record<string, unknown>);
+        return ok({
+          provider: "ollama",
+          content: "done",
+          model: "llama3.2",
+          usage: undefined,
+          toolCalls: undefined,
+        });
+      },
+    };
+    const toolSource = fakeToolSource([]);
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"]);
+
+    await agent.run({ provider: "ollama", prompt: "test", repositoryPath: "/repo" });
+
+    expect(requests[0]?.["provider"]).toBe("ollama");
+  });
+});
+
+describe("ToolUsingChatAgent tool-call policy", () => {
+  /** Provider fake that records every complete() request. */
+  function capturingProvider(
+    respond: (callIndex: number) => ProviderResponse,
+  ): ProviderPort & { readonly requests: Array<Record<string, unknown>> } {
+    const requests: Array<Record<string, unknown>> = [];
+    let index = 0;
+    return {
+      complete: async (request) => {
+        requests.push(request as unknown as Record<string, unknown>);
+        return ok(respond(index++));
+      },
+      get requests() {
+        return requests;
+      },
+    };
+  }
+
+  function toolCall(id: string, name: string): ToolCall {
+    return { id, type: "function", function: { name, arguments: "{}" } };
+  }
+
+  it("denies calls to tools on the denied list, returns an error result, and records the denial", async () => {
+    const provider = capturingProvider((i) =>
+      i === 0
+        ? {
+            provider: "ollama",
+            content: "",
+            model: "llama3.2",
+            usage: undefined,
+            toolCalls: [toolCall("call_1", "read_file_range")],
+          }
+        : {
+            provider: "ollama",
+            content: "final answer without the file",
+            model: "llama3.2",
+            usage: undefined,
+            toolCalls: undefined,
+          },
+    );
+    let executed = 0;
+    const toolSource = fakeToolSource(
+      [{ name: "read_file_range", description: "Read" }],
+      async () => {
+        executed += 1;
+        return ok("file contents");
+      },
+    );
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"], 10, {
+      deniedTools: ["read_file_range"],
+    });
+
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "read the file",
+      repositoryPath: "/repo",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.content).toBe("final answer without the file");
+      expect(result.value.deniedToolCalls).toEqual(["call_1"]);
+      const msgs = result.value.messages ?? [];
+      const toolMsg = msgs.find((m) => m.role === "tool");
+      expect(toolMsg?.content).toContain("denied by policy");
+    }
+    expect(executed).toBe(0);
+  });
+
+  it("offers only allowed tools to the model", async () => {
+    const provider = capturingProvider(() => ({
+      provider: "ollama",
+      content: "done",
+      model: "llama3.2",
+      usage: undefined,
+      toolCalls: undefined,
+    }));
+    const toolSource = fakeToolSource([
+      { name: "search_symbols", description: "Search" },
+      { name: "read_file_range", description: "Read" },
+      { name: "project_overview", description: "Overview" },
+    ]);
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"], 10, {
+      allowedTools: ["search_symbols", "project_overview"],
+    });
+
+    await agent.run({ provider: "ollama", prompt: "test", repositoryPath: "/repo" });
+
+    const offered = (provider.requests[0]?.["tools"] as Array<{ function: { name: string } }>).map(
+      (t) => t.function.name,
+    );
+    expect(offered).toEqual(["search_symbols", "project_overview"]);
+  });
+
+  it("enforces the maxToolCalls budget with an explicit denial reason", async () => {
+    // Always requests two calls per round; budget allows only one execution.
+    const provider = capturingProvider((i) => ({
+      provider: "ollama",
+      content: i === 0 ? "" : "budgeted answer",
+      model: "llama3.2",
+      usage: undefined,
+      toolCalls:
+        i === 0
+          ? [toolCall("call_a", "search_symbols"), toolCall("call_b", "search_symbols")]
+          : undefined,
+    }));
+    const toolSource = fakeToolSource([{ name: "search_symbols", description: "Search" }]);
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"], 10, {
+      maxToolCalls: 1,
+    });
+
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "search twice",
+      repositoryPath: "/repo",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.deniedToolCalls).toEqual(["call_b"]);
+      const msgs = result.value.messages ?? [];
+      const budgetMsg = msgs.find((m) => m.role === "tool" && m.content.includes("budget"));
+      expect(budgetMsg).toBeDefined();
+    }
+  });
+
+  it("honors a smaller maxResultChars from the policy", async () => {
+    const provider = capturingProvider((i) =>
+      i === 0
+        ? {
+            provider: "ollama",
+            content: "",
+            model: "llama3.2",
+            usage: undefined,
+            toolCalls: [toolCall("call_1", "search_symbols")],
+          }
+        : {
+            provider: "ollama",
+            content: "done",
+            model: "llama3.2",
+            usage: undefined,
+            toolCalls: undefined,
+          },
+    );
+    const toolSource = fakeToolSource(
+      [{ name: "search_symbols", description: "Search" }],
+      async () => ok(`${"x".repeat(500)}`),
+    );
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"], 10, {
+      maxResultChars: 50,
+    });
+
+    const result = await agent.run({ provider: "ollama", prompt: "test", repositoryPath: "/repo" });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const toolMsg = (result.value.messages ?? []).find((m) => m.role === "tool");
+      expect(toolMsg?.content.length).toBeLessThanOrEqual(70);
+      expect(toolMsg?.content).toContain("truncated");
+    }
+  });
 });

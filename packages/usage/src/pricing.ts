@@ -8,6 +8,8 @@ export interface StaticPriceEntry {
   readonly currency: string;
   readonly inputPerMillion: number;
   readonly outputPerMillion: number;
+  /** Optional provenance note overriding the default (e.g. for $0 local inference). */
+  readonly note?: string;
 }
 
 /**
@@ -33,6 +35,17 @@ export const BUILTIN_PRICING: Readonly<Record<string, Readonly<Record<string, St
       "gemini-2.5-pro": { currency: "USD", inputPerMillion: 1.25, outputPerMillion: 10 },
       "gemini-1.5-pro": { currency: "USD", inputPerMillion: 1.25, outputPerMillion: 5 },
     },
+    ollama: {
+      // Local Ollama inference runs on the user's own machine — no per-token
+      // cost. Cloud-hosted Ollama endpoints (API key set) do charge; their
+      // prices are unknown here, so the note says so rather than guessing.
+      "*": {
+        currency: "USD",
+        inputPerMillion: 0,
+        outputPerMillion: 0,
+        note: "local inference — no per-token cost; cloud-hosted endpoints may differ",
+      },
+    },
   };
 
 const PRICE_NOTE = "published list price, not verified";
@@ -52,16 +65,19 @@ export class StaticPricingSource implements PricingSource {
   }
 
   public async priceFor(provider: string, model: string): Promise<Result<ModelPrice>> {
-    const entry = this.table[provider]?.[model];
+    // Exact model entry first; a provider-level `"*"` wildcard is the fallback
+    // (used by Ollama, where model ids are arbitrary and locally hosted).
+    const entry = this.table[provider]?.[model] ?? this.table[provider]?.["*"];
     if (entry === undefined) {
       return fail(new UnknownPriceError(provider, model));
     }
+    const note = entry.note ?? PRICE_NOTE;
     return ok({
       provider,
       model,
       currency: entry.currency,
-      inputPerMillion: { source: "estimated", value: entry.inputPerMillion, note: PRICE_NOTE },
-      outputPerMillion: { source: "estimated", value: entry.outputPerMillion, note: PRICE_NOTE },
+      inputPerMillion: { source: "estimated", value: entry.inputPerMillion, note },
+      outputPerMillion: { source: "estimated", value: entry.outputPerMillion, note },
     });
   }
 

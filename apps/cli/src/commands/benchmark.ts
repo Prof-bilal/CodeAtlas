@@ -3,10 +3,28 @@ import { resolve } from "node:path";
 import {
   BenchmarkService,
   BenchmarkStore,
+  OllamaRunner,
   OpenCodeRunner,
   scaffoldTaskFile,
 } from "@atlas/benchmark";
-import type { BenchmarkConfig, TaskFile } from "@atlas/sdk";
+import type { BenchmarkRunner } from "@atlas/benchmark";
+import { createContextToolSourceFromSDK } from "@atlas/mcp";
+import type {
+  BenchmarkConfig,
+  ChatAgentPort,
+  ChatAgentRequest,
+  ChatAgentResult,
+  ProviderPort,
+  Result,
+  TaskFile,
+} from "@atlas/sdk";
+import {
+  ProviderChatAgent,
+  ToolUsingChatAgent,
+  createContextSDK,
+  createProviderService,
+  indexProject,
+} from "@atlas/sdk";
 import type { Command } from "commander";
 
 // ---------------------------------------------------------------------------
@@ -58,6 +76,7 @@ export function registerBenchmark(program: Command): void {
     .command("report <suite-id>")
     .description("Generate a benchmark report")
     .option("--json", "output as JSON instead of Markdown")
+    .option("--format <format>", "report format: markdown, json, or html (default: markdown)")
     .action(async (suiteId, opts) => {
       await generateReport(suiteId, opts);
     });
@@ -65,6 +84,44 @@ export function registerBenchmark(program: Command): void {
   // Bare `atlas benchmark` prints help
   bench.action(() => {
     bench.help();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Ollama runner composition
+// ---------------------------------------------------------------------------
+
+/**
+ * CodeAtlas-mode chat agent for Ollama benchmark runs: opens the repository's
+ * Context SDK per task and runs the bounded tool loop against the MCP context
+ * tools (reusing the exact tool definitions MCP serves — no second registry).
+ */
+class RepositoryToolLoopAgent implements ChatAgentPort {
+  public readonly providers = ["ollama"];
+
+  public constructor(private readonly provider: ProviderPort) {}
+
+  public handles(provider: string): boolean {
+    return provider === "ollama";
+  }
+
+  public async run(request: ChatAgentRequest): Promise<Result<ChatAgentResult>> {
+    const sdk = createContextSDK({ repositoryPath: request.repositoryPath });
+    try {
+      const toolSource = createContextToolSourceFromSDK(sdk);
+      const agent = new ToolUsingChatAgent(this.provider, toolSource, ["ollama"]);
+      return await agent.run(request);
+    } finally {
+      sdk.close();
+    }
+  }
+}
+
+function createOllamaRunner(): OllamaRunner {
+  const providers = createProviderService();
+  return new OllamaRunner({
+    baseline: new ProviderChatAgent(providers, ["ollama"]),
+    codeatlas: new RepositoryToolLoopAgent(providers),
   });
 }
 
@@ -77,9 +134,29 @@ function benchmarkRoot(): string {
 }
 
 function openService(): BenchmarkService {
-  const runners = new Map<string, OpenCodeRunner>();
+  const runners = new Map<string, BenchmarkRunner>();
   runners.set("opencode", new OpenCodeRunner());
+  runners.set("ollama", createOllamaRunner());
   return new BenchmarkService({ root: benchmarkRoot(), runners });
+}
+
+/** Path of the repository's context database (used to detect an existing index). */
+function contextDbPath(repositoryPath: string): string {
+  return resolve(repositoryPath, ".codeatlas", "context.db");
+}
+
+/** Ensure the repository is indexed before a CodeAtlas-mode run. */
+async function ensureIndexed(repositoryPath: string): Promise<void> {
+  if (existsSync(contextDbPath(repositoryPath))) {
+    return;
+  }
+  console.log("No CodeAtlas index found — indexing repository…");
+  const result = await indexProject({ repositoryPath, mode: "build" });
+  if (!result.ok) {
+    console.error(`Error: indexing failed: ${result.error.message}`);
+    process.exit(1);
+  }
+  console.log("Indexing complete.");
 }
 
 // ---------------------------------------------------------------------------
@@ -158,24 +235,38 @@ async function runSuite(
 
   const repoPath = resolve(opts.repo);
   if (!existsSync(repoPath)) {
-    console.error(`Error: repository path "${repoPath}" does not exist`);
+    console.error(`Error: repository path "${opts.repo}" does not exist`);
     process.exit(1);
   }
 
   const service = openService();
-  let modes: ("baseline" | "codeatlas")[] | undefined;
-  if (opts.mode !== undefined) {
-    if (opts.mode === "both") {
-      modes = ["baseline", "codeatlas"];
-    } else {
-      modes = [opts.mode as "baseline" | "codeatlas"];
+  const suiteResult = await service.loadSuite(suiteId);
+  if (!suiteResult.ok) {
+    console.error(`Error: ${suiteResult.error.message}`);
+    process.exit(1);
+  }
+
+  // Resolve the effective modes up front so the index is built only when a
+  // CodeAtlas-mode run will actually happen (both agents read it in that mode).
+  const modes =
+    opts.mode === undefined || opts.mode === "both"
+      ? suiteResult.value.config.modes
+      : [opts.mode as "baseline" | "codeatlas"];
+  if (modes.includes("codeatlas")) {
+    if (
+      suiteResult.value.config.agent === "ollama" &&
+      !createProviderService().listProviders().includes("ollama")
+    ) {
+      console.error("Error: Ollama is not configured. Run `atlas ollama connect` first.");
+      process.exit(1);
     }
+    await ensureIndexed(repoPath);
   }
 
   console.log(`Running suite "${suiteId}"...`);
   console.log(`Repository: ${repoPath}`);
   if (opts.task !== undefined) console.log(`Task filter: ${opts.task}`);
-  if (modes !== undefined) console.log(`Modes: ${modes.join(", ")}`);
+  console.log(`Modes: ${modes.join(", ")}`);
   console.log("");
 
   const result = await service.runSuite({
@@ -234,22 +325,23 @@ async function showStatus(suiteId: string, opts: { json?: boolean }): Promise<vo
 // report
 // ---------------------------------------------------------------------------
 
-async function generateReport(suiteId: string, opts: { json?: boolean }): Promise<void> {
+async function generateReport(
+  suiteId: string,
+  opts: { json?: boolean; format?: string },
+): Promise<void> {
+  const format = opts.json === true ? "json" : (opts.format ?? "markdown");
+  if (format !== "markdown" && format !== "json" && format !== "html") {
+    console.error(`Error: unknown format "${format}" (expected markdown, json, or html)`);
+    process.exit(1);
+  }
+
   const service = openService();
-  const result = await service.generateReport(suiteId, {
-    format: opts.json === true ? "json" : "markdown",
-  });
+  const result = await service.generateReport(suiteId, { format });
 
   if (!result.ok) {
     console.error(`Error: ${result.error.message}`);
     process.exit(1);
   }
 
-  const report = result.value;
-
-  if (opts.json === true) {
-    console.log(report.content);
-  } else {
-    console.log(report.content);
-  }
+  console.log(result.value.content);
 }

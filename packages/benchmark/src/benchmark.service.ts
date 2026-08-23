@@ -15,7 +15,7 @@ import type {
 import { type Result, fail, ok } from "@atlas/shared";
 import { evaluateTask } from "./evaluator";
 import { BenchmarkMetrics } from "./metrics";
-import { renderReport } from "./reporter";
+import { renderHtml, renderReport } from "./reporter";
 import { BenchmarkStore } from "./store";
 
 /** Options for creating a BenchmarkService. */
@@ -270,7 +270,7 @@ export class BenchmarkService implements BenchmarkPort {
 
   public async generateReport(
     suiteId: string,
-    options?: { readonly format?: "markdown" | "json" },
+    options?: { readonly format?: "markdown" | "json" | "html" },
   ): Promise<Result<BenchmarkReport>> {
     const suite = this.store.loadSuite(suiteId);
     if (suite === null) {
@@ -301,6 +301,18 @@ export class BenchmarkService implements BenchmarkPort {
         format: "json",
         generatedAt: new Date().toISOString(),
       };
+      this.store.saveReport(report);
+      return ok(report);
+    }
+
+    if (format === "html") {
+      const report = renderHtml({
+        suiteId,
+        config: suite.config,
+        tasks,
+        evaluations,
+        status,
+      });
       this.store.saveReport(report);
       return ok(report);
     }

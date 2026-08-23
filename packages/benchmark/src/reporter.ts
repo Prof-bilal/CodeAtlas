@@ -218,6 +218,151 @@ export function renderSummary(data: SummaryData): BenchmarkReport {
 }
 
 // ---------------------------------------------------------------------------
+// HTML rendering
+// ---------------------------------------------------------------------------
+
+function escapeHtml(text: string): string {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function htmlTable(headers: readonly string[], rows: readonly (readonly string[])[]): string {
+  const head = headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("");
+  const body = rows
+    .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
+    .join("\n");
+  return `<table>\n<thead><tr>${head}</tr></thead>\n<tbody>\n${body}\n</tbody>\n</table>`;
+}
+
+/**
+ * Render a per-repository benchmark report as a standalone HTML document.
+ * Mirrors {@link renderReport} with the same data, escaping all model/task
+ * derived text.
+ */
+export function renderHtml(data: RepoReportData): BenchmarkReport {
+  const { config, tasks, evaluations, status } = data;
+
+  const baseline = tasks.filter((t) => t.mode === "baseline");
+  const codeatlas = tasks.filter((t) => t.mode === "codeatlas");
+
+  const baseTokens = sumTokens(baseline);
+  const catTokens = sumTokens(codeatlas);
+  const baseCost = baseline.reduce((s, t) => s + t.cost, 0);
+  const catCost = codeatlas.reduce((s, t) => s + t.cost, 0);
+  const baseAvgMs = avg(baseline.map((t) => t.durationMs));
+  const catAvgMs = avg(codeatlas.map((t) => t.durationMs));
+
+  const baseEvals = evaluations.filter((e) => e.mode === "baseline");
+  const catEvals = evaluations.filter((e) => e.mode === "codeatlas");
+  const baseAvgScore = avg(baseEvals.map((e) => e.evaluation.score));
+  const catAvgScore = avg(catEvals.map((e) => e.evaluation.score));
+
+  const taskRows: string[][] = [];
+  const taskIds = [...new Set(tasks.map((t) => t.taskId))];
+  for (const tid of taskIds) {
+    const b = tasks.find((t) => t.taskId === tid && t.mode === "baseline");
+    const c = tasks.find((t) => t.taskId === tid && t.mode === "codeatlas");
+    const be = evaluations.find((e) => e.taskId === tid && e.mode === "baseline");
+    const ce = evaluations.find((e) => e.taskId === tid && e.mode === "codeatlas");
+    const cat = b?.category ?? c?.category ?? "unknown";
+    taskRows.push([
+      tid,
+      CATEGORY_LABELS[cat] ?? cat,
+      `${be?.evaluation.score ?? "—"} / ${ce?.evaluation.score ?? "—"}`,
+      `${fmtTokens(b?.tokens.total ?? 0)} / ${fmtTokens(c?.tokens.total ?? 0)}`,
+      `${fmtMs(b?.durationMs ?? 0)} / ${fmtMs(c?.durationMs ?? 0)}`,
+      String(c?.toolCallCount ?? 0),
+    ]);
+  }
+
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Benchmark Report — ${escapeHtml(config.name)}</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 60rem; padding: 0 1rem; color: #1a1a1a; }
+  h1 { font-size: 1.5rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0 2rem; font-size: 0.9rem; }
+  th, td { border: 1px solid #d0d0d0; padding: 0.35rem 0.6rem; text-align: left; }
+  th { background: #f4f4f4; }
+  dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
+  dt { font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Benchmark Report — ${escapeHtml(config.name)}</h1>
+<dl class="meta">
+<dt>Suite</dt><dd>${escapeHtml(config.id)}</dd>
+<dt>Agent</dt><dd>${escapeHtml(config.agent)}</dd>
+<dt>Model</dt><dd>${escapeHtml(config.model)}</dd>
+<dt>Generated</dt><dd>${escapeHtml(new Date().toISOString())}</dd>
+<dt>Status</dt><dd>${escapeHtml(`${status.status} (${status.completed}/${status.total} tasks)`)}</dd>
+</dl>
+<h2>Token &amp; Cost Summary</h2>
+${htmlTable(
+  ["Metric", "Baseline", "CodeAtlas", "Delta"],
+  [
+    [
+      "Total tokens",
+      fmtTokens(baseTokens),
+      fmtTokens(catTokens),
+      fmtTokens(baseTokens - catTokens),
+    ],
+    ["Cost (USD)", `$${fmt(baseCost, 4)}`, `$${fmt(catCost, 4)}`, `$${fmt(baseCost - catCost, 4)}`],
+    ["Avg duration", fmtMs(baseAvgMs), fmtMs(catAvgMs), fmtMs(baseAvgMs - catAvgMs)],
+  ],
+)}
+<h2>Accuracy Summary</h2>
+${htmlTable(
+  ["Metric", "Baseline", "CodeAtlas", "Delta"],
+  [
+    ["Avg score (0-2)", fmt(baseAvgScore), fmt(catAvgScore), fmt(catAvgScore - baseAvgScore)],
+    [
+      "Correct",
+      String(countStatus(baseEvals, "correct")),
+      String(countStatus(catEvals, "correct")),
+      "—",
+    ],
+    [
+      "Partial",
+      String(countStatus(baseEvals, "partially_correct")),
+      String(countStatus(catEvals, "partially_correct")),
+      "—",
+    ],
+    [
+      "Incorrect",
+      String(countStatus(baseEvals, "incorrect")),
+      String(countStatus(catEvals, "incorrect")),
+      "—",
+    ],
+    [
+      "Failed",
+      String(countStatus(baseEvals, "failed")),
+      String(countStatus(catEvals, "failed")),
+      "—",
+    ],
+  ],
+)}
+<h2>Task Results</h2>
+${htmlTable(["ID", "Category", "Score (B/C)", "Tokens (B/C)", "Duration (B/C)", "Tools (C)"], taskRows)}
+</body>
+</html>
+`;
+
+  return {
+    suiteId: data.suiteId,
+    content: html,
+    format: "html",
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
