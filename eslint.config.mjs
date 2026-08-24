@@ -65,6 +65,7 @@ const DEPENDENCY_MATRIX = {
     "@atlas/benchmark",
   ],
   "apps/cli": ["@atlas/sdk", "@atlas/mcp", "@atlas/benchmark"],
+  "apps/server": ["@atlas/sdk", "@atlas/mcp", "@atlas/benchmark"],
   "apps/extension": ["@atlas/sdk"],
   "packages/mcp": ["@atlas/sdk"],
   "packages/benchmark": ["@atlas/core", "@atlas/shared", "@atlas/agents", "@atlas/usage"],
@@ -106,6 +107,9 @@ export default tseslint.config(
       "tests/fixtures/**",
       "benchmark-repos/**",
       "benchmarks/**",
+      // Separate npm project with its own oxlint config — not part of the
+      // monorepo's ESLint scope.
+      "CodeAtlas-ui/**",
     ],
   },
   {

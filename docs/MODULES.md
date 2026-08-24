@@ -321,6 +321,19 @@ Responsible for launching and managing external AI CLI processes.
 - Must **NOT**: reimplement the agent's internal reasoning. See
   [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md).
 
+### Benchmark API server — « `apps/server` / `@atlas/server` » — **[IMPLEMENTED]**
+
+A localhost HTTP API ("CodeAtlas Benchmark API", ADR-013) exposing the
+benchmark framework to the web UI: suite reads/writes against the same
+`.codeatlas/benchmarks/` store the CLI uses, job-based suite execution with
+real per-task progress, the curated community repository library (local
+entries + shallow-cloned remote entries in isolated temp workspaces), and the
+"Test in Browser" quick test (scan → index → deterministic retrieval → context
+assembly, optional Ollama answer). `node:http`, zero new runtime dependencies;
+binds `127.0.0.1:8787` by default; composes `@atlas/sdk` + `@atlas/mcp` +
+`@atlas/benchmark` exactly like the CLI. Serves the built UI (`CodeAtlas-ui/
+dist`) when present. See [benchmark.md](./benchmark.md) §"HTTP API".
+
 ### MCP — « `@atlas/mcp` » — **[IMPLEMENTED]**
 Responsible for exposing context to external AI agents over MCP.
 

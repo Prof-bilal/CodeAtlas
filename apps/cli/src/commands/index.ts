@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import { type AgentsCommandOptions, registerAgents } from "./agents";
+import { registerAsk } from "./ask";
 import { registerBenchmark } from "./benchmark";
 import { type ContextCommandOptions, registerAgentRouter, registerContext } from "./context";
 import { type DoctorCommandOptions, registerDoctor } from "./doctor";
@@ -40,6 +41,10 @@ export function registerCommands(
   registerOllama(program);
   registerAgents(program, options.agentMcp === undefined ? {} : { agentMcp: options.agentMcp });
   registerTools(program, options.toolkit === undefined ? {} : { toolkit: options.toolkit });
+  registerAsk(
+    program,
+    options.integration === undefined ? {} : { integration: options.integration },
+  );
   registerContext(
     program,
     options.integration === undefined ? {} : { integration: options.integration },

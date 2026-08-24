@@ -1,8 +1,12 @@
+import { existsSync } from "node:fs";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, join, relative } from "node:path";
 import { createContextToolSourceFromSDK } from "@atlas/mcp";
 import {
   type AssembleOptions,
   type ContextIntegration,
   type ContextPackage,
+  type ContextSlice,
   type Session,
   createContextIntegration,
   createContextSDK,
@@ -10,6 +14,8 @@ import {
   renderContextBriefing,
   renderContextExplanation,
   renderContextPackage,
+  renderContextSlice,
+  saveContextSlice,
 } from "@atlas/sdk";
 import type { Command } from "commander";
 import { openMetrics } from "./metrics";
@@ -29,6 +35,36 @@ interface CommonOptions {
 interface ContextOptions extends CommonOptions {
   readonly explain?: boolean;
   readonly repo?: string;
+}
+interface ExportOptions {
+  readonly for?: string;
+  readonly repo?: string;
+  readonly out?: string;
+  readonly maxTokensTotal?: number;
+  readonly inject?: boolean;
+  readonly json?: boolean;
+}
+
+/** What `atlas context export --for <agent>` writes (and where it injects). */
+interface ExportTarget {
+  /** The agent's instruction file at the repository root, or `null` (generic). */
+  readonly instructionFile: string | null;
+}
+
+const EXPORT_TARGETS: Readonly<Record<string, ExportTarget>> = {
+  claude: { instructionFile: "CLAUDE.md" },
+  gemini: { instructionFile: "GEMINI.md" },
+  codex: { instructionFile: "AGENTS.md" },
+  opencode: { instructionFile: "AGENTS.md" },
+  generic: { instructionFile: null },
+};
+
+/** Markers around the injected block (idempotent replace between them). */
+const INJECT_START = "<!-- codeatlas:context-slice start -->";
+const INJECT_END = "<!-- codeatlas:context-slice end -->";
+
+function exportTargetHelp(): string {
+  return `target agent (${Object.keys(EXPORT_TARGETS).join(", ")})`;
 }
 interface LaunchOptions extends CommonOptions {
   readonly provider: string;
@@ -109,6 +145,22 @@ export function registerContext(program: Command, options: ContextCommandOptions
     )
     .action(async (sessionId: string, task: string, commandOptions: CommonOptions) =>
       runAttach(sessionId, task, commandOptions, options.integration),
+    );
+
+  context
+    .command("export <task>")
+    .description("Export a context slice as a self-contained, agent-ready markdown file")
+    .requiredOption("--for <agent>", exportTargetHelp())
+    .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
+    .option("--out <file>", "output file (default .codeatlas/exports/<task>-<id>.md)")
+    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
+    .option(
+      "--no-inject",
+      "do not append the instruction block to the target agent's instruction file",
+    )
+    .option("--json", "print the export outcome as JSON")
+    .action(async (task: string, commandOptions: ExportOptions) =>
+      runExport(task, commandOptions, options.integration),
     );
 }
 
@@ -264,7 +316,180 @@ async function runAttach(
   });
 }
 
-async function withIntegration(
+/**
+ * `atlas context export <task> --for <agent>`: build a context slice, write it
+ * as a self-contained markdown file, and (unless `--no-inject`) append an
+ * idempotent, marked instruction block to the target agent's instruction file
+ * (`CLAUDE.md` for claude, `AGENTS.md` for codex/opencode, …) so the agent
+ * knows the file exists and how to get a fresh one. The first injection backs
+ * the instruction file up (Configurator backup pattern); never auto-commits.
+ */
+async function runExport(
+  task: string,
+  options: ExportOptions,
+  injected?: ContextIntegration,
+): Promise<void> {
+  const target = EXPORT_TARGETS[options.for ?? ""];
+  if (target === undefined) {
+    console.error(`Unknown --for target "${options.for}". Valid targets: ${exportTargetHelp()}.`);
+    process.exitCode = 1;
+    return;
+  }
+  await withIntegration(
+    injected,
+    async (integration) => {
+      try {
+        const root = options.repo ?? resolveProjectRoot();
+        const slice = await integration.buildSlice({
+          task,
+          ...(options.maxTokensTotal === undefined
+            ? {}
+            : { budget: { maxTokensTotal: options.maxTokensTotal } }),
+        });
+
+        const exportPath =
+          options.out ??
+          join(root, ".codeatlas", "exports", `${taskSlug(task)}-${slice.id.slice(0, 8)}.md`);
+        await mkdir(dirname(exportPath), { recursive: true });
+        await writeFile(
+          exportPath,
+          `${renderContextSlice(slice)}\n\n${handoffSection(slice)}\n`,
+          "utf8",
+        );
+        // The canonical slice pair is saved too, so `--for` exports stay
+        // listable alongside `atlas ask --save` output.
+        const saved = await saveContextSlice(root, slice);
+
+        let instructionFile: string | null = null;
+        let injectedBlock = false;
+        if (target.instructionFile !== null && options.inject !== false) {
+          const outcome = await injectInstructionBlock(root, target.instructionFile, {
+            task,
+            slicePath: relative(root, exportPath),
+          });
+          instructionFile = target.instructionFile;
+          injectedBlock = outcome.injected;
+        }
+
+        if (options.json === true) {
+          console.log(
+            JSON.stringify(
+              {
+                slice: {
+                  id: slice.id,
+                  task: slice.task,
+                  items: slice.items.length,
+                  tokensEstimated: slice.tokens.estimated,
+                  stalenessState: slice.staleness.state,
+                },
+                exportPath,
+                saved: { jsonPath: saved.jsonPath, markdownPath: saved.markdownPath },
+                instructionFile,
+                injected: injectedBlock,
+              },
+              null,
+              2,
+            ),
+          );
+          return;
+        }
+        console.log(`Exported: ${exportPath}`);
+        console.log(`Saved: ${saved.jsonPath}`);
+        console.log(`Saved: ${saved.markdownPath}`);
+        if (instructionFile === null) {
+          console.log("Instruction block: none (generic target)");
+        } else {
+          console.log(
+            injectedBlock
+              ? `Instruction block: updated in ${instructionFile} (backup: ${instructionFile}.atlas-backup)`
+              : `Instruction block: ${instructionFile} unchanged (already present)`,
+          );
+        }
+        if (slice.staleness.state === "stale") {
+          console.error("Warning: the index was STALE when this slice was built.");
+        }
+      } catch (error) {
+        reportContextError(error);
+      }
+    },
+    options.repo,
+  );
+}
+
+/** The agent-facing footer appended to every exported slice file. */
+function handoffSection(slice: ContextSlice): string {
+  return [
+    "---",
+    "",
+    "## Agent handoff",
+    "",
+    `This slice was generated by CodeAtlas (strategy ${slice.retrieval.strategy}) for the task above. Only the ranked items above were selected — never assume the whole repository was included. For a fresh slice, run \`atlas ask "<task>"\` or the \`get_context_slice\` MCP tool.`,
+  ].join("\n");
+}
+
+/** Slugify a task into a file-name-safe stem (short, deterministic). */
+function taskSlug(task: string): string {
+  const slug = task
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+  return slug === "" ? "task" : slug;
+}
+
+/**
+ * Append (or replace) the marked CodeAtlas block in an instruction file.
+ * Returns whether the file content changed. The first modification backs the
+ * file up once; a re-export replaces the previous block instead of stacking.
+ */
+async function injectInstructionBlock(
+  root: string,
+  fileName: string,
+  info: { readonly task: string; readonly slicePath: string },
+): Promise<{ readonly injected: boolean }> {
+  const filePath = join(root, fileName);
+  const block = [
+    INJECT_START,
+    "",
+    "### CodeAtlas context slice",
+    "",
+    `A ranked, budgeted context slice for "${info.task}" is saved at \`${info.slicePath}\`.`,
+    "Read it before searching the repository for this task.",
+    'Regenerate it with `atlas context export "<task>" --for <agent>` or query fresh context',
+    "with `atlas ask` / the `get_context_slice` MCP tool.",
+    "",
+    INJECT_END,
+  ].join("\n");
+
+  let current: string | null = null;
+  if (existsSync(filePath)) {
+    current = await readFile(filePath, "utf8");
+  }
+  const start = current?.indexOf(INJECT_START) ?? -1;
+  const end = current?.indexOf(INJECT_END) ?? -1;
+  if (current !== null && start !== -1 && end !== -1 && end > start) {
+    const updated = current.slice(0, start) + block + current.slice(end + INJECT_END.length);
+    if (updated === current) {
+      return { injected: false };
+    }
+    await writeFile(filePath, updated, "utf8");
+    return { injected: true };
+  }
+  // First injection: back the user's file up before touching it.
+  if (current !== null) {
+    await copyFile(filePath, `${filePath}.atlas-backup`);
+    await writeFile(filePath, `${current.replace(/\s*$/, "")}\n\n${block}\n`, "utf8");
+  } else {
+    await writeFile(filePath, `${block}\n`, "utf8");
+  }
+  return { injected: true };
+}
+
+/**
+ * Open an integration for a repository (or reuse an injected one — the test
+ * seam), run the action, and always close the SDK/metrics/usage handles.
+ */
+export async function withIntegration(
   injected: ContextIntegration | undefined,
   action: (integration: ContextIntegration) => Promise<void>,
   repositoryPath?: string,

@@ -10,8 +10,10 @@ globally, or build it from source for development.
 | Node.js | `>=22.5.0` | The storage layer uses the built-in `node:sqlite`. All packages share this engine floor; the `.nvmrc` pins **22**. |
 | pnpm | `9.15.0` | Pinned in `package.json`; enable via Corepack (`corepack enable`). Only needed to build from source. |
 
-Platforms: Windows, macOS, and Linux (development is exercised on Windows; the
-code uses no platform-specific shelling).
+Platforms: Windows, macOS, and Linux (the codebase has explicit Windows
+accommodations — `.cmd` shim routing, `PATHEXT` handling — and uses only
+cross-platform Node APIs. CI runs on Ubuntu; Windows/macOS are exercised in
+development but not in CI).
 
 ## Option A — published global CLI (recommended for end users)
 

@@ -1,0 +1,93 @@
+{
+  "$comment": "Curated community benchmark library for the Atlas Benchmark UI. Entries with source 'local' point at directories that already exist on this machine (paths relative to the monorepo root); entries with source 'git' are shallow-cloned into an isolated temporary workspace when a benchmark runs, and cleaned up afterwards. Availability is checked live (filesystem / git ls-remote) — never assume. Do not add measured statistics here; files, languages, and benchmark numbers are read from real indexes and real suite results.",
+  "repositories": [
+    {
+      "id": "winston",
+      "name": "winston",
+      "description": "Multi-transport async logging library for Node.js. The pinned clone used by the 2026-08 OpenCode benchmark.",
+      "url": "https://github.com/winstonjs/winston",
+      "source": "local",
+      "path": "benchmarks/final-2026-08/repos/repo-01",
+      "difficulty": "small",
+      "languages": ["javascript", "typescript"]
+    },
+    {
+      "id": "commander",
+      "name": "commander.js",
+      "description": "Complete solution for Node.js command-line interfaces. The pinned clone used by the 2026-08 OpenCode benchmark.",
+      "url": "https://github.com/tj/commander.js",
+      "source": "local",
+      "path": "benchmarks/final-2026-08/repos/repo-02",
+      "difficulty": "small",
+      "languages": ["javascript", "typescript"]
+    },
+    {
+      "id": "axios",
+      "name": "axios",
+      "description": "Promise-based HTTP client for the browser and Node.js. The pinned clone used by the 2026-08 OpenCode benchmark.",
+      "url": "https://github.com/axios/axios",
+      "source": "local",
+      "path": "benchmarks/final-2026-08/repos/repo-03",
+      "difficulty": "medium",
+      "languages": ["javascript", "typescript"]
+    },
+    {
+      "id": "rxjs",
+      "name": "rxjs",
+      "description": "Reactive Extensions For JavaScript. The pinned clone used by the 2026-08 OpenCode benchmark.",
+      "url": "https://github.com/ReactiveX/rxjs",
+      "source": "local",
+      "path": "benchmarks/final-2026-08/repos/repo-04",
+      "difficulty": "medium",
+      "languages": ["typescript"]
+    },
+    {
+      "id": "small-app",
+      "name": "fixture-small-app",
+      "description": "Generated fixture repository (76 TypeScript files) used by the CodeAtlas scan/index harness.",
+      "source": "local",
+      "path": "benchmark-repos/01-small-app",
+      "difficulty": "small",
+      "languages": ["typescript"]
+    },
+    {
+      "id": "large-project",
+      "name": "fixture-large-project",
+      "description": "Generated fixture repository (~4,600 TypeScript files) used by the CodeAtlas scan/index harness.",
+      "source": "local",
+      "path": "benchmark-repos/05-large-project",
+      "difficulty": "large",
+      "languages": ["typescript"]
+    },
+    {
+      "id": "react",
+      "name": "react",
+      "description": "The library for web and native user interfaces. Shallow-cloned from GitHub when benchmarked (requires network + git).",
+      "url": "https://github.com/facebook/react",
+      "source": "git",
+      "cloneUrl": "https://github.com/facebook/react.git",
+      "difficulty": "medium",
+      "languages": ["javascript"]
+    },
+    {
+      "id": "typescript",
+      "name": "TypeScript",
+      "description": "The TypeScript compiler and tooling. Shallow-cloned from GitHub when benchmarked (requires network + git).",
+      "url": "https://github.com/microsoft/TypeScript",
+      "source": "git",
+      "cloneUrl": "https://github.com/microsoft/TypeScript.git",
+      "difficulty": "large",
+      "languages": ["typescript"]
+    },
+    {
+      "id": "express",
+      "name": "express",
+      "description": "Fast, unopinionated, minimalist web framework for Node.js. Shallow-cloned from GitHub when benchmarked (requires network + git).",
+      "url": "https://github.com/expressjs/express",
+      "source": "git",
+      "cloneUrl": "https://github.com/expressjs/express.git",
+      "difficulty": "small",
+      "languages": ["javascript"]
+    }
+  ]
+}

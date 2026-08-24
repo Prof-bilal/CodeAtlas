@@ -243,13 +243,19 @@ async function explainModule(h: HandlerContext, args: ToolArgs): Promise<unknown
 
   const sdk = h.ctx.requireSDK();
   const explanation = sdk.modules.explain(path, { includeSummary, includeDependencies });
+
+  const MAX_SYMBOLS = 200;
+  const MAX_FILES = 200;
+  const symbols = explanation.symbols.slice(0, MAX_SYMBOLS);
+  const files = explanation.files.slice(0, MAX_FILES);
+
   return {
     path,
     module: explanation.module,
     fileCount: explanation.fileCount,
-    files: explanation.files.map((file) => ({ path: file.path, language: file.language })),
+    files: files.map((file) => ({ path: file.path, language: file.language })),
     symbolCount: explanation.symbolCount,
-    symbols: explanation.symbols.map((symbol) => ({
+    symbols: symbols.map((symbol) => ({
       id: symbol.id,
       name: symbol.name,
       kind: symbol.kind,
@@ -262,6 +268,14 @@ async function explainModule(h: HandlerContext, args: ToolArgs): Promise<unknown
     dependencyCount: explanation.dependencyCount,
     dependencies: explanation.dependencies,
     summary: explanation.summary === null ? null : toSummaryShape(explanation.summary),
+    ...(explanation.fileCount > MAX_FILES
+      ? { fileOverflow: `${explanation.fileCount} total files (showing first ${MAX_FILES})` }
+      : {}),
+    ...(explanation.symbolCount > MAX_SYMBOLS
+      ? {
+          symbolOverflow: `${explanation.symbolCount} total symbols (showing first ${MAX_SYMBOLS})`,
+        }
+      : {}),
   };
 }
 

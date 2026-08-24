@@ -29,7 +29,8 @@ The rules below are enforced by ESLint `no-restricted-imports` (see
 | `agents`   | core, shared                                                   | everything else |
 | `toolkit`  | core, shared                                                   | everything else |
 | `sdk`      | shared, core, hashing, scanner, parser, storage, graph, context, cache, providers, summary, search, usage, agents *(`agents` was added when the SDK composed the connection layer for the session manager — ADR-007; `usage` when it composed the usage service — ADR-009)* | — |
-| `cli`      | `sdk`, `mcp`                                                   | every other `@atlas/*` feature package |
+| `cli`      | `sdk`, `mcp`, `benchmark` *(benchmark runners for `atlas benchmark`)* | every other `@atlas/*` feature package |
+| `server`   | `sdk`, `mcp`, `benchmark` *(Benchmark API composition root, ADR-013)* | every other `@atlas/*` feature package |
 | `mcp`      | `sdk`                                                          | every `@atlas/*` feature package |
 
 Rules that follow:
@@ -37,12 +38,15 @@ Rules that follow:
 1. **No cycles.** `core` and `shared` never import upstream packages.
 2. **No sideways coupling.** Feature packages never import each other's concrete
    classes; the **SDK** composes them.
-3. **`cli` touches the SDK and the MCP package only.** The CLI must never import
-   `parser`, `scanner`, etc. Its single additional allowed dependency is
-   `@atlas/mcp`, so it can start the MCP server (`atlas mcp`) — MCP itself
+3. **`cli` touches the SDK, MCP, and the benchmark package only.** The CLI must never import
+   `parser`, `scanner`, etc. Its additional allowed dependencies are
+   `@atlas/mcp` (so it can start the MCP server, `atlas mcp`) and
+   `@atlas/benchmark` (benchmark runners for `atlas benchmark`) — MCP itself
    imports only `@atlas/sdk`, and so does the VS Code extension
    (`apps/extension` / `@atlas/extension`). Future editor integrations will
-   follow the same rule (SDK only).
+   follow the same rule (SDK only). The Benchmark API server
+   (`apps/server` / `@atlas/server`, ADR-013) mirrors the CLI's allowance:
+   `sdk` + `mcp` + `benchmark`, nothing else.
 4. Feature packages **implement** `core` ports; they never depend on concrete
    classes from other feature packages.
 5. **`@atlas/usage`** (Usage & Credits) is a feature package: it may import

@@ -37,6 +37,7 @@ every package's source and tests.
 ```
 apps/
   cli/          # Commander.js CLI — context, sessions, usage, MCP, and Toolkit commands wired [PARTIAL]
+  server/       # Benchmark API (@atlas/server) — localhost HTTP over the benchmark framework [IMPLEMENTED]
   extension/    # VS Code extension (@atlas/extension) — SDK consumer         [IMPLEMENTED]
 packages/
   shared/       # Base types, Result, branded IDs, VERSION, ComingSoonError  [EXISTING]
@@ -523,6 +524,39 @@ examples/        # README placeholder only (no runnable examples)
   `packages/benchmark/tests/runner-ollama.test.ts` (5 tests),
   `packages/benchmark/tests/e2e-agents.test.ts` (5 e2e tests).
   See ADR-012.
+
+### Benchmark API server (`apps/server`) — **[IMPLEMENTED]**
+
+- **`@atlas/server`** (ADR-013): a localhost HTTP API ("CodeAtlas Benchmark
+  API", `node:http`, zero new runtime deps, default `127.0.0.1:8787`) that
+  backs the rebuilt **Atlas Benchmark** page in the web UI (`CodeAtlas-ui`).
+  It composes `@atlas/sdk` + `@atlas/mcp` + `@atlas/benchmark` exactly like
+  the CLI (added to the ESLint dependency matrix).
+- **Same store as the CLI**: suite list/detail/report read
+  `.codeatlas/benchmarks/`; aggregates are recomputed from persisted per-task
+  results via the evaluator (a filtered CLI `--task` run can leave a
+  subset-only `raw-results.json`). Suite repository paths persist in a
+  server-owned sidecar `suites/<id>/repository.json`.
+- **Jobs with real progress**: suite runs execute per task × mode
+  (`BenchmarkService.runTask`) behind a `JobManager` (1 concurrent, bounded
+  queue → 429, cooperative cancel, wall-clock budget), finalized by
+  `runSuite`'s resume path; the UI polls `GET /api/jobs/:id`. Browser
+  benchmarks ("Test in Browser" quick tests) measure scan → index →
+  deterministic retrieval latency → budgeted context assembly with an
+  estimated raw-vs-context token comparison; the optional AI answer runs only
+  with a configured Ollama provider (else honestly `unavailable`).
+- **Community library** (`apps/server/config/community-repos.json`,
+  operator-editable): local entries (pinned winston/commander/axios/rxjs
+  clones + scan fixtures) and `git` entries shallow-cloned (`git clone
+  --depth 1`, argument-array spawn) into isolated temp workspaces that are
+  always cleaned up; availability checked live (fs / `git ls-remote`), no
+  hardcoded statistics. A transparent 0–100 display score is computed only
+  from measured inputs and ships its formula with every value.
+- Security: localhost bind by default, `shell:false` spawns, 1 MiB body cap,
+  repo-relative paths in responses, path-safe static UI serving.
+- Tests: `apps/server/tests/{jobs,repos,benchmark,api}.test.ts` (33 tests —
+  includes a full HTTP end-to-end run with a fake runner and a real indexed
+  fixture repository; no network/credentials required).
 
 ### Multi-Agent Orchestrator (Task 17) — **[IMPLEMENTED]**
 

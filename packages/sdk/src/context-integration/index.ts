@@ -7,6 +7,7 @@ import { type BriefingPort, createBriefingPort } from "./briefing";
 import { ContextAttachUnsupportedError } from "./errors";
 import type { ContextBriefing, ContextExplanation, ContextPackage } from "./models";
 import { renderContextPackage, toContextExplanation } from "./render";
+import { type ContextSlice, projectContextSlice } from "./slice";
 import { detectStaleness } from "./staleness";
 
 export {
@@ -24,7 +25,12 @@ export {
 } from "./assemble";
 export { applyBudget, DEFAULT_CONTEXT_BUDGET } from "./budget";
 export { denyFilter, type DenyFilterResult } from "./deny";
-export { ContextAttachUnsupportedError, ContextPackageError } from "./errors";
+export {
+  ContextAttachUnsupportedError,
+  ContextPackageError,
+  ContextSliceError,
+  ContextSliceValidationError,
+} from "./errors";
 export {
   collectInstructions,
   type ProjectInstruction,
@@ -51,6 +57,33 @@ export {
   toContextExplanation,
 } from "./render";
 export { detectStaleness } from "./staleness";
+export {
+  SLICE_STRATEGY,
+  buildContextSlice,
+  projectContextSlice,
+  renderContextSlice,
+  sliceId,
+  sliceItemFenceLanguage,
+  toContextSlice,
+  type BuildSliceInput,
+  type ContextSlice,
+  type ContextSliceRepository,
+} from "./slice";
+export {
+  CONTEXT_SLICE_SCHEMA_VERSION,
+  MAX_SLICE_FILE_BYTES,
+  SLICES_DIR_NAME,
+  contextSlicePaths,
+  contextSlicesDir,
+  listContextSlices,
+  loadContextSlice,
+  saveContextSlice,
+  validateContextSlice,
+  validateContextSliceFile,
+  type ContextSliceFile,
+  type ContextSlicePaths,
+  type ContextSliceSummary,
+} from "./slice-store";
 
 /** Inputs to {@link ContextIntegration.buildPackage} / {@link ContextIntegration.explain}. */
 export interface BuildPackageInput extends AssembleOptions {
@@ -75,6 +108,17 @@ export interface LaunchInput extends BuildPackageInput {
 export interface AttachInput extends BuildPackageInput {
   /** A session in `CREATED` state; live/terminal sessions are not attachable. */
   readonly sessionId: string;
+}
+
+/** Inputs to {@link ContextIntegration.buildSlice}. */
+export interface BuildSliceRequest extends BuildPackageInput {
+  /**
+   * Refresh the index first when it is stale relative to the working tree
+   * (default `true` — the same freshness contract as the MCP tools). A failed
+   * refresh never blocks the slice: the staleness signal stays `stale` and the
+   * slice is labeled honestly.
+   */
+  readonly autoRefresh?: boolean;
 }
 
 /** Options for {@link createContextIntegration}. */
@@ -102,6 +146,13 @@ export interface ContextIntegration {
   buildPackage(input: BuildPackageInput): Promise<ContextPackage>;
   /** Assemble a package and project it to a content-free explanation. */
   explain(input: BuildPackageInput): Promise<ContextExplanation>;
+  /**
+   * Build a {@link ContextSlice} — the persisted projection of the package
+   * that every selective-delivery channel serves. Applies the freshness
+   * contract first (auto-refresh when stale) so slices are never silently
+   * outdated.
+   */
+  buildSlice(input: BuildSliceRequest): Promise<ContextSlice>;
   /**
    * Assemble a package, create a session, and start it with the rendered
    * package as the prompt. Fails cleanly with the session manager's `Result`.
@@ -149,6 +200,19 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
 
     async explain(input: BuildPackageInput): Promise<ContextExplanation> {
       return toContextExplanation(await this.buildPackage(input));
+    },
+
+    async buildSlice(input: BuildSliceRequest): Promise<ContextSlice> {
+      let staleness = await detectStaleness(context);
+      if (input.autoRefresh !== false && staleness.state === "stale" && context.isAvailable) {
+        const refreshed = await context.refresh();
+        if (refreshed.ok) {
+          staleness = await detectStaleness(context);
+        }
+        // A failed refresh leaves the stale signal in place — the slice is
+        // still built, and labeled STALE on every channel.
+      }
+      return projectContextSlice(context, input.task, staleness, toAssembleOptions(input));
     },
 
     async launch(input: LaunchInput): Promise<Result<Session>> {

@@ -1,0 +1,47 @@
+{
+  "name": "@atlas/server",
+  "version": "0.0.0",
+  "description": "CodeAtlas Benchmark API — a localhost HTTP server exposing the benchmark framework, community repository library, and browser benchmark over @atlas/sdk.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "codeatlas-server": "./dist/index.js"
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "biome format --write ."
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "ts-morph": "^28.0.0"
+  },
+  "devDependencies": {
+    "@atlas/benchmark": "workspace:*",
+    "@atlas/mcp": "workspace:*",
+    "@atlas/sdk": "workspace:*"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prof-bilal/CodeAtlas.git",
+    "directory": "apps/server"
+  },
+  "homepage": "https://github.com/Prof-bilal/CodeAtlas",
+  "bugs": {
+    "url": "https://github.com/Prof-bilal/CodeAtlas/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "CodeAtlas contributors"
+}

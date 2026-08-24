@@ -298,6 +298,14 @@ export const TOOLS: readonly ToolDefinition[] = [
       dependencies: z.array(z.object(moduleDependencyShape)).describe("Dependency edges."),
       summary: z.object(summaryShape).nullable().describe("Stored module summary, or null."),
       freshness: freshnessField,
+      fileOverflow: z
+        .string()
+        .optional()
+        .describe("Present when more files exist than were returned."),
+      symbolOverflow: z
+        .string()
+        .optional()
+        .describe("Present when more symbols exist than were returned."),
     },
   },
   {

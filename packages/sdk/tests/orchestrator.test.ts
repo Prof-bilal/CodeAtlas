@@ -211,6 +211,9 @@ function createFakeIntegration(): FakeIntegration {
     async explain() {
       throw new Error("unused in orchestrator tests");
     },
+    async buildSlice() {
+      throw new Error("unused in orchestrator tests");
+    },
     async launch() {
       return fail(new Error("unused in orchestrator tests"));
     },

@@ -25,7 +25,7 @@ export function createCli(options: CreateCliOptions = {}): Command {
 
   program
     .name("atlas")
-    .description("CodeAtlas — an open-source AI Context Engine")
+    .description("CodeAtlas — an open-source AI context engine for coding agents")
     .version(pkg.version)
     .action(() => {
       // Bare `atlas` prints help; the interactive TUI is a v2 follow-up.

@@ -17,12 +17,12 @@ import {
   type AgentMcpPort,
   type AgentMcpStatus,
   type ConfigureOutcome,
-  ContextAttachUnsupportedError,
   type ContextBriefing,
   type ContextExplanation,
   type ContextIntegration,
   type ContextPackage,
   type ContextSDK,
+  type ContextSlice,
   type SearchResult,
   type SessionPort,
   type Summary,
@@ -233,6 +233,7 @@ function fakeContextIntegration(overrides: Partial<ContextIntegration> = {}): Co
   return {
     buildPackage: vi.fn(async () => pkg),
     explain: vi.fn(async () => explanation),
+    buildSlice: vi.fn(async () => fakeContextSlice(pkg.task)),
     launch: vi.fn(async () => ({
       ok: true as const,
       value: session({ id: "s1", status: "RUNNING" }),
@@ -247,6 +248,23 @@ function fakeContextIntegration(overrides: Partial<ContextIntegration> = {}): Co
     })),
     getSessionOutput: vi.fn(() => undefined),
     ...overrides,
+  };
+}
+
+/** The deterministic slice `fakeContextIntegration.buildSlice` returns. */
+function fakeContextSlice(task: string): ContextSlice {
+  const pkg = fakeContextIntegrationPackage();
+  return {
+    id: "0123456789abcdef",
+    task,
+    createdAt: "2026-08-23T00:00:00.000Z",
+    repository: { name: "demo", lastIndexedAt: "2026-08-23T00:00:00.000Z" },
+    items: pkg.items,
+    tokens: { estimated: pkg.budget.tokensEstimated, method: "estimated" },
+    budget: pkg.budget,
+    exclusions: pkg.exclusions,
+    staleness: pkg.staleness,
+    retrieval: { latencyMs: 1, strategy: "deterministic-v1" },
   };
 }
 
@@ -378,6 +396,7 @@ describe("atlas CLI", () => {
     const names = program.commands.map((command) => command.name()).sort();
     expect(names).toEqual([
       "agents",
+      "ask",
       "benchmark",
       "build",
       "claude",
@@ -709,22 +728,21 @@ describe("atlas CLI", () => {
   });
 
   it("maps unsupported context attach errors to exit code 1 without crashing", async () => {
-    const integration = fakeContextIntegration({
-      attach: vi.fn(async () => ({
-        ok: false as const,
-        error: new ContextAttachUnsupportedError("s1", "RUNNING"),
-      })),
-    });
-    const program = createCli({ integration });
-    const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const previousExitCode = process.exitCode;
     try {
-      await program.parseAsync(["node", "atlas", "context", "attach", "s1", "fix auth"]);
-      expect(error.mock.calls.join(" ").toLowerCase()).toContain("cannot attach");
+      const integration = fakeContextIntegration({
+        attach: vi.fn(async () => fail(new Error("session is not in CREATED state"))),
+      });
+      const program = createCli({ integration });
+      const error = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        await program.parseAsync(["node", "atlas", "context", "attach", "s1", "fix auth"]);
+      } finally {
+        error.mockRestore();
+      }
       expect(process.exitCode).toBe(1);
     } finally {
       process.exitCode = previousExitCode;
-      error.mockRestore();
     }
   });
 

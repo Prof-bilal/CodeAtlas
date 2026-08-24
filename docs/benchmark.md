@@ -57,6 +57,49 @@ and concept-ratio hits plus on-disk citation checks.
 - Ollama models price at $0/token through the static pricing wildcard
   ("local inference"; cloud-hosted endpoints may differ).
 
+## HTTP API & the Benchmark dashboard — **[IMPLEMENTED]** (ADR-013)
+
+`apps/server` (`@atlas/server`) exposes the framework over a localhost HTTP
+API (`127.0.0.1:8787` by default, `node:http`, zero new runtime dependencies)
+that backs the **Atlas Benchmark** page in the web UI:
+
+```
+pnpm --filter @atlas/server build && node apps/server/dist/index.js
+```
+
+- **Suite reads/writes** go through the same `BenchmarkService`/`BenchmarkStore`
+  and the same `.codeatlas/benchmarks/` root as the CLI — the dashboard shows
+  exactly what the CLI produced. Aggregates are recomputed from the persisted
+  per-task results (a filtered CLI `--task` run can leave a subset-only
+  `raw-results.json`).
+- **Jobs with real progress**: runs execute per task × mode behind a job
+  manager (1 concurrent, bounded queue, cooperative cancel, wall-clock
+  budget); the UI polls `GET /api/jobs/:id` for stages, `completed/total`,
+  current task, and elapsed time. No simulated progress.
+- **Community library** (`apps/server/config/community-repos.json`,
+  operator-editable): `local` entries (the pinned winston/commander/axios/rxjs
+  clones and scan fixtures) and `git` entries (shallow-cloned into an isolated
+  temp workspace on run, always cleaned up). Availability is checked live;
+  repository statistics are never hardcoded.
+- **Browser benchmark** ("Test in Browser" quick test): scan → index (when
+  missing) → deterministic retrieval (`getRelevantContext`, latency measured)
+  → budgeted context assembly (`assembleContextPackage`) with per-item
+  scores/tokens/reasons and secret deny-filter reporting, plus an estimated
+  raw-vs-context token comparison. The optional AI answer runs only when an
+  Ollama provider is configured and is reported `unavailable` otherwise.
+- **Transparent display score**: `50 + 25·clamp(tokenSavings%/50) +
+  25·clamp(accuracyDelta)` — computed only from measured suite results; the
+  formula is returned with every score and shown in the UI.
+- Security posture: localhost bind by default, argument-array spawns only
+  (`shell:false`), 1 MiB body cap, repo-relative paths in responses, path-safe
+  static UI serving, job queue as rate limiting. See ADR-013.
+
+API routes (JSON, `/api` prefix): `GET /health`, `GET|POST /benchmarks`,
+`GET /benchmarks/:id`, `GET /benchmarks/:id/report`, `POST
+/benchmarks/:id/cancel`, `GET /task-files`, `GET /community/repos`, `POST
+/community/repos/:id/run`, `POST /browser-benchmarks`,
+`GET /browser-benchmarks/:id`, `GET /jobs`, `GET|POST /jobs/:id/cancel`.
+
 ## Suite results (2026-08)
 
 Run against the pinned clones in `benchmarks/final-2026-08/repos/` with

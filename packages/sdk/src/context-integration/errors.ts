@@ -20,9 +20,17 @@ export class ContextAttachUnsupportedError extends ContextPackageError {
     public readonly status: string,
   ) {
     super(
-      `Cannot attach context to session ${sessionId} (status: ${status}). ` +
-        "The installed AI CLIs run in non-interactive mode, so context can only be " +
-        "supplied when the session starts.",
+      `Cannot attach context to session ${sessionId} (status: ${status}). The installed AI CLIs run in non-interactive mode, so context can only be supplied when the session starts.`,
     );
   }
+}
+
+/** Base class for every context-slice (persistence/serialization) error. */
+export class ContextSliceError extends ContextPackageError {
+  public override readonly name: string = "ContextSliceError";
+}
+
+/** A saved slice file could not be read as a valid context slice. */
+export class ContextSliceValidationError extends ContextSliceError {
+  public override readonly name: string = "ContextSliceValidationError";
 }

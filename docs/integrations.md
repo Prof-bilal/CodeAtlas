@@ -58,9 +58,9 @@ Two delivery surfaces exist:
 - **`atlas context launch <task> --provider <provider>`** — assembles a
   budgeted Context Package and starts a provider session seeded with it
   (`createContextIntegration`, ADR-008).
-- **`atlas tui` slash commands** — `/claude`, `/gemini`, `/codex`,
-  `/opencode` (detect → launch interactively → install via npm when missing),
-  and `/cursor`, `/grok` (vendor install guidance).
+- **`atlas <agent> <prompt...>`** — standalone launch commands for each
+  agent (`atlas claude`, `atlas gemini`, `atlas codex`, `atlas opencode`).
+  These are thin wrappers over `atlas context launch`.
 
 Sessions are tracked by the session manager (`atlas sessions list/info/stop`).
 See [AGENT_SESSIONS.md](./AGENT_SESSIONS.md).

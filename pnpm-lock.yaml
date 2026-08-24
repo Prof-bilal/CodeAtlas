@@ -80,6 +80,22 @@ importers:
         specifier: ^1.92.0
         version: 1.125.0
 
+  apps/server:
+    dependencies:
+      ts-morph:
+        specifier: ^28.0.0
+        version: 28.0.0
+    devDependencies:
+      '@atlas/benchmark':
+        specifier: workspace:*
+        version: link:../../packages/benchmark
+      '@atlas/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
+      '@atlas/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+
   packages/agents:
     dependencies:
       '@atlas/core':

@@ -17,8 +17,10 @@ reporting format) — this file is about **tooling and commands**.
 | pnpm | `9.15.0` | `packageManager` field / `pnpm-workspace.yaml`. Enable via Corepack. |
 | Git | any recent | the repository is a git repo (branch `main`). |
 
-Platforms: **Windows**, macOS, and Linux are all expected to work (development
-has been exercised on Windows; the code uses no platform-specific shelling).
+Platforms: **Windows**, macOS, and Linux are all expected to work (the codebase
+has explicit Windows accommodations — `.cmd` shim routing, `PATHEXT` handling —
+and uses only cross-platform Node APIs. CI runs on Ubuntu; Windows/macOS are
+exercised in development but not in CI).
 
 ## 2. Install
 
