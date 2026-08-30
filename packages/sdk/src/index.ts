@@ -25,6 +25,17 @@ export type {
   ConfigurationVerification,
   ConfigureOutcome,
 } from "@atlas/core";
+export type {
+  ContextPlan,
+  PlannerPort,
+  PlanStep,
+  VerificationStrategy,
+} from "@atlas/core";
+export type {
+  TaskClassifierPort,
+  TaskClassification,
+  TaskClassifierEntities,
+} from "@atlas/core";
 export {
   Container,
   createProjectContainer,
@@ -297,6 +308,11 @@ export {
   type StalenessState,
   extractTaskEntities,
   type TaskEntities,
+  createClassifier,
+  createPlanner,
+  applyPlanAnnotations,
+  type ModelAnnotation,
+  type PlanAnnotationResult,
   evaluateSufficiency,
   type SufficiencyFailure,
   type SufficiencyInput,
@@ -453,3 +469,18 @@ export type {
   TokenMetrics,
   ToolCallRecord,
 } from "@atlas/core";
+export type {
+  ClaimCheck,
+  ClaimCheckInput,
+  ClaimCheckResult,
+  ClaimKind,
+  CommandRunResult,
+  OutputContractAssertion,
+  VerificationReport,
+  VerificationVerdict,
+  VerifierPort,
+  VerifyCommandConfig,
+  VerifyConfig,
+} from "@atlas/core";
+export { createVerifier, type VerifierServiceDeps } from "./verifier";
+export { loadVerifyConfig, VerifyConfigError } from "@atlas/verifier";

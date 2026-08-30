@@ -1,4 +1,11 @@
-import type { ContextSDK, Result, Summary, SummaryKind } from "@atlas/sdk";
+import type { ClaimCheckInput, ContextSDK, Result, Summary, SummaryKind } from "@atlas/sdk";
+import {
+  createClassifier,
+  createPlanner,
+  createVerifier,
+  evaluateSufficiency,
+  loadVerifyConfig,
+} from "@atlas/sdk";
 import type { CodeAtlasContext } from "./context";
 import { isDeniedPath } from "./deny";
 import type { Logger } from "./log";
@@ -50,6 +57,11 @@ export interface DependencyShape {
 export const HANDLERS: Readonly<
   Record<ToolName, (h: HandlerContext, args: ToolArgs) => Promise<unknown>>
 > = {
+  analyze_task: analyzeTask,
+  create_plan: createPlan,
+  find_relevant_context: findRelevantContext,
+  inspect_symbol: inspectSymbol,
+  verify_answer: verifyAnswer,
   search_symbols: searchSymbols,
   search_files: searchFiles,
   get_summary: getSummary,
@@ -58,6 +70,250 @@ export const HANDLERS: Readonly<
   project_overview: projectOverview,
   read_file_range: readFileRange,
 };
+
+// ── analyze_task ────────────────────────────────────────────────────────────
+
+async function analyzeTask(_h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const task = requireString(args, "task");
+  const classify = createClassifier();
+  const classification = classify(task);
+
+  const nextSteps: string[] = [];
+  if (classification.confidence < 0.4) {
+    nextSteps.push("Low classification confidence — consider rephrasing the task for clarity.");
+  }
+  if (classification.entities.filePaths.length > 0) {
+    nextSteps.push(`Search for files: ${classification.entities.filePaths.join(", ")}`);
+  }
+  if (classification.entities.symbolNames.length > 0) {
+    nextSteps.push(`Search for symbols: ${classification.entities.symbolNames.join(", ")}`);
+  }
+  nextSteps.push("Use create_plan to build a deterministic plan for this task.");
+
+  return {
+    category: classification.category,
+    subcategory: classification.subcategory,
+    confidence: classification.confidence,
+    reasoning: classification.reasoning,
+    entities: classification.entities,
+    nextSteps,
+  };
+}
+
+// ── create_plan ─────────────────────────────────────────────────────────────
+
+async function createPlan(h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const task = requireString(args, "task");
+  const sdk = h.ctx.requireSDK();
+
+  const classify = createClassifier();
+  const classification = classify(task);
+  const planner = createPlanner(sdk);
+  const planResult = planner.plan(task, classification);
+
+  const nextSteps: string[] = [];
+  if (planResult.unknowns.length > 0) {
+    nextSteps.push(`Unknowns detected: ${planResult.unknowns.join("; ")}`);
+  }
+  if (planResult.impactSet.length > 0) {
+    nextSteps.push(
+      `Review impact set (${planResult.impactSet.length} files) and use find_relevant_context for detailed context.`,
+    );
+  }
+  if (planResult.verificationStrategy !== "none") {
+    nextSteps.push(`Verification strategy: ${planResult.verificationStrategy}`);
+  }
+
+  return {
+    category: classification.category,
+    steps: planResult.steps,
+    impactSet: planResult.impactSet,
+    unknowns: planResult.unknowns,
+    verificationStrategy: planResult.verificationStrategy,
+    nextSteps,
+  };
+}
+
+// ── find_relevant_context ───────────────────────────────────────────────────
+
+async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const task = requireString(args, "task");
+  const maxItems = optionalInt(args, "maxItems", 1, 50) ?? 20;
+  const maxTokens = optionalInt(args, "maxTokens", 100, 50000) ?? 12000;
+
+  const sdk = h.ctx.requireSDK();
+
+  // Build the context package via the SDK's assembly pipeline.
+  const { assembleContextPackage } = await import("@atlas/sdk");
+  const { detectStaleness } = await import("@atlas/sdk");
+  const staleness = await detectStaleness(sdk);
+  const pkg = assembleContextPackage({
+    context: sdk,
+    repositoryPath: sdk.config.repositoryPath,
+    task,
+    staleness,
+    options: {
+      budget: { maxItems, maxTokensPerItem: 2000, maxTokensTotal: maxTokens },
+    },
+  });
+
+  // Run the sufficiency gate.
+  const indexedPaths = sdk.files.listFiles().map((f) => f.path);
+  const sufficiency = evaluateSufficiency({
+    planTargets: pkg.items.filter((i) => i.path !== null).map((i) => i.path ?? ""),
+    indexedPaths,
+    searchHits: pkg.items
+      .filter((i) => i.path !== null)
+      .map((i) => ({ path: i.path, score: i.score })),
+    isCodeModification: true,
+    criticalCount: pkg.items.filter((i) => i.tier === "critical").length,
+    closureDependencyCount: pkg.items.filter((i) => i.kind === "dependency").length,
+    isMultiFileTask: pkg.items.filter((i) => i.kind === "file").length > 1,
+  });
+
+  const nextSteps = [...sufficiency.nextSteps];
+  if (sufficiency.sufficient) {
+    nextSteps.push("Context is sufficient — proceed with the task.");
+  } else {
+    nextSteps.push(
+      "Context may be insufficient — consider broader search or dependency expansion.",
+    );
+  }
+
+  return {
+    task: pkg.task,
+    items: pkg.items.map((item) => ({
+      id: item.id,
+      kind: item.kind,
+      title: item.title,
+      path: item.path,
+      score: item.score,
+      source: item.source,
+      reason: item.reason,
+      ...(item.tier !== undefined ? { tier: item.tier } : {}),
+      tokens: item.tokens,
+    })),
+    sufficient: sufficiency.sufficient,
+    sufficiencyFailures: sufficiency.failures.map((f) => ({
+      predicate: f.predicate,
+      message: f.message,
+    })),
+    nextSteps,
+    budget: {
+      itemsRequested: pkg.budget.itemsRequested,
+      itemsIncluded: pkg.budget.itemsIncluded,
+      tokensEstimated: pkg.budget.tokensEstimated,
+      budgetExceeded: pkg.budget.budgetExceeded,
+    },
+  };
+}
+
+// ── inspect_symbol ──────────────────────────────────────────────────────────
+
+async function inspectSymbol(h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const symbolQuery = requireString(args, "symbol");
+  const sdk = h.ctx.requireSDK();
+
+  // Try to find the symbol by name search.
+  const hits = sdk.symbols.searchSymbols(symbolQuery, { limit: 1, minScore: 50 });
+  if (hits.length === 0) {
+    throw new ToolDomainError(`Symbol "${symbolQuery}" not found in the index.`);
+  }
+
+  const hit = hits[0];
+  if (hit === undefined) {
+    throw new ToolDomainError(`Symbol "${symbolQuery}" not found in the index.`);
+  }
+  const symbolId = symbolIdFromTarget(hit.targetId);
+  if (symbolId === undefined) {
+    throw new ToolDomainError(`Symbol "${symbolQuery}" could not be resolved.`);
+  }
+
+  const symbol = sdk.symbols.getSymbol(symbolId);
+
+  // Find callers and callees via dependency edges.
+  const allEdges = sdk.dependencies.getDependencyGraph();
+  const callers: Array<{ name: string; kind: string; filePath: string; edgeKind: string }> = [];
+  const callees: Array<{ name: string; kind: string; filePath: string; edgeKind: string }> = [];
+
+  const symbolNodeId = `n:${symbolId}`;
+  const fileNodeId = `n:file:${symbol.filePath}`;
+
+  for (const edge of allEdges) {
+    // Incoming edges (callers): edge.to points to our symbol or its file.
+    if (edge.to === symbolNodeId || edge.to === fileNodeId) {
+      const sourceNode = resolveNode(sdk, edge.from);
+      if (sourceNode !== null) {
+        callers.push({
+          name: sourceNode.name,
+          kind: sourceNode.kind,
+          filePath: sourceNode.filePath,
+          edgeKind: edge.kind,
+        });
+      }
+    }
+    // Outgoing edges (callees): edge.from points to our symbol or its file.
+    if (edge.from === symbolNodeId || edge.from === fileNodeId) {
+      const targetNode = resolveNode(sdk, edge.to);
+      if (targetNode !== null) {
+        callees.push({
+          name: targetNode.name,
+          kind: targetNode.kind,
+          filePath: targetNode.filePath,
+          edgeKind: edge.kind,
+        });
+      }
+    }
+  }
+
+  // Find test files: files matching *.test.ts or *.spec.ts in the same directory.
+  const testFiles: string[] = [];
+  const allFiles = sdk.files.listFiles();
+  const symbolDir = symbol.filePath.replace(/\\/g, "/").split("/").slice(0, -1).join("/");
+  for (const file of allFiles) {
+    const filePath = file.path.replace(/\\/g, "/");
+    if (
+      filePath.startsWith(symbolDir) &&
+      (filePath.endsWith(".test.ts") ||
+        filePath.endsWith(".spec.ts") ||
+        filePath.endsWith(".test.js") ||
+        filePath.endsWith(".spec.js"))
+    ) {
+      testFiles.push(file.path);
+    }
+  }
+
+  const nextSteps: string[] = [];
+  if (callers.length > 0) {
+    nextSteps.push(`Review ${callers.length} caller(s) to understand usage.`);
+  }
+  if (callees.length > 0) {
+    nextSteps.push(`Review ${callees.length} callee(s) to understand dependencies.`);
+  }
+  if (testFiles.length > 0) {
+    nextSteps.push(`Check ${testFiles.length} test file(s) for expected behavior.`);
+  }
+
+  return {
+    symbol: {
+      id: symbol.id,
+      name: symbol.name,
+      kind: symbol.kind,
+      filePath: symbol.filePath,
+      location: {
+        startLine: symbol.location.startLine,
+        endLine: symbol.location.endLine,
+      },
+      visibility: symbol.visibility,
+      documentation: symbol.documentation,
+      typeText: symbol.typeText,
+    },
+    callers,
+    callees,
+    testFiles,
+    nextSteps,
+  };
+}
 
 // ── search_symbols ───────────────────────────────────────────────────────────
 
@@ -97,7 +353,7 @@ async function searchSymbols(h: HandlerContext, args: ToolArgs): Promise<unknown
     };
   });
 
-  return { hits: enriched.slice(0, limit), total: enriched.length };
+  return { hits: enriched.slice(0, limit), total: enriched.length, nextSteps: [] };
 }
 
 // ── search_files ─────────────────────────────────────────────────────────────
@@ -125,7 +381,7 @@ async function searchFiles(h: HandlerContext, args: ToolArgs): Promise<unknown> 
     };
   });
 
-  return { hits: results.slice(0, limit), total: results.length };
+  return { hits: results.slice(0, limit), total: results.length, nextSteps: [] };
 }
 
 // ── get_summary ──────────────────────────────────────────────────────────────
@@ -152,6 +408,7 @@ async function getSummary(h: HandlerContext, args: ToolArgs): Promise<unknown> {
       found: true,
       generated: false,
       summaries: matches.map(toSummaryShape),
+      nextSteps: [],
     };
   }
   if (!generate) {
@@ -159,6 +416,7 @@ async function getSummary(h: HandlerContext, args: ToolArgs): Promise<unknown> {
       found: false,
       generated: false,
       summaries: [],
+      nextSteps: [],
       message: `No stored summary for "${target}". Pass "generate": true to create one via the configured AI provider.`,
     };
   }
@@ -176,6 +434,7 @@ async function getSummary(h: HandlerContext, args: ToolArgs): Promise<unknown> {
     found: true,
     generated: true,
     summaries: [toSummaryShape(result.value)],
+    nextSteps: [],
   };
 }
 
@@ -244,6 +503,7 @@ async function getDependencies(h: HandlerContext, args: ToolArgs): Promise<unkno
         toLabel: edge.toLabel,
       }),
     ),
+    nextSteps: [],
   };
 }
 
@@ -294,6 +554,7 @@ async function explainModule(h: HandlerContext, args: ToolArgs): Promise<unknown
           symbolOverflow: `${explanation.symbolCount} total symbols (showing first ${MAX_SYMBOLS})`,
         }
       : {}),
+    nextSteps: [],
   };
 }
 
@@ -331,6 +592,7 @@ async function projectOverview(h: HandlerContext, args: ToolArgs): Promise<unkno
       filePath: symbol.filePath,
     }));
   }
+  result["nextSteps"] = [];
   return result;
 }
 
@@ -373,6 +635,7 @@ async function readFileRange(h: HandlerContext, args: ToolArgs): Promise<unknown
     stale: range.stale,
     padded: range.padded,
     ...(range.message === undefined ? {} : { message: range.message }),
+    nextSteps: [],
   };
 }
 
@@ -401,4 +664,133 @@ function symbolIdFromTarget(targetId: string | null): string | undefined {
     return undefined;
   }
   return targetId.slice("symbol:".length);
+}
+
+/** Resolve a graph node id to a human-readable name, kind, and file path. */
+function resolveNode(
+  sdk: ContextSDK,
+  nodeId: string,
+): { name: string; kind: string; filePath: string } | null {
+  if (nodeId.startsWith("n:file:")) {
+    const path = nodeId.slice("n:file:".length);
+    return { name: path.split("/").pop() ?? path, kind: "file", filePath: path };
+  }
+  if (nodeId.startsWith("n:")) {
+    const symbolId = nodeId.slice("n:".length);
+    try {
+      const symbol = sdk.symbols.getSymbol(symbolId);
+      return { name: symbol.name, kind: symbol.kind, filePath: symbol.filePath };
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+// ── verify_answer ────────────────────────────────────────────────────────────
+
+async function verifyAnswer(h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const task = requireString(args, "task");
+  const citedPaths = optionalStringArray(args, "citedPaths") ?? [];
+  const citedSymbols = optionalStringArray(args, "citedSymbols") ?? [];
+  const planTargets = optionalStringArray(args, "planTargets") ?? [];
+  const outputContractRaw = optionalArray(args, "outputContract") as
+    | Array<{ kind?: string; value?: string }>
+    | undefined;
+
+  const outputContract = outputContractRaw?.map((c) => ({
+    kind: String(c.kind ?? ""),
+    value: String(c.value ?? ""),
+  }));
+
+  const sdk = h.ctx.requireSDK();
+  const projectRoot = h.ctx.root;
+
+  // Resolve symbols from the context index
+  const resolveSymbols = async (): Promise<readonly string[]> => {
+    try {
+      const overview = sdk.project.overview("summary");
+      return (overview.topSymbols ?? []).map((s) => s.name);
+    } catch {
+      return [];
+    }
+  };
+
+  const verifier = createVerifier({
+    resolveSymbols,
+    getAnswerText: () => task,
+    computeFingerprint: async () => `${projectRoot}:${Date.now()}`,
+    log: (msg) => h.logger.info(msg),
+  });
+
+  // Load verify config
+  const config = loadVerifyConfig(projectRoot) ?? undefined;
+
+  const claimInput: ClaimCheckInput = {
+    task,
+    citedPaths,
+    citedSymbols,
+    planTargets,
+    ...(outputContract ? { outputContract } : {}),
+  };
+
+  const report = await verifier.verify(claimInput, config, projectRoot);
+
+  return {
+    task: report.task,
+    strategy: report.strategy,
+    claims: {
+      checks: report.claims.checks.map((c) => ({
+        id: c.id,
+        kind: c.kind,
+        target: c.target,
+        passed: c.passed,
+        detail: c.detail,
+      })),
+      passed: report.claims.passed,
+      failed: report.claims.failed,
+      allPassed: report.claims.allPassed,
+    },
+    commands: report.commands.map((c) => ({
+      command: c.command,
+      args: [...c.args],
+      exitCode: c.exitCode,
+      stdout: c.stdout,
+      stderr: c.stderr,
+      timedOut: c.timedOut,
+      durationMs: c.durationMs,
+      preExisting: c.preExisting,
+    })),
+    verdict: report.verdict,
+    summary: report.summary,
+    nextSteps: buildVerifyNextSteps(report),
+  };
+}
+
+function buildVerifyNextSteps(report: { verdict: string; claims: { failed: number } }): string[] {
+  const steps: string[] = [];
+  if (report.verdict === "fail") {
+    if (report.claims.failed > 0) {
+      steps.push("Fix hallucinated paths or symbols cited in the answer");
+    }
+    steps.push("Re-run verification after correcting the answer");
+  }
+  if (report.verdict === "partial") {
+    steps.push("Pre-existing failures detected; consider running atlas doctor");
+  }
+  return steps;
+}
+
+function optionalStringArray(args: ToolArgs, key: string): string[] | undefined {
+  const val = args[key];
+  if (val === undefined || val === null) return undefined;
+  if (!Array.isArray(val)) return undefined;
+  return val.map((v) => String(v));
+}
+
+function optionalArray(args: ToolArgs, key: string): unknown[] | undefined {
+  const val = args[key];
+  if (val === undefined || val === null) return undefined;
+  if (!Array.isArray(val)) return undefined;
+  return val;
 }

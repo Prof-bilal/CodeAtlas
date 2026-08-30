@@ -8,8 +8,11 @@ import {
   type ContextPackage,
   type ContextSlice,
   type Session,
+  type TaskClassification,
+  createClassifier,
   createContextIntegration,
   createContextSDK,
+  createPlanner,
   createSessionManager,
   renderContextBriefing,
   renderContextExplanation,
@@ -18,7 +21,6 @@ import {
   saveContextSlice,
 } from "@atlas/sdk";
 import type { Command } from "commander";
-import { openMetrics } from "./metrics";
 import { contextDbPath, resolveProjectRoot } from "./search";
 import { openUsage } from "./usage";
 
@@ -31,6 +33,7 @@ interface CommonOptions {
   readonly includeInstructions?: boolean;
   readonly includeOverview?: boolean;
   readonly ai?: boolean;
+  readonly plan?: boolean;
 }
 interface ContextOptions extends CommonOptions {
   readonly explain?: boolean;
@@ -107,6 +110,7 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .option("--include-overview", "include the project overview")
     .option("--no-overview", "exclude the project overview")
     .option("--ai", "add an AI briefing of the assembled package (requires a configured provider)")
+    .option("--plan", "classify the task and include a deterministic plan in the output")
     .action(async (task: string, commandOptions: ContextOptions) =>
       runBuild(task, commandOptions, options.integration),
     );
@@ -207,24 +211,43 @@ async function runBuild(
     injected,
     async (integration) => {
       try {
+        // When --plan is set, classify the task and include a plan in the output.
+        let planOutput: string | undefined;
+        if (options.plan === true) {
+          const classify = createClassifier();
+          const classification = classify(task);
+          planOutput = renderPlanSection(task, classification, options.repo);
+        }
+
         if (options.explain === true) {
           const value = await integration.explain({ task, ...assembleOptions(options) });
-          emit(value, options.json === true, renderContextExplanation);
+          const base =
+            options.json === true
+              ? JSON.stringify(value, null, 2)
+              : renderContextExplanation(value);
+          emit(planOutput !== undefined ? `${planOutput}\n\n${base}` : base, false, (x) => x);
         } else if (options.ai === true) {
           const briefing = await integration.brief({ task, ...assembleOptions(options) });
           if (briefing.ok) {
-            emit(briefing.value, options.json === true, renderContextBriefing);
+            const base =
+              options.json === true
+                ? JSON.stringify(briefing.value, null, 2)
+                : renderContextBriefing(briefing.value);
+            emit(planOutput !== undefined ? `${planOutput}\n\n${base}` : base, false, (x) => x);
           } else {
             const pkg = await integration.buildPackage({ task, ...assembleOptions(options) });
-            emit(
-              { package: pkg, aiMessage: briefing.error.message },
-              options.json === true,
-              renderContextAIOutcome,
-            );
+            const outcome = { package: pkg, aiMessage: briefing.error.message };
+            const base =
+              options.json === true
+                ? JSON.stringify(outcome, null, 2)
+                : renderContextAIOutcome(outcome);
+            emit(planOutput !== undefined ? `${planOutput}\n\n${base}` : base, false, (x) => x);
           }
         } else {
           const value = await integration.buildPackage({ task, ...assembleOptions(options) });
-          emit(value, options.json === true, renderContextPackage);
+          const base =
+            options.json === true ? JSON.stringify(value, null, 2) : renderContextPackage(value);
+          emit(planOutput !== undefined ? `${planOutput}\n\n${base}` : base, false, (x) => x);
         }
       } catch (error) {
         reportContextError(error);
@@ -599,4 +622,69 @@ function parsePositiveInteger(value: string): number {
   if (!Number.isInteger(parsed) || parsed <= 0)
     throw new Error(`--max-tokens-total must be a positive integer, got "${value}"`);
   return parsed;
+}
+
+// ── Plan rendering ─────────────────────────────────────────────────────────
+
+function renderPlanSection(
+  task: string,
+  classification: TaskClassification,
+  repo?: string,
+): string {
+  const lines = [
+    "## Task Classification",
+    "",
+    `- **Category:** ${classification.category}`,
+    `- **Subcategory:** ${classification.subcategory}`,
+    `- **Confidence:** ${classification.confidence}`,
+    `- **Reasoning:** ${classification.reasoning}`,
+    "",
+  ];
+  if (classification.entities.filePaths.length > 0) {
+    lines.push(`- **Files:** ${classification.entities.filePaths.join(", ")}`);
+  }
+  if (classification.entities.symbolNames.length > 0) {
+    lines.push(`- **Symbols:** ${classification.entities.symbolNames.join(", ")}`);
+  }
+  lines.push("");
+
+  // Build the plan if a repo path is available (for search/graph).
+  if (repo !== undefined) {
+    try {
+      const root = repo ?? resolveProjectRoot();
+      const sdk = createContextSDK({
+        dbPath: contextDbPath(root),
+        repositoryPath: root,
+      });
+      try {
+        const planner = createPlanner(sdk);
+        const planResult = planner.plan(task, classification);
+        lines.push("## Plan", "");
+        for (const step of planResult.steps) {
+          lines.push(`### Step ${step.order}: ${step.action}`);
+          lines.push(`> ${step.rationale}`);
+          if (step.targetFiles.length > 0) {
+            lines.push(`> Targets: ${step.targetFiles.join(", ")}`);
+          }
+          lines.push("");
+        }
+        if (planResult.unknowns.length > 0) {
+          lines.push("**Unknowns:**");
+          for (const unknown of planResult.unknowns) {
+            lines.push(`- ${unknown}`);
+          }
+          lines.push("");
+        }
+        lines.push(`**Verification:** ${planResult.verificationStrategy}`);
+      } finally {
+        sdk.close();
+      }
+    } catch {
+      // If the index is unavailable, skip the plan — the classification
+      // header is still useful.
+      lines.push("*(plan unavailable — index not found)*");
+    }
+  }
+
+  return lines.join("\n");
 }

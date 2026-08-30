@@ -15,6 +15,7 @@ import { type SessionsCommandOptions, registerSessions } from "./sessions";
 import { registerTools } from "./tools";
 import type { ToolsCommandOptions } from "./tools";
 import { registerUsage } from "./usage";
+import { registerVerify } from "./verify";
 
 /** Register every CLI command on the given program. */
 export function registerCommands(
@@ -57,4 +58,5 @@ export function registerCommands(
   registerDoctor(program, options.doctor === undefined ? {} : { doctor: options.doctor });
   registerMcp(program);
   registerBenchmark(program);
+  registerVerify(program);
 }

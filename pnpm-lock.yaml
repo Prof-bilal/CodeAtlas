@@ -270,6 +270,9 @@ importers:
       '@atlas/usage':
         specifier: workspace:*
         version: link:../usage
+      '@atlas/verifier':
+        specifier: workspace:*
+        version: link:../verifier
 
   packages/search:
     dependencies:
@@ -321,6 +324,28 @@ importers:
       '@atlas/shared':
         specifier: workspace:*
         version: link:../shared
+
+  packages/verifier:
+    dependencies:
+      '@atlas/core':
+        specifier: workspace:*
+        version: link:../core
+      '@atlas/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@atlas/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.26)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.20.1)(lightningcss@1.33.0)
 
 packages:
 

@@ -7,6 +7,11 @@ import { z } from "zod";
  */
 
 export type ToolName =
+  | "analyze_task"
+  | "create_plan"
+  | "find_relevant_context"
+  | "inspect_symbol"
+  | "verify_answer"
   | "search_symbols"
   | "search_files"
   | "get_summary"
@@ -16,6 +21,11 @@ export type ToolName =
   | "read_file_range";
 
 export const TOOL_NAMES: readonly ToolName[] = [
+  "analyze_task",
+  "create_plan",
+  "find_relevant_context",
+  "inspect_symbol",
+  "verify_answer",
   "search_symbols",
   "search_files",
   "get_summary",
@@ -147,6 +157,242 @@ const moduleDependencyShape = {
 };
 
 export const TOOLS: readonly ToolDefinition[] = [
+  // ── High-level tools (planning layer) ──────────────────────────────────────
+  {
+    name: "analyze_task",
+    title: "Analyze task",
+    description:
+      "FIRST CHOICE for any task: classify it (debug/security/architecture/understand), extract file paths, symbol names, and keywords. " +
+      "Deterministic, no AI, no index required. Start here to understand what the task needs. " +
+      "Returns category, subcategory, confidence, reasoning, and extracted entities.",
+    inputSchema: {
+      task: boundedString("The user task or question to classify."),
+    },
+    outputSchema: {
+      category: z
+        .string()
+        .describe("High-level task category (debug, security, architecture, understand)."),
+      subcategory: z.string().describe("Finer-grained subcategory label."),
+      confidence: z.number().describe("Classification confidence (0..1)."),
+      reasoning: z.string().describe("Deterministic explanation of the classification."),
+      entities: z
+        .object({
+          filePaths: z.array(z.string()).describe("File paths mentioned in the task."),
+          symbolNames: z.array(z.string()).describe("Symbol name candidates."),
+          keywords: z.array(z.string()).describe("Lowercase keyword fallbacks."),
+        })
+        .describe("Extracted entities from the task text."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps for the model."),
+    },
+  },
+  {
+    name: "create_plan",
+    title: "Create plan",
+    description:
+      "Generate a deterministic plan for a task: classify it, build an impact set from search + dependency closure, " +
+      "and produce ordered steps with rationale and verification strategy. Requires an indexed project. " +
+      "Returns steps, impact set, unknowns, and verification strategy.",
+    inputSchema: {
+      task: boundedString("The user task to plan for."),
+    },
+    outputSchema: {
+      category: z.string().describe("Task category."),
+      steps: z
+        .array(
+          z.object({
+            order: z.number().describe("Step order (1-based)."),
+            action: z.string().describe("What to do."),
+            targetFiles: z.array(z.string()).describe("Files this step touches."),
+            rationale: z.string().describe("Why this step."),
+          }),
+        )
+        .describe("Ordered plan steps."),
+      impactSet: z.array(z.string()).describe("Files the plan expects to touch."),
+      unknowns: z.array(z.string()).describe("Things the plan cannot resolve deterministically."),
+      verificationStrategy: z.string().describe("Recommended verification approach."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps."),
+    },
+  },
+  {
+    name: "find_relevant_context",
+    title: "Find relevant context",
+    description:
+      "Retrieve ranked, budgeted context for a task. Returns context items organized by tier (critical/important/supporting) " +
+      "with scores, reasons, and line ranges. Includes a sufficiency gate that reports whether the context is enough to answer. " +
+      "Every result includes 'next_steps' — deterministic hints for what to do next.",
+    inputSchema: {
+      task: boundedString("The task to retrieve context for."),
+      maxItems: intRange(1, 50).optional().describe("Maximum context items (default 20)."),
+      maxTokens: intRange(100, 50000).optional().describe("Maximum total tokens (default 12000)."),
+    },
+    outputSchema: {
+      task: z.string().describe("The original task."),
+      items: z
+        .array(
+          z.object({
+            id: z.string().describe("Stable item id."),
+            kind: z
+              .string()
+              .describe("Item kind (file, symbol, summary, dependency, instructions, overview)."),
+            title: z.string().describe("Human-readable title."),
+            path: z.string().nullable().describe("File path, when applicable."),
+            score: z.number().describe("Relevance score."),
+            source: z.string().describe("How this item was selected."),
+            reason: z.string().describe("Why this item was included."),
+            tier: z.string().optional().describe("Hierarchy tier."),
+            tokens: z.number().describe("Estimated token count."),
+          }),
+        )
+        .describe("Ranked context items."),
+      sufficient: z.boolean().describe("Whether the context is sufficient to answer."),
+      sufficiencyFailures: z
+        .array(
+          z.object({
+            predicate: z.string().describe("Failed predicate id."),
+            message: z.string().describe("Human-readable explanation."),
+          }),
+        )
+        .describe("Why the context may be insufficient."),
+      nextSteps: z.array(z.string()).describe("Deterministic next steps for the model."),
+      budget: z
+        .object({
+          itemsRequested: z.number(),
+          itemsIncluded: z.number(),
+          tokensEstimated: z.number(),
+          budgetExceeded: z.boolean(),
+        })
+        .describe("Budget enforcement summary."),
+    },
+  },
+  {
+    name: "inspect_symbol",
+    title: "Inspect symbol",
+    description:
+      "Full symbol neighborhood: declaration details, callers, callees, and test files. " +
+      "Use after search_symbols narrows the target. Returns the symbol's location, kind, visibility, " +
+      "dependency edges (who calls/callees/extends it), and associated test files.",
+    inputSchema: {
+      symbol: boundedString("Symbol name or id to inspect."),
+    },
+    outputSchema: {
+      symbol: z
+        .object({
+          id: z.string().describe("Symbol id."),
+          name: z.string().describe("Symbol name."),
+          kind: z.string().describe("Symbol kind (function, class, method, ...)."),
+          filePath: z.string().describe("File where the symbol is defined."),
+          location: z
+            .object({
+              startLine: z.number(),
+              endLine: z.number(),
+            })
+            .describe("Source location (1-based)."),
+          visibility: z.string().describe("Access level."),
+          documentation: z.string().nullable().describe("Doc comment, when present."),
+          typeText: z.string().nullable().describe("Type annotation, when present."),
+        })
+        .describe("The symbol declaration."),
+      callers: z
+        .array(
+          z.object({
+            name: z.string(),
+            kind: z.string(),
+            filePath: z.string(),
+            edgeKind: z.string(),
+          }),
+        )
+        .describe("Symbols/nodes that call or use this symbol."),
+      callees: z
+        .array(
+          z.object({
+            name: z.string(),
+            kind: z.string(),
+            filePath: z.string(),
+            edgeKind: z.string(),
+          }),
+        )
+        .describe("Symbols/nodes that this symbol calls or uses."),
+      testFiles: z.array(z.string()).describe("Test files associated with this symbol's file."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps."),
+    },
+  },
+  {
+    name: "verify_answer",
+    title: "Verify answer",
+    description:
+      "Run claim checks and optional verification commands against an answer. " +
+      "Detects hallucinated file paths, missing symbols, plan coverage gaps, and output contract violations. " +
+      "Optionally runs typecheck/tests/lint via allow-listed commands from .codeatlas/verify.json. " +
+      "Returns a verification report with per-check pass/fail, command results, and an overall verdict.",
+    inputSchema: {
+      task: boundedString("The task the answer addresses."),
+      citedPaths: z
+        .array(boundedString("A file path cited in the answer."))
+        .optional()
+        .describe("File paths the answer claims to reference."),
+      citedSymbols: z
+        .array(boundedString("A symbol name cited in the answer."))
+        .optional()
+        .describe("Symbol names the answer claims to reference."),
+      planTargets: z
+        .array(boundedString("A plan target the answer should cover."))
+        .optional()
+        .describe("Plan step targets the answer should address."),
+      outputContract: z
+        .array(
+          z.object({
+            kind: boundedString("Contract kind (contains-text, contains-function, no-errors)."),
+            value: boundedString("Value to check against."),
+          }),
+        )
+        .optional()
+        .describe("Output contract assertions."),
+    },
+    outputSchema: {
+      task: z.string().describe("The task that was verified."),
+      strategy: z
+        .enum(["none", "claim-checks", "command-runners"])
+        .describe("Verification strategy used."),
+      claims: z
+        .object({
+          checks: z
+            .array(
+              z.object({
+                id: z.string().describe("Claim check id."),
+                kind: z.string().describe("Claim kind."),
+                target: z.string().describe("What was checked."),
+                passed: z.boolean().describe("Whether the claim passed."),
+                detail: z.string().describe("Human-readable result."),
+              }),
+            )
+            .describe("All claim checks run."),
+          passed: z.number().describe("Number of passing checks."),
+          failed: z.number().describe("Number of failing checks."),
+          allPassed: z.boolean().describe("True when all checks passed."),
+        })
+        .describe("Claim check results."),
+      commands: z
+        .array(
+          z.object({
+            command: z.string().describe("Command that was run."),
+            args: z.array(z.string()).describe("Arguments passed."),
+            exitCode: z.number().describe("Exit code (0 = success)."),
+            stdout: z.string().describe("Captured stdout (may be truncated)."),
+            stderr: z.string().describe("Captured stderr (may be truncated)."),
+            timedOut: z.boolean().describe("Whether the command timed out."),
+            durationMs: z.number().describe("Wall-clock duration in ms."),
+            preExisting: z.boolean().describe("True when this was a pre-existing failure."),
+          }),
+        )
+        .describe("Command run results."),
+      verdict: z
+        .enum(["pass", "fail", "partial", "skipped", "error"])
+        .describe("Overall verification verdict."),
+      summary: z.string().describe("Human-readable summary."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps."),
+    },
+  },
+  // ── Low-level tools (atomic operations) ────────────────────────────────────
   {
     name: "search_symbols",
     title: "Search symbols",
@@ -168,6 +414,7 @@ export const TOOLS: readonly ToolDefinition[] = [
     outputSchema: {
       hits: z.array(z.object(symbolHit)).describe("Ranked symbol hits."),
       total: z.number().describe("Total hits before the limit was applied."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
     },
   },
@@ -191,6 +438,7 @@ export const TOOLS: readonly ToolDefinition[] = [
     outputSchema: {
       hits: z.array(z.object(fileHit)).describe("Ranked file hits."),
       total: z.number().describe("Total hits before the limit was applied."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
     },
   },
@@ -225,6 +473,7 @@ export const TOOLS: readonly ToolDefinition[] = [
       generated: z.boolean().describe("Whether the summary was generated on this call."),
       summaries: z.array(z.object(summaryShape)).describe("Matching stored/generated summaries."),
       freshness: freshnessField,
+      nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       message: z
         .string()
         .optional()
@@ -261,6 +510,7 @@ export const TOOLS: readonly ToolDefinition[] = [
       total: z.number().describe("Total edges in the graph (before filtering)."),
       nodeFound: z.boolean().describe("False when the node was not found in the index."),
       dependencies: z.array(z.object(dependencyShape)).describe("Dependency edges."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
     },
   },
@@ -302,6 +552,7 @@ export const TOOLS: readonly ToolDefinition[] = [
       dependencyCount: z.number().describe("Dependency edges touching the module's files."),
       dependencies: z.array(z.object(moduleDependencyShape)).describe("Dependency edges."),
       summary: z.object(summaryShape).nullable().describe("Stored module summary, or null."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
       fileOverflow: z
         .string()
@@ -371,6 +622,7 @@ export const TOOLS: readonly ToolDefinition[] = [
         )
         .optional()
         .describe("Top symbols by dependency count (detail: full)."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
     },
   },
@@ -404,6 +656,7 @@ export const TOOLS: readonly ToolDefinition[] = [
       versionMatch: z.boolean().describe("False when expectedHash mismatches the current hash."),
       stale: z.boolean().describe("True when the on-disk file differs from the persisted index."),
       padded: z.boolean().describe("True when padding was applied around the requested range."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
       message: z
         .string()

@@ -42,6 +42,7 @@
     "@atlas/usage": "workspace:*",
     "@atlas/metrics": "workspace:*",
     "@atlas/toolkit": "workspace:*",
+    "@atlas/verifier": "workspace:*",
     "@atlas/benchmark": "workspace:*"
   },
   "license": "MIT",

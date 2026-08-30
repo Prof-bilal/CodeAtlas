@@ -1,8 +1,10 @@
 import { existsSync } from "node:fs";
 import { copyFile } from "node:fs/promises";
+import type { ContextIntegration, ContextPlan, ContextSlice, TaskClassification } from "@atlas/sdk";
 import {
-  type ContextIntegration,
-  type ContextSlice,
+  createClassifier,
+  createContextSDK,
+  createPlanner,
   renderContextSlice,
   saveContextSlice,
 } from "@atlas/sdk";
@@ -21,6 +23,7 @@ interface AskOptions {
   /** `false` when absent, the string copy target when `--save <path>` is given. */
   readonly save?: string | boolean;
   readonly json?: boolean;
+  readonly plan?: boolean;
 }
 
 /**
@@ -40,6 +43,7 @@ export function registerAsk(program: Command, options: AskCommandOptions = {}): 
       "persist the slice under .codeatlas/slices/ (and copy the markdown to <path> when given)",
     )
     .option("--json", "print the slice as JSON")
+    .option("--plan", "classify the task and show a deterministic plan before the context")
     .action(async (question: string, commandOptions: AskOptions) =>
       runAsk(question, commandOptions, options.integration),
     );
@@ -62,6 +66,28 @@ async function runAsk(
     injected,
     async (integration) => {
       try {
+        if (options.plan === true) {
+          // When --plan is set, classify the task and show a deterministic plan
+          // before building the context slice.
+          const classify = createClassifier();
+          const classification = classify(question);
+          console.log(renderPlanHeader(classification));
+
+          // Build the plan using the SDK's planner (needs a ContextSDK for search/graph).
+          const sdk = createContextSDK({
+            dbPath: contextDbPath(root),
+            repositoryPath: root,
+          });
+          try {
+            const planner = createPlanner(sdk);
+            const planResult = planner.plan(question, classification);
+            console.log(renderPlan(planResult));
+          } finally {
+            sdk.close();
+          }
+          console.log("---\n");
+        }
+
         const slice = await integration.buildSlice({
           task: question,
           ...(options.maxTokens === undefined
@@ -102,4 +128,46 @@ function parsePositiveInteger(value: string): number {
     throw new Error(`--max-tokens must be a positive integer, got "${value}"`);
   }
   return parsed;
+}
+
+// ── Plan rendering ─────────────────────────────────────────────────────────
+
+function renderPlanHeader(classification: TaskClassification): string {
+  const lines = [
+    "## Task Classification",
+    "",
+    `- **Category:** ${classification.category}`,
+    `- **Subcategory:** ${classification.subcategory}`,
+    `- **Confidence:** ${classification.confidence}`,
+    `- **Reasoning:** ${classification.reasoning}`,
+    "",
+  ];
+  if (classification.entities.filePaths.length > 0) {
+    lines.push(`- **Files:** ${classification.entities.filePaths.join(", ")}`);
+  }
+  if (classification.entities.symbolNames.length > 0) {
+    lines.push(`- **Symbols:** ${classification.entities.symbolNames.join(", ")}`);
+  }
+  return lines.join("\n");
+}
+
+function renderPlan(plan: ContextPlan): string {
+  const lines = ["## Plan", ""];
+  for (const step of plan.steps) {
+    lines.push(`### Step ${step.order}: ${step.action}`);
+    lines.push(`> ${step.rationale}`);
+    if (step.targetFiles.length > 0) {
+      lines.push(`> Targets: ${step.targetFiles.join(", ")}`);
+    }
+    lines.push("");
+  }
+  if (plan.unknowns.length > 0) {
+    lines.push("**Unknowns:**");
+    for (const unknown of plan.unknowns) {
+      lines.push(`- ${unknown}`);
+    }
+    lines.push("");
+  }
+  lines.push(`**Verification:** ${plan.verificationStrategy}`);
+  return lines.join("\n");
 }

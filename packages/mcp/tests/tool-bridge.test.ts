@@ -172,7 +172,7 @@ describe("createContextToolSource", () => {
       logger,
     });
     const tools = toolSource.listTools();
-    expect(tools.length).toBe(7);
+    expect(tools.length).toBe(12);
   });
 
   it("each tool has a function name matching the MCP registry", () => {
@@ -187,13 +187,18 @@ describe("createContextToolSource", () => {
       .map((t) => t.function.name)
       .sort();
     expect(names).toEqual([
+      "analyze_task",
+      "create_plan",
       "explain_module",
+      "find_relevant_context",
       "get_dependencies",
       "get_summary",
+      "inspect_symbol",
       "project_overview",
       "read_file_range",
       "search_files",
       "search_symbols",
+      "verify_answer",
     ]);
   });
 

@@ -52,6 +52,17 @@ export type {
   ToolTier,
   ToolTrustLevel,
 } from "./ports/tool-registry.port";
+export type {
+  ContextPlan,
+  PlannerPort,
+  PlanStep,
+  VerificationStrategy,
+} from "./ports/planner.port";
+export type {
+  TaskClassifierPort,
+  TaskClassification,
+  TaskEntities as TaskClassifierEntities,
+} from "./ports/task-classifier.port";
 export type { CachePort } from "./ports/cache.port";
 export type {
   ContextBuilderPort,
@@ -200,3 +211,16 @@ export type {
   TokenMetrics,
   ToolCallRecord,
 } from "./ports/benchmark.port";
+export type {
+  ClaimCheck,
+  ClaimCheckInput,
+  ClaimCheckResult,
+  ClaimKind,
+  CommandRunResult,
+  OutputContractAssertion,
+  VerificationReport,
+  VerificationVerdict,
+  VerifierPort,
+  VerifyCommandConfig,
+  VerifyConfig,
+} from "./ports/verifier.port";

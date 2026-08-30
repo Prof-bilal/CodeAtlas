@@ -561,3 +561,208 @@ describe("read_file_range", () => {
     });
   });
 });
+
+// ── analyze_task ────────────────────────────────────────────────────────────
+
+describe("analyze_task", () => {
+  it("classifies a debug task", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.analyze_task(ctx, {
+        task: "Fix the crash in src/auth.ts when login fails",
+      })) as {
+        category: string;
+        confidence: number;
+        reasoning: string;
+        entities: { filePaths: string[]; symbolNames: string[]; keywords: string[] };
+        nextSteps: string[];
+      };
+      expect(result.category).toBe("debug");
+      expect(result.confidence).toBeGreaterThan(0);
+      expect(result.reasoning.length).toBeGreaterThan(0);
+      expect(result.entities.filePaths).toContain("src/auth.ts");
+      expect(result.nextSteps.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("classifies a security task", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.analyze_task(ctx, {
+        task: "Fix the SQL injection vulnerability in the search endpoint",
+      })) as { category: string };
+      expect(result.category).toBe("security");
+    });
+  });
+
+  it("extracts symbol names from the task", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.analyze_task(ctx, {
+        task: "Fix `UserService.create` in src/user.ts",
+      })) as { entities: { symbolNames: string[]; filePaths: string[] } };
+      expect(result.entities.symbolNames).toContain("UserService");
+      expect(result.entities.filePaths).toContain("src/user.ts");
+    });
+  });
+
+  it("requires a task argument", async () => {
+    await withFixture(async (ctx) => {
+      await expect(HANDLERS.analyze_task(ctx, {})).rejects.toThrow(ToolInputError);
+    });
+  });
+});
+
+// ── create_plan ─────────────────────────────────────────────────────────────
+
+describe("create_plan", () => {
+  it("produces a plan with steps and impact set", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.create_plan(ctx, {
+        task: "Fix the login bug",
+      })) as {
+        category: string;
+        steps: Array<{ order: number; action: string; rationale: string }>;
+        impactSet: string[];
+        unknowns: string[];
+        verificationStrategy: string;
+        nextSteps: string[];
+      };
+      expect(result.category).toBe("debug");
+      expect(result.steps.length).toBeGreaterThan(0);
+      expect(result.impactSet.length).toBeGreaterThan(0);
+      expect(result.verificationStrategy).toBeDefined();
+      expect(result.nextSteps.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("includes steps with sequential order", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.create_plan(ctx, {
+        task: "Fix the bug",
+      })) as { steps: Array<{ order: number }> };
+      for (let i = 0; i < result.steps.length; i++) {
+        expect(result.steps[i]?.order).toBe(i + 1);
+      }
+    });
+  });
+
+  it("requires a task argument", async () => {
+    await withFixture(async (ctx) => {
+      await expect(HANDLERS.create_plan(ctx, {})).rejects.toThrow(ToolInputError);
+    });
+  });
+});
+
+// ── find_relevant_context ───────────────────────────────────────────────────
+
+describe("find_relevant_context", () => {
+  it("returns context items with sufficiency gate", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Fix the double function",
+      })) as {
+        task: string;
+        items: Array<{ id: string; kind: string; score: number }>;
+        sufficient: boolean;
+        sufficiencyFailures: Array<{ predicate: string; message: string }>;
+        nextSteps: string[];
+        budget: { itemsRequested: number; itemsIncluded: number; tokensEstimated: number };
+      };
+      expect(result.task).toBe("Fix the double function");
+      expect(result.items.length).toBeGreaterThan(0);
+      expect(typeof result.sufficient).toBe("boolean");
+      expect(result.nextSteps.length).toBeGreaterThan(0);
+      expect(result.budget.itemsIncluded).toBeGreaterThan(0);
+    });
+  });
+
+  it("every item has required fields", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Explain the math module",
+      })) as {
+        items: Array<{
+          id: string;
+          kind: string;
+          title: string;
+          score: number;
+          source: string;
+          reason: string;
+          tokens: number;
+        }>;
+      };
+      for (const item of result.items) {
+        expect(item.id.length).toBeGreaterThan(0);
+        expect(item.kind.length).toBeGreaterThan(0);
+        expect(item.title.length).toBeGreaterThan(0);
+        expect(item.score).toBeGreaterThanOrEqual(0);
+        expect(item.source.length).toBeGreaterThan(0);
+        expect(item.reason.length).toBeGreaterThan(0);
+        expect(item.tokens).toBeGreaterThanOrEqual(0);
+      }
+    });
+  });
+
+  it("supports budget customization", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Fix the bug",
+        maxItems: 3,
+        maxTokens: 5000,
+      })) as { items: unknown[]; budget: { itemsIncluded: number } };
+      expect(result.items.length).toBeLessThanOrEqual(3);
+      expect(result.budget.itemsIncluded).toBeLessThanOrEqual(3);
+    });
+  });
+
+  it("requires a task argument", async () => {
+    await withFixture(async (ctx) => {
+      await expect(HANDLERS.find_relevant_context(ctx, {})).rejects.toThrow(ToolInputError);
+    });
+  });
+});
+
+// ── inspect_symbol ──────────────────────────────────────────────────────────
+
+describe("inspect_symbol", () => {
+  it("returns symbol details with callers and callees", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.inspect_symbol(ctx, {
+        symbol: "double",
+      })) as {
+        symbol: { id: string; name: string; kind: string; filePath: string };
+        callers: Array<{ name: string; edgeKind: string }>;
+        callees: Array<{ name: string; edgeKind: string }>;
+        testFiles: string[];
+        nextSteps: string[];
+      };
+      expect(result.symbol.name).toBe("double");
+      expect(result.symbol.kind).toBe("function");
+      expect(result.symbol.filePath).toBe("/src/math.ts");
+      expect(result.testFiles).toEqual([]);
+      expect(result.nextSteps.length).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  it("finds callers via dependency edges", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.inspect_symbol(ctx, {
+        symbol: "double",
+      })) as { callers: Array<{ name: string; edgeKind: string }> };
+      // login calls double via n:s2 -> n:s1 edge
+      expect(result.callers.some((c) => c.name === "login")).toBe(true);
+    });
+  });
+
+  it("throws when symbol is not found", async () => {
+    await withFixture(async (ctx) => {
+      await expect(
+        HANDLERS.inspect_symbol(ctx, { symbol: "NonexistentThing12345" }),
+      ).rejects.toThrow(ToolDomainError);
+    });
+  });
+
+  it("requires a symbol argument", async () => {
+    await withFixture(async (ctx) => {
+      await expect(HANDLERS.inspect_symbol(ctx, {})).rejects.toThrow(ToolInputError);
+    });
+  });
+});

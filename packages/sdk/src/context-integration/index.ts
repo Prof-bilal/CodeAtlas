@@ -32,7 +32,14 @@ export {
   TIER_PRIORITY,
   type OutlineSymbol,
 } from "./hierarchy";
+export { createClassifier } from "./classifier";
 export { extractTaskEntities, type TaskEntities } from "./entities";
+export { createPlanner } from "./planner";
+export {
+  applyPlanAnnotations,
+  type ModelAnnotation,
+  type PlanAnnotationResult,
+} from "./plan-guard";
 export {
   evaluateSufficiency,
   type SufficiencyFailure,
