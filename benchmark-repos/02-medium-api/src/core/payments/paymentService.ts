@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger.js';
 import { EventBus } from '../../events/eventBus.js';
 import { cacheService } from '../../services/cacheService.js';
-import Stripe from 'stripe';
+import { getStripeClient } from '../../config/stripe.js';
 
 export interface Payment {
   id: string;
@@ -45,6 +45,16 @@ export class PaymentService {
   }
 
   async createPayment(data: CreatePaymentDTO): Promise<Payment> {
+    if (!data.userId) {
+      throw new Error('Invalid payment data: userId is required');
+    }
+    if (typeof data.amount !== 'number' || data.amount <= 0 || !Number.isInteger(data.amount)) {
+      throw new Error('Invalid payment data: amount must be a positive integer');
+    }
+    if (data.currency && (typeof data.currency !== 'string' || data.currency.length !== 3)) {
+      throw new Error('Invalid payment data: currency must be a 3-letter ISO code');
+    }
+
     const payment: Payment = {
       id: uuidv4(),
       userId: data.userId,
@@ -66,11 +76,29 @@ export class PaymentService {
 
   async processPayment(id: string): Promise<Payment> {
     const payment = await this.getPayment(id);
-    if (payment.status !== 'pending') {
-      throw new Error('Payment is not pending');
-    }
 
     try {
+      if (payment.status !== 'pending') {
+        throw new Error('Payment is not pending');
+      }
+
+      if (payment.amount <= 0) {
+        throw new Error('Payment amount must be positive');
+      }
+
+      if (!payment.paymentMethod) {
+        throw new Error('Payment method is required for processing');
+      }
+
+      const stripe = getStripeClient();
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(payment.amount * 100),
+        currency: payment.currency,
+        payment_method: payment.paymentMethod,
+        confirm: true,
+      });
+
+      payment.stripePaymentIntentId = paymentIntent.id;
       payment.status = 'completed';
       payment.updatedAt = new Date();
       this.eventBus.emit('payment:completed', { payment });

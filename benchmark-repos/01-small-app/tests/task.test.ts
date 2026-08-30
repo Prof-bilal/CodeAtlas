@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TaskService } from '../src/services/taskService.js';
 import { taskRepository } from '../src/repositories/taskRepository.js';
+import { tagRepository } from '../src/repositories/tagRepository.js';
 import { AppError } from '../src/services/authService.js';
 
 vi.mock('../src/repositories/taskRepository.js');
+vi.mock('../src/repositories/tagRepository.js');
 
 describe('TaskService', () => {
   let taskService: TaskService;
@@ -11,6 +13,8 @@ describe('TaskService', () => {
   beforeEach(() => {
     taskService = new TaskService();
     vi.clearAllMocks();
+    vi.mocked(tagRepository.getTagsForTask).mockResolvedValue([]);
+    vi.mocked(tagRepository.getTagsForTasks).mockResolvedValue(new Map());
   });
 
   const mockUserId = 'user-123';

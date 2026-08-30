@@ -151,9 +151,10 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "search_symbols",
     title: "Search symbols",
     description:
-      "Search the CodeAtlas index for symbols (functions, classes, interfaces, methods, constants, ...) by name. " +
-      "Returns ranked hits with the symbol kind, the defining file, the doc comment when present, and a relevance score. " +
-      "Typo-tolerant fuzzy matching is on by default. Use it before get_dependencies or explain_module to find a symbol's exact name and file.",
+      "FIRST CHOICE: Find related code by symbol name (functions, classes, interfaces, methods, constants, ...). " +
+      "Use this before read_file_range to narrow down targets. Typical: 1-2 calls per task. " +
+      "Returns ranked hits with symbol kind, file, documentation, and score. " +
+      "Overlaps with search_files; prefer this for code symbols.",
     inputSchema: {
       query: boundedString("Symbol name or fragment to search for."),
       limit: intRange(1, 100).optional().describe("Maximum number of hits to return (default 20)."),
@@ -174,9 +175,10 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "search_files",
     title: "Search files",
     description:
-      "Search the CodeAtlas index for files by path or content. " +
-      "Returns ranked hits with the file path, detected language, and a relevance score. " +
-      "Typo-tolerant fuzzy matching is on by default.",
+      "Find files by path or content. Use when searching for tests, config, or documentation. " +
+      "Typical: 1-2 calls per task. Typo-tolerant fuzzy matching is on by default. " +
+      "Overlaps with search_symbols; prefer search_symbols for code symbols. " +
+      "Use this for file paths, test files, config files, or documentation.",
     inputSchema: {
       query: boundedString("File path fragment or content text to search for."),
       limit: intRange(1, 100).optional().describe("Maximum number of hits to return (default 20)."),
@@ -196,11 +198,11 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "get_summary",
     title: "Get summary",
     description:
-      "Retrieve a stored summary for a file, folder, module, or the whole project from the persisted index. " +
-      "This is deterministic and works with no AI provider configured. " +
+      "Retrieve a stored summary for a file, folder, module, or the whole project. " +
+      "Deterministic, no AI needed. Typical: 1-2 calls per task. " +
+      'Use target "project" for the project-level summary, or a file/folder path. ' +
       'When no stored summary exists and "generate" is true, a fresh AI summary is produced through the configured provider ' +
-      "(CodeAtlas is AI-optional, so generation fails cleanly when no provider is configured). " +
-      'Use target "project" for the project-level summary, or a file/folder path.',
+      "(generation fails cleanly when no provider is configured).",
     inputSchema: {
       target: boundedString(
         'Path of the file/folder/module to summarize, or "project" for the whole project.',
@@ -233,7 +235,10 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "get_dependencies",
     title: "Get dependencies",
     description:
-      "Return persisted dependency edges from the CodeAtlas graph (imports, calls, extends, implements, references, ...). " +
+      "Understand relationships between code: persisted dependency edges (imports, calls, extends, implements, references, ...). " +
+      "For debugging: use direction='incoming', relation='calls' (what calls this). " +
+      "For architecture: use direction='outgoing', relation='imports' (what this uses). " +
+      "Typical: 1 call per task. Returns edges with human-readable labels. " +
       "Optionally filter to a single node — a file path, symbol id, or symbol name — and by relation kind. " +
       '"direction" selects outgoing edges (what the node depends on), incoming edges (what depends on it), or both. ' +
       "Edge endpoints are graph node ids with human-readable labels resolved from files and symbols.",
@@ -263,9 +268,9 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "explain_module",
     title: "Explain module",
     description:
-      "Explain a module (a folder or package): its persisted module record, the files it contains, the key symbols defined there, " +
-      "and the dependency edges touching its files. Optionally includes the stored module summary. " +
-      "Useful for understanding what a directory does before editing it.",
+      "Get a full picture of a directory/package: module record, files, key symbols, and dependency edges. " +
+      "Use when you need to understand a whole module before editing. Typical: 1 call per task. " +
+      "Use project_overview for a project-level summary instead.",
     inputSchema: {
       path: boundedString("Path of the module/folder to explain."),
       includeSummary: z
@@ -312,8 +317,8 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "project_overview",
     title: "Project overview",
     description:
-      "High-level overview of the indexed project: when it was saved, the schema version, counts of files/symbols/modules/dependencies/summaries, " +
-      "a language breakdown, and the stored project summary when present. " +
+      "High-level project stats: saved-at, schema version, file/symbol/module/dependency counts, language breakdown, and the stored project summary. " +
+      "Use at task start to understand project structure. Typical: 0-1 calls per task. " +
       'With detail "full" it also lists modules, the top files, and the top symbols.',
     inputSchema: {
       includeSummary: z
@@ -342,7 +347,13 @@ export const TOOLS: readonly ToolDefinition[] = [
       languages: z.record(z.string(), z.number()).describe("Files per detected language."),
       summary: z.object(summaryShape).nullable().describe("Stored project summary, or null."),
       modules: z
-        .array(z.object({ path: z.string(), name: z.string(), moduleType: z.string() }))
+        .array(
+          z.object({
+            path: z.string(),
+            name: z.string(),
+            moduleType: z.string(),
+          }),
+        )
         .optional()
         .describe("Module list (detail: full)."),
       topFiles: z
@@ -351,7 +362,12 @@ export const TOOLS: readonly ToolDefinition[] = [
         .describe("Top files by symbol count (detail: full)."),
       topSymbols: z
         .array(
-          z.object({ id: z.string(), name: z.string(), kind: z.string(), filePath: z.string() }),
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            kind: z.string(),
+            filePath: z.string(),
+          }),
         )
         .optional()
         .describe("Top symbols by dependency count (detail: full)."),
@@ -362,7 +378,8 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "read_file_range",
     title: "Read file range (version-aware)",
     description:
-      "Read a line range of an indexed file from the current working tree, with optional version validation. " +
+      "Get exact code. Slow. Only call after a search narrows the target. Typical: 2-5 calls per task. " +
+      "Reads a line range of an indexed file from the current working tree, with optional version validation. " +
       'Pass "expectedHash" (a file hash previously returned by CodeAtlas) so the read can detect whether the file ' +
       'changed since that context was generated; on a mismatch it returns the fresh content and "versionMatch": false ' +
       'instead of silently trusting stale line numbers. "padding" (default 5) includes context lines above and below ' +

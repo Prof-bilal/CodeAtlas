@@ -1,7 +1,12 @@
 export * from "./domain/entities";
 export * from "./domain/hashing";
 export * from "./domain/scan";
-export type { AgentInfo, AgentPort, AgentRunRequest, AgentRunResult } from "./ports/agent.port";
+export type {
+  AgentInfo,
+  AgentPort,
+  AgentRunRequest,
+  AgentRunResult,
+} from "./ports/agent.port";
 export type {
   AgentMcpPort,
   AgentMcpStatus,
@@ -48,7 +53,10 @@ export type {
   ToolTrustLevel,
 } from "./ports/tool-registry.port";
 export type { CachePort } from "./ports/cache.port";
-export type { ContextBuilderPort } from "./ports/context.port";
+export type {
+  ContextBuilderPort,
+  ContextTaskCategory,
+} from "./ports/context.port";
 export type { ContextItem } from "./domain/entities";
 export type {
   CompatibilityCheck,

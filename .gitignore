@@ -60,4 +60,10 @@ CodeAtlas Agent Toolkit_ 50 Verified Skills and Reference Integrations.md
 
 # Final benchmark (2026-08) — pinned repository checkouts (own .git dirs)
 benchmarks/final-2026-08/repos/
+benchmarks/beta-final/results/sdk-tool-loop/
+benchmarks/beta-final/results/report.json
 opencode.json/
+AUDIT_METHODOLOGY_INDEX.md
+AUDIT_EXECUTIVE_SUMMARY.md
+BETA_AUDIT_REMEDIATION_PLAN.md
+CodeAtlas-ui/

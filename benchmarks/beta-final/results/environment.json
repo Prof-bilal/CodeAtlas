@@ -1,0 +1,17 @@
+{
+  "capturedAt": "2026-08-30T03:16:29.723Z",
+  "os": {
+    "platform": "linux",
+    "release": "6.19.14+kali-amd64"
+  },
+  "cpu": {
+    "model": "AMD Ryzen 5 7430U with Radeon Graphics",
+    "cores": 12
+  },
+  "ram": "7.17 GiB",
+  "node": "v24.19.0",
+  "opencode": "1.18.23",
+  "codeatlas_cli": "0.4.0-beta.0",
+  "model": null,
+  "provider": "opencode"
+}

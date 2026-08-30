@@ -52,6 +52,34 @@ export class PaymentRepository {
     return result.rows[0] || null;
   }
 
+  async update(id: string, fields: { status?: string; stripePaymentId?: string }): Promise<Payment | null> {
+    const setClauses: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (fields.status !== undefined) {
+      setClauses.push(`status = $${paramIndex++}`);
+      params.push(fields.status);
+    }
+    if (fields.stripePaymentId !== undefined) {
+      setClauses.push(`stripe_payment_id = $${paramIndex++}`);
+      params.push(fields.stripePaymentId);
+    }
+
+    if (setClauses.length === 0) {
+      return this.findById(id);
+    }
+
+    setClauses.push('updated_at = CURRENT_TIMESTAMP');
+    params.push(id);
+
+    const result = await databaseService.query<Payment>(
+      `UPDATE payments SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+      params
+    );
+    return result.rows[0] || null;
+  }
+
   async findByUserId(userId: string, options?: { limit?: number; offset?: number }): Promise<Payment[]> {
     let query = 'SELECT * FROM payments WHERE user_id = $1';
     const params: any[] = [userId];

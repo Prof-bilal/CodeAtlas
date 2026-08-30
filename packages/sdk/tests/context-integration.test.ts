@@ -424,6 +424,43 @@ describe("render helpers", () => {
     expect(text).toContain("Ranked search hit.");
     expect(text).not.toContain("export function double");
   });
+
+  it("does not add transparency notes for a complete, fresh package", () => {
+    const text = renderContextPackage(samplePackage());
+    expect(text).not.toContain("⚠️ NOTE");
+    expect(text).not.toContain("🔒");
+  });
+
+  it("warns when context was truncated by the budget (beta audit Fix 7)", () => {
+    const pkg = samplePackage();
+    const budget = {
+      ...pkg.budget,
+      droppedByTokens: ["file:/src/other.ts"],
+      itemsIncluded: 1,
+      itemsRequested: 2,
+    };
+    const text = renderContextPackage({ ...pkg, budget });
+    expect(text).toContain("⚠️ NOTE: Context was truncated to stay within token budget.");
+    expect(text).toContain("Call search/read tools");
+  });
+
+  it("warns when the context index is stale (beta audit Fix 7)", () => {
+    const pkg = {
+      ...samplePackage(),
+      staleness: { ...samplePackage().staleness, state: "stale" as const },
+    };
+    const text = renderContextPackage(pkg);
+    expect(text).toContain("⚠️ NOTE: Context index may be out of date (stale).");
+  });
+
+  it("reports security exclusions to the agent (beta audit Fix 7)", () => {
+    const pkg = {
+      ...samplePackage(),
+      exclusions: { droppedPaths: ["/repo/.env"], droppedPatterns: [] },
+    };
+    const text = renderContextPackage(pkg);
+    expect(text).toContain("🔒 1 file(s) excluded by security policy");
+  });
 });
 
 describe("createContextIntegration — delivery", () => {

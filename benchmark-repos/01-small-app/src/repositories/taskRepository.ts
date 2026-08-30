@@ -92,35 +92,42 @@ export class TaskRepository {
   }
 
   async findByUser(userId: string, filters: TaskFilters = {}, limit: number = 50, offset: number = 0): Promise<TaskModel[]> {
-    const conditions: string[] = ['user_id = $1'];
+    const conditions: string[] = ['tasks.user_id = $1'];
     const values: any[] = [userId];
     let paramIndex = 2;
+    let joins = '';
 
     if (filters.status) {
-      conditions.push(`status = $${paramIndex++}`);
+      conditions.push(`tasks.status = $${paramIndex++}`);
       values.push(filters.status);
     }
 
     if (filters.priority) {
-      conditions.push(`priority = $${paramIndex++}`);
+      conditions.push(`tasks.priority = $${paramIndex++}`);
       values.push(filters.priority);
     }
 
     if (filters.assignedTo) {
-      conditions.push(`assigned_to = $${paramIndex++}`);
+      conditions.push(`tasks.assigned_to = $${paramIndex++}`);
       values.push(filters.assignedTo);
     }
 
     if (filters.search) {
-      conditions.push(`(title ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`);
+      conditions.push(`(tasks.title ILIKE $${paramIndex} OR tasks.description ILIKE $${paramIndex})`);
       values.push(`%${filters.search}%`);
       paramIndex++;
+    }
+
+    if (filters.tag) {
+      joins += ` INNER JOIN task_tags tt ON tasks.id = tt.task_id INNER JOIN tags tg ON tt.tag_id = tg.id`;
+      conditions.push(`LOWER(tg.name) = LOWER($${paramIndex++})`);
+      values.push(filters.tag);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const rows = await query<any>(
-      `SELECT * FROM tasks ${whereClause} ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
+      `SELECT DISTINCT tasks.* FROM tasks ${joins} ${whereClause} ORDER BY tasks.created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
       [...values, limit, offset]
     );
 
@@ -128,35 +135,42 @@ export class TaskRepository {
   }
 
   async countByUser(userId: string, filters: TaskFilters = {}): Promise<number> {
-    const conditions: string[] = ['user_id = $1'];
+    const conditions: string[] = ['tasks.user_id = $1'];
     const values: any[] = [userId];
     let paramIndex = 2;
+    let joins = '';
 
     if (filters.status) {
-      conditions.push(`status = $${paramIndex++}`);
+      conditions.push(`tasks.status = $${paramIndex++}`);
       values.push(filters.status);
     }
 
     if (filters.priority) {
-      conditions.push(`priority = $${paramIndex++}`);
+      conditions.push(`tasks.priority = $${paramIndex++}`);
       values.push(filters.priority);
     }
 
     if (filters.assignedTo) {
-      conditions.push(`assigned_to = $${paramIndex++}`);
+      conditions.push(`tasks.assigned_to = $${paramIndex++}`);
       values.push(filters.assignedTo);
     }
 
     if (filters.search) {
-      conditions.push(`(title ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`);
+      conditions.push(`(tasks.title ILIKE $${paramIndex} OR tasks.description ILIKE $${paramIndex})`);
       values.push(`%${filters.search}%`);
       paramIndex++;
+    }
+
+    if (filters.tag) {
+      joins += ` INNER JOIN task_tags tt ON tasks.id = tt.task_id INNER JOIN tags tg ON tt.tag_id = tg.id`;
+      conditions.push(`LOWER(tg.name) = LOWER($${paramIndex++})`);
+      values.push(filters.tag);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const result = await queryOne<{ count: string }>(
-      `SELECT COUNT(*) as count FROM tasks ${whereClause}`,
+      `SELECT COUNT(DISTINCT tasks.*) as count FROM tasks ${joins} ${whereClause}`,
       values
     );
 
@@ -172,12 +186,14 @@ export class TaskRepository {
     return rows.map(this.mapRowToTask);
   }
 
-  async findOverdueTasks(): Promise<TaskModel[]> {
+  async findOverdueTasks(userId: string): Promise<TaskModel[]> {
     const rows = await query<any>(
       `SELECT * FROM tasks 
-       WHERE due_date < CURRENT_TIMESTAMP 
+       WHERE user_id = $1
+       AND due_date < CURRENT_TIMESTAMP 
        AND status NOT IN ('completed', 'cancelled')
-       ORDER BY due_date ASC`
+       ORDER BY due_date ASC`,
+      [userId]
     );
 
     return rows.map(this.mapRowToTask);

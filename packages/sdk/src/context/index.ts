@@ -1,4 +1,11 @@
 export { createContextSDK, resolveContextConfig } from "./sdk";
+export {
+  expandDependencyClosure,
+  type ClosureExpansion,
+  type ClosureKind,
+  type ClosureOptions,
+  type ClosureSnapshot,
+} from "./closure";
 export type {
   ContextSDK,
   ContextSDKOptions,

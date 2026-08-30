@@ -27,7 +27,10 @@ function symbol(symbolId: string, name: string, filePath: string): CoreSymbol {
 }
 
 function service(store: ContextStore): ContextBuilderService {
-  return new ContextBuilderService({ search: new SearchService({ db: store }), db: store });
+  return new ContextBuilderService({
+    search: new SearchService({ db: store }),
+    db: store,
+  });
 }
 
 describe("ContextBuilderService", () => {
@@ -98,5 +101,42 @@ describe("ContextBuilderService", () => {
       content: "export const n = 1;",
       score: 1,
     });
+  });
+
+  it("boosts category-relevant files for a debug task (beta audit Fix 4)", async () => {
+    const store = new ContextStore({ filePath: ":memory:" });
+    // Both files mention the query token; only one is error-handling code.
+    store.saveContext({
+      files: [
+        file("/src/service.ts", "export function handle(value: string) { return value; }"),
+        file("/src/errors.ts", "export function handleError(error: Error) { throw error; }"),
+      ],
+      symbols: [
+        symbol("s1", "handle", "/src/service.ts"),
+        symbol("s2", "handleError", "/src/errors.ts"),
+      ],
+    });
+    const builder = service(store);
+
+    // Without a category: plain relevance ordering.
+    const plain = await builder.build("handle");
+    expect(plain.ok).toBe(true);
+    if (!plain.ok) return;
+
+    // With taskCategory "debug": error-handling code is boosted.
+    const debugged = await builder.build("handle", undefined, "debug");
+    expect(debugged.ok).toBe(true);
+    if (!debugged.ok) return;
+
+    const sourcesOf = (items: readonly { source: string }[]) => items.map((i) => i.source);
+    const plainOrder = sourcesOf(plain.value);
+    const debugOrder = sourcesOf(debugged.value);
+    // All hits survive in both cases (a boost, never a filter).
+    expect([...debugOrder].sort()).toEqual([...plainOrder].sort());
+    // The error handler ranks at least as high under the debug hint.
+    expect(debugOrder.indexOf("/src/errors.ts")).toBeLessThanOrEqual(
+      plainOrder.indexOf("/src/errors.ts"),
+    );
+    expect(debugOrder[0]).toBe("/src/errors.ts");
   });
 });

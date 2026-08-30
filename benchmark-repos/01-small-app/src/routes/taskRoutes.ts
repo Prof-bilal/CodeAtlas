@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
 import { taskService } from '../services/taskService.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, authorize, authorizeTaskOwnerOrAdmin } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -40,6 +40,7 @@ router.get('/', async (req: Request, res: Response) => {
       priority: req.query.priority as string,
       assignedTo: req.query.assignedTo as string,
       search: req.query.search as string,
+      tag: req.query.tag as string,
     };
 
     const result = await taskService.findAll(req.user.id, filters, page, limit);
@@ -111,7 +112,7 @@ router.post('/', createTaskValidation, async (req: Request, res: Response) => {
   }
 });
 
-router.put('/:id', updateTaskValidation, async (req: Request, res: Response) => {
+router.put('/:id', updateTaskValidation, authorizeTaskOwnerOrAdmin, async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -131,7 +132,7 @@ router.put('/:id', updateTaskValidation, async (req: Request, res: Response) => 
   }
 });
 
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', authorize('admin'), async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       res.status(401).json({ error: 'Not authenticated' });
@@ -145,7 +146,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/:id/complete', async (req: Request, res: Response) => {
+router.patch('/:id/complete', authorizeTaskOwnerOrAdmin, async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       res.status(401).json({ error: 'Not authenticated' });
@@ -159,7 +160,7 @@ router.patch('/:id/complete', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/:id/start', async (req: Request, res: Response) => {
+router.patch('/:id/start', authorizeTaskOwnerOrAdmin, async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       res.status(401).json({ error: 'Not authenticated' });
@@ -173,7 +174,7 @@ router.patch('/:id/start', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/:id/cancel', async (req: Request, res: Response) => {
+router.patch('/:id/cancel', authorizeTaskOwnerOrAdmin, async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       res.status(401).json({ error: 'Not authenticated' });
@@ -187,7 +188,7 @@ router.patch('/:id/cancel', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/:id/assign', async (req: Request, res: Response) => {
+router.patch('/:id/assign', authorizeTaskOwnerOrAdmin, async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       res.status(401).json({ error: 'Not authenticated' });

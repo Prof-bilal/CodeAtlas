@@ -1,0 +1,36 @@
+{
+  "repository": "benchmark-repos/01-small-app",
+  "name": "small-app",
+  "version": "local",
+  "files": 0,
+  "tasks": [
+    {
+      "id": "SMI-T01",
+      "category": "bug-investigation",
+      "prompt": "A user reports that requests to the tasks API fail with an unexpected error when the request body is missing fields. Investigate the validation and error-handling flow and identify the files and functions most likely involved. Use the assistant tools available to you (file search, grep, file reads, and any repository context tools that are available) to explore the codebase before answering. Cite the specific files you inspected.",
+      "expected_files": [
+        "src/middleware/errorHandler.ts",
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts"
+      ],
+      "expected_concepts": ["validation", "error handler", "middleware", "request body"],
+      "evaluation_method": "Automated (evaluator v2) + manual review. Score 2 if the validation/error flow is traced with correct files. 1 if partial. 0 if wrong.",
+      "gold_impact_files": [
+        "src/middleware/errorHandler.ts",
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts"
+      ],
+      "forbidden_changes": [".env", "src/config/database.ts"]
+    },
+    {
+      "id": "SMI-T02",
+      "category": "code-modification",
+      "prompt": "Modify the task service so that creating a task with an empty title is rejected with a validation error instead of being persisted. Provide the exact code change and the files you would modify. Use the assistant tools available to you to explore the codebase before answering.",
+      "expected_files": ["src/services/taskService.ts"],
+      "expected_concepts": ["validation", "create task", "empty title"],
+      "evaluation_method": "Automated: hidden tests must pass (runHiddenTests with allowExecution). Score 2 if tests pass; 1 if compile-only; 0 otherwise.",
+      "gold_impact_files": ["src/services/taskService.ts"],
+      "hidden_tests": ["tests/task.test.ts"]
+    }
+  ]
+}

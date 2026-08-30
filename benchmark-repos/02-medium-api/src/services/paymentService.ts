@@ -1,6 +1,7 @@
 import { PaymentRepository } from '../database/repositories/paymentRepository.js';
-import { eventBus } from '../../events/eventBus.js';
-import { logger } from '../../utils/logger.js';
+import { eventBus } from '../events/eventBus.js';
+import { logger } from '../utils/logger.js';
+import { getStripeClient } from '../config/stripe.js';
 
 export interface PaymentService {
   getPayment(id: string): Promise<any>;
@@ -45,17 +46,52 @@ export class PaymentServiceImpl implements PaymentService {
       throw new Error('Payment not found');
     }
 
-    // Simulate payment processing
-    const updatedPayment = await this.paymentRepository.updateStatus(id, 'completed');
+    if (payment.status !== 'pending') {
+      throw new Error('Payment is not in pending status');
+    }
 
-    await eventBus.publish('payment.success', {
-      paymentId: id,
-      userId: payment.userId,
-      amount: payment.amount,
-      currency: payment.currency,
-    }, 'payment-service');
+    if (!payment.amount || payment.amount <= 0) {
+      throw new Error('Payment amount must be positive');
+    }
 
-    return updatedPayment;
+    try {
+      const stripe = getStripeClient();
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(payment.amount * 100),
+        currency: payment.currency || 'usd',
+        payment_method: payment.paymentMethod,
+        confirm: true,
+      });
+
+      const updatedPayment = await this.paymentRepository.update(id, {
+        status: 'completed',
+        stripePaymentId: paymentIntent.id,
+      });
+
+      await eventBus.publish('payment.success', {
+        paymentId: id,
+        userId: payment.userId,
+        amount: payment.amount,
+        currency: payment.currency,
+        stripePaymentIntentId: paymentIntent.id,
+      }, 'payment-service');
+
+      return updatedPayment;
+    } catch (error) {
+      logger.error('Payment processing failed', { paymentId: id, error });
+
+      await this.paymentRepository.update(id, { status: 'failed' });
+
+      await eventBus.publish('payment.failed', {
+        paymentId: id,
+        userId: payment.userId,
+        amount: payment.amount,
+        currency: payment.currency,
+        error: error instanceof Error ? error.message : String(error),
+      }, 'payment-service');
+
+      throw error;
+    }
   }
 
   async refundPayment(id: string, amount?: number): Promise<any> {

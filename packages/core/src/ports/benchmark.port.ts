@@ -38,7 +38,7 @@ export interface BenchmarkPort {
 export type BenchmarkAgent = "opencode" | "ollama";
 
 /** Comparison mode: baseline (no MCP) vs CodeAtlas (with MCP context). */
-export type BenchmarkMode = "baseline" | "codeatlas";
+export type BenchmarkMode = "baseline" | "codeatlas" | "codeatlas-intel";
 
 /** Top-level benchmark configuration. */
 export interface BenchmarkConfig {
@@ -127,6 +127,23 @@ export interface TaskDefinition {
   readonly evaluation_method: string;
   /** Optional per-task timeout override in seconds. */
   readonly max_seconds?: number;
+  /**
+   * Repository-relative paths that a correct code-touching task must affect.
+   * Enables wrong-file-rate evaluation (small-model intelligence benchmark,
+   * Phase 0). Optional — absent for read/explain tasks.
+   */
+  readonly gold_impact_files?: readonly string[];
+  /**
+   * Repository-relative paths the agent must NOT propose changing. Enables
+   * unnecessary-change detection. Optional.
+   */
+  readonly forbidden_changes?: readonly string[];
+  /**
+   * Repository-relative test files executed after the task to measure task
+   * completion. Executed only via the explicit, allow-listed test runner
+   * (ADR-015 policy) — never implicitly. Optional.
+   */
+  readonly hidden_tests?: readonly string[];
 }
 
 /** Task categories for classification and reporting. */
@@ -264,6 +281,20 @@ export interface BenchmarkEvaluation {
   readonly conceptRatio: number;
   /** Repository-relative paths cited by the agent that exist on disk. */
   readonly citedFiles: readonly string[];
+  /**
+   * Repository-relative paths cited by the agent that do NOT exist on disk
+   * (hallucinated paths). Present only when at least one path-like string is
+   * cited; empty when the agent cited no paths.
+   */
+  readonly hallucinatedFiles?: readonly string[];
+  /**
+   * Cited paths that exist on disk but are NOT in the task's
+   * `gold_impact_files` (wrong-file signal). Present only when the task
+   * declares `gold_impact_files`.
+   */
+  readonly wrongFiles?: readonly string[];
+  /** The task's `gold_impact_files`, when declared. */
+  readonly goldImpactFiles?: readonly string[];
 }
 
 /** Aggregate result for a full suite run. */

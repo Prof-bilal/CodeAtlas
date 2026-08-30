@@ -1,5 +1,6 @@
 import { sep as pathSep } from "node:path";
-import type { Summary } from "@atlas/core";
+import { rerankByContextTaskCategory } from "@atlas/context";
+import type { ContextTaskCategory, ContextTier, LineRange, Summary } from "@atlas/core";
 import { estimateTokens } from "@atlas/shared";
 import { InvalidQueryError } from "../context/errors";
 import type {
@@ -11,6 +12,7 @@ import type {
 import type { ContextSDK } from "../context/sdk";
 import { DEFAULT_CONTEXT_BUDGET, applyBudget } from "./budget";
 import { type DenyFilterResult, denyFilter } from "./deny";
+import { lineRangeOfSymbol, tierPriorityOf } from "./hierarchy";
 import { type ProjectInstruction, collectInstructions } from "./instructions";
 import type {
   ContextBudget,
@@ -85,6 +87,13 @@ export interface AssembleOptions {
    * no scoping (shared context).
    */
   readonly scopePaths?: readonly string[];
+  /**
+   * Task-aware ranking hint (beta audit Fix 4). When set, search hits whose
+   * path/title matches category-relevant patterns are boosted before selection
+   * (e.g. "debug" surfaces error handlers and middleware). A ranking hint —
+   * never a filter.
+   */
+  readonly taskCategory?: ContextTaskCategory;
 }
 
 /** Everything the assembler needs. */
@@ -103,6 +112,7 @@ interface FileSelection {
   readonly score: number;
   readonly source: ContextItemSource;
   readonly reason: string;
+  readonly tier: ContextTier;
 }
 
 /** A symbol candidate selected for inclusion. */
@@ -112,6 +122,7 @@ interface SymbolSelection {
   readonly score: number;
   readonly source: ContextItemSource;
   readonly reason: string;
+  readonly tier: ContextTier;
 }
 
 type Selection = FileSelection | SymbolSelection;
@@ -132,7 +143,10 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
   if (task.trim() === "") {
     throw new InvalidQueryError("Task must not be empty.");
   }
-  const budget: ContextBudget = { ...DEFAULT_CONTEXT_BUDGET, ...options.budget };
+  const budget: ContextBudget = {
+    ...DEFAULT_CONTEXT_BUDGET,
+    ...options.budget,
+  };
 
   const exclusions: { droppedPaths: string[]; droppedPatterns: string[] } = {
     droppedPaths: [],
@@ -168,8 +182,20 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
       }
       const item =
         selection.kind === "file"
-          ? fileItem(selection.file, selection.score, selection.source, selection.reason)
-          : symbolItem(selection.symbol, selection.score, selection.source, selection.reason);
+          ? fileItem(
+              selection.file,
+              selection.score,
+              selection.source,
+              selection.reason,
+              selection.tier,
+            )
+          : symbolItem(
+              selection.symbol,
+              selection.score,
+              selection.source,
+              selection.reason,
+              selection.tier,
+            );
       contextItems.push(item);
       const nodeId =
         selection.kind === "file" ? fileNodeId(path) : symbolNodeId(selection.symbol.id);
@@ -235,7 +261,13 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
           continue;
         }
         contextItems.push(
-          fileItem(selection.file, selection.score, selection.source, selection.reason),
+          fileItem(
+            selection.file,
+            selection.score,
+            selection.source,
+            selection.reason,
+            selection.tier,
+          ),
         );
       }
     }
@@ -273,10 +305,13 @@ function collectSelections(
   options: AssembleOptions,
 ): readonly Selection[] {
   const selections: Selection[] = [];
-  const hits = context.search.search(task, {
+  let hits = context.search.search(task, {
     types: ["symbol", "file"],
     limit: options.searchLimit ?? 30,
   });
+  if (options.taskCategory !== undefined) {
+    hits = rerankByContextTaskCategory(hits, options.taskCategory);
+  }
   for (const hit of hits) {
     if (hit.kind === "file" && hit.path !== null) {
       try {
@@ -287,6 +322,7 @@ function collectSelections(
           score: hit.score,
           source: "search",
           reason: `Ranked search hit (score ${hit.score}) for "${task}".`,
+          tier: "important",
         });
       } catch {
         // File disappeared from a concurrently-refreshed index — skip.
@@ -304,6 +340,7 @@ function collectSelections(
           score: hit.score,
           source: "search",
           reason: `Ranked search hit (score ${hit.score}) — symbol "${symbol.name}".`,
+          tier: "important",
         });
       } catch {
         // Symbol removed from a concurrent index refresh — skip.
@@ -346,6 +383,7 @@ function explicitSelections(context: ContextSDK, task: string): readonly Selecti
           score: 100,
           source: "explicit",
           reason: `Task names file "${word}" directly.`,
+          tier: "critical",
         });
         continue;
       } catch {
@@ -355,7 +393,10 @@ function explicitSelections(context: ContextSDK, task: string): readonly Selecti
     if (!isIdentifierLike(word)) {
       continue;
     }
-    const hits = context.symbols.searchSymbols(word, { limit: 1, minScore: 85 });
+    const hits = context.symbols.searchSymbols(word, {
+      limit: 1,
+      minScore: 85,
+    });
     for (const hit of hits) {
       const symbolId = symbolIdFromTarget(hit.targetId);
       if (symbolId === null) {
@@ -369,6 +410,7 @@ function explicitSelections(context: ContextSDK, task: string): readonly Selecti
           score: hit.score,
           source: "explicit",
           reason: `Task names symbol "${symbol.name}" directly.`,
+          tier: "critical",
         });
       } catch {
         // Not resolvable — skip.
@@ -437,6 +479,7 @@ function dependencyChainSelections(
         score,
         source: "dependency-chain",
         reason: `File reached through the dependency graph (hop-${DEPENDENCY_CHAIN_HOPS} expansion) for a dependency-intent task.`,
+        tier: "important",
       });
     } catch {
       // File disappeared from a concurrently-refreshed index — skip.
@@ -547,7 +590,14 @@ function fileScoreOf(summary: Summary, selectedNodes: ReadonlyMap<string, number
 
 /** Order context items by score desc, then kind, then id (deterministic). */
 function sortByRank(items: readonly ContextPackageItem[]): readonly ContextPackageItem[] {
+  // Tier-first ordering (ADR-014 / P1.5): critical items precede important,
+  // then unranked, supporting, optional — so the budget's tail-drop consumes
+  // lower tiers first and rendering reads tier-major (context-strategy.md §4).
   return [...items].sort((left, right) => {
+    const tierDelta = tierPriorityOf(left.tier) - tierPriorityOf(right.tier);
+    if (tierDelta !== 0) {
+      return tierDelta;
+    }
     if (right.score !== left.score) {
       return right.score - left.score;
     }
@@ -644,6 +694,7 @@ function fileItem(
   score: number,
   source: ContextItemSource,
   reason: string,
+  tier: ContextTier,
 ): ContextPackageItem {
   const content = `File: ${file.path}\nLanguage: ${file.language}\n\n${file.content}`;
   return {
@@ -657,6 +708,7 @@ function fileItem(
     reason,
     truncated: false,
     tokens: estimateTokens(content),
+    tier,
   };
 }
 
@@ -665,6 +717,7 @@ function symbolItem(
   score: number,
   source: ContextItemSource,
   reason: string,
+  tier: ContextTier,
 ): ContextPackageItem {
   const lines = [
     `Symbol: ${symbol.name} (${symbol.kind})`,
@@ -689,6 +742,8 @@ function symbolItem(
     reason,
     truncated: false,
     tokens: estimateTokens(content),
+    tier,
+    ranges: [lineRangeOfSymbol(symbol.location)] as readonly LineRange[],
   };
 }
 
@@ -710,6 +765,7 @@ function summaryItem(summary: Summary, score: number): ContextPackageItem {
     reason: `Stored ${summary.kind} summary for "${target}", included with its selected file.`,
     truncated: false,
     tokens: estimateTokens(content),
+    tier: "supporting",
   };
 }
 
@@ -726,6 +782,7 @@ function dependencyItem(edge: DependencyContext, score: number): ContextPackageI
     reason: "Persisted dependency edge touching a selected file or symbol.",
     truncated: false,
     tokens: estimateTokens(content),
+    tier: "important",
   };
 }
 

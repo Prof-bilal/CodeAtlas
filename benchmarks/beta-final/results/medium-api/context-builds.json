@@ -1,0 +1,66 @@
+[
+  {
+    "taskId": "MA-T01",
+    "durationMs": 343,
+    "exitCode": 0,
+    "itemCount": 1,
+    "estimatedTokens": 851,
+    "budgetExceeded": null
+  },
+  {
+    "taskId": "MA-T02",
+    "durationMs": 337,
+    "exitCode": 0,
+    "itemCount": 1,
+    "estimatedTokens": 851,
+    "budgetExceeded": null
+  },
+  {
+    "taskId": "MA-T03",
+    "durationMs": 344,
+    "exitCode": 0,
+    "itemCount": 1,
+    "estimatedTokens": 851,
+    "budgetExceeded": null
+  },
+  {
+    "taskId": "MA-T04",
+    "durationMs": 345,
+    "exitCode": 0,
+    "itemCount": 1,
+    "estimatedTokens": 851,
+    "budgetExceeded": null
+  },
+  {
+    "taskId": "MA-T05",
+    "durationMs": 339,
+    "exitCode": 0,
+    "itemCount": 1,
+    "estimatedTokens": 851,
+    "budgetExceeded": null
+  },
+  {
+    "taskId": "MA-T06",
+    "durationMs": 337,
+    "exitCode": 0,
+    "itemCount": 1,
+    "estimatedTokens": 851,
+    "budgetExceeded": null
+  },
+  {
+    "taskId": "MA-T07",
+    "durationMs": 348,
+    "exitCode": 0,
+    "itemCount": 1,
+    "estimatedTokens": 851,
+    "budgetExceeded": null
+  },
+  {
+    "taskId": "MA-T08",
+    "durationMs": 348,
+    "exitCode": 0,
+    "itemCount": 1,
+    "estimatedTokens": 851,
+    "budgetExceeded": null
+  }
+]

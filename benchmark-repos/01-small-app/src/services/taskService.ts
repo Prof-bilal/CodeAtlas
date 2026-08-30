@@ -1,5 +1,7 @@
 import { taskRepository } from '../repositories/taskRepository.js';
+import { tagRepository } from '../repositories/tagRepository.js';
 import { CreateTaskInput, UpdateTaskInput, TaskResponse, TaskFilters, toTaskResponse } from '../models/task.js';
+import { toTagResponse } from '../models/tag.js';
 import { AppError } from './authService.js';
 
 export interface PaginatedResult<T> {
@@ -27,7 +29,8 @@ export class TaskService {
       throw new AppError('Access denied', 403);
     }
 
-    return toTaskResponse(task);
+    const tags = await tagRepository.getTagsForTask(id);
+    return toTaskResponse(task, tags.map(toTagResponse));
   }
 
   async update(id: string, input: UpdateTaskInput, userId: string): Promise<TaskResponse> {
@@ -42,7 +45,8 @@ export class TaskService {
     }
 
     const updatedTask = await taskRepository.update(id, input);
-    return toTaskResponse(updatedTask!);
+    const tags = await tagRepository.getTagsForTask(id);
+    return toTaskResponse(updatedTask!, tags.map(toTagResponse));
   }
 
   async delete(id: string, userId: string): Promise<void> {
@@ -71,8 +75,11 @@ export class TaskService {
       taskRepository.countByUser(userId, filters),
     ]);
 
+    const taskIds = tasks.map(t => t.id);
+    const tagMap = await tagRepository.getTagsForTasks(taskIds);
+
     return {
-      data: tasks.map(toTaskResponse),
+      data: tasks.map(task => toTaskResponse(task, (tagMap.get(task.id) || []).map(toTagResponse))),
       total,
       page,
       limit,
@@ -107,10 +114,10 @@ export class TaskService {
   }
 
   async findOverdueTasks(userId: string): Promise<TaskResponse[]> {
-    const tasks = await taskRepository.findOverdueTasks();
-    return tasks
-      .filter(task => task.userId === userId)
-      .map(toTaskResponse);
+    const tasks = await taskRepository.findOverdueTasks(userId);
+    const taskIds = tasks.map(t => t.id);
+    const tagMap = await tagRepository.getTagsForTasks(taskIds);
+    return tasks.map(task => toTaskResponse(task, (tagMap.get(task.id) || []).map(toTagResponse)));
   }
 }
 

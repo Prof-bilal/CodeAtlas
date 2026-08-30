@@ -1,0 +1,116 @@
+{
+  "repository": "small-app",
+  "name": "Task Manager API",
+  "path": "/home/bilal/CodeAtlas/benchmark-repos/01-small-app",
+  "language": "TypeScript",
+  "framework": "Express 4 + PostgreSQL",
+  "files": 73,
+  "estimated_tokens": 35000,
+  "tasks": [
+    {
+      "id": "SA-T01",
+      "category": "repository-understanding",
+      "prompt": "Explain the authentication flow in this Task Manager API. How does a user register, login, and get access to protected routes? Trace the full chain from the route handler through middleware to the service and database layers. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/routes/authRoutes.ts",
+        "src/middleware/auth.ts",
+        "src/services/authService.ts",
+        "src/repositories/sessionRepository.ts",
+        "src/config/auth.ts"
+      ],
+      "expected_concepts": ["register", "login", "JWT", "refresh token", "bcrypt", "authenticate middleware", "Bearer token"],
+      "max_seconds": 300
+    },
+    {
+      "id": "SA-T02",
+      "category": "bug-fix",
+      "prompt": "There is a performance bug in the task service: when finding overdue tasks, it fetches ALL overdue tasks from the database and then filters by user ID in memory. This is an N+1 problem. Find this bug in the code, explain why it's a problem, and fix it so the filtering happens at the database query level. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts",
+        "tests/task.test.ts"
+      ],
+      "expected_concepts": ["findOverdueTasks", "userId filter", "query builder", "WHERE clause", "database query"],
+      "max_seconds": 600
+    },
+    {
+      "id": "SA-T03",
+      "category": "feature",
+      "prompt": "Add a task tagging system: users should be able to assign multiple tags to tasks, and filter tasks by tag. Follow the existing architecture patterns (routes, services, repositories, models, database schema). Create a new Tag model, a task_tags junction table, update the Task model to include tags, and add API endpoints for tag CRUD and task-tag assignment. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/db/schema.ts",
+        "src/models/task.ts",
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts"
+      ],
+      "expected_concepts": ["Tag model", "task_tags", "junction table", "many-to-many", "tag endpoint", "filter by tag"],
+      "max_seconds": 900
+    },
+    {
+      "id": "SA-T04",
+      "category": "refactoring",
+      "prompt": "The authorization middleware exists but is never actually used in the route handlers. Refactor the task routes to use the existing `authorize` middleware for admin-only endpoints (like delete task) and ensure only the task owner or an admin can modify a task. Don't change the service layer behavior, only add the middleware guards. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/routes/taskRoutes.ts",
+        "src/middleware/auth.ts",
+        "src/services/authService.ts"
+      ],
+      "expected_concepts": ["authorize middleware", "admin role", "task owner", "role-based access", "middleware guard"],
+      "max_seconds": 600
+    },
+    {
+      "id": "SA-T05",
+      "category": "debugging",
+      "prompt": "A user reports that the change-password endpoint always returns a 401 error even with a valid token. Investigate the code path from the route handler through authentication to the service layer and identify what could cause this. Explain your findings with specific file and line references. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/routes/authRoutes.ts",
+        "src/middleware/auth.ts",
+        "src/services/authService.ts"
+      ],
+      "expected_concepts": ["change-password", "verifyToken", "authenticate middleware", "req.user", "userId"],
+      "max_seconds": 300
+    },
+    {
+      "id": "SA-T06",
+      "category": "cross-file",
+      "prompt": "Trace the complete data flow when a task is created: from the HTTP request, through route validation, service processing, repository insertion, to the database. Identify every file involved and every transformation the data undergoes. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts",
+        "src/db/schema.ts",
+        "src/models/task.ts"
+      ],
+      "expected_concepts": ["POST /tasks", "CreateTaskInput", "TaskModel", "INSERT", "task table", "toTaskResponse"],
+      "max_seconds": 300
+    },
+    {
+      "id": "SA-T07",
+      "category": "security",
+      "prompt": "Review the authentication and authorization code for security vulnerabilities. Check for: insecure JWT handling, missing input validation, SQL injection risks, improper error handling that leaks information, and any other security concerns. Provide specific findings with file and line references. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/config/auth.ts",
+        "src/services/authService.ts",
+        "src/middleware/auth.ts",
+        "src/config/database.ts",
+        "src/routes/authRoutes.ts"
+      ],
+      "expected_concepts": ["JWT secret", "bcrypt rounds", "SQL injection", "input validation", "error message leaking", "rate limiting"],
+      "max_seconds": 600
+    },
+    {
+      "id": "SA-T08",
+      "category": "testing",
+      "prompt": "Write comprehensive integration tests for the task CRUD operations. The existing tests are unit tests for the service layer. Create tests that verify the full HTTP request/response cycle including authentication, authorization, and database operations. Follow the existing test patterns. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "tests/task.test.ts",
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts",
+        "src/middleware/auth.ts"
+      ],
+      "expected_concepts": ["integration test", "HTTP request", "authentication", "status code", "response body", "test helper"],
+      "max_seconds": 900
+    }
+  ]
+}

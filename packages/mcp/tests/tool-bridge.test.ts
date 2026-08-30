@@ -94,7 +94,13 @@ function fakeSDK(): ContextSDK {
       overview: () => ({
         savedAt: "2026-01-01T00:00:00Z",
         schemaVersion: 1,
-        counts: { files: 0, symbols: 0, modules: 0, dependencies: 0, summaries: 0 },
+        counts: {
+          files: 0,
+          symbols: 0,
+          modules: 0,
+          dependencies: 0,
+          summaries: 0,
+        },
         languages: {},
       }),
     },
@@ -141,7 +147,13 @@ function fakeSDK(): ContextSDK {
       overview: {
         savedAt: "2026-01-01T00:00:00Z",
         schemaVersion: 1,
-        counts: { files: 0, symbols: 0, modules: 0, dependencies: 0, summaries: 0 },
+        counts: {
+          files: 0,
+          symbols: 0,
+          modules: 0,
+          dependencies: 0,
+          summaries: 0,
+        },
         languages: {},
       },
     }),
@@ -155,7 +167,10 @@ describe("createContextToolSource", () => {
   it("returns exactly 7 tools", () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({ ctx: { requireSDK: () => sdk } as never, logger });
+    const toolSource = createContextToolSource({
+      ctx: { requireSDK: () => sdk } as never,
+      logger,
+    });
     const tools = toolSource.listTools();
     expect(tools.length).toBe(7);
   });
@@ -163,7 +178,10 @@ describe("createContextToolSource", () => {
   it("each tool has a function name matching the MCP registry", () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({ ctx: { requireSDK: () => sdk } as never, logger });
+    const toolSource = createContextToolSource({
+      ctx: { requireSDK: () => sdk } as never,
+      logger,
+    });
     const names = toolSource
       .listTools()
       .map((t) => t.function.name)
@@ -182,7 +200,10 @@ describe("createContextToolSource", () => {
   it("each tool has JSON Schema parameters", () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({ ctx: { requireSDK: () => sdk } as never, logger });
+    const toolSource = createContextToolSource({
+      ctx: { requireSDK: () => sdk } as never,
+      logger,
+    });
     for (const tool of toolSource.listTools()) {
       expect(tool.function.parameters).toBeDefined();
       expect(typeof tool.function.parameters).toBe("object");
@@ -192,7 +213,10 @@ describe("createContextToolSource", () => {
   it("executes a tool call and returns a result", async () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({ ctx: { requireSDK: () => sdk } as never, logger });
+    const toolSource = createContextToolSource({
+      ctx: { requireSDK: () => sdk } as never,
+      logger,
+    });
     const result = await toolSource.execute("project_overview", {});
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -203,7 +227,10 @@ describe("createContextToolSource", () => {
   it("returns error for unknown tool names", async () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({ ctx: { requireSDK: () => sdk } as never, logger });
+    const toolSource = createContextToolSource({
+      ctx: { requireSDK: () => sdk } as never,
+      logger,
+    });
     const result = await toolSource.execute("nonexistent_tool", {});
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -218,9 +245,32 @@ describe("createContextToolSource", () => {
       throw new Error("symbol lookup failed");
     };
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({ ctx: { requireSDK: () => sdk } as never, logger });
+    const toolSource = createContextToolSource({
+      ctx: { requireSDK: () => sdk } as never,
+      logger,
+    });
     // search_symbols calls symbols.searchSymbols, not getSymbol, so it should work
-    const result = await toolSource.execute("search_symbols", { query: "test" });
+    const result = await toolSource.execute("search_symbols", {
+      query: "test",
+    });
     expect(result.ok).toBe(true);
+  });
+
+  it("exposes a deny-filter that blocks secret files (beta audit Fix 6)", () => {
+    const logger = createLogger({ level: "error" });
+    const toolSource = createContextToolSource({
+      ctx: { requireSDK: () => fakeSDK() } as never,
+      logger,
+    });
+    const deny = toolSource.getDenyFilter?.();
+    expect(deny).toBeDefined();
+    if (deny === undefined) return;
+    expect(deny("/repo/.env")).toBe(true);
+    expect(deny("/repo/.env.local")).toBe(true);
+    expect(deny("/repo/secrets.json")).toBe(true);
+    expect(deny("/repo/keys/id_rsa")).toBe(true);
+    expect(deny("/repo/certs/server.pem")).toBe(true);
+    expect(deny("/repo/src/index.ts")).toBe(false);
+    expect(deny("/repo/README.md")).toBe(false);
   });
 });

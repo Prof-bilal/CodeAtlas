@@ -1,0 +1,15 @@
+{
+  "startupMs": 8008,
+  "initOk": false,
+  "toolsOk": true,
+  "tools": [
+    "codeatlas",
+    "search_symbols",
+    "search_files",
+    "get_summary",
+    "get_dependencies",
+    "explain_module",
+    "project_overview",
+    "read_file_range"
+  ]
+}

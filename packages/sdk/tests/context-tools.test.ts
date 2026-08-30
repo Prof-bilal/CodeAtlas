@@ -1,7 +1,7 @@
 import type { ProviderPort, ProviderResponse, ToolCall } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 import { describe, expect, it } from "vitest";
-import { ToolUsingChatAgent } from "../src/context-tools/tool-loop";
+import { SearchMemory, ToolUsingChatAgent } from "../src/context-tools/tool-loop";
 import type { ContextToolSource } from "../src/context-tools/types";
 
 /** A fake provider that returns a fixed response. */
@@ -190,7 +190,10 @@ describe("ToolUsingChatAgent", () => {
             {
               id: `call_${callCount}`,
               type: "function",
-              function: { name: "search_symbols", arguments: '{"query":"test"}' },
+              function: {
+                name: "search_symbols",
+                arguments: '{"query":"test"}',
+              },
             },
           ],
         });
@@ -307,7 +310,10 @@ describe("ToolUsingChatAgent", () => {
     if (result.ok) {
       // Messages should be preserved (copied from request)
       expect(result.value.messages?.length).toBeGreaterThanOrEqual(3);
-      expect(result.value.messages?.[0]?.content).toBe("hello");
+      // The first user message is prefixed with the context guidance (Fix 1)
+      const first = String(result.value.messages?.[0]?.content ?? "");
+      expect(first).toContain("hello");
+      expect(first).toContain("CodeAtlas has provided context");
     }
   });
 
@@ -342,7 +348,11 @@ describe("ToolUsingChatAgent", () => {
     const toolSource = fakeToolSource([]);
     const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"]);
 
-    await agent.run({ provider: "ollama", prompt: "test", repositoryPath: "/repo" });
+    await agent.run({
+      provider: "ollama",
+      prompt: "test",
+      repositoryPath: "/repo",
+    });
 
     expect(requests[0]?.["provider"]).toBe("ollama");
   });
@@ -434,7 +444,11 @@ describe("ToolUsingChatAgent tool-call policy", () => {
       allowedTools: ["search_symbols", "project_overview"],
     });
 
-    await agent.run({ provider: "ollama", prompt: "test", repositoryPath: "/repo" });
+    await agent.run({
+      provider: "ollama",
+      prompt: "test",
+      repositoryPath: "/repo",
+    });
 
     const offered = (provider.requests[0]?.["tools"] as Array<{ function: { name: string } }>).map(
       (t) => t.function.name,
@@ -500,7 +514,11 @@ describe("ToolUsingChatAgent tool-call policy", () => {
       maxResultChars: 50,
     });
 
-    const result = await agent.run({ provider: "ollama", prompt: "test", repositoryPath: "/repo" });
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "test",
+      repositoryPath: "/repo",
+    });
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -508,5 +526,248 @@ describe("ToolUsingChatAgent tool-call policy", () => {
       expect(toolMsg?.content.length).toBeLessThanOrEqual(70);
       expect(toolMsg?.content).toContain("truncated");
     }
+  });
+});
+
+describe("SearchMemory", () => {
+  it("recalls exact queries (normalized)", () => {
+    const memory = new SearchMemory();
+    memory.remember("search_symbols:Auth", { hits: [1] });
+    expect(memory.recall("search_symbols:auth")).toEqual({ hits: [1] });
+    expect(memory.recall("search_symbols:  AUTH ")).toEqual({ hits: [1] });
+    expect(memory.recall("search_symbols:other")).toBeUndefined();
+  });
+
+  it("treats near-duplicate queries as similar", () => {
+    const memory = new SearchMemory();
+    expect(memory.isSimilar("authenticate", "Authenticate")).toBe(true);
+    expect(memory.isSimilar("authenticate", "authenticate!")).toBe(true);
+    expect(memory.isSimilar("authenticate", "authentication")).toBe(true); // edit distance 1
+    expect(memory.isSimilar("authenticate", "completely-different")).toBe(false);
+  });
+});
+
+describe("ToolUsingChatAgent repeated queries, limits, guidance, progress", () => {
+  /** Provider that issues toolCalls on round 0, then plain text. */
+  function oneRoundProvider(toolCalls: readonly ToolCall[]): ProviderPort {
+    let called = false;
+    return {
+      complete: async () => {
+        if (!called) {
+          called = true;
+          return ok({
+            provider: "ollama",
+            content: "",
+            model: "llama3.2",
+            usage: undefined,
+            toolCalls,
+          });
+        }
+        return ok({
+          provider: "ollama",
+          content: "done",
+          model: "llama3.2",
+          usage: undefined,
+          toolCalls: undefined,
+        });
+      },
+    };
+  }
+
+  it("returns cached results for near-duplicate queries without re-executing", async () => {
+    let executions = 0;
+    const toolSource = fakeToolSource(
+      [{ name: "search_symbols", description: "Search" }],
+      async () => {
+        executions += 1;
+        return ok({ hits: ["hit"] });
+      },
+    );
+    const provider = oneRoundProvider([
+      {
+        id: "call_1",
+        type: "function",
+        function: { name: "search_symbols", arguments: '{"query":"auth"}' },
+      },
+      {
+        id: "call_2",
+        type: "function",
+        function: { name: "search_symbols", arguments: '{"query":"auth!"}' },
+      },
+    ]);
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"]);
+
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "find auth",
+      repositoryPath: "/repo",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // The near-duplicate call must not re-execute the tool.
+    expect(executions).toBe(1);
+    const msgs = result.value.messages ?? [];
+    const cachedMsg = msgs.find((m) => m.role === "tool" && m.content.includes("_cached"));
+    expect(cachedMsg).toBeDefined();
+  });
+
+  it("enforces default per-tool call limits", async () => {
+    let executions = 0;
+    const toolSource = fakeToolSource(
+      [{ name: "get_dependencies", description: "Deps" }],
+      async () => {
+        executions += 1;
+        return ok({ edges: [] });
+      },
+    );
+    const provider = oneRoundProvider([
+      {
+        id: "c1",
+        type: "function",
+        function: { name: "get_dependencies", arguments: '{"node":"a"}' },
+      },
+      {
+        id: "c2",
+        type: "function",
+        function: { name: "get_dependencies", arguments: '{"node":"b"}' },
+      },
+    ]);
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"]);
+
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "deps",
+      repositoryPath: "/repo",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(executions).toBe(1);
+    const msgs = result.value.messages ?? [];
+    const limitMsg = msgs.find((m) => m.role === "tool" && m.content.includes("limit reached"));
+    expect(limitMsg).toBeDefined();
+  });
+
+  it("enforces per-tool limits for MCP-prefixed tool names (codeatlas_*)", async () => {
+    let executions = 0;
+    const toolSource = fakeToolSource(
+      [{ name: "codeatlas_search_symbols", description: "Search" }],
+      async () => {
+        executions += 1;
+        return ok({ hits: [] });
+      },
+    );
+    const provider = oneRoundProvider([
+      {
+        id: "p1",
+        type: "function",
+        function: { name: "codeatlas_search_symbols", arguments: '{"query":"a"}' },
+      },
+      {
+        id: "p2",
+        type: "function",
+        function: { name: "codeatlas_search_symbols", arguments: '{"query":"b"}' },
+      },
+      {
+        id: "p3",
+        type: "function",
+        function: { name: "codeatlas_search_symbols", arguments: '{"query":"c"}' },
+      },
+    ]);
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"]);
+
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "search",
+      repositoryPath: "/repo",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // Default limit for search_symbols is 2 — the prefixed name must share it.
+    expect(executions).toBe(2);
+    const msgs = result.value.messages ?? [];
+    const limitMsg = msgs.find((m) => m.role === "tool" && m.content.includes("limit reached"));
+    expect(limitMsg).toBeDefined();
+  });
+
+  it("injects the context guidance into the first user message", async () => {
+    const provider = fakeProvider({
+      provider: "ollama",
+      content: "answer",
+      model: "llama3.2",
+      usage: undefined,
+      toolCalls: undefined,
+    });
+    const toolSource = fakeToolSource([]);
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"]);
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "Do the task",
+      repositoryPath: "/repo",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const msgs = result.value.messages ?? [];
+    expect(msgs[0]?.role).toBe("user");
+    expect(String(msgs[0]?.content)).toContain("Do NOT read files that are already in the context");
+  });
+
+  it("appends a progress note after repeated low-growth rounds", async () => {
+    // Three rounds returning the same tiny result: rounds 2+ add almost no
+    // new content relative to the biggest round so far.
+    let round = 0;
+    const provider: ProviderPort = {
+      complete: async () => {
+        round += 1;
+        if (round <= 3) {
+          return ok({
+            provider: "ollama",
+            content: "",
+            model: "llama3.2",
+            usage: undefined,
+            toolCalls: [
+              {
+                id: `c${round}`,
+                type: "function",
+                function: {
+                  name: "search_symbols",
+                  arguments: `{"query":"q${round}"}`,
+                },
+              },
+            ],
+          });
+        }
+        return ok({
+          provider: "ollama",
+          content: "final",
+          model: "llama3.2",
+          usage: undefined,
+          toolCalls: undefined,
+        });
+      },
+    };
+    const toolSource = fakeToolSource(
+      [{ name: "search_symbols", description: "Search" }],
+      async () => ok({ hits: ["x"] }),
+    );
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"], 10, {
+      perToolCallLimit: { search_symbols: 10 },
+    });
+
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "search a lot",
+      repositoryPath: "/repo",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const msgs = result.value.messages ?? [];
+    const progressMsg = msgs.find(
+      (m) => m.role === "system" && String(m.content).includes("[Progress:"),
+    );
+    expect(progressMsg).toBeDefined();
   });
 });

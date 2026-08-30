@@ -1,5 +1,6 @@
 import type { ContextSDK, Result, Summary, SummaryKind } from "@atlas/sdk";
 import type { CodeAtlasContext } from "./context";
+import { isDeniedPath } from "./deny";
 import type { Logger } from "./log";
 import { SUMMARY_KINDS, SYMBOL_KINDS, type ToolName } from "./tools";
 import {
@@ -117,7 +118,11 @@ async function searchFiles(h: HandlerContext, args: ToolArgs): Promise<unknown> 
         // File removed from a concurrent refresh — omit language.
       }
     }
-    return { path: hit.path, ...(language !== undefined ? { language } : {}), score: hit.score };
+    return {
+      path: hit.path,
+      ...(language !== undefined ? { language } : {}),
+      score: hit.score,
+    };
   });
 
   return { hits: results.slice(0, limit), total: results.length };
@@ -143,7 +148,11 @@ async function getSummary(h: HandlerContext, args: ToolArgs): Promise<unknown> {
       ? matchesBase
       : matchesBase.filter((summary) => summary.kind === kindHint);
   if (matches.length > 0) {
-    return { found: true, generated: false, summaries: matches.map(toSummaryShape) };
+    return {
+      found: true,
+      generated: false,
+      summaries: matches.map(toSummaryShape),
+    };
   }
   if (!generate) {
     return {
@@ -163,7 +172,11 @@ async function getSummary(h: HandlerContext, args: ToolArgs): Promise<unknown> {
   h.logger.info(
     `generated ${kind} summary for "${target}" (provider: ${result.value.metadata.provider})`,
   );
-  return { found: true, generated: true, summaries: [toSummaryShape(result.value)] };
+  return {
+    found: true,
+    generated: true,
+    summaries: [toSummaryShape(result.value)],
+  };
 }
 
 /** Resolve the generation scope for a target (mirrors the old kind hints). */
@@ -242,7 +255,10 @@ async function explainModule(h: HandlerContext, args: ToolArgs): Promise<unknown
   const includeDependencies = optionalBoolean(args, "includeDependencies") ?? true;
 
   const sdk = h.ctx.requireSDK();
-  const explanation = sdk.modules.explain(path, { includeSummary, includeDependencies });
+  const explanation = sdk.modules.explain(path, {
+    includeSummary,
+    includeDependencies,
+  });
 
   const MAX_SYMBOLS = 200;
   const MAX_FILES = 200;
@@ -269,7 +285,9 @@ async function explainModule(h: HandlerContext, args: ToolArgs): Promise<unknown
     dependencies: explanation.dependencies,
     summary: explanation.summary === null ? null : toSummaryShape(explanation.summary),
     ...(explanation.fileCount > MAX_FILES
-      ? { fileOverflow: `${explanation.fileCount} total files (showing first ${MAX_FILES})` }
+      ? {
+          fileOverflow: `${explanation.fileCount} total files (showing first ${MAX_FILES})`,
+        }
       : {}),
     ...(explanation.symbolCount > MAX_SYMBOLS
       ? {
@@ -324,6 +342,15 @@ async function readFileRange(h: HandlerContext, args: ToolArgs): Promise<unknown
   const endLine = requireInt(args, "endLine");
   const padding = optionalInt(args, "padding", 0, 1000);
   const expectedHash = optionalString(args, "expectedHash");
+
+  // Security: never read denied (secret/sensitive) files through MCP
+  // (beta audit Fix 6). Fail closed with a clear domain error.
+  if (isDeniedPath(path)) {
+    h.logger.warn(`Security: Blocked read of denied file: ${path}`);
+    throw new ToolDomainError(
+      `File "${path}" is in the deny list (security policy). This file may contain secrets or sensitive configuration.`,
+    );
+  }
 
   if (endLine < startLine) {
     throw new ToolInputError(`"endLine" (${endLine}) must be >= "startLine" (${startLine}).`);

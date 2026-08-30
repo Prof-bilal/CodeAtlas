@@ -11,3 +11,9 @@ export { renderReport, renderSummary, renderHtml } from "./reporter";
 export { scaffoldSuite, scaffoldTaskFile } from "./scaffold";
 export { OpenCodeRunner } from "./runner/opencode";
 export { OllamaRunner, type OllamaRunnerAgents } from "./runner/ollama";
+export {
+  runHiddenTests,
+  hiddenTestsPassed,
+  type RunHiddenTestsOptions,
+  type HiddenTestResult,
+} from "./test-runner";

@@ -1,0 +1,115 @@
+{
+  "repository": "medium-api",
+  "name": "SaaS Platform API",
+  "path": "/home/bilal/CodeAtlas/benchmark-repos/02-medium-api",
+  "language": "TypeScript",
+  "framework": "Express 4 + PostgreSQL + Redis + Stripe",
+  "files": 395,
+  "estimated_tokens": 180000,
+  "tasks": [
+    {
+      "id": "MA-T01",
+      "category": "repository-understanding",
+      "prompt": "Explain the event-driven architecture of this SaaS platform. How does the EventBus work? What events are published, and what handlers consume them? Trace the flow from a payment being processed through event publication to notification delivery. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/events/eventBus.ts",
+        "src/events/handlers/paymentHandler.ts",
+        "src/events/handlers/notificationHandler.ts",
+        "src/core/payments/paymentService.ts",
+        "src/core/notifications/notificationService.ts"
+      ],
+      "expected_concepts": ["EventBus", "subscribe", "publish", "payment event", "notification handler", "event store"],
+      "max_seconds": 300
+    },
+    {
+      "id": "MA-T02",
+      "category": "bug-fix",
+      "prompt": "The PaymentService has a bug: the try/catch block in processPayment() is unreachable because no code in the try block can actually throw. The Stripe integration is not wired up. Fix this so that the payment processing actually validates the input, creates a charge, handles failures, and stores the result. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/core/payments/paymentService.ts",
+        "src/database/repositories/paymentRepository.ts",
+        "src/core/payments/paymentValidator.ts"
+      ],
+      "expected_concepts": ["processPayment", "Stripe", "try/catch", "validation", "charge creation", "payment status"],
+      "max_seconds": 600
+    },
+    {
+      "id": "MA-T03",
+      "category": "api",
+      "prompt": "Add a new V2 endpoint for bulk task operations: PATCH /api/v2/tasks/bulk that accepts an array of task IDs and status updates, and applies them in a single database transaction. Follow the existing V2 controller/route patterns and use the existing middleware stack. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/controllers/taskControllerV2.ts",
+        "src/routes/taskRoutesV2.ts",
+        "src/middleware/auth.ts",
+        "src/database/repositories/taskRepository.ts"
+      ],
+      "expected_concepts": ["bulk update", "transaction", "V2 controller", "V2 route", "array input", "batch operation"],
+      "max_seconds": 900
+    },
+    {
+      "id": "MA-T04",
+      "category": "refactoring",
+      "prompt": "The middleware stack has several middleware functions that are defined but not applied to routes. Audit the middleware directory, identify which middleware functions are exported but never used in any route file, and wire them up where appropriate. Don't change middleware behavior, only add them to the routes that need them. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/middleware/",
+        "src/routes/",
+        "src/index.ts",
+        "src/app.ts"
+      ],
+      "expected_concepts": ["unused middleware", "rate limiter", "timeout", "correlation ID", "metrics", "request logger"],
+      "max_seconds": 600
+    },
+    {
+      "id": "MA-T05",
+      "category": "database",
+      "prompt": "The notification service stores notifications in-memory, which means they're lost on server restart. Add a proper database-backed notification repository following the same pattern as the existing repositories (payment, user, task). Create a notifications table schema, a NotificationRepository class, and update the NotificationService to use it instead of the in-memory array. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/core/notifications/notificationService.ts",
+        "src/database/repositories/notificationRepository.ts",
+        "src/database/schema.ts",
+        "src/database/migrations.ts"
+      ],
+      "expected_concepts": ["NotificationRepository", "notifications table", "CREATE TABLE", "persistent storage", "migration"],
+      "max_seconds": 900
+    },
+    {
+      "id": "MA-T06",
+      "category": "debugging",
+      "prompt": "The webhook delivery system has a reliability issue: testWebhook() uses the global fetch with no timeout, and failed deliveries are not retried. Investigate the webhook service and its test infrastructure, then fix the reliability issues. Add proper timeouts, retry logic, and failure tracking. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/core/webhooks/webhookService.ts",
+        "src/utils/retry.ts",
+        "src/utils/logger.ts"
+      ],
+      "expected_concepts": ["webhook delivery", "timeout", "retry", "failure count", "delivery log", "exponential backoff"],
+      "max_seconds": 600
+    },
+    {
+      "id": "MA-T07",
+      "category": "security",
+      "prompt": "Review the API key management system for security issues. Check how API keys are generated, stored, validated, and revoked. Identify any vulnerabilities in the key lifecycle. Look for issues like: keys stored in plaintext, missing key rotation, no rate limiting per key, keys not properly scoped. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/core/apiKeys/apiKeyService.ts",
+        "src/database/repositories/apiKeyRepository.ts",
+        "src/middleware/auth.ts",
+        "src/config/auth.ts"
+      ],
+      "expected_concepts": ["API key", "hash", "secret", "scope", "rotation", "rate limit", "revocation"],
+      "max_seconds": 600
+    },
+    {
+      "id": "MA-T08",
+      "category": "cross-file",
+      "prompt": "Map the complete dependency graph between all major modules in this codebase. For each service, identify what it depends on and what depends on it. Identify any circular dependencies. Show the dependency flow from the route layer down to the database layer. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "src/routes/",
+        "src/controllers/",
+        "src/core/",
+        "src/database/",
+        "src/events/"
+      ],
+      "expected_concepts": ["dependency graph", "circular dependency", "import chain", "module boundary", "layer architecture"],
+      "max_seconds": 600
+    }
+  ]
+}

@@ -10,7 +10,10 @@ import { ToolDomainError, ToolInputError } from "../src/validation";
 import { type Fixture, createFixture, silentLogger } from "./fixture";
 
 function handlerContext(fx: Fixture): HandlerContext {
-  return { ctx: new CodeAtlasContext({ root: fx.root }), logger: silentLogger() };
+  return {
+    ctx: new CodeAtlasContext({ root: fx.root }),
+    logger: silentLogger(),
+  };
 }
 
 /** Run `fn` against a fixture index, always releasing the SQLite handle. */
@@ -28,7 +31,10 @@ async function withFixture(fn: (ctx: HandlerContext) => Promise<void>): Promise<
 /** Run `fn` against a root with no index (domain-error paths). */
 async function withEmptyRoot(fn: (ctx: HandlerContext) => Promise<void>): Promise<void> {
   const root = mkdtempSync(join(tmpdir(), "atlas-mcp-noidx-"));
-  const ctx: HandlerContext = { ctx: new CodeAtlasContext({ root }), logger: silentLogger() };
+  const ctx: HandlerContext = {
+    ctx: new CodeAtlasContext({ root }),
+    logger: silentLogger(),
+  };
   try {
     await fn(ctx);
   } finally {
@@ -60,7 +66,10 @@ async function withOnDiskFile(
     } finally {
       container.getContextDb().close();
     }
-    const ctx: HandlerContext = { ctx: new CodeAtlasContext({ root }), logger: silentLogger() };
+    const ctx: HandlerContext = {
+      ctx: new CodeAtlasContext({ root }),
+      logger: silentLogger(),
+    };
     try {
       await fn(ctx);
     } finally {
@@ -147,7 +156,11 @@ describe("search_files", () => {
   it("returns file hits with detected language", async () => {
     await withFixture(async (ctx) => {
       const result = (await HANDLERS.search_files(ctx, { query: "auth" })) as {
-        hits: ReadonlyArray<{ path: string | null; language: string | undefined; score: number }>;
+        hits: ReadonlyArray<{
+          path: string | null;
+          language: string | undefined;
+          score: number;
+        }>;
         total: number;
       };
       const hit = result.hits.find((entry) => entry.path === "/src/auth.ts");
@@ -175,10 +188,16 @@ describe("search_files", () => {
 describe("get_summary", () => {
   it("returns a stored file summary", async () => {
     await withFixture(async (ctx) => {
-      const result = (await HANDLERS.get_summary(ctx, { target: "/src/math.ts" })) as {
+      const result = (await HANDLERS.get_summary(ctx, {
+        target: "/src/math.ts",
+      })) as {
         found: boolean;
         generated: boolean;
-        summaries: ReadonlyArray<{ kind: string; target: string; overview: string }>;
+        summaries: ReadonlyArray<{
+          kind: string;
+          target: string;
+          overview: string;
+        }>;
       };
       expect(result.found).toBe(true);
       expect(result.generated).toBe(false);
@@ -189,7 +208,9 @@ describe("get_summary", () => {
 
   it("reports a missing summary without erroring", async () => {
     await withFixture(async (ctx) => {
-      const result = (await HANDLERS.get_summary(ctx, { target: "/src/missing.ts" })) as {
+      const result = (await HANDLERS.get_summary(ctx, {
+        target: "/src/missing.ts",
+      })) as {
         found: boolean;
         message: string;
       };
@@ -200,7 +221,9 @@ describe("get_summary", () => {
 
   it("matches the project summary by kind", async () => {
     await withFixture(async (ctx) => {
-      const result = (await HANDLERS.get_summary(ctx, { target: "project" })) as {
+      const result = (await HANDLERS.get_summary(ctx, {
+        target: "project",
+      })) as {
         found: boolean;
         summaries: ReadonlyArray<{ kind: string; overview: string }>;
       };
@@ -212,7 +235,10 @@ describe("get_summary", () => {
 
   it("honors the kind hint", async () => {
     await withFixture(async (ctx) => {
-      const result = (await HANDLERS.get_summary(ctx, { target: "/src", kind: "module" })) as {
+      const result = (await HANDLERS.get_summary(ctx, {
+        target: "/src",
+        kind: "module",
+      })) as {
         found: boolean;
         summaries: ReadonlyArray<{ kind: string }>;
       };
@@ -260,7 +286,11 @@ describe("get_dependencies", () => {
       const result = (await HANDLERS.get_dependencies(ctx, {})) as {
         count: number;
         total: number;
-        dependencies: ReadonlyArray<{ fromLabel: string; toLabel: string; relation: string }>;
+        dependencies: ReadonlyArray<{
+          fromLabel: string;
+          toLabel: string;
+          relation: string;
+        }>;
       };
       expect(result.count).toBe(2);
       expect(result.total).toBe(2);
@@ -273,7 +303,10 @@ describe("get_dependencies", () => {
       const outgoing = (await HANDLERS.get_dependencies(ctx, {
         node: "/src/math.ts",
         direction: "incoming",
-      })) as { count: number; dependencies: ReadonlyArray<{ fromLabel: string }> };
+      })) as {
+        count: number;
+        dependencies: ReadonlyArray<{ fromLabel: string }>;
+      };
       expect(outgoing.count).toBe(1);
       expect(outgoing.dependencies[0]?.fromLabel).toBe("/src/auth.ts");
     });
@@ -292,7 +325,9 @@ describe("get_dependencies", () => {
 
   it("filters by relation kind", async () => {
     await withFixture(async (ctx) => {
-      const result = (await HANDLERS.get_dependencies(ctx, { relation: "calls" })) as {
+      const result = (await HANDLERS.get_dependencies(ctx, {
+        relation: "calls",
+      })) as {
         count: number;
       };
       expect(result.count).toBe(1);
@@ -301,7 +336,9 @@ describe("get_dependencies", () => {
 
   it("reports when a node does not exist", async () => {
     await withFixture(async (ctx) => {
-      const result = (await HANDLERS.get_dependencies(ctx, { node: "/src/nope.ts" })) as {
+      const result = (await HANDLERS.get_dependencies(ctx, {
+        node: "/src/nope.ts",
+      })) as {
         count: number;
         nodeFound: boolean;
       };
@@ -365,7 +402,9 @@ describe("project_overview", () => {
 
   it("includes listings with detail full", async () => {
     await withFixture(async (ctx) => {
-      const result = (await HANDLERS.project_overview(ctx, { detail: "full" })) as {
+      const result = (await HANDLERS.project_overview(ctx, {
+        detail: "full",
+      })) as {
         modules: unknown[];
         topFiles: unknown[];
         topSymbols: unknown[];
@@ -378,16 +417,52 @@ describe("project_overview", () => {
 
   it("omits the summary when includeSummary is false", async () => {
     await withFixture(async (ctx) => {
-      const result = (await HANDLERS.project_overview(ctx, { includeSummary: false })) as Record<
-        string,
-        unknown
-      >;
+      const result = (await HANDLERS.project_overview(ctx, {
+        includeSummary: false,
+      })) as Record<string, unknown>;
       expect(result["summary"]).toBeUndefined();
     });
   });
 });
 
 describe("read_file_range", () => {
+  it("blocks reads of secret files with a clear domain error (beta audit Fix 6)", async () => {
+    // The deny check fires before any index or disk access, so an empty root
+    // is enough: denied paths must fail closed regardless of index state.
+    await withEmptyRoot(async (ctx) => {
+      const denied = [
+        "/repo/.env",
+        "/repo/.env.production",
+        "/repo/secrets.json",
+        "/repo/.ssh/id_rsa",
+        "/repo/certs/server.pem",
+      ];
+      for (const path of denied) {
+        await expect(
+          HANDLERS.read_file_range(ctx, { path, startLine: 1, endLine: 5 }),
+        ).rejects.toThrow(ToolDomainError);
+        await expect(
+          HANDLERS.read_file_range(ctx, { path, startLine: 1, endLine: 5 }),
+        ).rejects.toThrow(/deny list \(security policy\)/);
+      }
+    });
+  });
+
+  it("does not deny ordinary source files", async () => {
+    await withEmptyRoot(async (ctx) => {
+      // Ordinary paths pass the deny-filter; they then fail on the missing
+      // index (ToolDomainError with a different message) — the point is that
+      // the denial reason is not the security policy.
+      await expect(
+        HANDLERS.read_file_range(ctx, {
+          path: "/repo/src/index.ts",
+          startLine: 1,
+          endLine: 5,
+        }),
+      ).rejects.toThrow(/No context index found/);
+    });
+  });
+
   it("rejects a missing path and missing line arguments", async () => {
     await withFixture(async (ctx) => {
       await expect(HANDLERS.read_file_range(ctx, {})).rejects.toThrow(/path/);
@@ -400,7 +475,11 @@ describe("read_file_range", () => {
   it("rejects endLine before startLine", async () => {
     await withFixture(async (ctx) => {
       await expect(
-        HANDLERS.read_file_range(ctx, { path: "/src/auth.ts", startLine: 10, endLine: 2 }),
+        HANDLERS.read_file_range(ctx, {
+          path: "/src/auth.ts",
+          startLine: 10,
+          endLine: 2,
+        }),
       ).rejects.toThrow(/endLine/);
     });
   });
@@ -412,7 +491,12 @@ describe("read_file_range", () => {
         startLine: 1,
         endLine: 2,
         padding: 0,
-      })) as { stale: boolean; content: string; versionMatch: boolean; padded: boolean };
+      })) as {
+        stale: boolean;
+        content: string;
+        versionMatch: boolean;
+        padded: boolean;
+      };
       expect(result.stale).toBe(true);
       expect(result.versionMatch).toBe(true);
       expect(result.padded).toBe(false);
@@ -464,7 +548,12 @@ describe("read_file_range", () => {
         endLine: 2,
         padding: 0,
         expectedHash: oldHash.hash,
-      })) as { stale: boolean; versionMatch: boolean; message?: string; content: string };
+      })) as {
+        stale: boolean;
+        versionMatch: boolean;
+        message?: string;
+        content: string;
+      };
       expect(result.stale).toBe(true);
       expect(result.versionMatch).toBe(false);
       expect(result.message).toContain("changed");

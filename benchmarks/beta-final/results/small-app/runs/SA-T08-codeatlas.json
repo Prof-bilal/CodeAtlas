@@ -1,0 +1,28 @@
+{
+  "taskId": "SA-T08",
+  "category": "testing",
+  "mode": "codeatlas",
+  "exitCode": 1,
+  "timedOut": false,
+  "wallMs": 2714,
+  "stderrPreview": "",
+  "metrics": {
+    "input": 0,
+    "output": 0,
+    "reasoning": 0,
+    "total": 0,
+    "cacheWrite": 0,
+    "cacheRead": 0,
+    "cost": 0,
+    "steps": 0
+  },
+  "finalText": "",
+  "allText": "",
+  "textChunks": [],
+  "toolCalls": [],
+  "toolErrors": [],
+  "eventSpanMs": 0,
+  "events": [
+    "{\"type\":\"error\",\"timestamp\":1787592222051,\"sessionID\":\"ses_fcb335dbfffeYm1bvAcbaOlaZF\",\"error\":{\"name\":\"UnknownError\",\"data\":{\"message\":\"Unexpected server error. Check server logs for details.\",\"ref\":\"err_218a59af\"}}}"
+  ]
+}

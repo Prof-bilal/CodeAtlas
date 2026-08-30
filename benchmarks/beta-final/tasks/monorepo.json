@@ -1,0 +1,114 @@
+{
+  "repository": "monorepo",
+  "name": "Project Management Platform",
+  "path": "/home/bilal/CodeAtlas/benchmark-repos/03-monorepo",
+  "language": "TypeScript",
+  "framework": "Express 5 + React 19 + pnpm workspaces",
+  "files": 1046,
+  "estimated_tokens": 500000,
+  "tasks": [
+    {
+      "id": "MR-T01",
+      "category": "repository-understanding",
+      "prompt": "Explain the architecture of this monorepo. What packages exist, how do they relate to each other, and what is the dependency direction? Describe the role of each package (shared, auth, database, payments) and how the apps (api, web, worker) consume them. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "packages/shared/src/",
+        "packages/auth/src/",
+        "packages/database/src/",
+        "packages/payments/src/",
+        "apps/api/src/",
+        "apps/web/src/",
+        "apps/worker/src/"
+      ],
+      "expected_concepts": ["pnpm workspace", "BaseRepository", "Result type", "AuthService", "PaymentService", "dependency direction"],
+      "max_seconds": 300
+    },
+    {
+      "id": "MR-T02",
+      "category": "bug-fix",
+      "prompt": "The web app depends on a @monorepo/ui package that doesn't exist. This causes build failures. Investigate the web app's dependencies, identify the missing package, and create a minimal UI component library package that satisfies the dependency. Follow the monorepo's package conventions. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "apps/web/package.json",
+        "packages/ui/",
+        "pnpm-workspace.yaml"
+      ],
+      "expected_concepts": ["@monorepo/ui", "missing package", "pnpm workspace", "package.json", "peer dependency"],
+      "max_seconds": 600
+    },
+    {
+      "id": "MR-T03",
+      "category": "feature",
+      "prompt": "Add a task dependency feature to the monorepo: tasks should be able to depend on other tasks (blocking relationships). This requires changes across all layers: shared types, database schema, API endpoints, and worker processing. Follow the existing patterns (BaseRepository, Result type, Controller/Service). Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "packages/shared/src/types/task.ts",
+        "packages/database/src/repositories/taskRepository.ts",
+        "packages/database/src/schema.ts",
+        "apps/api/src/controllers/taskController.ts",
+        "apps/worker/src/services/workerService.ts"
+      ],
+      "expected_concepts": ["task dependency", "blocking", "blocked_by", "topological sort", "cascade", "dependency graph"],
+      "max_seconds": 900
+    },
+    {
+      "id": "MR-T04",
+      "category": "refactoring",
+      "prompt": "The BaseRepository's createMany, updateMany, and deleteMany methods iterate sequentially over items instead of using batch SQL operations. Refactor these to use proper batch SQL for better performance while maintaining the same interface. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "packages/database/src/BaseRepository.ts",
+        "packages/database/src/databaseService.ts"
+      ],
+      "expected_concepts": ["batch insert", "batch update", "batch delete", "SQL performance", "transaction", "BaseRepository"],
+      "max_seconds": 600
+    },
+    {
+      "id": "MR-T05",
+      "category": "cross-file",
+      "prompt": "The AuthService and TaskController both use in-memory Maps instead of the actual database. Trace the full path from the controller through the service to where the database should be called. Show exactly what needs to change in each file to connect these services to the BaseRepository pattern. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "apps/api/src/controllers/taskController.ts",
+        "packages/auth/src/authService.ts",
+        "packages/database/src/BaseRepository.ts",
+        "packages/database/src/repositories/taskRepository.ts",
+        "packages/database/src/repositories/userRepository.ts"
+      ],
+      "expected_concepts": ["in-memory Map", "BaseRepository", "database connection", "repository pattern", "dependency injection"],
+      "max_seconds": 600
+    },
+    {
+      "id": "MR-T06",
+      "category": "database",
+      "prompt": "The monorepo has a schema.ts file in the database package but the actual table creation is not properly wired up. Create a complete migration system that can create all the required tables (users, tasks, projects, payments, notifications) with proper foreign keys and indexes. Follow the existing schema definitions. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "packages/database/src/schema.ts",
+        "packages/database/src/databaseService.ts",
+        "packages/database/src/migrations.ts"
+      ],
+      "expected_concepts": ["migration", "CREATE TABLE", "foreign key", "index", "schema version", "rollback"],
+      "max_seconds": 900
+    },
+    {
+      "id": "MR-T07",
+      "category": "testing",
+      "prompt": "The monorepo has zero test files. Create a test suite for the shared package's Result type implementation, covering all the methods (ok, err, map, flatMap, unwrap, etc.). Follow TypeScript testing best practices with a framework like vitest. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "packages/shared/src/result/",
+        "packages/shared/package.json"
+      ],
+      "expected_concepts": ["Result type", "ok", "err", "map", "flatMap", "unwrap", "vitest", "test suite"],
+      "max_seconds": 600
+    },
+    {
+      "id": "MR-T08",
+      "category": "security",
+      "prompt": "Review the authentication implementation in the auth package for security issues. Check token generation, validation, refresh flow, and session management. Identify any vulnerabilities like weak secrets, missing token expiry, improper session invalidation, or privilege escalation. Use the tools available to you to explore the codebase. Cite specific files.",
+      "expected_files": [
+        "packages/auth/src/authService.ts",
+        "packages/auth/src/strategies/",
+        "packages/auth/src/tokens/",
+        "packages/auth/src/guards/"
+      ],
+      "expected_concepts": ["JWT", "refresh token", "token expiry", "session invalidation", "secret management", "guard"],
+      "max_seconds": 600
+    }
+  ]
+}

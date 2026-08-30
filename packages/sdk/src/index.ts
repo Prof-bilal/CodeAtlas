@@ -34,10 +34,20 @@ export {
 export { indexProject } from "./indexing/indexer";
 export type { IndexRequest, IndexResult } from "./indexing/indexer";
 export { scanProjectOverview } from "./indexing/scan";
-export type { FileTreeNode, ProjectScan, ToolDefinition } from "@atlas/core";
+export type {
+  FileTreeNode,
+  ProjectScan,
+  ToolDefinition,
+  ContextTaskCategory,
+} from "@atlas/core";
 export {
   createContextSDK,
   resolveContextConfig,
+  expandDependencyClosure,
+  type ClosureExpansion,
+  type ClosureKind,
+  type ClosureOptions,
+  type ClosureSnapshot,
   type ContextSDK,
   type ContextSDKOptions,
   type ContextSDKConfig,
@@ -82,10 +92,20 @@ export {
   SymbolNotFoundError,
 } from "./context/errors";
 export { ReadRepositories, WriteRepositories } from "./context/repositories";
-export { createSessionManager, type CreateSessionManagerOptions } from "./sessions/index";
-export type { ContextToolSource, ToolCallPolicy, ToolCallDecision } from "./context-tools/index";
+export {
+  createSessionManager,
+  type CreateSessionManagerOptions,
+} from "./sessions/index";
+export type {
+  ContextToolSource,
+  ToolCallPolicy,
+  ToolCallDecision,
+} from "./context-tools/index";
 export {
   ToolUsingChatAgent,
+  SearchMemory,
+  CONTEXT_GUIDANCE,
+  DEFAULT_PER_TOOL_LIMITS,
   MAX_TOOL_ROUNDS,
   MAX_TOOL_RESULT_CHARS,
   evaluateToolCallPolicy,
@@ -114,8 +134,14 @@ export type {
   AgentRunResult,
 } from "@atlas/core";
 export type { AgentServiceOptions } from "@atlas/agents";
-export { createUsageService, type CreateUsageServiceOptions } from "./usage/index";
-export { createMetricsService, type CreateMetricsServiceOptions } from "./metrics/index";
+export {
+  createUsageService,
+  type CreateUsageServiceOptions,
+} from "./usage/index";
+export {
+  createMetricsService,
+  type CreateMetricsServiceOptions,
+} from "./metrics/index";
 export { createProviderService, createOllamaService } from "./providers/index";
 export type {
   CreateOllamaServiceOptions,
@@ -127,13 +153,19 @@ export type {
   ProviderOverview,
 } from "./providers/index";
 export type { ProviderStatus } from "@atlas/providers";
-export { createToolRegistry, type CreateToolRegistryOptions } from "./toolkit/index";
+export {
+  createToolRegistry,
+  type CreateToolRegistryOptions,
+} from "./toolkit/index";
 export {
   createCompatibilityEngine,
   type CreateCompatibilityEngineOptions,
 } from "./toolkit/index";
 export { createInstaller, type CreateInstallerOptions } from "./toolkit/index";
-export { createConfigurator, type CreateConfiguratorOptions } from "./toolkit/index";
+export {
+  createConfigurator,
+  type CreateConfiguratorOptions,
+} from "./toolkit/index";
 export {
   createToolkitSDK,
   type CreateToolkitSDKOptions,
@@ -142,7 +174,11 @@ export {
   type ToolkitSDK,
   type ToolkitUpdateOutcome,
 } from "./toolkit/index";
-export { withUsageTracking, trackAgentRun, StaticPricingSource } from "@atlas/usage";
+export {
+  withUsageTracking,
+  trackAgentRun,
+  StaticPricingSource,
+} from "@atlas/usage";
 export type { TrackingContext, WithUsageTrackingOptions } from "@atlas/usage";
 export {
   UsageError,
@@ -259,6 +295,18 @@ export {
   type ExclusionRecord,
   type StaleContextSignal,
   type StalenessState,
+  extractTaskEntities,
+  type TaskEntities,
+  evaluateSufficiency,
+  type SufficiencyFailure,
+  type SufficiencyInput,
+  type SufficiencyResult,
+  buildSymbolOutline,
+  lineRangeOfSymbol,
+  sliceContentByRanges,
+  tierPriorityOf,
+  TIER_PRIORITY,
+  type OutlineSymbol,
 } from "./context-integration/index";
 export {
   createOrchestrator,

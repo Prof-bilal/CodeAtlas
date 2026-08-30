@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService, AppError } from '../services/authService.js';
 import { UserModel } from '../models/user.js';
+import { taskRepository } from '../repositories/taskRepository.js';
 
 declare global {
   namespace Express {
@@ -48,6 +49,42 @@ export function authorize(...roles: string[]) {
 
     next();
   };
+}
+
+export function authorizeTaskOwnerOrAdmin(req: Request, res: Response, next: NextFunction): void {
+  if (!req.user) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  if (req.user.role === 'admin') {
+    next();
+    return;
+  }
+
+  const taskId = req.params.id;
+  if (!taskId) {
+    res.status(400).json({ error: 'Task ID required' });
+    return;
+  }
+
+  taskRepository.findById(taskId)
+    .then(task => {
+      if (!task) {
+        res.status(404).json({ error: 'Task not found' });
+        return;
+      }
+
+      if (task.userId !== req.user!.id) {
+        res.status(403).json({ error: 'Insufficient permissions' });
+        return;
+      }
+
+      next();
+    })
+    .catch(() => {
+      res.status(500).json({ error: 'Internal server error' });
+    });
 }
 
 export function optionalAuth(req: Request, res: Response, next: NextFunction): void {

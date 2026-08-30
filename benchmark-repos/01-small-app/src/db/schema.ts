@@ -31,6 +31,21 @@ export interface Session {
   createdAt: Date;
 }
 
+export interface Tag {
+  id: string;
+  name: string;
+  color: string | null;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TaskTag {
+  taskId: string;
+  tagId: string;
+  createdAt: Date;
+}
+
 export const schema = `
   CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -65,6 +80,23 @@ export const schema = `
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS tags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    color VARCHAR(7),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(name, user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS task_tags (
+    task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (task_id, tag_id)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id);
   CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
   CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
@@ -72,4 +104,8 @@ export const schema = `
   CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
   CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
   CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+  CREATE INDEX IF NOT EXISTS idx_tags_user_id ON tags(user_id);
+  CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
+  CREATE INDEX IF NOT EXISTS idx_task_tags_task_id ON task_tags(task_id);
+  CREATE INDEX IF NOT EXISTS idx_task_tags_tag_id ON task_tags(tag_id);
 `;

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "codeatlas": {
+      "type": "local",
+      "command": [
+        "/home/bilal/CodeAtlas/node_modules/.bin/codeatlas-mcp"
+      ],
+      "enabled": true,
+      "environment": {
+        "ATLAS_ROOT": "/home/bilal/CodeAtlas/benchmark-repos/01-small-app"
+      }
+    }
+  }
+}

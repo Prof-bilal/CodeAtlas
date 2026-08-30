@@ -37,11 +37,14 @@ export function applyBudget(
     truncateToTokens(item, budget.maxTokensPerItem, itemsTruncated),
   );
 
-  // The token cap may drop anything except project instructions.
-  const dropableByTokens = (item: ContextPackageItem): boolean => item.kind !== "instructions";
+  // The token cap may drop anything except project instructions and
+  // critical-tier items (tier-first consumption, ADR-014: budgets prevent
+  // explosion but never discard the files the task must touch).
+  const dropableByTokens = (item: ContextPackageItem): boolean =>
+    item.kind !== "instructions" && item.tier !== "critical";
   // The item-count cap additionally protects dependency-chain evidence files.
   const dropableByCount = (item: ContextPackageItem): boolean =>
-    item.kind !== "instructions" && item.source !== "dependency-chain";
+    item.kind !== "instructions" && item.source !== "dependency-chain" && item.tier !== "critical";
 
   let current = truncated;
   let total = current.reduce((sum, item) => sum + item.tokens, 0);

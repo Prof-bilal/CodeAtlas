@@ -1,3 +1,5 @@
+import { TagResponse } from './tag.js';
+
 export interface TaskModel {
   id: string;
   title: string;
@@ -38,6 +40,7 @@ export interface TaskResponse {
   dueDate: Date | null;
   userId: string;
   assignedTo: string | null;
+  tags: TagResponse[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,9 +50,10 @@ export interface TaskFilters {
   priority?: string;
   assignedTo?: string;
   search?: string;
+  tag?: string;
 }
 
-export function toTaskResponse(task: TaskModel): TaskResponse {
+export function toTaskResponse(task: TaskModel, tags: TagResponse[] = []): TaskResponse {
   return {
     id: task.id,
     title: task.title,
@@ -59,6 +63,7 @@ export function toTaskResponse(task: TaskModel): TaskResponse {
     dueDate: task.dueDate,
     userId: task.userId,
     assignedTo: task.assignedTo,
+    tags,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
   };

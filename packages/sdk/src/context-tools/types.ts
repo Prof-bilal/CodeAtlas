@@ -21,6 +21,13 @@ export interface ContextToolSource {
    *   `Result` with a human-readable error message for domain/validation errors.
    */
   execute(name: string, args: Record<string, unknown>): Promise<Result<unknown>>;
+
+  /**
+   * Optional deny-filter for file reads (beta audit Fix 6). Returns true when
+   * the path should be blocked (secrets/sensitive configuration). When
+   * present, consumers must refuse to read denied paths.
+   */
+  getDenyFilter?(): (path: string) => boolean;
 }
 
 /** Maximum tool calls per request (prevents infinite loops). */
@@ -48,7 +55,30 @@ export interface ToolCallPolicy {
   readonly maxToolCalls?: number;
   /** Maximum characters per tool result (default: `MAX_TOOL_RESULT_CHARS`). */
   readonly maxResultChars?: number;
+  /**
+   * Per-tool call limits. Keys are tool names, values are max executed calls
+   * per run. When unset, {@link DEFAULT_PER_TOOL_LIMITS} applies.
+   */
+  readonly perToolCallLimit?: Record<string, number>;
 }
+
+/**
+ * Default per-tool call limits for the runtime tool loop.
+ *
+ * These encode the audited "typical usage" per task (see the beta audit):
+ * searches should be narrow and repeated-query detection deduplicates near
+ * duplicates, so a handful of calls per tool is enough. Tools absent from
+ * this record are unlimited (beyond `maxToolCalls`).
+ */
+export const DEFAULT_PER_TOOL_LIMITS: Record<string, number> = {
+  search_symbols: 2,
+  search_files: 2,
+  get_dependencies: 1,
+  explain_module: 1,
+  read_file_range: 5,
+  get_summary: 2,
+  project_overview: 1,
+};
 
 /** Outcome of evaluating one tool name against a {@link ToolCallPolicy}. */
 export interface ToolCallDecision {
@@ -64,15 +94,32 @@ export interface ToolCallDecision {
 export function evaluateToolCallPolicy(
   policy: ToolCallPolicy | undefined,
   name: string,
+  perToolCounts?: Record<string, number>,
 ): ToolCallDecision {
-  if (policy === undefined) {
-    return { allowed: true };
+  if (policy !== undefined) {
+    if (policy.deniedTools?.includes(name) === true) {
+      return { allowed: false, reason: `Tool "${name}" is denied by policy` };
+    }
+    if (policy.allowedTools !== undefined && !policy.allowedTools.includes(name)) {
+      return {
+        allowed: false,
+        reason: `Tool "${name}" is not in the allowed tool list`,
+      };
+    }
   }
-  if (policy.deniedTools?.includes(name) === true) {
-    return { allowed: false, reason: `Tool "${name}" is denied by policy` };
-  }
-  if (policy.allowedTools !== undefined && !policy.allowedTools.includes(name)) {
-    return { allowed: false, reason: `Tool "${name}" is not in the allowed tool list` };
+  // Per-tool call limits apply even without an explicit policy: the defaults
+  // encode the audited "typical usage" per task. Override via
+  // `policy.perToolCallLimit`.
+  const limits = policy?.perToolCallLimit ?? DEFAULT_PER_TOOL_LIMITS;
+  const limit = limits[name];
+  if (limit !== undefined && perToolCounts !== undefined) {
+    const used = perToolCounts[name] ?? 0;
+    if (used >= limit) {
+      return {
+        allowed: false,
+        reason: `Tool "${name}" limit reached (${used}/${limit} calls). Use results from prior calls instead of repeating this tool.`,
+      };
+    }
   }
   return { allowed: true };
 }

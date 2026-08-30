@@ -1,0 +1,51 @@
+{
+  "date": "2026-08-25",
+  "model": "opencode default (deepseek-v4-flash-free)",
+  "agent": "OpenCode 1.18.21",
+  "codeatlas_version": "0.4.0-beta.0",
+  "repositories": [
+    {
+      "id": "small-app",
+      "name": "Task Manager API",
+      "files": 73,
+      "estimated_tokens": 35000
+    },
+    {
+      "id": "medium-api",
+      "name": "SaaS Platform API",
+      "files": 395,
+      "estimated_tokens": 180000
+    }
+  ],
+  "results": {
+    "baseline": {
+      "tasks_completed": 9,
+      "tasks_correct": 7,
+      "success_rate": "78%",
+      "avg_score": 1.78,
+      "total_tokens": 4792515,
+      "avg_duration_s": 291
+    },
+    "codeatlas": {
+      "tasks_completed": 7,
+      "tasks_correct": 3,
+      "success_rate": "43%",
+      "avg_score": 1.43,
+      "total_tokens": 1514135,
+      "avg_duration_s": 205
+    },
+    "delta": {
+      "accuracy": "-35 percentage points",
+      "tokens": "-68.4% (3,278,380 saved)",
+      "duration": "-29.6% faster"
+    }
+  },
+  "verdict": "NOT READY FOR BETA",
+  "critical_issues": [
+    "Agent over-explores with MCP tools instead of using context",
+    "Accuracy regression of 35 percentage points",
+    "Timeout issues on debugging/security tasks",
+    "Context saturation on medium repos"
+  ],
+  "generatedAt": "2026-08-25T03:35:33.465Z"
+}

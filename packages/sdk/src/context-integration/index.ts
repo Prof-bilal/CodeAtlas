@@ -24,6 +24,21 @@ export {
   type AssembleOptions,
 } from "./assemble";
 export { applyBudget, DEFAULT_CONTEXT_BUDGET } from "./budget";
+export {
+  buildSymbolOutline,
+  lineRangeOfSymbol,
+  sliceContentByRanges,
+  tierPriorityOf,
+  TIER_PRIORITY,
+  type OutlineSymbol,
+} from "./hierarchy";
+export { extractTaskEntities, type TaskEntities } from "./entities";
+export {
+  evaluateSufficiency,
+  type SufficiencyFailure,
+  type SufficiencyInput,
+  type SufficiencyResult,
+} from "./sufficiency";
 export { denyFilter, type DenyFilterResult } from "./deny";
 export {
   ContextAttachUnsupportedError,
@@ -31,10 +46,7 @@ export {
   ContextSliceError,
   ContextSliceValidationError,
 } from "./errors";
-export {
-  collectInstructions,
-  type ProjectInstruction,
-} from "./instructions";
+export { collectInstructions, type ProjectInstruction } from "./instructions";
 export type {
   BudgetRecord,
   ContextBriefing,
@@ -281,5 +293,6 @@ function toAssembleOptions(input: BuildPackageInput): AssembleOptions {
       : {}),
     ...(input.includeOverview !== undefined ? { includeOverview: input.includeOverview } : {}),
     ...(input.scopePaths !== undefined ? { scopePaths: input.scopePaths } : {}),
+    ...(input.taskCategory !== undefined ? { taskCategory: input.taskCategory } : {}),
   };
 }

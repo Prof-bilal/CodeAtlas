@@ -3,15 +3,27 @@ import { PaymentService } from '../../src/core/payments/paymentService.js';
 import { EventBus } from '../../src/events/eventBus.js';
 
 vi.mock('../../src/events/eventBus.js');
+vi.mock('../../src/config/stripe.js', () => ({
+  getStripeClient: vi.fn(),
+}));
 
 describe('PaymentService', () => {
   let paymentService: PaymentService;
   let mockEventBus: any;
+  let mockStripe: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockEventBus = { emit: vi.fn() };
     paymentService = new PaymentService(mockEventBus);
+
+    const { getStripeClient } = require('../../src/config/stripe.js');
+    mockStripe = {
+      paymentIntents: {
+        create: vi.fn().mockResolvedValue({ id: 'pi_test_123', status: 'succeeded' }),
+      },
+    };
+    getStripeClient.mockReturnValue(mockStripe);
   });
 
   describe('createPayment', () => {
@@ -21,13 +33,47 @@ describe('PaymentService', () => {
       expect(payment.amount).toBe(1000);
       expect(payment.status).toBe('pending');
     });
+
+    it('should reject invalid payment data', async () => {
+      await expect(paymentService.createPayment({ userId: '', amount: 1000 }))
+        .rejects.toThrow('Invalid payment data');
+      await expect(paymentService.createPayment({ userId: 'user-1', amount: -500 }))
+        .rejects.toThrow('Invalid payment data');
+      await expect(paymentService.createPayment({ userId: 'user-1', amount: 1.5 }))
+        .rejects.toThrow('Invalid payment data');
+    });
+
+    it('should reject invalid currency', async () => {
+      await expect(paymentService.createPayment({ userId: 'user-1', amount: 1000, currency: 'US' }))
+        .rejects.toThrow('Invalid payment data');
+      await expect(paymentService.createPayment({ userId: 'user-1', amount: 1000, currency: 'USDDD' }))
+        .rejects.toThrow('Invalid payment data');
+    });
   });
 
   describe('processPayment', () => {
-    it('should process pending payment', async () => {
+    it('should process pending payment via Stripe', async () => {
       const payment = await paymentService.createPayment({ userId: 'user-1', amount: 1000 });
       const processed = await paymentService.processPayment(payment.id);
       expect(processed.status).toBe('completed');
+      expect(processed.stripePaymentIntentId).toBe('pi_test_123');
+      expect(mockStripe.paymentIntents.create).toHaveBeenCalledWith({
+        amount: 100000,
+        currency: 'usd',
+        payment_method: undefined,
+        confirm: true,
+      });
+      expect(mockEventBus.emit).toHaveBeenCalledWith('payment:completed', expect.any(Object));
+    });
+
+    it('should handle Stripe failure and set status to failed', async () => {
+      mockStripe.paymentIntents.create.mockRejectedValue(new Error('Card declined'));
+      const payment = await paymentService.createPayment({ userId: 'user-1', amount: 1000 });
+      await expect(paymentService.processPayment(payment.id)).rejects.toThrow('Card declined');
+      expect(payment.status).toBe('failed');
+      expect(mockEventBus.emit).toHaveBeenCalledWith('payment:failed', expect.objectContaining({
+        error: expect.objectContaining({ message: 'Card declined' }),
+      }));
     });
 
     it('should reject non-pending payment', async () => {

@@ -3,6 +3,7 @@ import {
   type ContextToolSource,
   type Result,
   type ToolDefinition,
+  denyFilter,
   fail,
   ok,
 } from "@atlas/sdk";
@@ -56,6 +57,10 @@ export function createContextToolSource(handlerContext: HandlerContext): Context
         return fail(new Error(message));
       }
     },
+
+    // Security (beta audit Fix 6): expose the secret deny-filter so consumers
+    // (tool loop, CLI) can pre-check paths before any read is attempted.
+    getDenyFilter: () => (path: string) => !denyFilter(path, "").accepted,
   };
 }
 

@@ -136,10 +136,45 @@ export interface GraphEdge {
   readonly kind: string;
 }
 
+/** Context hierarchy tier (ADR-014): how essential an item is for the task. */
+export type ContextTier = "critical" | "important" | "supporting" | "optional";
+
+/**
+ * A 1-based inclusive source line range (ADR-014, additive). Used to deliver
+ * only the relevant slice of a Critical-tier file instead of whole files.
+ */
+export interface LineRange {
+  /** First line of the range (1-based, inclusive). */
+  readonly startLine: number;
+  /** Last line of the range (1-based, inclusive, >= startLine). */
+  readonly endLine: number;
+}
+
 /** A ranked snippet of source code selected as prompt context. */
 export interface ContextItem {
   readonly source: FilePath;
   readonly content: string;
   /** Relevance score; higher is better. */
   readonly score: number;
+  /**
+   * Hierarchy tier (additive, ADR-014). Absent for legacy producers —
+   * consumers must treat an absent tier as "unranked".
+   */
+  readonly tier?: ContextTier;
+  /**
+   * Deterministic reason this item was selected (e.g. "imported by
+   * /src/auth.ts"). Additive, ADR-014.
+   */
+  readonly reason?: string;
+  /**
+   * Relevant line ranges within `content` (1-based, inclusive; additive,
+   * ADR-014). Absent means "whole file". Consumers must render only these
+   * ranges when present.
+   */
+  readonly ranges?: readonly LineRange[];
+  /**
+   * Deterministic, structured annotations (e.g. `{ testsFor: "src/auth.ts" }`,
+   * `{ closureHop: "1" }`). Additive, ADR-014; never model-generated.
+   */
+  readonly annotations?: Readonly<Record<string, string>>;
 }

@@ -33,9 +33,14 @@ const PATH_DENY_PATTERNS: readonly PathDenyPattern[] = [
   { pattern: "*.p12/.pfx", re: /\.(p12|pfx)$/i },
   { pattern: "*.jks/.keystore", re: /\.(jks|keystore)$/i },
   { pattern: "id_rsa/id_dsa/id_ed25519", re: /^id_(rsa|dsa|ed25519|ecdsa)$/i },
-  { pattern: "credentials/secret files", re: /^(credentials|secret|secrets)$/i },
+  {
+    pattern: "credentials/secret files",
+    re: /^(credentials|secret|secrets)$/i,
+  },
   // Whole secret directories (`.ssh`, `.aws`, `.gcloud`).
   { pattern: ".*.ssh/.aws/.gcloud dirs", re: /^\.(ssh|aws|gcloud)$/i },
+  // JSON secret bundles (`secrets.json`, `secrets.local.json`, …).
+  { pattern: "secrets*.json", re: /^secrets?(?:[-_.]?\w+)*\.json$/i },
 ];
 
 /** Content-level patterns: a high-confidence credential match excludes the file. */
@@ -50,8 +55,14 @@ const CONTENT_DENY_PATTERNS: readonly ContentDenyPattern[] = [
     match: (content) =>
       /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY(?: BLOCK)?-----/.test(content),
   },
-  { pattern: "AWS access key", match: (content) => /\bAKIA[0-9A-Z]{16}\b/.test(content) },
-  { pattern: "Google API key", match: (content) => /\bAIza[0-9A-Za-z_-]{35}\b/.test(content) },
+  {
+    pattern: "AWS access key",
+    match: (content) => /\bAKIA[0-9A-Z]{16}\b/.test(content),
+  },
+  {
+    pattern: "Google API key",
+    match: (content) => /\bAIza[0-9A-Za-z_-]{35}\b/.test(content),
+  },
   {
     pattern: "OpenAI-style secret key",
     match: (content) => /\bsk-[A-Za-z0-9]{20,}\b/.test(content),
@@ -125,5 +136,9 @@ export function denyFilter(path: string, content: string): DenyFilterResult {
       contentPatterns.push(entry.pattern);
     }
   }
-  return { accepted: contentPatterns.length === 0, pathPatterns, contentPatterns };
+  return {
+    accepted: contentPatterns.length === 0,
+    pathPatterns,
+    contentPatterns,
+  };
 }

@@ -1,0 +1,23 @@
+{
+  "durationMs": 2115,
+  "exitCode": 0,
+  "parsed": {
+    "repositoryPath": "/home/bilal/CodeAtlas/benchmark-repos/01-small-app",
+    "dbPath": "/home/bilal/CodeAtlas/benchmark-repos/01-small-app/.codeatlas/context.db",
+    "mode": "build",
+    "files": 82,
+    "parsedFiles": 82,
+    "skippedFiles": 0,
+    "symbols": 1313,
+    "dependencies": 1986,
+    "added": 87,
+    "changed": 0,
+    "deleted": 0,
+    "unchanged": 0,
+    "manifestPath": "/home/bilal/CodeAtlas/benchmark-repos/01-small-app/.codeatlas/manifest.json",
+    "summaries": 0,
+    "summariesFailed": 0
+  },
+  "indexSizeBytes": 2082259,
+  "stderr": ""
+}

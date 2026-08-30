@@ -1,0 +1,28 @@
+{
+  "taskId": "SA-T07",
+  "category": "security",
+  "mode": "codeatlas",
+  "exitCode": 1,
+  "timedOut": false,
+  "wallMs": 2686,
+  "stderrPreview": "",
+  "metrics": {
+    "input": 0,
+    "output": 0,
+    "reasoning": 0,
+    "total": 0,
+    "cacheWrite": 0,
+    "cacheRead": 0,
+    "cost": 0,
+    "steps": 0
+  },
+  "finalText": "",
+  "allText": "",
+  "textChunks": [],
+  "toolCalls": [],
+  "toolErrors": [],
+  "eventSpanMs": 0,
+  "events": [
+    "{\"type\":\"error\",\"timestamp\":1787592216542,\"sessionID\":\"ses_fcb337327ffeO2oPLkpWVrxmxJ\",\"error\":{\"name\":\"UnknownError\",\"data\":{\"message\":\"Unexpected server error. Check server logs for details.\",\"ref\":\"err_90f610b5\"}}}"
+  ]
+}

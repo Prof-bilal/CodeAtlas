@@ -13,7 +13,7 @@
  * - **serializable** — plain data, no functions, no AI-CLI-specific formatting.
  */
 
-import type { SummaryContent, SummaryMetadata } from "@atlas/core";
+import type { ContextTier, LineRange, SummaryContent, SummaryMetadata } from "@atlas/core";
 import type { FreshnessSignal, FreshnessState } from "../context/models";
 
 /**
@@ -64,6 +64,17 @@ export interface ContextPackageItem {
   readonly truncated: boolean;
   /** Estimated token count of `content` (deterministic heuristic). */
   readonly tokens: number;
+  /**
+   * Hierarchy tier (additive, ADR-014 / Phase 1 P1.5). Absent = "unranked";
+   * budgets consume tiers top-first and never drop critical items.
+   */
+  readonly tier?: ContextTier;
+  /**
+   * Relevant 1-based inclusive line ranges of the source file (additive,
+   * ADR-014). Present for symbol items (their exact declaration span) and
+   * for file items when only specific ranges are known relevant.
+   */
+  readonly ranges?: readonly LineRange[];
 }
 
 /** Configurable caps for a context package. */
@@ -124,6 +135,8 @@ export interface ContextExplanationItem {
   readonly reason: string;
   readonly truncated: boolean;
   readonly tokens: number;
+  /** Hierarchy tier (additive, ADR-014); absent = "unranked". */
+  readonly tier?: ContextTier;
 }
 
 /** Structured per-item explanation plus the budget/exclusion records. */
