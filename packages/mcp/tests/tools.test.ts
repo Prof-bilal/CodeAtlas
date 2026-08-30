@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { TOOLS, TOOL_NAMES } from "../src/tools";
+import { TOOLS, TOOL_NAMES, type ToolName } from "../src/tools";
 
 describe("tool registry", () => {
   it("exposes exactly the twelve expected tools", () => {
@@ -27,7 +27,7 @@ describe("tool registry", () => {
   });
 
   it("lists high-level tools before low-level tools", () => {
-    const highLevel = [
+    const highLevel: ToolName[] = [
       "analyze_task",
       "create_plan",
       "find_relevant_context",
