@@ -21,6 +21,7 @@ import {
   saveContextSlice,
 } from "@atlas/sdk";
 import type { Command } from "commander";
+import { openMetrics } from "./metrics";
 import { contextDbPath, resolveProjectRoot } from "./search";
 import { openUsage } from "./usage";
 
