@@ -150,6 +150,16 @@ export interface ChatAgentResult {
    * the run continues. Undefined/empty when no policy denied anything.
    */
   readonly deniedToolCalls?: readonly string[];
+  /**
+   * Why the tool loop terminated (Phase 5, P5.4).
+   * Undefined when the agent does not run a tool loop.
+   */
+  readonly stopReason?: string;
+  /**
+   * Agent state accumulated during the tool loop (Phase 5, P5.1).
+   * Undefined when the agent does not run a tool loop.
+   */
+  readonly agentState?: unknown;
 }
 
 /**

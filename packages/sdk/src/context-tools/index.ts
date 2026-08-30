@@ -14,3 +14,26 @@ export {
   SearchMemory,
   ToolUsingChatAgent,
 } from "./tool-loop";
+export type { ToolLoopConfig, InspectedResult } from "./tool-loop";
+export { inspectResult } from "./tool-loop";
+export type {
+  AgentState,
+  ToolUsage,
+  FileChange,
+  VerificationRun,
+  StopReason,
+} from "./state";
+export {
+  MAX_STATE_SUMMARY_CHARS,
+  addKnownFacts,
+  addRisk,
+  createAgentState,
+  nextRound,
+  recordFileInspected,
+  recordToolUsage,
+  recordVerificationRun,
+  renderStateSummary,
+  setClassification,
+  setPlan,
+  setStopReason,
+} from "./state";

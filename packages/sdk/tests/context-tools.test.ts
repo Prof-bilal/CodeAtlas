@@ -1,7 +1,8 @@
 import type { ProviderPort, ProviderResponse, ToolCall } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 import { describe, expect, it } from "vitest";
-import { SearchMemory, ToolUsingChatAgent } from "../src/context-tools/tool-loop";
+import { SearchMemory, ToolUsingChatAgent, inspectResult } from "../src/context-tools/tool-loop";
+import type { ToolLoopConfig } from "../src/context-tools/tool-loop";
 import type { ContextToolSource } from "../src/context-tools/types";
 
 /** A fake provider that returns a fixed response. */
@@ -212,7 +213,7 @@ describe("ToolUsingChatAgent", () => {
     // Should have made exactly 3 calls (the max)
     expect(callCount).toBe(3);
     if (result.ok) {
-      expect(result.value.content).toContain("maximum iterations");
+      expect(result.value.content).toContain("max-rounds");
     }
   });
 
@@ -769,5 +770,325 @@ describe("ToolUsingChatAgent repeated queries, limits, guidance, progress", () =
       (m) => m.role === "system" && String(m.content).includes("[Progress:"),
     );
     expect(progressMsg).toBeDefined();
+  });
+});
+
+describe("inspectResult", () => {
+  it("flags empty results", () => {
+    const r = inspectResult("search_symbols", "");
+    expect(r.empty).toBe(true);
+    expect(r.informative).toBe(false);
+    expect(r.recoveryMenu.length).toBeGreaterThan(0);
+    expect(r.recoveryMenu[0]).toContain("no results");
+  });
+
+  it("flags empty object results", () => {
+    const r = inspectResult("search_symbols", "{}");
+    expect(r.empty).toBe(true);
+  });
+
+  it("flags error results", () => {
+    const r = inspectResult("get_dependencies", '{"error":"node not found"}');
+    expect(r.error).toBe(true);
+    expect(r.recoveryMenu.length).toBeGreaterThan(0);
+  });
+
+  it("extracts file paths from results", () => {
+    const r = inspectResult("search_symbols", "Found in /src/auth.ts and ./lib/user.ts");
+    expect(r.filePaths).toContain("/src/auth.ts");
+    expect(r.filePaths).toContain("./lib/user.ts");
+  });
+
+  it("extracts facts from informative results", () => {
+    const r = inspectResult(
+      "search_symbols",
+      "AuthService is defined in auth.ts\nlogin() is an async function\nexported from index.ts",
+    );
+    expect(r.facts.length).toBeGreaterThan(0);
+    expect(r.informative).toBe(true);
+  });
+
+  it("returns empty recovery menu for good results", () => {
+    const r = inspectResult("search_symbols", "Found auth module with 3 symbols");
+    expect(r.recoveryMenu).toEqual([]);
+    expect(r.empty).toBe(false);
+    expect(r.error).toBe(false);
+  });
+});
+
+describe("ToolUsingChatAgent Phase 5: state tracking + stopReason + plan-aware rounds", () => {
+  /** Provider that issues toolCalls on first call, then plain text. */
+  function oneRoundProvider(toolCalls: readonly ToolCall[]): ProviderPort {
+    let called = false;
+    return {
+      complete: async () => {
+        if (!called) {
+          called = true;
+          return ok({
+            provider: "ollama",
+            content: "",
+            model: "llama3.2",
+            usage: undefined,
+            toolCalls,
+          });
+        }
+        return ok({
+          provider: "ollama",
+          content: "done",
+          model: "llama3.2",
+          usage: undefined,
+          toolCalls: undefined,
+        });
+      },
+    };
+  }
+
+  function fakeToolSource(
+    tools: Array<{ name: string; description: string }>,
+    executeFn?: (name: string, args: Record<string, unknown>) => Promise<Result<unknown>>,
+  ): ContextToolSource {
+    const toolNames = new Set(tools.map((t) => t.name));
+    return {
+      listTools: () =>
+        tools.map((t) => ({
+          type: "function" as const,
+          function: {
+            name: t.name,
+            description: t.description,
+            parameters: { type: "object" as const, properties: {} },
+          },
+        })),
+      execute:
+        executeFn ??
+        (async (name, args) => {
+          if (!toolNames.has(name)) {
+            return fail(new Error(`Unknown tool: "${name}"`));
+          }
+          return ok({ tool: name, args });
+        }),
+    };
+  }
+
+  it("returns stopReason=final-answer on normal completion", async () => {
+    const provider = fakeProvider({
+      provider: "ollama",
+      content: "answer",
+      model: "llama3.2",
+      usage: undefined,
+      toolCalls: undefined,
+    });
+    const toolSource = fakeToolSource([]);
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"]);
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "test",
+      repositoryPath: "/repo",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.stopReason).toBe("final-answer");
+    }
+  });
+
+  it("returns stopReason=max-rounds when max rounds hit", async () => {
+    let callCount = 0;
+    const alwaysToolCall: ProviderPort = {
+      complete: async () => {
+        callCount++;
+        return ok({
+          provider: "ollama",
+          content: "",
+          model: "llama3.2",
+          usage: undefined,
+          toolCalls: [
+            {
+              id: `call_${callCount}`,
+              type: "function",
+              function: {
+                name: "search_symbols",
+                arguments: '{"query":"test"}',
+              },
+            },
+          ],
+        });
+      },
+    };
+    const toolSource = fakeToolSource([{ name: "search_symbols", description: "Search" }]);
+    const agent = new ToolUsingChatAgent(alwaysToolCall, toolSource, ["ollama"], 3);
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "search",
+      repositoryPath: "/repo",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.stopReason).toBe("max-rounds");
+      expect(result.value.agentState).toBeDefined();
+    }
+  });
+
+  it("returns stopReason=budget-exhausted when maxToolCalls hit via config", async () => {
+    let callCount = 0;
+    const alwaysToolCall: ProviderPort = {
+      complete: async () => {
+        callCount++;
+        return ok({
+          provider: "ollama",
+          content: "",
+          model: "llama3.2",
+          usage: undefined,
+          toolCalls: [
+            {
+              id: `call_${callCount}`,
+              type: "function",
+              function: {
+                name: "search_symbols",
+                arguments: `{"query":"q${callCount}"}`,
+              },
+            },
+          ],
+        });
+      },
+    };
+    const toolSource = fakeToolSource([{ name: "search_symbols", description: "Search" }]);
+    const agent = new ToolUsingChatAgent(alwaysToolCall, toolSource, ["ollama"], 10, undefined, {
+      maxToolCalls: 2,
+    });
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "search",
+      repositoryPath: "/repo",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.stopReason).toBe("budget-exhausted");
+    }
+  });
+
+  it("returns stopReason=budget-exhausted when maxTimeMs hit", async () => {
+    const slowProvider: ProviderPort = {
+      complete: async () => {
+        // Simulate a slow provider by waiting
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return ok({
+          provider: "ollama",
+          content: "",
+          model: "llama3.2",
+          usage: undefined,
+          toolCalls: [
+            {
+              id: "call_1",
+              type: "function",
+              function: { name: "search_symbols", arguments: '{"query":"a"}' },
+            },
+          ],
+        });
+      },
+    };
+    const toolSource = fakeToolSource([{ name: "search_symbols", description: "Search" }]);
+    // maxTimeMs=1ms should trigger immediately
+    const agent = new ToolUsingChatAgent(slowProvider, toolSource, ["ollama"], 10, undefined, {
+      maxTimeMs: 1,
+    });
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "search",
+      repositoryPath: "/repo",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.stopReason).toBe("budget-exhausted");
+    }
+  });
+
+  it("populates agentState with tool usage and files inspected", async () => {
+    const toolCalls: ToolCall[] = [
+      {
+        id: "call_1",
+        type: "function",
+        function: { name: "search_symbols", arguments: '{"query":"auth"}' },
+      },
+    ];
+    const provider = oneRoundProvider(toolCalls);
+    const toolSource = fakeToolSource(
+      [{ name: "search_symbols", description: "Search" }],
+      async () => ok({ hits: [{ path: "/src/auth.ts" }] }),
+    );
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"]);
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "find auth",
+      repositoryPath: "/repo",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const state = result.value.agentState as Record<string, unknown>;
+      expect(state).toBeDefined();
+      const toolsUsed = state["toolsUsed"] as Array<Record<string, unknown>>;
+      expect(toolsUsed.length).toBe(1);
+      expect(toolsUsed[0]?.["name"]).toBe("search_symbols");
+      expect(toolsUsed[0]?.["cached"]).toBe(false);
+    }
+  });
+
+  it("injects state summary and objective restatement with plan steps", async () => {
+    const provider = fakeProvider({
+      provider: "ollama",
+      content: "answer",
+      model: "llama3.2",
+      usage: undefined,
+      toolCalls: undefined,
+    });
+    const toolSource = fakeToolSource([]);
+    const config: ToolLoopConfig = {
+      planSteps: [
+        { order: 1, action: "read auth.ts", targetFiles: ["auth.ts"], rationale: "need context" },
+      ],
+      verificationStrategy: "claim-checks",
+    };
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"], 10, undefined, config);
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "fix auth bug",
+      repositoryPath: "/repo",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const msgs = result.value.messages ?? [];
+      // The state summary should appear as a system message (after round 0)
+      const stateMsg = msgs.find(
+        (m) => m.role === "system" && String(m.content).includes("AgentState"),
+      );
+      expect(stateMsg).toBeDefined();
+    }
+  });
+
+  it("inspects results and injects recovery menu for empty results", async () => {
+    const toolCalls: ToolCall[] = [
+      {
+        id: "call_1",
+        type: "function",
+        function: { name: "search_symbols", arguments: '{"query":"nonexistent"}' },
+      },
+    ];
+    const provider = oneRoundProvider(toolCalls);
+    const toolSource = fakeToolSource(
+      [{ name: "search_symbols", description: "Search" }],
+      async () => ok(""),
+    );
+    const agent = new ToolUsingChatAgent(provider, toolSource, ["ollama"]);
+    const result = await agent.run({
+      provider: "ollama",
+      prompt: "find xyz",
+      repositoryPath: "/repo",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const msgs = result.value.messages ?? [];
+      const recoveryMsg = msgs.find(
+        (m) => m.role === "system" && String(m.content).includes("[ResultInspector]"),
+      );
+      expect(recoveryMsg).toBeDefined();
+    }
   });
 });

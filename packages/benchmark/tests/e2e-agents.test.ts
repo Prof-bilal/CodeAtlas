@@ -235,7 +235,10 @@ describe("E2E: Ollama → CodeAtlas tool loop → context", () => {
 
         const second = ollama.requests[1];
         const secondMessages = second.messages ?? [];
-        expect(secondMessages.map((m) => m.role)).toEqual(["user", "assistant", "tool"]);
+        // The second request includes: user, assistant(tool_calls), tool(result),
+        // and optionally a system message (state summary from Phase 5).
+        const roles = secondMessages.map((m) => m.role);
+        expect(roles.slice(0, 3)).toEqual(["user", "assistant", "tool"]);
         const toolMessage = secondMessages[2];
         expect(toolMessage?.tool_call_id).toBe("call_e2e_1");
         // The tool result must carry real indexed context (the symbol we seeded),

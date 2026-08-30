@@ -2,12 +2,26 @@ import type {
   ChatAgentPort,
   ChatAgentRequest,
   ChatAgentResult,
+  PlanStep,
   ProviderMessage,
   ProviderPort,
   ToolCall,
   ToolDefinition,
+  VerificationStrategy,
 } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
+import {
+  type StopReason,
+  addKnownFacts,
+  createAgentState,
+  nextRound,
+  recordFileInspected,
+  recordToolUsage,
+  renderStateSummary,
+  setClassification,
+  setPlan,
+  setStopReason,
+} from "./state";
 import type { ContextToolSource, ToolCallPolicy } from "./types";
 import { MAX_TOOL_RESULT_CHARS, MAX_TOOL_ROUNDS, evaluateToolCallPolicy } from "./types";
 
@@ -29,6 +43,117 @@ export const CONTEXT_GUIDANCE =
 const LOW_GROWTH_ROUNDS = 2;
 /** A round must add at least this fraction of new content to count as progress. */
 const LOW_GROWTH_THRESHOLD = 0.05;
+
+/** Minimum characters for a tool result to be considered informative. */
+const MIN_INFORMATIVE_RESULT_CHARS = 10;
+
+/**
+ * Configuration for the tool loop (Phase 5, P5.2–P5.4).
+ *
+ * Extends the basic agent with plan-aware state tracking and budget control.
+ */
+export interface ToolLoopConfig {
+  /** Plan steps from the planner (optional, enables plan-aware rounds). */
+  readonly planSteps?: readonly PlanStep[];
+  /** Verification strategy from the plan. */
+  readonly verificationStrategy?: VerificationStrategy;
+  /** Task category from the classifier. */
+  readonly taskCategory?: string;
+  /** Classification confidence (0–1). */
+  readonly confidence?: number;
+  /** Entities extracted from the task. */
+  readonly entities?: readonly string[];
+  /** Maximum total tool calls (overrides policy.maxToolCalls). */
+  readonly maxToolCalls?: number;
+  /** Maximum wall-clock time in milliseconds (0 = no limit). */
+  readonly maxTimeMs?: number;
+}
+
+/**
+ * A normalized tool result with quality signals (Phase 5, P5.3).
+ */
+export interface InspectedResult {
+  /** The original tool result text. */
+  readonly raw: string;
+  /** Whether the result is empty or trivially small. */
+  readonly empty: boolean;
+  /** Whether the result indicates an error. */
+  readonly error: boolean;
+  /** Whether the result is informative (has meaningful content). */
+  readonly informative: boolean;
+  /** Recovery suggestions for empty/failed results. */
+  readonly recoveryMenu: readonly string[];
+  /** File paths extracted from the result (for state tracking). */
+  readonly filePaths: readonly string[];
+  /** Facts extracted from the result (for state tracking). */
+  readonly facts: readonly string[];
+}
+
+/**
+ * Inspect a tool result: normalize, flag empty/failed, extract metadata,
+ * and generate recovery suggestions on failures (Phase 5, P5.3).
+ *
+ * This is a deterministic module — no AI, no IO.
+ */
+export function inspectResult(toolName: string, rawResult: string): InspectedResult {
+  const trimmed = rawResult.trim();
+  const empty = trimmed.length === 0 || trimmed === "{}" || trimmed === "[]";
+  const error = trimmed.startsWith("{") && trimmed.includes('"error"');
+
+  const recoveryMenu: string[] = [];
+  if (empty) {
+    recoveryMenu.push(`Tool "${toolName}" returned no results.`);
+    if (toolName.startsWith("search_")) {
+      recoveryMenu.push("Try a broader search query or use get_dependencies instead.");
+    } else if (toolName === "read_file_range") {
+      recoveryMenu.push("Check if the file path is correct and the range is valid.");
+    } else {
+      recoveryMenu.push("Try a different tool or refine your query.");
+    }
+  } else if (error) {
+    recoveryMenu.push(`Tool "${toolName}" returned an error.`);
+    recoveryMenu.push("Check the error message and adjust your approach.");
+  }
+
+  // Extract file paths (paths starting with / or ./ or ../)
+  const filePaths: string[] = [];
+  const pathPattern = /(?:^|\s)((?:\.{0,2}\/)[^\s,;)}\]]+)/g;
+  let pathMatch = pathPattern.exec(trimmed);
+  while (pathMatch !== null) {
+    const p = pathMatch[1];
+    if (p !== undefined && !filePaths.includes(p)) {
+      filePaths.push(p);
+    }
+    pathMatch = pathPattern.exec(trimmed);
+  }
+
+  // Extract simple facts (lines that look like statements about code)
+  const facts: string[] = [];
+  if (!empty && !error) {
+    // Take the first few meaningful lines as facts
+    const lines = trimmed.split("\n").filter((l) => l.trim().length > 5);
+    for (const line of lines.slice(0, 3)) {
+      const fact = line
+        .trim()
+        .replace(/^[-*]\s*/, "")
+        .replace(/^"\s*/, "")
+        .replace(/"\s*$/, "");
+      if (fact.length > 5 && fact.length < 200) {
+        facts.push(fact);
+      }
+    }
+  }
+
+  return {
+    raw: rawResult,
+    empty,
+    error,
+    informative: !empty && !error && trimmed.length >= MIN_INFORMATIVE_RESULT_CHARS,
+    recoveryMenu,
+    filePaths,
+    facts,
+  };
+}
 
 /**
  * Remembers prior search queries and their results so near-duplicate queries
@@ -121,6 +246,23 @@ function estimateTokens(text: string): number {
 }
 
 /**
+ * Build the objective restatement for the current round based on plan steps.
+ *
+ * Maps the current round to a plan step (1:1) and generates a focused
+ * objective message for the model.
+ */
+function buildObjectiveRestatement(
+  round: number,
+  planSteps: readonly PlanStep[],
+): string | undefined {
+  if (planSteps.length === 0) return undefined;
+  const stepIndex = Math.min(round, planSteps.length - 1);
+  const step = planSteps[stepIndex];
+  if (step === undefined) return undefined;
+  return `[Round ${round + 1} objective] Step ${step.order}: ${step.action} (targets: ${step.targetFiles.join(", ") || "none"})`;
+}
+
+/**
  * A chat agent that wraps a `ProviderPort` and runs a bounded tool loop.
  *
  * When the model responds with `tool_calls`, this agent executes them against
@@ -129,10 +271,13 @@ function estimateTokens(text: string): number {
  * - The model responds without tool calls (final answer).
  * - `MAX_TOOL_ROUNDS` is reached (returns the last content with a note).
  * - An unknown tool is called (returns an error result to the model).
+ * - Global budget (maxToolCalls or maxTimeMs) is exhausted.
  *
- * An optional `ToolCallPolicy` restricts which tools are offered and executed
- * (advisory security surface): denied calls receive an error result the model
- * can react to, and the denied call ids are surfaced on the result.
+ * Phase 5 adds:
+ * - Per-step rounds with plan-aware objective restatement (P5.2)
+ * - AgentState tracking across rounds (P5.1)
+ * - ResultInspector for quality signals and recovery menus (P5.3)
+ * - Global budget + stop-reason on every result (P5.4)
  */
 export class ToolUsingChatAgent implements ChatAgentPort {
   public readonly providers: readonly string[];
@@ -140,6 +285,7 @@ export class ToolUsingChatAgent implements ChatAgentPort {
   private readonly toolSource: ContextToolSource;
   private readonly maxRounds: number;
   private readonly policy: ToolCallPolicy | undefined;
+  private readonly loopConfig: ToolLoopConfig;
   /** Deduplication memory for repeated/near-duplicate queries (audit Fix 2). */
   private readonly searchMemory = new SearchMemory();
   /** Executed-call count per tool name, for per-tool limits (audit Fix 5). */
@@ -151,12 +297,14 @@ export class ToolUsingChatAgent implements ChatAgentPort {
     providers: readonly string[] = ["ollama"],
     maxRounds: number = MAX_TOOL_ROUNDS,
     policy?: ToolCallPolicy,
+    loopConfig?: ToolLoopConfig,
   ) {
     this.providers = providers;
     this.provider = provider;
     this.toolSource = toolSource;
     this.maxRounds = maxRounds;
     this.policy = policy;
+    this.loopConfig = loopConfig ?? {};
   }
 
   public handles(provider: string): boolean {
@@ -182,11 +330,34 @@ export class ToolUsingChatAgent implements ChatAgentPort {
     const toolDefs = tools.length > 0 ? tools : undefined;
     const maxResultChars = this.policy?.maxResultChars ?? MAX_TOOL_RESULT_CHARS;
 
+    // Phase 5: Initialize agent state (P5.1)
+    let state = createAgentState(request.prompt);
+    if (this.loopConfig.planSteps !== undefined) {
+      state = setPlan(state, {
+        steps: this.loopConfig.planSteps,
+        impactSet: this.loopConfig.planSteps.flatMap((s) => [...s.targetFiles]),
+        unknowns: [],
+        verificationStrategy: this.loopConfig.verificationStrategy ?? "none",
+      });
+    }
+    if (this.loopConfig.taskCategory !== undefined) {
+      state = setClassification(state, {
+        category: this.loopConfig.taskCategory,
+        confidence: this.loopConfig.confidence ?? 0,
+        entities: this.loopConfig.entities ?? [],
+      });
+    }
+
     let lastContent = "";
     let lastModel: string | undefined;
     let lastUsage: ChatAgentResult["tokenUsage"] = undefined;
     let executedCalls = 0;
     const deniedToolCalls: string[] = [];
+    let stopReason: StopReason = "final-answer";
+
+    // Phase 5: Global budget (P5.4)
+    const effectiveMaxToolCalls = this.loopConfig.maxToolCalls ?? this.policy?.maxToolCalls;
+    const maxTimeMs = this.loopConfig.maxTimeMs ?? 0;
 
     // Progress tracking for diminishing-returns detection (beta audit Fix 3):
     // tracks *unique new* content per round so repeated identical results
@@ -196,6 +367,28 @@ export class ToolUsingChatAgent implements ChatAgentPort {
     const seenResults = new Set<string>();
 
     for (let round = 0; round < this.maxRounds; round++) {
+      // Phase 5: Check global budget (P5.4)
+      if (maxTimeMs > 0 && Date.now() - startMs >= maxTimeMs) {
+        stopReason = "budget-exhausted";
+        break;
+      }
+      if (effectiveMaxToolCalls !== undefined && executedCalls >= effectiveMaxToolCalls) {
+        stopReason = "budget-exhausted";
+        break;
+      }
+
+      // Phase 5: Inject state summary + objective restatement (P5.2)
+      const stateSummary = renderStateSummary(state);
+      const objective = buildObjectiveRestatement(round, this.loopConfig.planSteps ?? []);
+      if (round > 0 || objective !== undefined) {
+        const stateMsg: string[] = [];
+        if (objective !== undefined) {
+          stateMsg.push(objective);
+        }
+        stateMsg.push(stateSummary);
+        messages.push({ role: "system", content: stateMsg.join("\n\n") });
+      }
+
       const result = await this.provider.complete({
         provider: request.provider,
         prompt: request.prompt,
@@ -204,6 +397,7 @@ export class ToolUsingChatAgent implements ChatAgentPort {
       });
 
       if (!result.ok) {
+        state = setStopReason(state, "error");
         return fail(
           new Error(`Provider "${request.provider}" request failed: ${result.error.message}`),
         );
@@ -218,6 +412,8 @@ export class ToolUsingChatAgent implements ChatAgentPort {
 
       // No tool calls — final answer
       if (toolCalls === undefined || toolCalls.length === 0) {
+        stopReason = "final-answer";
+        state = setStopReason(state, stopReason);
         return ok({
           model: lastModel,
           content: lastContent,
@@ -225,6 +421,8 @@ export class ToolUsingChatAgent implements ChatAgentPort {
           tokenUsage: lastUsage,
           messages: [...messages],
           ...(deniedToolCalls.length > 0 ? { deniedToolCalls: [...deniedToolCalls] } : {}),
+          stopReason,
+          agentState: state,
         });
       }
 
@@ -269,6 +467,13 @@ export class ToolUsingChatAgent implements ChatAgentPort {
               seenResults.add(cachedText);
               roundResultChars += estimateTokens(cachedText);
             }
+            // Phase 5: Track in state (P5.2)
+            state = recordToolUsage(state, {
+              name: coreName,
+              queryKey: queryKeyOf(args),
+              round,
+              cached: true,
+            });
             messages.push({
               role: "tool",
               content: JSON.stringify({
@@ -299,6 +504,43 @@ export class ToolUsingChatAgent implements ChatAgentPort {
           seenResults.add(toolResult);
           roundResultChars += estimateTokens(toolResult);
         }
+
+        // Phase 5: Inspect result + update state (P5.3)
+        const inspected = inspectResult(coreName, toolResult);
+        state = recordToolUsage(state, {
+          name: coreName,
+          queryKey: queryKeyOf(args),
+          round,
+          cached: false,
+        });
+        if (inspected.filePaths.length > 0) {
+          for (const fp of inspected.filePaths) {
+            state = recordFileInspected(state, fp);
+          }
+        }
+        if (inspected.facts.length > 0) {
+          state = addKnownFacts(state, inspected.facts);
+        }
+        // Inject recovery menu for empty/error results
+        if (inspected.recoveryMenu.length > 0) {
+          const recoveryMsg = inspected.recoveryMenu.join(" ");
+          messages.push({
+            role: "tool",
+            content: typeof toolResult === "string" ? toolResult : JSON.stringify(toolResult),
+            tool_call_id: toolCall.id,
+          });
+          messages.push({
+            role: "system",
+            content: `[ResultInspector] ${recoveryMsg}`,
+          });
+        } else {
+          messages.push({
+            role: "tool",
+            content: typeof toolResult === "string" ? toolResult : JSON.stringify(toolResult),
+            tool_call_id: toolCall.id,
+          });
+        }
+
         if (isSearchLike && Object.keys(args).length > 0) {
           // Remember the parsed result value so cached replays serialize
           // identically to the original (keeps progress detection honest).
@@ -310,12 +552,10 @@ export class ToolUsingChatAgent implements ChatAgentPort {
           }
           this.searchMemory.remember(`${coreName}:${queryKeyOf(args)}`, value);
         }
-        messages.push({
-          role: "tool",
-          content: typeof toolResult === "string" ? toolResult : JSON.stringify(toolResult),
-          tool_call_id: toolCall.id,
-        });
       }
+
+      // Phase 5: Advance round (P5.1)
+      state = nextRound(state);
 
       // Progress detection (beta audit Fix 3): if this round added little new
       // content relative to the biggest round so far, nudge the model toward
@@ -326,6 +566,7 @@ export class ToolUsingChatAgent implements ChatAgentPort {
       ) {
         consecutiveLowGrowthRounds += 1;
         if (consecutiveLowGrowthRounds >= LOW_GROWTH_ROUNDS) {
+          stopReason = "low-growth";
           messages.push({
             role: "system",
             content: `[Progress: After ${round + 1} rounds, you've gathered information but recent searches added little new data. Consider answering with what you have. You can continue searching or provide your answer now.]`,
@@ -337,8 +578,14 @@ export class ToolUsingChatAgent implements ChatAgentPort {
       previousRoundTokens = Math.max(previousRoundTokens, roundResultChars);
     }
 
-    // Max rounds reached — return last content with a truncation note
-    const note = `\n\n[Tool loop ended after ${this.maxRounds} rounds — maximum iterations reached.]`;
+    // Max rounds reached — return last content with a truncation note.
+    // "low-growth" is a hint to the model during the loop; the actual
+    // termination cause is always max-rounds when we fall out of the loop.
+    if (stopReason !== "budget-exhausted") {
+      stopReason = "max-rounds";
+    }
+    state = setStopReason(state, stopReason);
+    const note = `\n\n[Tool loop ended after ${this.maxRounds} rounds — ${stopReason}.]`;
     return ok({
       model: lastModel,
       content: lastContent + note,
@@ -346,6 +593,8 @@ export class ToolUsingChatAgent implements ChatAgentPort {
       tokenUsage: lastUsage,
       messages: [...messages],
       ...(deniedToolCalls.length > 0 ? { deniedToolCalls: [...deniedToolCalls] } : {}),
+      stopReason,
+      agentState: state,
     });
   }
 
