@@ -417,6 +417,7 @@ describe("atlas CLI", () => {
       "tools",
       "update",
       "usage",
+      "verify",
     ]);
   });
 
