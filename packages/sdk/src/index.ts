@@ -323,6 +323,10 @@ export {
   tierPriorityOf,
   TIER_PRIORITY,
   type OutlineSymbol,
+  createCritic,
+  runChecklist,
+  DEFAULT_CRITIC_CONFIG,
+  type CriticReview,
 } from "./context-integration/index";
 export {
   createOrchestrator,
@@ -481,6 +485,17 @@ export type {
   VerifierPort,
   VerifyCommandConfig,
   VerifyConfig,
+} from "@atlas/core";
+export type {
+  CriticCheckCategory,
+  CriticCheckInput,
+  CriticCheckItem,
+  CriticCheckResult,
+  CriticConfig,
+  CriticIssue,
+  CriticPort,
+  CriticVerdict,
+  OutputContractCheck,
 } from "@atlas/core";
 export { createVerifier, type VerifierServiceDeps } from "./verifier";
 export { loadVerifyConfig, VerifyConfigError } from "@atlas/verifier";

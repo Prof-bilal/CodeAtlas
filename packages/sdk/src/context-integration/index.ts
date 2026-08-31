@@ -1,9 +1,17 @@
 import { UnknownSessionError } from "@atlas/agents";
-import type { Session, SessionOutput, SessionPort, UsagePort } from "@atlas/core";
+import type {
+  ClaimCheckResult,
+  CriticConfig,
+  Session,
+  SessionOutput,
+  SessionPort,
+  UsagePort,
+} from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 import type { ContextSDK } from "../context/sdk";
 import { type AssembleOptions, assembleContextPackage } from "./assemble";
 import { type BriefingPort, createBriefingPort } from "./briefing";
+import { type CriticReview, createCritic } from "./critic";
 import { ContextAttachUnsupportedError } from "./errors";
 import type { ContextBriefing, ContextExplanation, ContextPackage } from "./models";
 import { renderContextPackage, toContextExplanation } from "./render";
@@ -17,6 +25,14 @@ export {
   type BriefingRequest,
   type BriefingResponse,
 } from "./briefing";
+
+export {
+  DEFAULT_CRITIC_CONFIG,
+  createCritic,
+  runChecklist,
+  type CriticConfig,
+  type CriticReview,
+} from "./critic";
 
 export {
   assembleContextPackage,
@@ -150,6 +166,8 @@ export interface ContextIntegrationOptions {
   readonly ai?: BriefingPort;
   /** Optional usage port; AI briefings are recorded with actual tokens. */
   readonly usage?: UsagePort;
+  /** Critic configuration (defaults to same-model, 1 revision). */
+  readonly criticConfig?: CriticConfig;
 }
 
 /**
@@ -191,6 +209,16 @@ export interface ContextIntegration {
    */
   brief(input: BuildPackageInput): Promise<Result<ContextBriefing>>;
   /**
+   * Run the critic on an answer: deterministic checklist + optional AI review.
+   * Returns a CriticReview with issues and revision recommendations.
+   * Undefined when the critic is not configured.
+   */
+  review?(
+    answer: string,
+    input: BuildPackageInput,
+    claimResults: ClaimCheckResult,
+  ): Promise<Result<CriticReview>>;
+  /**
    * Retrieve the captured stdout/stderr of a session launched with
    * `captureOutput: true`, or `undefined` when the session is unknown or did
    * not capture output. The output stays available after the session reaches
@@ -204,6 +232,7 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
   const { context, sessions } = options;
   const ai =
     options.ai ?? createBriefingPort(options.usage === undefined ? {} : { usage: options.usage });
+  const critic = createCritic(undefined, options.criticConfig);
 
   return {
     async buildPackage(input: BuildPackageInput): Promise<ContextPackage> {
@@ -279,6 +308,24 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
         metadata: generated.value.metadata,
         package: pkg,
       });
+    },
+
+    async review(
+      answer: string,
+      input: BuildPackageInput,
+      claimResults: ClaimCheckResult,
+    ): Promise<Result<CriticReview>> {
+      const pkg = await this.buildPackage(input);
+      const citedPaths = pkg.items
+        .filter((item) => item.path !== null)
+        .map((item) => item.path as string);
+      const checklist = critic.check({
+        answer,
+        citedPaths,
+        planTargets: [],
+        claimResults,
+      });
+      return critic.review(answer, checklist, renderContextPackage(pkg));
     },
 
     getSessionOutput(sessionId: string): SessionOutput | undefined {

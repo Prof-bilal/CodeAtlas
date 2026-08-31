@@ -224,3 +224,15 @@ export type {
   VerifyCommandConfig,
   VerifyConfig,
 } from "./ports/verifier.port";
+export type {
+  CriticCheckCategory,
+  CriticCheckInput,
+  CriticCheckItem,
+  CriticCheckResult,
+  CriticConfig,
+  CriticIssue,
+  CriticPort,
+  CriticReview,
+  CriticVerdict,
+  OutputContractCheck,
+} from "./ports/critic.port";

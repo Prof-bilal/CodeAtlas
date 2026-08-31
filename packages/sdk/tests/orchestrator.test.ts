@@ -223,6 +223,9 @@ function createFakeIntegration(): FakeIntegration {
     async brief() {
       return fail(new Error("unused in orchestrator tests"));
     },
+    async review() {
+      return fail(new Error("unused in orchestrator tests"));
+    },
     getSessionOutput() {
       return undefined;
     },
