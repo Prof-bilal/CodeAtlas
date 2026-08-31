@@ -17,3 +17,16 @@ export {
   type RunHiddenTestsOptions,
   type HiddenTestResult,
 } from "./test-runner";
+export {
+  SINGLE_ABLATION_SCENARIOS,
+  generateAblationRequests,
+  ablationTaskId,
+  extractBaseTaskId,
+  extractScenarioLabel,
+  AblationRunner,
+  type AblationScenario,
+} from "./ablation";
+export {
+  PROVIDER_BUDGET_DEFAULTS,
+  resolveBudget,
+} from "./defaults";

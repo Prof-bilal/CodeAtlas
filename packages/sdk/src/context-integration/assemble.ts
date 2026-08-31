@@ -135,6 +135,7 @@ const KIND_RANK: Readonly<Record<ContextItemKind, number>> = {
   dependency: 3,
   overview: 4,
   instructions: 5,
+  digest: 6,
 };
 
 /** Assemble a ranked, budgeted, deny-filtered Context Package for a task. */
@@ -166,7 +167,17 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
     }
   }
 
-  // 2..n. Indexed context (only when an index exists).
+  // 2. Repository digest — architecture map, entry points, conventions.
+  //    Always included when available (Supporting tier, never budget-dropped).
+  const digestItems: ContextPackageItem[] = [];
+  if (context.isAvailable) {
+    const digest = context.summaries.getDigest();
+    if (digest !== undefined) {
+      digestItems.push(digestItem(digest));
+    }
+  }
+
+  // 3..n. Indexed context (only when an index exists).
   const overviewItems: ContextPackageItem[] = [];
   const contextItems: ContextPackageItem[] = [];
   if (context.isAvailable) {
@@ -280,6 +291,7 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
 
   const ordered = [
     ...instructionItems,
+    ...digestItems,
     ...(options.scopePaths !== undefined ? [] : overviewItems),
     ...sortByRank(scopeItems(contextItems, options.scopePaths)),
   ];
@@ -651,6 +663,28 @@ function instructionItem(instruction: ProjectInstruction): ContextPackageItem {
     reason: `Project instruction file included so the agent follows repository rules (${instruction.filename}).`,
     truncated: false,
     tokens: estimateTokens(content),
+  };
+}
+
+function digestItem(digest: Summary): ContextPackageItem {
+  const lines = [digest.content.overview];
+  for (const point of digest.content.keyPoints) {
+    lines.push(`- ${point}`);
+  }
+  const content = lines.join("\n");
+  return {
+    id: "digest:repository",
+    kind: "digest",
+    title: "Repository digest",
+    path: null,
+    content,
+    score: 0,
+    source: "digest",
+    reason:
+      "Deterministic repository digest: architecture map, entry points, and conventions (cached, never stale).",
+    truncated: false,
+    tokens: estimateTokens(content),
+    tier: "supporting",
   };
 }
 

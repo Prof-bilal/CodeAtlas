@@ -32,7 +32,8 @@ export type ContextItemKind =
   | "summary"
   | "dependency"
   | "instructions"
-  | "overview";
+  | "overview"
+  | "digest";
 
 /** Where an item came from (for explainability). */
 export type ContextItemSource =
@@ -42,7 +43,8 @@ export type ContextItemSource =
   | "dependency"
   | "dependency-chain"
   | "instructions"
-  | "overview";
+  | "overview"
+  | "digest";
 
 /** One selected piece of context, with its selection explanation. */
 export interface ContextPackageItem {

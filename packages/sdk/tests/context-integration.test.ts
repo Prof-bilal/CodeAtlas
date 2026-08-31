@@ -144,6 +144,16 @@ function standardData(overrides: Partial<ContextData> = {}): ContextData {
       fixtureSummary("file", "/src/math.ts", "Math utilities for the project.", ["double"]),
       fixtureSummary("module", "/src", "The src module holds math and auth.", ["math", "auth"]),
       fixtureSummary("project", "", "CodeAtlas demo project.", ["math", "auth", "readme"]),
+      fixtureSummary(
+        "digest",
+        "",
+        "The demo project is a TypeScript project with 3 files organized into 1 module.",
+        [
+          "Entry points: /src/auth.ts (1 dependents)",
+          "Modules: src",
+          "Naming convention: camelCase",
+        ],
+      ),
     ],
     ...overrides,
   };
@@ -282,6 +292,25 @@ describe("assembleContextPackage (via buildPackage)", () => {
       for (const item of pkg.items) {
         expect(item.reason.length).toBeGreaterThan(0);
       }
+    });
+  });
+
+  it("includes the repository digest after instructions", async () => {
+    const repo = tempRepo();
+    writeFileSync(join(repo, "AGENTS.md"), "# Rules\nNever commit secrets.\n");
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: fakeSessions().port });
+      const pkg = await integration.buildPackage({ task: "double" });
+
+      const digestIndex = pkg.items.findIndex((i) => i.kind === "digest");
+      const firstInstructionIndex = pkg.items.findIndex((i) => i.kind === "instructions");
+      const overviewIndex = pkg.items.findIndex((i) => i.kind === "overview");
+
+      expect(digestIndex).toBeGreaterThanOrEqual(0);
+      expect(digestIndex).toBeGreaterThan(firstInstructionIndex);
+      expect(overviewIndex).toBeGreaterThan(digestIndex);
+      expect(pkg.items[digestIndex]?.tier).toBe("supporting");
+      expect(pkg.items[digestIndex]?.source).toBe("digest");
     });
   });
 

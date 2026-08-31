@@ -27,6 +27,7 @@ import {
 import { ContextStore } from "@atlas/storage";
 import { SummaryService } from "@atlas/summary";
 import { withUsageTracking } from "@atlas/usage";
+import { type DigestInput, buildDigest } from "../context-integration/digest";
 import { fileNodeId, symbolNodeId } from "../context/nodes";
 import { createProviderService } from "../providers/index";
 
@@ -65,6 +66,8 @@ export interface IndexResult {
   readonly summaries: number;
   /** Files whose summary generation failed (e.g. no provider configured). */
   readonly summariesFailed: number;
+  /** True when the deterministic repository digest was generated and stored. */
+  readonly digestGenerated: boolean;
 }
 
 /**
@@ -153,6 +156,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
         manifestPath: manifest.value.path,
         summaries: 0,
         summariesFailed: 0,
+        digestGenerated: false,
       });
     }
 
@@ -298,6 +302,32 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       }
     }
 
+    // Deterministic repository digest: architecture map, entry points,
+    // conventions — no provider needed, content-hash-cached by the
+    // summaries table (UNIQUE(kind, target)).
+    const digestInput: DigestInput = {
+      manifest: {
+        name: manifest.value.manifest.name,
+        languages: manifest.value.manifest.languages,
+        framework: manifest.value.manifest.framework,
+      },
+      files: sourceFiles.map((f) => ({ path: f.path, language: f.language })),
+      symbols: mergedSymbols.map((s) => ({
+        id: s.id,
+        name: s.name,
+        kind: s.kind,
+        filePath: s.filePath,
+      })),
+      dependencies: dependencies.map((d) => ({
+        from: d.from,
+        to: d.to,
+        kind: d.kind,
+      })),
+      modules: modules.map((m) => ({ path: m.path, name: m.name })),
+    };
+    const digest = buildDigest(digestInput);
+    const storedSummaries = [...summaries, digest];
+
     const data: ContextData = {
       files: sourceFiles,
       symbols: mergedSymbols,
@@ -305,7 +335,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       modules,
       hashes: current.value.hashes,
       metadata: { repositoryPath, manifestPath: manifest.value.path },
-      ...(summaries.length > 0 ? { summaries } : {}),
+      ...(storedSummaries.length > 0 ? { summaries: storedSummaries } : {}),
     };
 
     if (incremental) {
@@ -337,6 +367,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       manifestPath: manifest.value.path,
       summaries: summaries.length,
       summariesFailed,
+      digestGenerated: true,
     };
     if (request.metrics !== undefined) {
       request.metrics.recordScan({

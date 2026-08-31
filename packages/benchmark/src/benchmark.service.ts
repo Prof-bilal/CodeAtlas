@@ -211,18 +211,28 @@ export class BenchmarkService implements BenchmarkPort {
       }
     }
 
-    // Compute aggregates
+    // Compute aggregates (supports 2-arm and 3-arm)
     const baseline = results.filter((t) => t.mode === "baseline");
     const codeatlas = results.filter((t) => t.mode === "codeatlas");
+    const intel = results.filter((t) => t.mode === "codeatlas-intel");
     const baseTokens = baseline.reduce((s, t) => s + t.tokens.total, 0);
     const catTokens = codeatlas.reduce((s, t) => s + t.tokens.total, 0);
+    const intelTokens = intel.reduce((s, t) => s + t.tokens.total, 0);
     const baseCost = baseline.reduce((s, t) => s + t.cost, 0);
     const catCost = codeatlas.reduce((s, t) => s + t.cost, 0);
+    const intelCost = intel.reduce((s, t) => s + t.cost, 0);
 
     const baseEvals = evaluations.filter((e) => e.mode === "baseline");
     const catEvals = evaluations.filter((e) => e.mode === "codeatlas");
+    const intelEvals = evaluations.filter((e) => e.mode === "codeatlas-intel");
     const baseAvg = avg(baseEvals.map((e) => e.evaluation.score));
     const catAvg = avg(catEvals.map((e) => e.evaluation.score));
+    const intelAvg = avg(intelEvals.map((e) => e.evaluation.score));
+
+    // Accuracy delta: compare best CodeAtlas mode against baseline
+    const bestCat = codeatlas.length > 0 ? catAvg : intelAvg;
+    const bestTokens = codeatlas.length > 0 ? catTokens : intelTokens;
+    const bestCost = codeatlas.length > 0 ? catCost : intelCost;
 
     this.store.updateSuiteStatus(request.suiteId, "completed");
 
@@ -230,9 +240,9 @@ export class BenchmarkService implements BenchmarkPort {
       suiteId: request.suiteId,
       tasks: results,
       evaluations,
-      tokenSavings: baseTokens - catTokens,
-      costSavings: baseCost - catCost,
-      accuracyDelta: catAvg - baseAvg,
+      tokenSavings: baseTokens - bestTokens,
+      costSavings: baseCost - bestCost,
+      accuracyDelta: bestCat - baseAvg,
       completedAt: new Date().toISOString(),
     };
 

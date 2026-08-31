@@ -50,6 +50,12 @@ export interface BenchmarkConfig {
   readonly agent: BenchmarkAgent;
   /** Model identifier (e.g. "opencode/deepseek-v4-flash-free", "ollama/llama3.2"). */
   readonly model: string;
+  /**
+   * Multiple model identifiers for matrix runs (P8.1).
+   * When present, the suite runs each task against every model × every mode.
+   * Overrides `model` for matrix expansion.
+   */
+  readonly models?: readonly string[];
   /** Modes to run (both by default). */
   readonly modes: readonly BenchmarkMode[];
   /** Agent-specific options. */
@@ -58,6 +64,10 @@ export interface BenchmarkConfig {
   readonly taskTimeoutMs?: number;
   /** Number of runs per task per mode (default: 1). */
   readonly runsPerTask?: number;
+  /** Ablation toggles (P8.2) — disables intel features per run. */
+  readonly ablation?: BenchmarkAblationConfig;
+  /** Per-provider default budget overrides (P8.3). */
+  readonly budgetDefaults?: ModelBudgetDefaults;
 }
 
 /** Agent-specific configuration overrides. */
@@ -68,6 +78,56 @@ export interface AgentOptions {
   readonly temperature?: number;
   /** Ollama-specific: base URL override. */
   readonly baseUrl?: string;
+}
+
+/**
+ * Ablation configuration for Phase 8 (P8.2).
+ *
+ * Each toggle disables one intel feature so we can measure its individual
+ * contribution. When a toggle is `false`, the runner executes the task
+ * *without* that feature (equivalent to a lower-complexity mode).
+ *
+ * All default to `true` (feature enabled). Setting any to `false` produces
+ * an ablated run.
+ */
+export interface BenchmarkAblationConfig {
+  /** Disable the plan-step injection (P1).* */
+  readonly disablePlanner?: boolean;
+  /** Disable hierarchy-based search ranking (P2).* */
+  readonly disableHierarchy?: boolean;
+  /** Disable verification / feedback loop (P5).* */
+  readonly disableVerification?: boolean;
+  /** Disable the AI critic pass (P6).* */
+  readonly disableCritic?: boolean;
+  /** Disable the static digest (P7).* */
+  readonly disableDigest?: boolean;
+}
+
+/**
+ * Per-provider default budget configuration (P8.3).
+ *
+ * Recommended token budgets and cost limits for each provider when running
+ * benchmark tasks. Used to prevent runaway costs and to set sane defaults
+ * for local models.
+ */
+export interface ModelBudgetDefaults {
+  /** Maximum total tokens per task run (0 = unlimited). */
+  readonly maxTokensPerTask?: number;
+  /** Maximum cost per task run in USD (0 = unlimited). */
+  readonly maxCostPerTask?: number;
+  /** Maximum wall-clock time per task run in milliseconds. */
+  readonly maxDurationMs?: number;
+  /** Provider-specific overrides keyed by provider name. */
+  readonly perProvider?: Readonly<
+    Record<
+      string,
+      {
+        readonly maxTokensPerTask?: number;
+        readonly maxCostPerTask?: number;
+        readonly maxDurationMs?: number;
+      }
+    >
+  >;
 }
 
 // ---------------------------------------------------------------------------

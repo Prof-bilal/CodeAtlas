@@ -31,7 +31,15 @@ export const MAX_SLICE_FILE_BYTES = 4 * 1024 * 1024;
 const SAFE_SLICE_ID = /^[0-9a-f]{16}$/;
 
 /** Kinds/sources a validated slice item may carry (mirrors `models.ts`). */
-const ITEM_KINDS = new Set(["file", "symbol", "summary", "dependency", "instructions", "overview"]);
+const ITEM_KINDS = new Set([
+  "file",
+  "symbol",
+  "summary",
+  "dependency",
+  "instructions",
+  "overview",
+  "digest",
+]);
 const ITEM_SOURCES = new Set([
   "search",
   "explicit",
@@ -40,6 +48,7 @@ const ITEM_SOURCES = new Set([
   "dependency-chain",
   "instructions",
   "overview",
+  "digest",
 ]);
 const STALENESS_STATES = new Set(["fresh", "stale", "unknown", "unavailable"]);
 

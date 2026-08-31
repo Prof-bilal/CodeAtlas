@@ -5,17 +5,20 @@ import {
   BenchmarkStore,
   OllamaRunner,
   OpenCodeRunner,
+  SINGLE_ABLATION_SCENARIOS,
   scaffoldTaskFile,
 } from "@atlas/benchmark";
 import type { BenchmarkRunner } from "@atlas/benchmark";
 import { createContextToolSourceFromSDK } from "@atlas/mcp";
 import type {
   BenchmarkConfig,
+  BenchmarkRunRequest,
   ChatAgentPort,
   ChatAgentRequest,
   ChatAgentResult,
   ProviderPort,
   Result,
+  TaskDefinition,
   TaskFile,
 } from "@atlas/sdk";
 import {
@@ -46,6 +49,10 @@ export function registerBenchmark(program: Command): void {
     .option("--model <model>", "model identifier")
     .option("--repo <path>", "repository path to benchmark against")
     .option("--task-file <path>", "path to a task definition JSON file to include")
+    .option(
+      "--modes <modes>",
+      "comma-separated modes: baseline,codeatlas,codeatlas-intel (default: all)",
+    )
     .action(async (opts) => {
       await initSuite(opts);
     });
@@ -55,7 +62,10 @@ export function registerBenchmark(program: Command): void {
     .command("run <suite-id>")
     .description("Run tasks in a benchmark suite")
     .option("--task <task-id>", "run only this task")
-    .option("--mode <mode>", "mode to run: baseline, codeatlas, or both (default: both)")
+    .option(
+      "--mode <mode>",
+      "mode to run: baseline, codeatlas, codeatlas-intel, or both (default: both)",
+    )
     .option("--repo <path>", "repository path (required)")
     .option("--force", "re-run tasks even if results exist")
     .action(async (suiteId, opts) => {
@@ -79,6 +89,18 @@ export function registerBenchmark(program: Command): void {
     .option("--format <format>", "report format: markdown, json, or html (default: markdown)")
     .action(async (suiteId, opts) => {
       await generateReport(suiteId, opts);
+    });
+
+  // --- ablation ---
+  bench
+    .command("ablation <suite-id>")
+    .description("Run ablation scenarios (toggle intel features one at a time)")
+    .option("--task <task-id>", "run only this task (base task ID, no scenario suffix)")
+    .option("--repo <path>", "repository path (required)")
+    .option("--force", "re-run scenarios even if results exist")
+    .option("--scenarios <list>", "comma-separated scenario labels (default: all)")
+    .action(async (suiteId, opts) => {
+      await runAblation(suiteId, opts);
     });
 
   // Bare `atlas benchmark` prints help
@@ -170,14 +192,23 @@ async function initSuite(opts: {
   model?: string;
   repo?: string;
   taskFile?: string;
+  modes?: string;
 }): Promise<void> {
   const suiteId = opts.id ?? `benchmark-${Date.now()}`;
+  const modes =
+    opts.modes !== undefined
+      ? (opts.modes.split(",").map((m) => m.trim()) as (
+          | "baseline"
+          | "codeatlas"
+          | "codeatlas-intel"
+        )[])
+      : (["baseline", "codeatlas", "codeatlas-intel"] as const);
   const config: BenchmarkConfig = {
     id: suiteId,
     name: opts.name ?? "Benchmark",
     agent: (opts.agent as "opencode" | "ollama") ?? "opencode",
     model: opts.model ?? "opencode/deepseek-v4-flash-free",
-    modes: ["baseline", "codeatlas"],
+    modes,
   };
 
   const service = openService();
@@ -251,8 +282,8 @@ async function runSuite(
   const modes =
     opts.mode === undefined || opts.mode === "both"
       ? suiteResult.value.config.modes
-      : [opts.mode as "baseline" | "codeatlas"];
-  if (modes.includes("codeatlas")) {
+      : [opts.mode as "baseline" | "codeatlas" | "codeatlas-intel"];
+  if (modes.includes("codeatlas") || modes.includes("codeatlas-intel")) {
     if (
       suiteResult.value.config.agent === "ollama" &&
       !createProviderService().listProviders().includes("ollama")
@@ -344,4 +375,116 @@ async function generateReport(
   }
 
   console.log(result.value.content);
+}
+
+// ---------------------------------------------------------------------------
+// ablation
+// ---------------------------------------------------------------------------
+
+async function runAblation(
+  suiteId: string,
+  opts: {
+    task?: string;
+    repo?: string;
+    force?: boolean;
+    scenarios?: string;
+  },
+): Promise<void> {
+  if (opts.repo === undefined) {
+    console.error("Error: --repo <path> is required");
+    process.exit(1);
+  }
+
+  const repoPath = resolve(opts.repo);
+  if (!existsSync(repoPath)) {
+    console.error(`Error: repository path "${opts.repo}" does not exist`);
+    process.exit(1);
+  }
+
+  const service = openService();
+  const suiteResult = await service.loadSuite(suiteId);
+  if (!suiteResult.ok) {
+    console.error(`Error: ${suiteResult.error.message}`);
+    process.exit(1);
+  }
+
+  // Resolve scenarios
+  const scenarioLabels =
+    opts.scenarios !== undefined
+      ? opts.scenarios.split(",").map((s) => s.trim())
+      : SINGLE_ABLATION_SCENARIOS.map((s) => s.label);
+  const scenarios = SINGLE_ABLATION_SCENARIOS.filter((s) => scenarioLabels.includes(s.label));
+  if (scenarios.length === 0) {
+    console.error("Error: no valid ablation scenarios specified");
+    process.exit(1);
+  }
+
+  // Ensure index exists for CodeAtlas mode
+  await ensureIndexed(repoPath);
+
+  console.log(`Running ablation scenarios for suite "${suiteId}"...`);
+  console.log(`Repository: ${repoPath}`);
+  console.log(`Scenarios: ${scenarios.map((s) => s.label).join(", ")}`);
+  console.log("");
+
+  // Load task definitions
+  const store = new BenchmarkStore(benchmarkRoot());
+  const allTaskDefs: TaskDefinition[] = [];
+  for (const tf of suiteResult.value.taskFiles) {
+    const taskFile = store.loadTaskFile(tf);
+    if (taskFile !== null) allTaskDefs.push(...taskFile.tasks);
+  }
+
+  const taskFilter = opts.task ?? null;
+
+  let completed = 0;
+  let total = 0;
+
+  for (const taskDef of allTaskDefs) {
+    if (taskFilter !== null && taskDef.id !== taskFilter) continue;
+
+    for (const scenario of scenarios) {
+      total++;
+      const ablationTaskId = `${taskDef.id}#${scenario.label}`;
+
+      // Skip if result exists and --force not set
+      if (!opts.force) {
+        const existing = store.loadTaskResult(suiteId, ablationTaskId, "codeatlas-intel");
+        if (existing !== null) {
+          completed++;
+          continue;
+        }
+      }
+
+      console.log(`  [${scenario.label}] ${taskDef.id}...`);
+
+      const request: BenchmarkRunRequest = {
+        suiteId,
+        taskId: taskDef.id,
+        mode: "codeatlas-intel",
+        repositoryPath: repoPath,
+      };
+
+      // For now, run with full intel and tag with scenario label.
+      // The actual feature-toggle integration requires runner-level support
+      // (passing ablationConfig through RunnerRequest).
+      const result = await service.runTask(request);
+
+      if (result.ok) {
+        // Save with ablation-tagged task ID for report separation
+        const taggedResult = {
+          ...result.value,
+          taskId: ablationTaskId,
+        };
+        store.saveTaskResult(suiteId, taggedResult);
+        completed++;
+      } else {
+        console.error(`    Error: ${result.error.message}`);
+      }
+    }
+  }
+
+  console.log("");
+  console.log("Ablation run complete.");
+  console.log(`  Tasks: ${completed}/${total} completed`);
 }

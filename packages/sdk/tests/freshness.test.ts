@@ -105,7 +105,7 @@ describe("context freshness (Test B: large repo → compact, budgeted context)",
     const root = await tempRepo();
     const files: Array<{ path: string; content: string }> = [];
     let rawSize = 0;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 200; i++) {
       const content = `export function fn${i}(n: number) { return n + ${i}; }\nexport const value${i} = ${i};\n`;
       rawSize += content.length;
       files.push({ path: join(root, "src", `mod${i}.ts`), content });
@@ -118,7 +118,7 @@ describe("context freshness (Test B: large repo → compact, budgeted context)",
     const build = await indexProject({ repositoryPath: root, mode: "build" });
     expect(build.ok).toBe(true);
     if (!build.ok) return;
-    expect(build.value.files).toBe(60);
+    expect(build.value.files).toBe(200);
 
     await withSdkFor(root, async (sdk) => {
       const staleness = await detectStaleness(sdk);

@@ -2,7 +2,7 @@ import type { Result } from "@atlas/shared";
 import type { SourceFile } from "../domain/entities";
 
 /** The scope of a generated summary. */
-export type SummaryKind = "file" | "folder" | "module" | "project";
+export type SummaryKind = "file" | "folder" | "module" | "project" | "digest";
 
 /** Per-call options for a summary request. */
 export interface SummaryOptions {

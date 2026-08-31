@@ -6,6 +6,7 @@ import type {
   BenchmarkTaskResult,
   TaskFile,
 } from "@atlas/core";
+import { extractScenarioLabel } from "./ablation";
 
 // ---------------------------------------------------------------------------
 // Formatting helpers
@@ -74,84 +75,198 @@ export function renderReport(data: RepoReportData): BenchmarkReport {
   // Token summary
   const baseline = tasks.filter((t) => t.mode === "baseline");
   const codeatlas = tasks.filter((t) => t.mode === "codeatlas");
+  const intel = tasks.filter((t) => t.mode === "codeatlas-intel");
+  const hasIntel = intel.length > 0;
 
   const baseTokens = sumTokens(baseline);
   const catTokens = sumTokens(codeatlas);
+  const intelTokens = sumTokens(intel);
   const baseCost = baseline.reduce((s, t) => s + t.cost, 0);
   const catCost = codeatlas.reduce((s, t) => s + t.cost, 0);
+  const intelCost = intel.reduce((s, t) => s + t.cost, 0);
   const baseAvgMs = avg(baseline.map((t) => t.durationMs));
   const catAvgMs = avg(codeatlas.map((t) => t.durationMs));
+  const intelAvgMs = avg(intel.map((t) => t.durationMs));
 
   lines.push("## Token & Cost Summary");
   lines.push("");
-  lines.push("| Metric | Baseline | CodeAtlas | Delta |");
-  lines.push("|--------|----------|-----------|-------|");
-  lines.push(
-    `| Total tokens | ${fmtTokens(baseTokens)} | ${fmtTokens(catTokens)} | ${fmtTokens(baseTokens - catTokens)} |`,
-  );
-  lines.push(
-    `| Cost (USD) | $${fmt(baseCost, 4)} | $${fmt(catCost, 4)} | $${fmt(baseCost - catCost, 4)} |`,
-  );
-  lines.push(
-    `| Avg duration | ${fmtMs(baseAvgMs)} | ${fmtMs(catAvgMs)} | ${fmtMs(baseAvgMs - catAvgMs)} |`,
-  );
+  if (hasIntel) {
+    lines.push("| Metric | Baseline | CodeAtlas | CodeAtlas Intel |");
+    lines.push("|--------|----------|-----------|-----------------|");
+    lines.push(
+      `| Total tokens | ${fmtTokens(baseTokens)} | ${fmtTokens(catTokens)} | ${fmtTokens(intelTokens)} |`,
+    );
+    lines.push(
+      `| Cost (USD) | $${fmt(baseCost, 4)} | $${fmt(catCost, 4)} | $${fmt(intelCost, 4)} |`,
+    );
+    lines.push(
+      `| Avg duration | ${fmtMs(baseAvgMs)} | ${fmtMs(catAvgMs)} | ${fmtMs(intelAvgMs)} |`,
+    );
+  } else {
+    lines.push("| Metric | Baseline | CodeAtlas | Delta |");
+    lines.push("|--------|----------|-----------|-------|");
+    lines.push(
+      `| Total tokens | ${fmtTokens(baseTokens)} | ${fmtTokens(catTokens)} | ${fmtTokens(baseTokens - catTokens)} |`,
+    );
+    lines.push(
+      `| Cost (USD) | $${fmt(baseCost, 4)} | $${fmt(catCost, 4)} | $${fmt(baseCost - catCost, 4)} |`,
+    );
+    lines.push(
+      `| Avg duration | ${fmtMs(baseAvgMs)} | ${fmtMs(catAvgMs)} | ${fmtMs(baseAvgMs - catAvgMs)} |`,
+    );
+  }
   lines.push("");
 
   // Accuracy summary
   const baseEvals = evaluations.filter((e) => e.mode === "baseline");
   const catEvals = evaluations.filter((e) => e.mode === "codeatlas");
+  const intelEvals = evaluations.filter((e) => e.mode === "codeatlas-intel");
   const baseAvgScore = avg(baseEvals.map((e) => e.evaluation.score));
   const catAvgScore = avg(catEvals.map((e) => e.evaluation.score));
+  const intelAvgScore = avg(intelEvals.map((e) => e.evaluation.score));
 
   lines.push("## Accuracy Summary");
   lines.push("");
-  lines.push("| Metric | Baseline | CodeAtlas | Delta |");
-  lines.push("|--------|----------|-----------|-------|");
-  lines.push(
-    `| Avg score (0-2) | ${fmt(baseAvgScore)} | ${fmt(catAvgScore)} | ${fmt(catAvgScore - baseAvgScore)} |`,
-  );
-  lines.push(
-    `| Correct | ${countStatus(baseEvals, "correct")} | ${countStatus(catEvals, "correct")} | — |`,
-  );
-  lines.push(
-    `| Partial | ${countStatus(baseEvals, "partially_correct")} | ${countStatus(catEvals, "partially_correct")} | — |`,
-  );
-  lines.push(
-    `| Incorrect | ${countStatus(baseEvals, "incorrect")} | ${countStatus(catEvals, "incorrect")} | — |`,
-  );
-  lines.push(
-    `| Failed | ${countStatus(baseEvals, "failed")} | ${countStatus(catEvals, "failed")} | — |`,
-  );
-  lines.push("");
-
-  // Task details
-  lines.push("## Task Results");
-  lines.push("");
-  lines.push("| ID | Category | Score (B/C) | Tokens (B/C) | Duration (B/C) | Tools (C) |");
-  lines.push("|----|----------|-------------|--------------|----------------|-----------|");
-
-  const taskIds = [...new Set(tasks.map((t) => t.taskId))];
-  for (const tid of taskIds) {
-    const b = tasks.find((t) => t.taskId === tid && t.mode === "baseline");
-    const c = tasks.find((t) => t.taskId === tid && t.mode === "codeatlas");
-    const be = evaluations.find((e) => e.taskId === tid && e.mode === "baseline");
-    const ce = evaluations.find((e) => e.taskId === tid && e.mode === "codeatlas");
-    const cat = b?.category ?? c?.category ?? "unknown";
-    const catLabel = CATEGORY_LABELS[cat] ?? cat;
-
-    const bScore = be?.evaluation.score ?? "—";
-    const cScore = ce?.evaluation.score ?? "—";
-    const bTokens = b?.tokens.total ?? 0;
-    const cTokens = c?.tokens.total ?? 0;
-    const bMs = b?.durationMs ?? 0;
-    const cMs = c?.durationMs ?? 0;
-    const cTools = c?.toolCallCount ?? 0;
-
+  if (hasIntel) {
+    lines.push("| Metric | Baseline | CodeAtlas | CodeAtlas Intel |");
+    lines.push("|--------|----------|-----------|-----------------|");
     lines.push(
-      `| ${tid} | ${catLabel} | ${bScore}/${cScore} | ${fmtTokens(bTokens)}/${fmtTokens(cTokens)} | ${fmtMs(bMs)}/${fmtMs(cMs)} | ${cTools} |`,
+      `| Avg score (0-2) | ${fmt(baseAvgScore)} | ${fmt(catAvgScore)} | ${fmt(intelAvgScore)} |`,
+    );
+    lines.push(
+      `| Correct | ${countStatus(baseEvals, "correct")} | ${countStatus(catEvals, "correct")} | ${countStatus(intelEvals, "correct")} |`,
+    );
+    lines.push(
+      `| Partial | ${countStatus(baseEvals, "partially_correct")} | ${countStatus(catEvals, "partially_correct")} | ${countStatus(intelEvals, "partially_correct")} |`,
+    );
+    lines.push(
+      `| Incorrect | ${countStatus(baseEvals, "incorrect")} | ${countStatus(catEvals, "incorrect")} | ${countStatus(intelEvals, "incorrect")} |`,
+    );
+    lines.push(
+      `| Failed | ${countStatus(baseEvals, "failed")} | ${countStatus(catEvals, "failed")} | ${countStatus(intelEvals, "failed")} |`,
+    );
+  } else {
+    lines.push("| Metric | Baseline | CodeAtlas | Delta |");
+    lines.push("|--------|----------|-----------|-------|");
+    lines.push(
+      `| Avg score (0-2) | ${fmt(baseAvgScore)} | ${fmt(catAvgScore)} | ${fmt(catAvgScore - baseAvgScore)} |`,
+    );
+    lines.push(
+      `| Correct | ${countStatus(baseEvals, "correct")} | ${countStatus(catEvals, "correct")} | — |`,
+    );
+    lines.push(
+      `| Partial | ${countStatus(baseEvals, "partially_correct")} | ${countStatus(catEvals, "partially_correct")} | — |`,
+    );
+    lines.push(
+      `| Incorrect | ${countStatus(baseEvals, "incorrect")} | ${countStatus(catEvals, "incorrect")} | — |`,
+    );
+    lines.push(
+      `| Failed | ${countStatus(baseEvals, "failed")} | ${countStatus(catEvals, "failed")} | — |`,
     );
   }
   lines.push("");
+
+  // Task details
+  const nonAblationTasks = tasks.filter((t) => !extractScenarioLabel(t.taskId));
+  const ablationTasks = tasks.filter((t) => extractScenarioLabel(t.taskId) !== null);
+
+  lines.push("## Task Results");
+  lines.push("");
+  if (hasIntel) {
+    lines.push(
+      "| ID | Category | Score (B/C/I) | Tokens (B/C/I) | Duration (B/C/I) | Tools (C/I) |",
+    );
+    lines.push(
+      "|----|----------|---------------|----------------|------------------|-------------|",
+    );
+
+    const taskIds = [...new Set(nonAblationTasks.map((t) => t.taskId))];
+    for (const tid of taskIds) {
+      const b = nonAblationTasks.find((t) => t.taskId === tid && t.mode === "baseline");
+      const c = nonAblationTasks.find((t) => t.taskId === tid && t.mode === "codeatlas");
+      const i = nonAblationTasks.find((t) => t.taskId === tid && t.mode === "codeatlas-intel");
+      const be = evaluations.find((e) => e.taskId === tid && e.mode === "baseline");
+      const ce = evaluations.find((e) => e.taskId === tid && e.mode === "codeatlas");
+      const ie = evaluations.find((e) => e.taskId === tid && e.mode === "codeatlas-intel");
+      const cat = b?.category ?? c?.category ?? i?.category ?? "unknown";
+      const catLabel = CATEGORY_LABELS[cat] ?? cat;
+
+      const bScore = be?.evaluation.score ?? "—";
+      const cScore = ce?.evaluation.score ?? "—";
+      const iScore = ie?.evaluation.score ?? "—";
+      const bTokens = b?.tokens.total ?? 0;
+      const cTokens = c?.tokens.total ?? 0;
+      const iTokens = i?.tokens.total ?? 0;
+      const bMs = b?.durationMs ?? 0;
+      const cMs = c?.durationMs ?? 0;
+      const iMs = i?.durationMs ?? 0;
+      const cTools = c?.toolCallCount ?? 0;
+      const iTools = i?.toolCallCount ?? 0;
+
+      lines.push(
+        `| ${tid} | ${catLabel} | ${bScore}/${cScore}/${iScore} | ${fmtTokens(bTokens)}/${fmtTokens(cTokens)}/${fmtTokens(iTokens)} | ${fmtMs(bMs)}/${fmtMs(cMs)}/${fmtMs(iMs)} | ${cTools}/${iTools} |`,
+      );
+    }
+  } else {
+    lines.push("| ID | Category | Score (B/C) | Tokens (B/C) | Duration (B/C) | Tools (C) |");
+    lines.push("|----|----------|-------------|--------------|----------------|-----------|");
+
+    const taskIds = [...new Set(nonAblationTasks.map((t) => t.taskId))];
+    for (const tid of taskIds) {
+      const b = nonAblationTasks.find((t) => t.taskId === tid && t.mode === "baseline");
+      const c = nonAblationTasks.find((t) => t.taskId === tid && t.mode === "codeatlas");
+      const be = evaluations.find((e) => e.taskId === tid && e.mode === "baseline");
+      const ce = evaluations.find((e) => e.taskId === tid && e.mode === "codeatlas");
+      const cat = b?.category ?? c?.category ?? "unknown";
+      const catLabel = CATEGORY_LABELS[cat] ?? cat;
+
+      const bScore = be?.evaluation.score ?? "—";
+      const cScore = ce?.evaluation.score ?? "—";
+      const bTokens = b?.tokens.total ?? 0;
+      const cTokens = c?.tokens.total ?? 0;
+      const bMs = b?.durationMs ?? 0;
+      const cMs = c?.durationMs ?? 0;
+      const cTools = c?.toolCallCount ?? 0;
+
+      lines.push(
+        `| ${tid} | ${catLabel} | ${bScore}/${cScore} | ${fmtTokens(bTokens)}/${fmtTokens(cTokens)} | ${fmtMs(bMs)}/${fmtMs(cMs)} | ${cTools} |`,
+      );
+    }
+  }
+  lines.push("");
+
+  // Ablation comparison (P8.2)
+  if (ablationTasks.length > 0) {
+    lines.push("## Ablation Comparison");
+    lines.push("");
+    lines.push("Each row shows a single-feature ablation (one intel feature disabled).");
+    lines.push("The `full-intel` row is the un-ablated baseline for comparison.");
+    lines.push("");
+
+    const scenarioLabels = [
+      "full-intel",
+      "no-planner",
+      "no-hierarchy",
+      "no-verification",
+      "no-critic",
+    ];
+
+    lines.push("| Scenario | Avg Score | Total Tokens | Avg Duration |");
+    lines.push("|----------|-----------|--------------|--------------|");
+
+    for (const label of scenarioLabels) {
+      const scenarioTasks = ablationTasks.filter((t) => extractScenarioLabel(t.taskId) === label);
+      if (scenarioTasks.length === 0) continue;
+      const scenarioEvals = evaluations.filter((e) => extractScenarioLabel(e.taskId) === label);
+      const avgScore = avg(scenarioEvals.map((e) => e.evaluation.score));
+      const totalTokens = sumTokens(scenarioTasks);
+      const avgDuration = avg(scenarioTasks.map((t) => t.durationMs));
+      lines.push(
+        `| ${label} | ${fmt(avgScore)} | ${fmtTokens(totalTokens)} | ${fmtMs(avgDuration)} |`,
+      );
+    }
+    lines.push("");
+  }
 
   return {
     suiteId: data.suiteId,
@@ -188,24 +303,40 @@ export function renderSummary(data: SummaryData): BenchmarkReport {
   for (const repo of data.results) {
     const baseline = repo.tasks.filter((t) => t.mode === "baseline");
     const codeatlas = repo.tasks.filter((t) => t.mode === "codeatlas");
+    const intel = repo.tasks.filter((t) => t.mode === "codeatlas-intel");
+    const hasIntel = intel.length > 0;
+
     const baseTokens = sumTokens(baseline);
     const catTokens = sumTokens(codeatlas);
-    const savings = baseTokens > 0 ? ((baseTokens - catTokens) / baseTokens) * 100 : 0;
-
+    const intelTokens = sumTokens(intel);
     const baseEvals = repo.evaluations.filter((e) => e.mode === "baseline");
     const catEvals = repo.evaluations.filter((e) => e.mode === "codeatlas");
+    const intelEvals = repo.evaluations.filter((e) => e.mode === "codeatlas-intel");
     const baseAvg = avg(baseEvals.map((e) => e.evaluation.score));
     const catAvg = avg(catEvals.map((e) => e.evaluation.score));
+    const intelAvg = avg(intelEvals.map((e) => e.evaluation.score));
 
     lines.push(`## ${repo.config.name}`);
     lines.push("");
     lines.push(
-      `- Tasks: ${repo.tasks.length / 2} (${repo.status.completed}/${repo.status.total} completed)`,
+      `- Tasks: ${repo.tasks.length / (hasIntel ? 3 : 2)} (${repo.status.completed}/${repo.status.total} completed)`,
     );
-    lines.push(`- Token savings: ${fmtTokens(baseTokens - catTokens)} (${pct(savings)})`);
-    lines.push(
-      `- Accuracy delta: ${fmt(catAvg - baseAvg)} (baseline ${fmt(baseAvg)} → CodeAtlas ${fmt(catAvg)})`,
-    );
+
+    if (hasIntel) {
+      const bestTokens = catTokens > 0 ? catTokens : intelTokens;
+      const bestAvg = catAvg > 0 ? catAvg : intelAvg;
+      const savings = baseTokens > 0 ? ((baseTokens - bestTokens) / baseTokens) * 100 : 0;
+      lines.push(`- Token savings: ${fmtTokens(baseTokens - bestTokens)} (${pct(savings)})`);
+      lines.push(
+        `- Accuracy delta: ${fmt(bestAvg - baseAvg)} (baseline ${fmt(baseAvg)} → CodeAtlas ${fmt(catAvg)} → Intel ${fmt(intelAvg)})`,
+      );
+    } else {
+      const savings = baseTokens > 0 ? ((baseTokens - catTokens) / baseTokens) * 100 : 0;
+      lines.push(`- Token savings: ${fmtTokens(baseTokens - catTokens)} (${pct(savings)})`);
+      lines.push(
+        `- Accuracy delta: ${fmt(catAvg - baseAvg)} (baseline ${fmt(baseAvg)} → CodeAtlas ${fmt(catAvg)})`,
+      );
+    }
     lines.push("");
   }
 
@@ -247,35 +378,57 @@ export function renderHtml(data: RepoReportData): BenchmarkReport {
 
   const baseline = tasks.filter((t) => t.mode === "baseline");
   const codeatlas = tasks.filter((t) => t.mode === "codeatlas");
+  const intel = tasks.filter((t) => t.mode === "codeatlas-intel");
+  const hasIntel = intel.length > 0;
 
   const baseTokens = sumTokens(baseline);
   const catTokens = sumTokens(codeatlas);
+  const intelTokens = sumTokens(intel);
   const baseCost = baseline.reduce((s, t) => s + t.cost, 0);
   const catCost = codeatlas.reduce((s, t) => s + t.cost, 0);
+  const intelCost = intel.reduce((s, t) => s + t.cost, 0);
   const baseAvgMs = avg(baseline.map((t) => t.durationMs));
   const catAvgMs = avg(codeatlas.map((t) => t.durationMs));
+  const intelAvgMs = avg(intel.map((t) => t.durationMs));
 
   const baseEvals = evaluations.filter((e) => e.mode === "baseline");
   const catEvals = evaluations.filter((e) => e.mode === "codeatlas");
+  const intelEvals = evaluations.filter((e) => e.mode === "codeatlas-intel");
   const baseAvgScore = avg(baseEvals.map((e) => e.evaluation.score));
   const catAvgScore = avg(catEvals.map((e) => e.evaluation.score));
+  const intelAvgScore = avg(intelEvals.map((e) => e.evaluation.score));
 
+  const nonAblationTasks = tasks.filter((t) => !extractScenarioLabel(t.taskId));
   const taskRows: string[][] = [];
-  const taskIds = [...new Set(tasks.map((t) => t.taskId))];
+  const taskIds = [...new Set(nonAblationTasks.map((t) => t.taskId))];
   for (const tid of taskIds) {
-    const b = tasks.find((t) => t.taskId === tid && t.mode === "baseline");
-    const c = tasks.find((t) => t.taskId === tid && t.mode === "codeatlas");
+    const b = nonAblationTasks.find((t) => t.taskId === tid && t.mode === "baseline");
+    const c = nonAblationTasks.find((t) => t.taskId === tid && t.mode === "codeatlas");
+    const i = nonAblationTasks.find((t) => t.taskId === tid && t.mode === "codeatlas-intel");
     const be = evaluations.find((e) => e.taskId === tid && e.mode === "baseline");
     const ce = evaluations.find((e) => e.taskId === tid && e.mode === "codeatlas");
-    const cat = b?.category ?? c?.category ?? "unknown";
-    taskRows.push([
-      tid,
-      CATEGORY_LABELS[cat] ?? cat,
-      `${be?.evaluation.score ?? "—"} / ${ce?.evaluation.score ?? "—"}`,
-      `${fmtTokens(b?.tokens.total ?? 0)} / ${fmtTokens(c?.tokens.total ?? 0)}`,
-      `${fmtMs(b?.durationMs ?? 0)} / ${fmtMs(c?.durationMs ?? 0)}`,
-      String(c?.toolCallCount ?? 0),
-    ]);
+    const ie = evaluations.find((e) => e.taskId === tid && e.mode === "codeatlas-intel");
+    const cat = b?.category ?? c?.category ?? i?.category ?? "unknown";
+
+    if (hasIntel) {
+      taskRows.push([
+        tid,
+        CATEGORY_LABELS[cat] ?? cat,
+        `${be?.evaluation.score ?? "—"} / ${ce?.evaluation.score ?? "—"} / ${ie?.evaluation.score ?? "—"}`,
+        `${fmtTokens(b?.tokens.total ?? 0)} / ${fmtTokens(c?.tokens.total ?? 0)} / ${fmtTokens(i?.tokens.total ?? 0)}`,
+        `${fmtMs(b?.durationMs ?? 0)} / ${fmtMs(c?.durationMs ?? 0)} / ${fmtMs(i?.durationMs ?? 0)}`,
+        `${c?.toolCallCount ?? 0} / ${i?.toolCallCount ?? 0}`,
+      ]);
+    } else {
+      taskRows.push([
+        tid,
+        CATEGORY_LABELS[cat] ?? cat,
+        `${be?.evaluation.score ?? "—"} / ${ce?.evaluation.score ?? "—"}`,
+        `${fmtTokens(b?.tokens.total ?? 0)} / ${fmtTokens(c?.tokens.total ?? 0)}`,
+        `${fmtMs(b?.durationMs ?? 0)} / ${fmtMs(c?.durationMs ?? 0)}`,
+        String(c?.toolCallCount ?? 0),
+      ]);
+    }
   }
 
   const html = `<!doctype html>
@@ -304,52 +457,106 @@ export function renderHtml(data: RepoReportData): BenchmarkReport {
 <dt>Status</dt><dd>${escapeHtml(`${status.status} (${status.completed}/${status.total} tasks)`)}</dd>
 </dl>
 <h2>Token &amp; Cost Summary</h2>
-${htmlTable(
-  ["Metric", "Baseline", "CodeAtlas", "Delta"],
-  [
-    [
-      "Total tokens",
-      fmtTokens(baseTokens),
-      fmtTokens(catTokens),
-      fmtTokens(baseTokens - catTokens),
-    ],
-    ["Cost (USD)", `$${fmt(baseCost, 4)}`, `$${fmt(catCost, 4)}`, `$${fmt(baseCost - catCost, 4)}`],
-    ["Avg duration", fmtMs(baseAvgMs), fmtMs(catAvgMs), fmtMs(baseAvgMs - catAvgMs)],
-  ],
-)}
+${
+  hasIntel
+    ? htmlTable(
+        ["Metric", "Baseline", "CodeAtlas", "Intel"],
+        [
+          ["Total tokens", fmtTokens(baseTokens), fmtTokens(catTokens), fmtTokens(intelTokens)],
+          ["Cost (USD)", `$${fmt(baseCost, 4)}`, `$${fmt(catCost, 4)}`, `$${fmt(intelCost, 4)}`],
+          ["Avg duration", fmtMs(baseAvgMs), fmtMs(catAvgMs), fmtMs(intelAvgMs)],
+        ],
+      )
+    : htmlTable(
+        ["Metric", "Baseline", "CodeAtlas", "Delta"],
+        [
+          [
+            "Total tokens",
+            fmtTokens(baseTokens),
+            fmtTokens(catTokens),
+            fmtTokens(baseTokens - catTokens),
+          ],
+          [
+            "Cost (USD)",
+            `$${fmt(baseCost, 4)}`,
+            `$${fmt(catCost, 4)}`,
+            `$${fmt(baseCost - catCost, 4)}`,
+          ],
+          ["Avg duration", fmtMs(baseAvgMs), fmtMs(catAvgMs), fmtMs(baseAvgMs - catAvgMs)],
+        ],
+      )
+}
 <h2>Accuracy Summary</h2>
-${htmlTable(
-  ["Metric", "Baseline", "CodeAtlas", "Delta"],
-  [
-    ["Avg score (0-2)", fmt(baseAvgScore), fmt(catAvgScore), fmt(catAvgScore - baseAvgScore)],
-    [
-      "Correct",
-      String(countStatus(baseEvals, "correct")),
-      String(countStatus(catEvals, "correct")),
-      "—",
-    ],
-    [
-      "Partial",
-      String(countStatus(baseEvals, "partially_correct")),
-      String(countStatus(catEvals, "partially_correct")),
-      "—",
-    ],
-    [
-      "Incorrect",
-      String(countStatus(baseEvals, "incorrect")),
-      String(countStatus(catEvals, "incorrect")),
-      "—",
-    ],
-    [
-      "Failed",
-      String(countStatus(baseEvals, "failed")),
-      String(countStatus(catEvals, "failed")),
-      "—",
-    ],
-  ],
-)}
+${
+  hasIntel
+    ? htmlTable(
+        ["Metric", "Baseline", "CodeAtlas", "Intel"],
+        [
+          ["Avg score (0-2)", fmt(baseAvgScore), fmt(catAvgScore), fmt(intelAvgScore)],
+          [
+            "Correct",
+            String(countStatus(baseEvals, "correct")),
+            String(countStatus(catEvals, "correct")),
+            String(countStatus(intelEvals, "correct")),
+          ],
+          [
+            "Partial",
+            String(countStatus(baseEvals, "partially_correct")),
+            String(countStatus(catEvals, "partially_correct")),
+            String(countStatus(intelEvals, "partially_correct")),
+          ],
+          [
+            "Incorrect",
+            String(countStatus(baseEvals, "incorrect")),
+            String(countStatus(catEvals, "incorrect")),
+            String(countStatus(intelEvals, "incorrect")),
+          ],
+          [
+            "Failed",
+            String(countStatus(baseEvals, "failed")),
+            String(countStatus(catEvals, "failed")),
+            String(countStatus(intelEvals, "failed")),
+          ],
+        ],
+      )
+    : htmlTable(
+        ["Metric", "Baseline", "CodeAtlas", "Delta"],
+        [
+          ["Avg score (0-2)", fmt(baseAvgScore), fmt(catAvgScore), fmt(catAvgScore - baseAvgScore)],
+          [
+            "Correct",
+            String(countStatus(baseEvals, "correct")),
+            String(countStatus(catEvals, "correct")),
+            "—",
+          ],
+          [
+            "Partial",
+            String(countStatus(baseEvals, "partially_correct")),
+            String(countStatus(catEvals, "partially_correct")),
+            "—",
+          ],
+          [
+            "Incorrect",
+            String(countStatus(baseEvals, "incorrect")),
+            String(countStatus(catEvals, "incorrect")),
+            "—",
+          ],
+          [
+            "Failed",
+            String(countStatus(baseEvals, "failed")),
+            String(countStatus(catEvals, "failed")),
+            "—",
+          ],
+        ],
+      )
+}
 <h2>Task Results</h2>
-${htmlTable(["ID", "Category", "Score (B/C)", "Tokens (B/C)", "Duration (B/C)", "Tools (C)"], taskRows)}
+${htmlTable(
+  hasIntel
+    ? ["ID", "Category", "Score (B/C/I)", "Tokens (B/C/I)", "Duration (B/C/I)", "Tools (C/I)"]
+    : ["ID", "Category", "Score (B/C)", "Tokens (B/C)", "Duration (B/C)", "Tools (C)"],
+  taskRows,
+)}
 </body>
 </html>
 `;

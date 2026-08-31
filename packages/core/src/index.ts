@@ -186,6 +186,7 @@ export type {
   MetricsTokens,
 } from "./ports/metrics.port";
 export type {
+  BenchmarkAblationConfig,
   BenchmarkAgent,
   BenchmarkConfig,
   BenchmarkEvaluation,
@@ -200,6 +201,7 @@ export type {
   BenchmarkSuiteResult,
   BenchmarkSuiteRunRequest,
   BenchmarkTaskResult,
+  ModelBudgetDefaults,
   ReportOptions,
   ReportSection,
   RunnerRequest,

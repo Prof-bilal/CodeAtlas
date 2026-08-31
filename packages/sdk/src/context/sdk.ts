@@ -181,6 +181,8 @@ export interface SummaryContextAPI {
   getModuleSummary(path: string): Summary | undefined;
   /** The stored project summary, or `undefined`. */
   getProjectSummary(): Summary | undefined;
+  /** The stored repository digest (architecture map, entry points, conventions), or `undefined`. */
+  getDigest(): Summary | undefined;
   /** Generate a fresh file summary (AI is optional; fails cleanly without a provider). */
   generateFile(path: string, options?: SummaryOptions): Promise<Result<Summary>>;
   /** Generate a fresh folder summary (AI is optional; fails cleanly without a provider). */
@@ -627,6 +629,10 @@ class ContextSDKFacade implements ContextSDK {
     getProjectSummary: (): Summary | undefined => {
       this.requireAvailable();
       return this.reads.findSummary("project", "");
+    },
+    getDigest: (): Summary | undefined => {
+      this.requireAvailable();
+      return this.reads.findSummary("digest", "");
     },
     generateFile: async (path: string, options?): Promise<Result<Summary>> => {
       this.requireAvailable();

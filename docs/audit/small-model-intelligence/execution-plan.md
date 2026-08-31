@@ -171,13 +171,28 @@
 
 ## Phase 7 — Repository memory
 
-- **P7.1** Digest generation (architecture map, entry points, conventions)
-  from manifest + graph + scanner signals, as a new summary kind.
-  Files: `packages/summary/src`, `packages/sdk/src/indexing` (refresh on
-  `updateContext`), `packages/sdk/src/context-integration/instructions.ts`.
-  Tests: digest stable on unchanged repo (hash cache hit); updates on change.
-- **P7.2** Digest in slices/packages (Supporting tier). Tests: render tests.
-- **P7.3** Benchmark comprehension category. Gate: scores improve vs P0.6.
+> **Status: implemented (P7.1–P7.2), 2026-08-31.** P7.1 deterministic digest
+> generation (`buildDigest` in `@atlas/sdk`, stored as `kind: "digest"` in the
+> existing `Summaries` table) and P7.2 (digest item in assembled packages and
+> slices, Supporting tier, protected from budget drops, `getDigest()` on the
+> SDK) shipped; digest typecheck/lint/format green and unit + integration tests
+> pass (1293/1293). **P7.3 (benchmark comprehension-category measurement) is
+> pending** — it requires the P0.6 live baseline and model runs, gated per
+> `docs/TESTING.md`.
+
+- **P7.1** ✅ Digest generation (architecture map, entry points, conventions)
+  from manifest + graph + scanner signals, as a new summary kind. New
+  `packages/sdk/src/context-integration/digest.ts`; SDK `getDigest()`; refreshed
+  during `indexProject` (update/build) and persisted in the `Summaries` table
+  (`UNIQUE(kind, target)` — no schema change). Tests: stable on unchanged input;
+  updates on change.
+- **P7.2** ✅ Digest in context packages/slices (Supporting tier), included
+  after instruction files; never dropped by the budget (like `instructions`);
+  `digest` added to `ContextItemKind`/`ContextItemSource` and the slice-store
+  validation sets. Tests: digest present + correctly placed in assembled
+  packages; slice round-trip.
+- **P7.3** ⚠️ Benchmark comprehension category. Gate: scores improve vs P0.6
+  (blocked on the live baseline).
 
 ## Phase 8 — Benchmark & optimization
 

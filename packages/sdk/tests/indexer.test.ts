@@ -168,7 +168,19 @@ describe("indexProject", () => {
     if (!result.ok) return;
     expect(result.value.summaries).toBe(0);
     expect(result.value.summariesFailed).toBe(0);
+    expect(result.value.digestGenerated).toBe(true);
     expect(summary.calls).toHaveLength(0);
+
+    // The deterministic digest is always generated and stored, even when AI
+    // summaries are not requested.
+    const store = new ContextStore({ filePath: result.value.dbPath });
+    try {
+      const stored = store.loadContext().summaries ?? [];
+      expect(stored).toHaveLength(1);
+      expect(stored[0]?.kind).toBe("digest");
+    } finally {
+      store.close();
+    }
   });
 
   it("generates and persists a file summary per parsed file with summaries", async () => {
@@ -185,13 +197,15 @@ describe("indexProject", () => {
     if (!result.ok) return;
     expect(result.value.summaries).toBe(2);
     expect(result.value.summariesFailed).toBe(0);
+    expect(result.value.digestGenerated).toBe(true);
     expect(summary.calls).toHaveLength(2);
 
     const store = new ContextStore({ filePath: result.value.dbPath });
     try {
       const summaries = store.loadContext().summaries ?? [];
-      expect(summaries).toHaveLength(2);
-      expect(summaries.every((item) => item.kind === "file")).toBe(true);
+      // The two AI file summaries plus the deterministic digest.
+      expect(summaries).toHaveLength(3);
+      expect(summaries.filter((item) => item.kind === "file").length).toBe(2);
       expect(summaries.map((item) => item.target).sort()).toEqual(
         expect.arrayContaining([join(root, "src", "index.ts"), join(root, "src", "math.ts")]),
       );
@@ -220,7 +234,10 @@ describe("indexProject", () => {
 
     const store = new ContextStore({ filePath: result.value.dbPath });
     try {
-      expect(store.loadContext().summaries ?? []).toHaveLength(0);
+      // AI summaries all failed, but the deterministic digest is still stored.
+      const stored = store.loadContext().summaries ?? [];
+      expect(stored).toHaveLength(1);
+      expect(stored[0]?.kind).toBe("digest");
     } finally {
       store.close();
     }

@@ -19,6 +19,7 @@ export type OllamaRunnerAgents =
   | {
       readonly baseline: ChatAgentPort;
       readonly codeatlas: ChatAgentPort;
+      readonly "codeatlas-intel"?: ChatAgentPort;
     };
 
 /**
@@ -122,7 +123,11 @@ export class OllamaRunner implements BenchmarkRunner {
     if ("run" in this.agents) {
       return this.agents;
     }
-    return mode === "baseline" ? this.agents.baseline : this.agents.codeatlas;
+    if (mode === "baseline") return this.agents.baseline;
+    if (mode === "codeatlas-intel") {
+      return this.agents["codeatlas-intel"] ?? this.agents.codeatlas;
+    }
+    return this.agents.codeatlas;
   }
 }
 

@@ -49,6 +49,16 @@ export {
   type OutlineSymbol,
 } from "./hierarchy";
 export { createClassifier } from "./classifier";
+export {
+  buildDigest,
+  type DigestContent,
+  type DigestEdge,
+  type DigestFile,
+  type DigestInput,
+  type DigestManifest,
+  type DigestModule,
+  type DigestSymbol,
+} from "./digest";
 export { extractTaskEntities, type TaskEntities } from "./entities";
 export { createPlanner } from "./planner";
 export {
