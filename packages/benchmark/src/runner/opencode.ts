@@ -161,7 +161,9 @@ export class OpenCodeRunner implements BenchmarkRunner {
       }
     } else if (enable) {
       // Best-effort: create the entry if missing, reusing the built MCP server.
-      const here = dirname(fileURLToPath(import.meta.url));
+      const here = dirname(
+        typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url),
+      );
       const env: Record<string, unknown> = {
         ATLAS_ROOT: repoPath,
       };

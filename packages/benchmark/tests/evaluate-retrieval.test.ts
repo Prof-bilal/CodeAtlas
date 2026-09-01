@@ -6,7 +6,15 @@ import { evaluateRetrieval, scoreTaskRetrieval } from "../src/retrieval-metrics.
 import type { ContextSDK } from "../src/retrieval-metrics.js";
 
 function hit(path: string) {
-  return { id: path, path, kind: "file" as const, score: 1, snippet: "" };
+  return {
+    id: path,
+    path,
+    kind: "file" as const,
+    score: 1,
+    snippet: "",
+    title: path,
+    targetId: path,
+  };
 }
 
 function makeTask(id: string, files: string[]): TaskDefinition {
@@ -20,6 +28,10 @@ function makeTask(id: string, files: string[]): TaskDefinition {
   };
 }
 
+function mockSdk(searchFn: () => readonly ReturnType<typeof hit>[]): ContextSDK {
+  return { isAvailable: true, search: { search: searchFn } } as unknown as ContextSDK;
+}
+
 describe("evaluateRetrieval", () => {
   it("throws when SDK is not available", () => {
     expect(() => evaluateRetrieval({ isAvailable: false } as ContextSDK, [])).toThrow(
@@ -29,7 +41,7 @@ describe("evaluateRetrieval", () => {
 
   it("returns empty report for empty task list", () => {
     const report = evaluateRetrieval(
-      { isAvailable: true, search: { search: () => [] } } as ContextSDK,
+      mockSdk(() => []),
       [],
     );
     expect(report.tasks).toHaveLength(0);
@@ -39,12 +51,12 @@ describe("evaluateRetrieval", () => {
   });
 
   it("aggregates precision@k — p@1 = 0.5 when one task hits and one misses", () => {
-    const sdk1 = { search: { search: () => [hit("src/a.ts")] } };
-    const sdk2 = { search: { search: () => [hit("src/other.ts")] } };
+    const sdk1 = mockSdk(() => [hit("src/a.ts")]);
+    const sdk2 = mockSdk(() => [hit("src/other.ts")]);
     const t1 = makeTask("a", ["src/a.ts"]);
     const t2 = makeTask("b", ["src/b.ts"]);
-    const r1 = scoreTaskRetrieval(sdk1 as ContextSDK, t1, [1, 5]);
-    const r2 = scoreTaskRetrieval(sdk2 as ContextSDK, t2, [1, 5]);
+    const r1 = scoreTaskRetrieval(sdk1, t1, [1, 5]);
+    const r2 = scoreTaskRetrieval(sdk2, t2, [1, 5]);
 
     // p@1 task-1 = 1/1, task-2 = 0/1 → mean = 0.5
     const p1_t1 = r1.hitsAtK[1] / 1;
@@ -58,9 +70,9 @@ describe("evaluateRetrieval", () => {
   });
 
   it("MRR = 0 when no expected file is retrieved", () => {
-    const sdk = { search: { search: () => [hit("src/other.ts")] } };
+    const sdk = mockSdk(() => [hit("src/other.ts")]);
     const t = makeTask("miss", ["src/missing.ts"]);
-    const result = scoreTaskRetrieval(sdk as ContextSDK, t);
+    const result = scoreTaskRetrieval(sdk, t);
     let best: number | null = null;
     for (const v of Object.values(result.ranks)) {
       if (v !== null && (best === null || v < best)) best = v;
@@ -70,9 +82,9 @@ describe("evaluateRetrieval", () => {
   });
 
   it("MRR = 1 when expected file is at rank 1", () => {
-    const sdk = { search: { search: () => [hit("src/target.ts")] } };
+    const sdk = mockSdk(() => [hit("src/target.ts")]);
     const t = makeTask("hit", ["src/target.ts"]);
-    const result = scoreTaskRetrieval(sdk as ContextSDK, t);
+    const result = scoreTaskRetrieval(sdk, t);
     let best: number | null = null;
     for (const v of Object.values(result.ranks)) {
       if (v !== null && (best === null || v < best)) best = v;
