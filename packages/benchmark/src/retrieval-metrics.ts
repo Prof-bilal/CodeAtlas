@@ -9,7 +9,6 @@
 //
 // Deterministic: no AI, no network, same index + query ⇒ same numbers.
 
-import { join } from "node:path";
 import type { SearchRequest, SearchResult, TaskDefinition } from "@atlas/core";
 
 /** Minimal local type for the Context SDK — avoids a forbidden `@atlas/sdk` import. */
@@ -160,11 +159,3 @@ function mean(xs: number[]): number {
 export function repositoryOf(taskFile: { repository?: string }): string {
   return taskFile.repository ?? ".";
 }
-
-/** Build a `ContextSDK` pointed at a benchmark repo (thin wrapper for ergonomics). */
-export async function openSdkForRepo(repoPath: string): Promise<ContextSDK> {
-  const { createContextSDK } = await import("@atlas/sdk");
-  return createContextSDK({ repositoryPath: join(".", repoPath) });
-}
-
-void openSdkForRepo;
