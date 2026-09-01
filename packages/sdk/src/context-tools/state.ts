@@ -52,6 +52,8 @@ export interface ToolUsage {
   readonly round: number;
   /** Whether the result was cached (near-duplicate). */
   readonly cached: boolean;
+  /** Character length of the tool output. */
+  readonly outputChars?: number;
 }
 
 /** A file change proposed by the model. */

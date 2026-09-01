@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { homedir } from "node:os";
+import { join, resolve } from "node:path";
 import {
   BenchmarkService,
   BenchmarkStore,
@@ -10,19 +11,18 @@ import {
 } from "@atlas/benchmark";
 import type { BenchmarkRunner } from "@atlas/benchmark";
 import { createContextToolSourceFromSDK } from "@atlas/mcp";
-import type {
-  BenchmarkConfig,
-  BenchmarkRunRequest,
-  ChatAgentPort,
-  ChatAgentRequest,
-  ChatAgentResult,
-  ProviderPort,
-  Result,
-  TaskDefinition,
-  TaskFile,
-} from "@atlas/sdk";
 import {
+  type BenchmarkConfig,
+  type BenchmarkRunRequest,
+  type ChatAgentPort,
+  type ChatAgentRequest,
+  type ChatAgentResult,
   ProviderChatAgent,
+  type ProviderPort,
+  type Result,
+  type TaskDefinition,
+  type TaskFile,
+  type ToolCallPolicy,
   ToolUsingChatAgent,
   createContextSDK,
   createProviderService,
@@ -45,8 +45,9 @@ export function registerBenchmark(program: Command): void {
     .description("Initialize a new benchmark suite")
     .option("--id <id>", "suite identifier (default: benchmark-<timestamp>)")
     .option("--name <name>", "display name (default: 'Benchmark')")
-    .option("--agent <agent>", "agent backend: opencode or ollama (default: opencode)")
+    .option("--agent <agent>", "agent backend: opencode, kilo, or ollama (default: opencode)")
     .option("--model <model>", "model identifier")
+    .option("--models <models>", "comma-separated model identifiers for matrix expansion")
     .option("--repo <path>", "repository path to benchmark against")
     .option("--task-file <path>", "path to a task definition JSON file to include")
     .option(
@@ -66,8 +67,9 @@ export function registerBenchmark(program: Command): void {
       "--mode <mode>",
       "mode to run: baseline, codeatlas, codeatlas-intel, or both (default: both)",
     )
-    .option("--repo <path>", "repository path (required)")
+    .requiredOption("--repo <path>", "repository path (required)")
     .option("--force", "re-run tasks even if results exist")
+    .option("--models <models>", "comma-separated model identifiers for matrix expansion")
     .action(async (suiteId, opts) => {
       await runSuite(suiteId, opts);
     });
@@ -96,7 +98,7 @@ export function registerBenchmark(program: Command): void {
     .command("ablation <suite-id>")
     .description("Run ablation scenarios (toggle intel features one at a time)")
     .option("--task <task-id>", "run only this task (base task ID, no scenario suffix)")
-    .option("--repo <path>", "repository path (required)")
+    .requiredOption("--repo <path>", "repository path (required)")
     .option("--force", "re-run scenarios even if results exist")
     .option("--scenarios <list>", "comma-separated scenario labels (default: all)")
     .action(async (suiteId, opts) => {
@@ -131,13 +133,46 @@ class RepositoryToolLoopAgent implements ChatAgentPort {
     const sdk = createContextSDK({ repositoryPath: request.repositoryPath });
     try {
       const toolSource = createContextToolSourceFromSDK(sdk);
-      const agent = new ToolUsingChatAgent(this.provider, toolSource, ["ollama"]);
+      const agent = new ToolUsingChatAgent(
+        this.provider,
+        toolSource,
+        ["ollama"],
+        MAX_TOOL_ROUNDS_FREE,
+        BENCHMARK_TOOL_POLICY,
+      );
       return await agent.run(request);
     } finally {
       sdk.close();
     }
   }
 }
+
+/**
+ * Benchmark tool-loop budget for weak/free models (small-model intelligence
+ * benchmark, Phase 3). Bounds the worst tool-thrash we measured on free models
+ * (mimo reached 29 calls / 762K tokens on one task) while still allowing the
+ * normal 1–5-call exploration. Tuned conservatively so it never blocks a
+ * reasonable task; the loop can expand per-tool when a task genuinely needs it.
+ */
+const MAX_TOOL_ROUNDS_FREE = 6;
+
+const BENCHMARK_TOOL_POLICY: ToolCallPolicy = {
+  maxToolCalls: 8,
+  perToolCallLimit: {
+    search_symbols: 2,
+    search_files: 2,
+    find_relevant_context: 3,
+    analyze_task: 2,
+    create_plan: 2,
+    inspect_symbol: 3,
+    get_dependencies: 2,
+    explain_module: 2,
+    read_file_range: 3,
+    verify_answer: 2,
+    get_summary: 1,
+    project_overview: 1,
+  },
+};
 
 function createOllamaRunner(): OllamaRunner {
   const providers = createProviderService();
@@ -158,6 +193,16 @@ function benchmarkRoot(): string {
 function openService(): BenchmarkService {
   const runners = new Map<string, BenchmarkRunner>();
   runners.set("opencode", new OpenCodeRunner());
+  runners.set(
+    "kilo",
+    new OpenCodeRunner({
+      openCodeBin: "kilo",
+      name: "kilo",
+      model: "kilo/nvidia/nemotron-3.5-lightning:free",
+      configPath: join(homedir(), ".config", "kilo", "kilo.jsonc"),
+      omitDirFlag: true,
+    }),
+  );
   runners.set("ollama", createOllamaRunner());
   return new BenchmarkService({ root: benchmarkRoot(), runners });
 }
@@ -190,6 +235,7 @@ async function initSuite(opts: {
   name?: string;
   agent?: string;
   model?: string;
+  models?: string;
   repo?: string;
   taskFile?: string;
   modes?: string;
@@ -203,12 +249,17 @@ async function initSuite(opts: {
           | "codeatlas-intel"
         )[])
       : (["baseline", "codeatlas", "codeatlas-intel"] as const);
+  const models =
+    opts.models !== undefined ? opts.models.split(",").map((m) => m.trim()) : undefined;
   const config: BenchmarkConfig = {
     id: suiteId,
     name: opts.name ?? "Benchmark",
-    agent: (opts.agent as "opencode" | "ollama") ?? "opencode",
-    model: opts.model ?? "opencode/deepseek-v4-flash-free",
+    agent: (opts.agent as "opencode" | "kilo" | "ollama") ?? "opencode",
+    model:
+      opts.model ??
+      (models !== undefined && models.length > 0 ? models[0] : "opencode/deepseek-v4-flash-free"),
     modes,
+    ...(models !== undefined ? { models } : {}),
   };
 
   const service = openService();
@@ -257,14 +308,12 @@ async function runSuite(
     mode?: string;
     repo?: string;
     force?: boolean;
+    models?: string;
   },
 ): Promise<void> {
-  if (opts.repo === undefined) {
-    console.error("Error: --repo <path> is required");
-    process.exit(1);
-  }
-
-  const repoPath = resolve(opts.repo);
+  // --repo is now required via .requiredOption(); commander throws if omitted
+  const repo = opts.repo as string;
+  const repoPath = resolve(repo);
   if (!existsSync(repoPath)) {
     console.error(`Error: repository path "${opts.repo}" does not exist`);
     process.exit(1);
@@ -294,10 +343,16 @@ async function runSuite(
     await ensureIndexed(repoPath);
   }
 
+  const models =
+    opts.models !== undefined ? opts.models.split(",").map((m) => m.trim()) : undefined;
+
   console.log(`Running suite "${suiteId}"...`);
   console.log(`Repository: ${repoPath}`);
   if (opts.task !== undefined) console.log(`Task filter: ${opts.task}`);
   console.log(`Modes: ${modes.join(", ")}`);
+  if (models !== undefined && models.length > 0) {
+    console.log(`Models: ${models.join(", ")}`);
+  }
   console.log("");
 
   const result = await service.runSuite({
@@ -306,6 +361,7 @@ async function runSuite(
     modes,
     taskId: opts.task,
     force: opts.force,
+    ...(models !== undefined && models.length > 0 ? { models } : {}),
   });
 
   if (!result.ok) {
@@ -390,12 +446,9 @@ async function runAblation(
     scenarios?: string;
   },
 ): Promise<void> {
-  if (opts.repo === undefined) {
-    console.error("Error: --repo <path> is required");
-    process.exit(1);
-  }
-
-  const repoPath = resolve(opts.repo);
+  // --repo is now required via .requiredOption(); commander throws if omitted
+  const repo = opts.repo as string;
+  const repoPath = resolve(repo);
   if (!existsSync(repoPath)) {
     console.error(`Error: repository path "${opts.repo}" does not exist`);
     process.exit(1);

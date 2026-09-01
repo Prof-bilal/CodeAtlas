@@ -105,7 +105,9 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
     .option("--explain", "show content-free item sources, scores, and reasons")
     .option("--json", "print the package or explanation as JSON")
-    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
+    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
+      Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
+    )
     .option("--include-instructions", "include project instruction files")
     .option("--no-instructions", "exclude project instruction files")
     .option("--include-overview", "include the project overview")
@@ -122,7 +124,9 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .requiredOption("--provider <id>", "AI agent provider id")
     .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
     .option("--json", "print the launched session as JSON")
-    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
+    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
+      Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
+    )
     .option("--include-instructions", "include project instruction files")
     .option("--no-instructions", "exclude project instruction files")
     .option("--include-overview", "include the project overview")
@@ -139,7 +143,9 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .command("attach <sessionId> <task>")
     .description("Attach safe repository context to a CREATED session")
     .option("--json", "print the attached session as JSON")
-    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
+    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
+      Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
+    )
     .option("--include-instructions", "include project instruction files")
     .option("--no-instructions", "exclude project instruction files")
     .option("--include-overview", "include the project overview")
@@ -158,7 +164,9 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .requiredOption("--for <agent>", exportTargetHelp())
     .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
     .option("--out <file>", "output file (default .codeatlas/exports/<task>-<id>.md)")
-    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
+    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
+      Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
+    )
     .option(
       "--no-inject",
       "do not append the instruction block to the target agent's instruction file",
@@ -184,7 +192,9 @@ export function registerAgentRouter(program: Command, options: ContextCommandOpt
       .argument("<prompt...>", "what you want the agent to do")
       .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
       .option("--json", "print the launched session as JSON")
-      .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
+      .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
+        Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
+      )
       .option("--include-instructions", "include project instruction files")
       .option("--no-instructions", "exclude project instruction files")
       .option("--include-overview", "include the project overview")

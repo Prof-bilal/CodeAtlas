@@ -29,3 +29,12 @@ export {
 export type { DependencyShape, HandlerContext, SummaryShape } from "./handlers";
 export { createContextToolSource, createContextToolSourceFromSDK } from "./tool-bridge";
 export { zodToJsonSchema } from "./zod-to-json-schema";
+export {
+  ToolCallBudget,
+  createToolCallBudget,
+  readBudgetConfigFromEnv,
+  type BudgetCheckResult,
+  type ToolCallBudgetConfig,
+  type ToolCallBudgetEntry,
+  type ToolCallBudgetSnapshot,
+} from "./budget";

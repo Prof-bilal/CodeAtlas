@@ -209,11 +209,12 @@ describe("E2E: Ollama → CodeAtlas tool loop → context", () => {
         // The final answer is the model's round-2 text (proving the loop closed).
         expect(result.value.finalText).toContain("E2E_CONTEXT_MARKER");
 
-        // Token metrics come from the provider's actual usage on the last turn.
+        // Token metrics are cumulative across all provider calls.
+        // Round 1: 120 input + 18 output; Round 2: 340 input + 24 output.
         expect(result.value.metrics.source).toBe("actual");
-        expect(result.value.metrics.input).toBe(340);
-        expect(result.value.metrics.output).toBe(24);
-        expect(result.value.metrics.total).toBe(364);
+        expect(result.value.metrics.input).toBe(460);
+        expect(result.value.metrics.output).toBe(42);
+        expect(result.value.metrics.total).toBe(502);
 
         // The executed tool call is recorded as successful.
         expect(result.value.toolCalls).toHaveLength(1);

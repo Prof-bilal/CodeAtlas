@@ -30,3 +30,28 @@ export {
   PROVIDER_BUDGET_DEFAULTS,
   resolveBudget,
 } from "./defaults";
+export {
+  evaluateRetrieval,
+  scoreTaskRetrieval,
+  type RetrievalResult,
+  type RetrievalReport,
+} from "./retrieval-metrics";
+export {
+  classifyFailure,
+  classifyAllFailures,
+  type FailureClassificationEntry,
+  type FailureClassificationReport,
+} from "./failure-classifier";
+export {
+  pairedBootstrap,
+  isSignificant,
+  describeDiff,
+  type BootstrapResult,
+  type BootstrapOptions,
+  DEFAULT_BOOTSTRAP_OPTIONS,
+} from "./paired-bootstrap";
+export {
+  pairedTTest,
+  describeComparison,
+  type SignificanceResult,
+} from "./significance";

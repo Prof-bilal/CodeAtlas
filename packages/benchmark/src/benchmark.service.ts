@@ -14,6 +14,7 @@ import type {
 } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 import { evaluateTask } from "./evaluator";
+import { classifyFailure } from "./failure-classifier";
 import { BenchmarkMetrics } from "./metrics";
 import { renderHtml, renderReport } from "./reporter";
 import { BenchmarkStore } from "./store";
@@ -103,13 +104,14 @@ export class BenchmarkService implements BenchmarkPort {
     this.store.updateSuiteStatus(request.suiteId, "running");
 
     const timeoutMs = request.timeoutMs ?? suite.config.taskTimeoutMs ?? 540_000;
+    const effectiveModel = request.model ?? suite.config.model;
 
     const runnerResult = await runner.execute({
       prompt: task.prompt,
       repositoryPath: request.repositoryPath,
       mode: request.mode,
       timeoutMs,
-      model: suite.config.model,
+      model: effectiveModel,
     });
 
     if (!runnerResult.ok) {
@@ -125,12 +127,33 @@ export class BenchmarkService implements BenchmarkPort {
       .filter((o: unknown): o is string => typeof o === "string");
     const evaluation = evaluateTask(task, rr.finalText, toolOutputs, request.repositoryPath);
 
+    // Classify failure (Phase A2)
+    const failureClassification = classifyFailure(
+      {
+        taskId: task.id,
+        category: task.category,
+        mode: request.mode,
+        agent: suite.config.agent,
+        model: effectiveModel,
+        tokens: rr.metrics,
+        cost: rr.cost,
+        durationMs: rr.durationMs,
+        timedOut: rr.timedOut,
+        exitCode: rr.exitCode,
+        finalText: rr.finalText,
+        toolCallCount: rr.toolCalls.length,
+        toolCalls: rr.toolCalls,
+        recordedAt: new Date().toISOString(),
+      },
+      evaluation,
+    );
+
     const result: BenchmarkTaskResult = {
       taskId: task.id,
       category: task.category,
       mode: request.mode,
       agent: suite.config.agent,
-      model: suite.config.model,
+      model: effectiveModel,
       tokens: rr.metrics,
       cost: rr.cost,
       durationMs: rr.durationMs,
@@ -139,6 +162,11 @@ export class BenchmarkService implements BenchmarkPort {
       finalText: rr.finalText,
       toolCallCount: rr.toolCalls.length,
       toolCalls: rr.toolCalls,
+      ...(rr.observability !== undefined ? { observability: rr.observability } : {}),
+      ...(failureClassification !== undefined ? { failureClassification } : {}),
+      ...(rr.stopReason !== undefined ? { stopReason: rr.stopReason } : {}),
+      ...(rr.roundCount !== undefined ? { roundCount: rr.roundCount } : {}),
+      ...(rr.dedupeHitCount !== undefined ? { dedupeHitCount: rr.dedupeHitCount } : {}),
       error: rr.error,
       stderr: rr.stderr,
       recordedAt: new Date().toISOString(),
@@ -152,7 +180,7 @@ export class BenchmarkService implements BenchmarkPort {
       taskId: task.id,
       mode: request.mode,
       agent: suite.config.agent,
-      model: suite.config.model,
+      model: effectiveModel,
       tokens: rr.metrics.total,
       cost: rr.cost,
       durationMs: rr.durationMs,
@@ -175,6 +203,11 @@ export class BenchmarkService implements BenchmarkPort {
 
     const modes = request.modes ?? [...suite.config.modes];
     const taskFilter = request.taskId !== undefined ? request.taskId : null;
+    // Matrix expansion: when multiple models are configured, run each
+    // task × mode × model combination. The store key uses a sanitized
+    // model suffix on the task ID to avoid collisions.
+    const models = request.models ?? suite.config.models;
+    const matrixModels = models !== undefined && models.length > 1 ? [...models] : undefined;
 
     this.store.updateSuiteStatus(request.suiteId, "running");
 
@@ -184,29 +217,66 @@ export class BenchmarkService implements BenchmarkPort {
     for (const taskDef of taskDefs) {
       if (taskFilter !== null && taskDef.id !== taskFilter) continue;
 
-      for (const mode of modes) {
-        // Skip if result exists and --force not set
-        if (!request.force) {
-          const existing = this.store.loadTaskResult(request.suiteId, taskDef.id, mode);
-          if (existing !== null) {
-            results.push(existing);
-            const ev = this.buildEvaluationEntry(existing, taskDef);
-            if (ev !== null) evaluations.push(ev);
-            continue;
+      if (matrixModels !== undefined) {
+        // Matrix mode: expand task × mode × model
+        for (const mode of modes) {
+          for (const model of matrixModels) {
+            const matrixTaskId = `${taskDef.id}@${sanitizeModelForId(model)}`;
+            // Skip if result exists and --force not set
+            if (!request.force) {
+              const existing = this.store.loadTaskResult(request.suiteId, matrixTaskId, mode);
+              if (existing !== null) {
+                results.push(existing);
+                const ev = this.buildEvaluationEntry(existing, taskDef);
+                if (ev !== null) evaluations.push(ev);
+                continue;
+              }
+            }
+
+            const taskResult = await this.runTask({
+              suiteId: request.suiteId,
+              taskId: taskDef.id,
+              mode,
+              repositoryPath: request.repositoryPath,
+              model,
+            });
+
+            if (taskResult.ok) {
+              // Tag result with matrix task ID for store persistence
+              const taggedResult = { ...taskResult.value, taskId: matrixTaskId };
+              this.store.saveTaskResult(request.suiteId, taggedResult);
+              results.push(taggedResult);
+              const ev = this.buildEvaluationEntry(taggedResult, taskDef);
+              if (ev !== null) evaluations.push(ev);
+            }
           }
         }
+      } else {
+        // Single-model mode: existing behavior
+        for (const mode of modes) {
+          // Skip if result exists and --force not set
+          if (!request.force) {
+            const existing = this.store.loadTaskResult(request.suiteId, taskDef.id, mode);
+            if (existing !== null) {
+              results.push(existing);
+              const ev = this.buildEvaluationEntry(existing, taskDef);
+              if (ev !== null) evaluations.push(ev);
+              continue;
+            }
+          }
 
-        const taskResult = await this.runTask({
-          suiteId: request.suiteId,
-          taskId: taskDef.id,
-          mode,
-          repositoryPath: request.repositoryPath,
-        });
+          const taskResult = await this.runTask({
+            suiteId: request.suiteId,
+            taskId: taskDef.id,
+            mode,
+            repositoryPath: request.repositoryPath,
+          });
 
-        if (taskResult.ok) {
-          results.push(taskResult.value);
-          const ev = this.buildEvaluationEntry(taskResult.value, taskDef);
-          if (ev !== null) evaluations.push(ev);
+          if (taskResult.ok) {
+            results.push(taskResult.value);
+            const ev = this.buildEvaluationEntry(taskResult.value, taskDef);
+            if (ev !== null) evaluations.push(ev);
+          }
         }
       }
     }
@@ -262,7 +332,8 @@ export class BenchmarkService implements BenchmarkPort {
     }
 
     const taskDefs = this.loadAllTaskDefs(suite);
-    const total = taskDefs.length * suite.config.modes.length;
+    const modelCount = suite.config.models?.length ?? 1;
+    const total = taskDefs.length * suite.config.modes.length * modelCount;
     const results = this.store.listTaskResults(suiteId);
 
     return ok({
@@ -390,4 +461,12 @@ export class BenchmarkService implements BenchmarkPort {
 function avg(values: number[]): number {
   if (values.length === 0) return 0;
   return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+/**
+ * Sanitize a model identifier for use in a store file key.
+ * Replaces `/` and `.` with `-` and strips other problematic characters.
+ */
+function sanitizeModelForId(model: string): string {
+  return model.replace(/[/.]/g, "-").replace(/[^a-zA-Z0-9\-_]/g, "");
 }

@@ -37,7 +37,12 @@ export function registerAsk(program: Command, options: AskCommandOptions = {}): 
     .command("ask <question>")
     .description("Get a ranked, budgeted context slice for a question (never the whole repo)")
     .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
-    .option("--max-tokens <number>", "maximum estimated tokens for the slice", parsePositiveInteger)
+    .option(
+      "--max-tokens <number>",
+      "maximum estimated tokens for the slice",
+      parsePositiveInteger,
+      () => Number.parseInt(process.env.MAX_TOKENS ?? "", 10),
+    )
     .option(
       "--save [path]",
       "persist the slice under .codeatlas/slices/ (and copy the markdown to <path> when given)",

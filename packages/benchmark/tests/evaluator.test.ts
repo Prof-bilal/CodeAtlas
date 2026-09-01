@@ -23,6 +23,23 @@ describe("fileHits", () => {
     const hits = fileHits(["lib/Console.js"], "Found LIB/CONSOLE.JS");
     expect(hits).toEqual(["lib/Console.js"]);
   });
+
+  it("matches basename tokens when the cited extension differs", () => {
+    // Model cites "create logger" prose while the expected file is create-logger.ts
+    const hits = fileHits(
+      ["lib/winston/create-logger.ts"],
+      "The main entry creates loggers via the create logger factory module",
+    );
+    expect(hits).toEqual(["lib/winston/create-logger.ts"]);
+  });
+
+  it("does not token-match unrelated files", () => {
+    const hits = fileHits(
+      ["lib/winston/container.js"],
+      "The transport registry handles daily rotation of log files",
+    );
+    expect(hits).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -45,6 +62,19 @@ describe("conceptHits", () => {
   it("normalizes underscores and hyphens", () => {
     const hits = conceptHits(["error_handler"], "The error-handler class handles errors");
     expect(hits).toEqual(["error_handler"]);
+  });
+
+  it("fuzzy-matches concept word variants (handler ≈ handling)", () => {
+    const hits = conceptHits(
+      ["error handler", "request validation"],
+      "The error-handling middleware performs request validation before routing",
+    );
+    expect(hits).toEqual(["error handler", "request validation"]);
+  });
+
+  it("does not fuzzy-match unrelated short tokens", () => {
+    const hits = conceptHits(["user auth"], "The cart total uses a sale price");
+    expect(hits).toEqual([]);
   });
 });
 

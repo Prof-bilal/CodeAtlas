@@ -35,7 +35,7 @@ export interface BenchmarkPort {
 // ---------------------------------------------------------------------------
 
 /** Supported AI agent backends for task execution. */
-export type BenchmarkAgent = "opencode" | "ollama";
+export type BenchmarkAgent = "opencode" | "ollama" | "kilo";
 
 /** Comparison mode: baseline (no MCP) vs CodeAtlas (with MCP context). */
 export type BenchmarkMode = "baseline" | "codeatlas" | "codeatlas-intel";
@@ -233,6 +233,8 @@ export interface BenchmarkRunRequest {
   readonly repositoryPath: string;
   /** Optional timeout override. */
   readonly timeoutMs?: number | undefined;
+  /** Optional model override for matrix expansion. */
+  readonly model?: string | undefined;
 }
 
 /** Request to run an entire suite. */
@@ -247,6 +249,12 @@ export interface BenchmarkSuiteRunRequest {
   readonly force?: boolean | undefined;
   /** Optional task ID filter — run only this task. */
   readonly taskId?: string | undefined;
+  /**
+   * Model identifiers for matrix expansion.
+   * When present, each task × mode is run against every model.
+   * Overrides `config.models` for this run.
+   */
+  readonly models?: readonly string[] | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -281,6 +289,16 @@ export interface BenchmarkTaskResult {
   readonly toolCallCount: number;
   /** Tool call details (for CodeAtlas mode). */
   readonly toolCalls: readonly ToolCallRecord[];
+  /** Additive Phase A observability / attribution ledger. */
+  readonly observability?: BenchmarkObservability;
+  /** Failure classification derived from the evaluation and ledger. */
+  readonly failureClassification?: FailureClassification;
+  /** Why the tool loop terminated (Phase A5). */
+  readonly stopReason?: string | undefined;
+  /** Number of tool-loop rounds executed (Phase A5). */
+  readonly roundCount?: number | undefined;
+  /** Number of search queries served from dedup cache (Phase A5). */
+  readonly dedupeHitCount?: number | undefined;
   /** Error message if the run failed. */
   readonly error?: string | undefined;
   /** Captured stderr from the runner process. */
@@ -317,8 +335,120 @@ export interface ToolCallRecord {
   readonly status: "success" | "error" | "unknown";
   /** Duration in milliseconds (if measured). */
   readonly durationMs?: number | undefined;
+  /** Serialized tool output, when captured by the runner. */
+  readonly output?: string | undefined;
+  /** Estimated token count of the serialized tool output. */
+  readonly outputTokens?: number | undefined;
   /** Whether the call produced an error. */
   readonly isError: boolean;
+  /** 0-based tool-loop round this call occurred in. */
+  readonly round?: number | undefined;
+}
+
+/** Status of a metric in the Phase A attribution ledger. */
+export type BenchmarkMetricStatus = "measured" | "unavailable" | "not_instrumented";
+
+/** One metric cell in the Phase A attribution ledger. */
+export interface BenchmarkMetricValue {
+  /** Numeric value when measured, else `null`. */
+  readonly value: number | null;
+  /** Whether the value is measured, unavailable, or not yet instrumented. */
+  readonly status: BenchmarkMetricStatus;
+  /** Optional explanatory note or owning file when absent. */
+  readonly note?: string;
+}
+
+/** Canonical Phase A metric names used in the benchmark ledger/report. */
+export type BenchmarkMetricName =
+  | "success_rate"
+  | "accuracy"
+  | "total_tokens"
+  | "system_prompt_tokens"
+  | "repository_context_tokens"
+  | "tool_output_tokens"
+  | "repeated_context_tokens"
+  | "duplicate_context_percent"
+  | "unique_context_tokens"
+  | "agent_message_tokens"
+  | "reasoning_tokens"
+  | "final_answer_input_tokens"
+  | "final_answer_output_tokens"
+  | "llm_call_count"
+  | "tool_call_count"
+  | "latency_ms"
+  | "cache_read_tokens"
+  | "cache_write_tokens";
+
+/** One provider-call entry in the Phase A attribution ledger. */
+export interface BenchmarkCallUsage {
+  /** 1-based provider-call index. */
+  readonly callIndex: number;
+  /** 0-based round for tool-loop runs. */
+  readonly round: number;
+  /** Number of messages sent on this call. */
+  readonly messageCount: number;
+  /** Estimated transcript input tokens for this call. */
+  readonly estimatedInputTokens: number;
+  /** Fixed tool-schema overhead tokens on this call. */
+  readonly toolSchemaTokens: number;
+  /** Provider-reported input tokens, when available. */
+  readonly inputTokens?: number;
+  /** Provider-reported output tokens, when available. */
+  readonly outputTokens?: number;
+  /** Provider-reported total tokens, when available. */
+  readonly totalTokens?: number;
+}
+
+/** One duplicate-content attribution bucket (Phase A6). */
+export interface DuplicateAttributionBucket {
+  /** Human-readable source label. */
+  readonly source: string;
+  /** Repo-wide A/B/C/D duplicate classification. */
+  readonly classification: "A" | "B" | "C" | "D";
+  /** Estimated duplicate tokens attributed to this source. */
+  readonly tokens: number;
+  /** Count of repeated instances for this source. */
+  readonly count: number;
+  /** Optional explanation. */
+  readonly note?: string;
+}
+
+/** Additive per-task observability captured for Phase A. */
+export interface BenchmarkObservability {
+  /** Phase A metric ledger keyed by canonical metric name. */
+  readonly metrics: Readonly<Partial<Record<BenchmarkMetricName, BenchmarkMetricValue>>>;
+  /** Provider-call breakdown for the task run. */
+  readonly providerCalls?: readonly BenchmarkCallUsage[];
+  /** Tool-call count grouped by tool name. */
+  readonly toolCallsByTool?: Readonly<Record<string, number>>;
+  /** Tool-output tokens grouped by tool name. */
+  readonly toolOutputTokensByTool?: Readonly<Record<string, number>>;
+  /** Duplicate-content attribution buckets. */
+  readonly duplicateBuckets?: readonly DuplicateAttributionBucket[];
+  /** Total transcript messages retained at the end of the run. */
+  readonly transcriptMessageCount?: number;
+  /** Estimated transcript tokens retained at the end of the run. */
+  readonly transcriptEstimatedTokens?: number;
+  /** Count of repeated file/path-oriented tool reads. */
+  readonly repeatedFileCount?: number;
+}
+
+/** Phase A failure-classification labels. */
+export type FailureCategory =
+  | "budget_truncation"
+  | "lexical_miss"
+  | "context_overload"
+  | "tool_loop_underuse"
+  | "insufficient_signal";
+
+/** One task's failure classification (Phase A2). */
+export interface FailureClassification {
+  /** Classified failure category. */
+  readonly category: FailureCategory;
+  /** Short evidence summary for the classification. */
+  readonly reason: string;
+  /** Concrete next fix to test. */
+  readonly proposedFix: string;
 }
 
 /** Evaluation result for a single task. */
@@ -468,6 +598,14 @@ export interface RunnerResult {
   readonly exitCode: number | null;
   readonly finalText: string;
   readonly toolCalls: readonly ToolCallRecord[];
+  /** Additive Phase A observability / attribution ledger. */
+  readonly observability?: BenchmarkObservability | undefined;
+  /** Why the tool loop terminated. */
+  readonly stopReason?: string | undefined;
+  /** Number of tool-loop rounds executed. */
+  readonly roundCount?: number | undefined;
+  /** Number of search queries served from dedup cache. */
+  readonly dedupeHitCount?: number | undefined;
   readonly error?: string | undefined;
   readonly stderr?: string | undefined;
 }

@@ -4,6 +4,7 @@ import type {
   BenchmarkReport,
   BenchmarkStatus,
   BenchmarkTaskResult,
+  FailureCategory,
   TaskFile,
 } from "@atlas/core";
 import { extractScenarioLabel } from "./ablation";
@@ -165,6 +166,22 @@ export function renderReport(data: RepoReportData): BenchmarkReport {
     );
   }
   lines.push("");
+
+  // Phase A — Attribution Ledger (per-arm cost breakdown)
+  const ledgerLines = renderAttributionLedger(baseline, codeatlas, intel);
+  lines.push(...ledgerLines);
+
+  // Phase A — Failure Classification
+  const failureLines = renderFailureClassification(tasks);
+  lines.push(...failureLines);
+
+  // Phase A — Duplicate Content Audit
+  const duplicateLines = renderDuplicateAudit(baseline, codeatlas, intel);
+  lines.push(...duplicateLines);
+
+  // Phase A5 — Tool Loop Diagnostics
+  const diagLines = renderToolLoopDiagnostics(baseline, codeatlas, intel);
+  lines.push(...diagLines);
 
   // Task details
   const nonAblationTasks = tasks.filter((t) => !extractScenarioLabel(t.taskId));
@@ -567,6 +584,364 @@ ${htmlTable(
     format: "html",
     generatedAt: new Date().toISOString(),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Phase A — Attribution Ledger
+// ---------------------------------------------------------------------------
+
+function renderAttributionLedger(
+  baseline: readonly BenchmarkTaskResult[],
+  codeatlas: readonly BenchmarkTaskResult[],
+  intel: readonly BenchmarkTaskResult[],
+): string[] {
+  const lines: string[] = [];
+  const hasIntel = intel.length > 0;
+
+  lines.push("## Phase A — Attribution Ledger");
+  lines.push("");
+
+  const metrics = [
+    "total_tokens",
+    "system_prompt_tokens",
+    "repository_context_tokens",
+    "tool_output_tokens",
+    "repeated_context_tokens",
+    "unique_context_tokens",
+    "duplicate_context_percent",
+    "agent_message_tokens",
+    "reasoning_tokens",
+    "final_answer_input_tokens",
+    "final_answer_output_tokens",
+    "llm_call_count",
+    "tool_call_count",
+    "latency_ms",
+    "cache_read_tokens",
+    "cache_write_tokens",
+  ] as const;
+
+  const metricLabels: Record<string, string> = {
+    total_tokens: "Total tokens",
+    system_prompt_tokens: "System prompt tokens",
+    repository_context_tokens: "Repo context tokens",
+    tool_output_tokens: "Tool output tokens",
+    repeated_context_tokens: "Repeated context tokens",
+    unique_context_tokens: "Unique context tokens",
+    duplicate_context_percent: "Duplicate context %",
+    agent_message_tokens: "Agent message tokens",
+    reasoning_tokens: "Reasoning tokens",
+    final_answer_input_tokens: "Final answer input tokens",
+    final_answer_output_tokens: "Final answer output tokens",
+    llm_call_count: "LLM call count",
+    tool_call_count: "Tool call count",
+    latency_ms: "Latency (ms)",
+    cache_read_tokens: "Cache read tokens",
+    cache_write_tokens: "Cache write tokens",
+  };
+
+  if (hasIntel) {
+    lines.push("| Metric | Baseline | CodeAtlas | CodeAtlas Intel |");
+    lines.push("|--------|----------|-----------|-----------------|");
+  } else {
+    lines.push("| Metric | Baseline | CodeAtlas |");
+    lines.push("|--------|----------|-----------|");
+  }
+
+  for (const metric of metrics) {
+    const bVal = aggregateMetric(baseline, metric);
+    const cVal = aggregateMetric(codeatlas, metric);
+    const iVal = hasIntel ? aggregateMetric(intel, metric) : null;
+
+    const label = metricLabels[metric] ?? metric;
+    const bStr = formatMetricValue(metric, bVal);
+    const cStr = formatMetricValue(metric, cVal);
+    const iStr = iVal !== null ? formatMetricValue(metric, iVal) : undefined;
+
+    if (hasIntel && iStr !== undefined) {
+      lines.push(`| ${label} | ${bStr} | ${cStr} | ${iStr} |`);
+    } else {
+      lines.push(`| ${label} | ${bStr} | ${cStr} |`);
+    }
+  }
+  lines.push("");
+
+  return lines;
+}
+
+function aggregateMetric(
+  tasks: readonly BenchmarkTaskResult[],
+  metric: string,
+): { value: number | null; status: string } {
+  let totalValue = 0;
+  let anyMeasured = false;
+  let anyUnavailable = false;
+
+  for (const task of tasks) {
+    const obs = task.observability;
+    if (obs === undefined) continue;
+    const mv = obs.metrics[metric as keyof typeof obs.metrics];
+    if (mv === undefined || mv === null) continue;
+    if (mv.status === "measured" && mv.value !== null) {
+      totalValue += mv.value;
+      anyMeasured = true;
+    } else if (mv.status === "unavailable") {
+      anyUnavailable = true;
+    }
+  }
+
+  if (anyMeasured) return { value: totalValue, status: "measured" };
+  if (anyUnavailable) return { value: null, status: "unavailable" };
+  return { value: null, status: "not_instrumented" };
+}
+
+function formatMetricValue(metric: string, agg: { value: number | null; status: string }): string {
+  if (agg.status === "unavailable") return "UNAVAILABLE";
+  if (agg.status === "not_instrumented" || agg.value === null) return "NOT INSTRUMENTED";
+  if (metric === "duplicate_context_percent") return pct(agg.value);
+  if (metric === "latency_ms") return fmtMs(agg.value);
+  return fmtTokens(Math.round(agg.value));
+}
+
+// ---------------------------------------------------------------------------
+// Phase A — Failure Classification
+// ---------------------------------------------------------------------------
+
+const FAILURE_LABELS: Record<FailureCategory, string> = {
+  budget_truncation: "Budget Truncation",
+  lexical_miss: "Lexical Miss",
+  context_overload: "Context Overload",
+  tool_loop_underuse: "Tool Loop Underuse",
+  insufficient_signal: "Insufficient Signal",
+};
+
+function renderFailureClassification(tasks: readonly BenchmarkTaskResult[]): string[] {
+  const lines: string[] = [];
+
+  const classified = tasks.filter((t) => t.failureClassification !== undefined);
+  if (classified.length === 0) return lines;
+
+  lines.push("## Phase A — Failure Classification");
+  lines.push("");
+  lines.push("| Task | Mode | Category | Reason | Proposed Fix |");
+  lines.push("|------|------|----------|--------|--------------|");
+
+  for (const task of classified) {
+    const fc = task.failureClassification;
+    if (!fc) continue;
+    lines.push(
+      `| ${task.taskId} | ${task.mode} | ${FAILURE_LABELS[fc.category] ?? fc.category} | ${truncateCell(fc.reason, 80)} | ${truncateCell(fc.proposedFix, 60)} |`,
+    );
+  }
+  lines.push("");
+
+  // Aggregate table
+  const aggregate: Record<FailureCategory, number> = {
+    budget_truncation: 0,
+    lexical_miss: 0,
+    context_overload: 0,
+    tool_loop_underuse: 0,
+    insufficient_signal: 0,
+  };
+  for (const task of classified) {
+    const fc = task.failureClassification;
+    if (!fc) continue;
+    aggregate[fc.category] += 1;
+  }
+
+  lines.push("### Failure Aggregate");
+  lines.push("");
+  lines.push("| Category | Count | % of Failures |");
+  lines.push("|----------|-------|---------------|");
+  for (const [cat, count] of Object.entries(aggregate) as [FailureCategory, number][]) {
+    if (count === 0) continue;
+    const pctStr = classified.length > 0 ? pct((count / classified.length) * 100) : "0%";
+    lines.push(`| ${FAILURE_LABELS[cat]} | ${count} | ${pctStr} |`);
+  }
+  lines.push("");
+
+  return lines;
+}
+
+function truncateCell(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  return `${text.slice(0, maxLen - 3)}...`;
+}
+
+// ---------------------------------------------------------------------------
+// Phase A — Duplicate Content Audit
+// ---------------------------------------------------------------------------
+
+function renderDuplicateAudit(
+  baseline: readonly BenchmarkTaskResult[],
+  codeatlas: readonly BenchmarkTaskResult[],
+  intel: readonly BenchmarkTaskResult[],
+): string[] {
+  const lines: string[] = [];
+  const hasIntel = intel.length > 0;
+
+  // Check if any tasks have observability with duplicate data
+  const allTasks = [...baseline, ...codeatlas, ...intel];
+  const hasDuplicateData = allTasks.some(
+    (t) =>
+      t.observability?.duplicateBuckets !== undefined &&
+      t.observability.duplicateBuckets.length > 0,
+  );
+  if (!hasDuplicateData) return lines;
+
+  lines.push("## Phase A — Duplicate Content Audit");
+  lines.push("");
+
+  // Per-arm summary
+  if (hasIntel) {
+    lines.push("| Metric | Baseline | CodeAtlas | CodeAtlas Intel |");
+    lines.push("|--------|----------|-----------|-----------------|");
+  } else {
+    lines.push("| Metric | Baseline | CodeAtlas |");
+    lines.push("|--------|----------|-----------|");
+  }
+
+  const bRepeated = sumRepeatedFiles(baseline);
+  const cRepeated = sumRepeatedFiles(codeatlas);
+  const iRepeated = hasIntel ? sumRepeatedFiles(intel) : null;
+  const bDupPct = avgDuplicatePercent(baseline);
+  const cDupPct = avgDuplicatePercent(codeatlas);
+  const iDupPct = hasIntel ? avgDuplicatePercent(intel) : null;
+  const bDupTokens = sumDuplicateTokens(baseline);
+  const cDupTokens = sumDuplicateTokens(codeatlas);
+  const iDupTokens = hasIntel ? sumDuplicateTokens(intel) : null;
+
+  if (hasIntel && iRepeated !== null && iDupPct !== null && iDupTokens !== null) {
+    lines.push(`| Repeated file reads | ${bRepeated} | ${cRepeated} | ${iRepeated} |`);
+    lines.push(`| Avg duplicate % | ${pct(bDupPct)} | ${pct(cDupPct)} | ${pct(iDupPct)} |`);
+    lines.push(
+      `| Total duplicate tokens | ${fmtTokens(bDupTokens)} | ${fmtTokens(cDupTokens)} | ${fmtTokens(iDupTokens)} |`,
+    );
+  } else {
+    lines.push(`| Repeated file reads | ${bRepeated} | ${cRepeated} |`);
+    lines.push(`| Avg duplicate % | ${pct(bDupPct)} | ${pct(cDupPct)} |`);
+    lines.push(`| Total duplicate tokens | ${fmtTokens(bDupTokens)} | ${fmtTokens(cDupTokens)} |`);
+  }
+  lines.push("");
+
+  // Per-bucket breakdown (aggregate across all codeatlas tasks)
+  const bucketAggregate = aggregateDuplicateBuckets(codeatlas);
+  if (bucketAggregate.length > 0) {
+    lines.push("### Duplicate Attribution Buckets (CodeAtlas)");
+    lines.push("");
+    lines.push("| Source | Classification | Tokens | Count |");
+    lines.push("|--------|---------------|--------|-------|");
+    for (const b of bucketAggregate) {
+      lines.push(`| ${b.source} | ${b.classification} | ${fmtTokens(b.tokens)} | ${b.count} |`);
+    }
+    lines.push("");
+  }
+
+  return lines;
+}
+
+function sumRepeatedFiles(tasks: readonly BenchmarkTaskResult[]): number {
+  return tasks.reduce((sum, t) => sum + (t.observability?.repeatedFileCount ?? 0), 0);
+}
+
+function avgDuplicatePercent(tasks: readonly BenchmarkTaskResult[]): number {
+  const pcts = tasks
+    .map((t) => t.observability?.metrics?.duplicate_context_percent?.value)
+    .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+  if (pcts.length === 0) return 0;
+  return pcts.reduce((a, b) => a + b, 0) / pcts.length;
+}
+
+function sumDuplicateTokens(tasks: readonly BenchmarkTaskResult[]): number {
+  return tasks.reduce(
+    (sum, t) => sum + ((t.observability?.metrics?.repeated_context_tokens?.value as number) ?? 0),
+    0,
+  );
+}
+
+interface BucketAggregate {
+  source: string;
+  classification: string;
+  tokens: number;
+  count: number;
+}
+
+function aggregateDuplicateBuckets(tasks: readonly BenchmarkTaskResult[]): BucketAggregate[] {
+  const map = new Map<string, BucketAggregate>();
+  for (const task of tasks) {
+    const buckets = task.observability?.duplicateBuckets;
+    if (buckets === undefined) continue;
+    for (const b of buckets) {
+      const key = `${b.classification}:${b.source}`;
+      const existing = map.get(key);
+      if (existing !== undefined) {
+        existing.tokens += b.tokens;
+        existing.count += b.count;
+      } else {
+        map.set(key, {
+          source: b.source,
+          classification: b.classification,
+          tokens: b.tokens,
+          count: b.count,
+        });
+      }
+    }
+  }
+  return [...map.values()].sort((a, b) => b.tokens - a.tokens);
+}
+
+// ---------------------------------------------------------------------------
+// Phase A5 — Tool Loop Diagnostics
+// ---------------------------------------------------------------------------
+
+function renderToolLoopDiagnostics(
+  _baseline: readonly BenchmarkTaskResult[],
+  codeatlas: readonly BenchmarkTaskResult[],
+  intel: readonly BenchmarkTaskResult[],
+): string[] {
+  const lines: string[] = [];
+  const hasIntel = intel.length > 0;
+  const codeatlasAll = [...codeatlas, ...intel];
+  if (codeatlasAll.length === 0) return lines;
+
+  lines.push("## Phase A5 — Tool Loop Diagnostics");
+  lines.push("");
+
+  const avgRounds = (tasks: readonly BenchmarkTaskResult[]): string => {
+    const counts = tasks.map((t) => t.roundCount).filter((v): v is number => v !== undefined);
+    return counts.length > 0 ? fmt(avg(counts)) : "N/A";
+  };
+  const avgDedupe = (tasks: readonly BenchmarkTaskResult[]): string => {
+    const counts = tasks.map((t) => t.dedupeHitCount).filter((v): v is number => v !== undefined);
+    return counts.length > 0 ? fmt(avg(counts)) : "N/A";
+  };
+  const stopReasonCounts = (tasks: readonly BenchmarkTaskResult[]): string => {
+    const counts = new Map<string, number>();
+    for (const t of tasks) {
+      const sr = t.stopReason ?? "N/A";
+      counts.set(sr, (counts.get(sr) ?? 0) + 1);
+    }
+    return [...counts.entries()].map(([k, v]) => `${k}: ${v}`).join(", ");
+  };
+
+  if (hasIntel) {
+    lines.push("| Metric | Baseline | CodeAtlas | CodeAtlas Intel |");
+    lines.push("|--------|----------|-----------|-----------------|");
+  } else {
+    lines.push("| Metric | Baseline | CodeAtlas |");
+    lines.push("|--------|----------|-----------|");
+  }
+  lines.push(
+    `| Avg rounds | N/A | ${avgRounds(codeatlas)} | ${hasIntel ? avgRounds(intel) : ""} |`,
+  );
+  lines.push(
+    `| Avg dedup hits | N/A | ${avgDedupe(codeatlas)} | ${hasIntel ? avgDedupe(intel) : ""} |`,
+  );
+  lines.push(
+    `| Stop reasons | N/A | ${stopReasonCounts(codeatlas)} | ${hasIntel ? stopReasonCounts(intel) : ""} |`,
+  );
+  lines.push("");
+
+  return lines;
 }
 
 // ---------------------------------------------------------------------------

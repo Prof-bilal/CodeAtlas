@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { type ToolCallBudget, createToolCallBudget } from "./budget";
 import { CodeAtlasContext, type CodeAtlasContextOptions } from "./context";
 import type { FreshnessReport } from "./freshness";
 import { HANDLERS, type HandlerContext } from "./handlers";
@@ -44,7 +45,14 @@ export function createMcpServer(options: McpServerOptions = {}): CodeAtlasMcpSer
     name: options.serverName ?? "codeatlas",
     version: VERSION,
   });
-  registerTools(server, context, logger);
+  // Per-session tool-call budget. One MCP server process == one agent
+  // session (one opencod / kilo run), so these counters reset with the
+  // process and naturally bound a single run's tool thrash. Defaults to
+  // unlimited; limits engage only when an operator sets the env vars (see
+  // budget.ts). This is the seam that travels the budget from the ollama-only
+  // runner to opencod / kilo / any MCP client.
+  const budget = createToolCallBudget();
+  registerTools(server, context, logger, budget);
   return {
     server,
     context,
@@ -89,7 +97,12 @@ export async function startStdioServer(
   return mcp;
 }
 
-function registerTools(server: McpServer, context: CodeAtlasContext, logger: Logger): void {
+function registerTools(
+  server: McpServer,
+  context: CodeAtlasContext,
+  logger: Logger,
+  budget: ToolCallBudget,
+): void {
   for (const tool of TOOLS) {
     server.registerTool(
       tool.name,
@@ -99,7 +112,7 @@ function registerTools(server: McpServer, context: CodeAtlasContext, logger: Log
         inputSchema: tool.inputSchema,
         outputSchema: tool.outputSchema,
       },
-      (args, _extra) => runTool(tool, context, logger, args),
+      (args, _extra) => runTool(tool, context, logger, budget, args),
     );
   }
 }
@@ -109,10 +122,22 @@ async function runTool(
   tool: ToolDefinition,
   context: CodeAtlasContext,
   logger: Logger,
+  budget: ToolCallBudget,
   args: unknown,
 ): Promise<CallToolResult> {
   const startedAt = performance.now();
   logger.debug(`tool call: ${tool.name}`);
+  // Per-session call/count budget (opencod / kilo / browser paths all funnel
+  // through here). Defaults to unlimited, so this is a no-op unless an env
+  // var is set. When tripped, we reject *before* invoking the handler —
+  // critical against read-flush loops like 19× `read_file_range` → 762k
+  // tokens — and report it as a structured error result.
+  const budgetCheck = budget.check(tool.name);
+  if (!budgetCheck.allowed) {
+    logger.warn(`tool call rejected by budget: ${budgetCheck.reason}`);
+    context.recordMcpRequest(Math.round(performance.now() - startedAt));
+    return toErrorResult(tool.name, new Error(budgetCheck.reason ?? "budget exceeded"), logger);
+  }
   // Detect stale index state before serving reads: refresh incrementally when
   // the working tree has drifted, and report the outcome to the client.
   const freshness = await context.ensureFresh();
@@ -121,12 +146,16 @@ async function runTool(
   try {
     const result = await handler(hctx, args as ToolArgs);
     const enriched = enrichFreshness(result, freshness);
+    const bytes = JSON.stringify(enriched).length;
+    budget.record(tool.name, bytes);
     context.recordMcpRequest(Math.round(performance.now() - startedAt));
     return {
       content: [{ type: "text", text: JSON.stringify(enriched, null, 2) }],
       structuredContent: enriched as Record<string, unknown>,
     };
   } catch (error) {
+    // The call still happened; account it for attribution.
+    budget.record(tool.name, 0);
     context.recordMcpRequest(Math.round(performance.now() - startedAt));
     return toErrorResult(tool.name, error, logger);
   }

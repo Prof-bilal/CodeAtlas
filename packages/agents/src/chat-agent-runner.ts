@@ -1,6 +1,10 @@
 import type { ChatAgentPort, ChatAgentRequest, ChatAgentResult, ProviderPort } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
 /**
  * A provider-backed chat agent runner that implements `ChatAgentPort`.
  *
@@ -37,6 +41,7 @@ export class ProviderChatAgent implements ChatAgentPort {
     try {
       const result = await this.provider.complete({
         provider: request.provider,
+        ...(request.model !== undefined ? { model: request.model } : {}),
         prompt: request.prompt,
         ...(request.messages !== undefined ? { messages: request.messages } : {}),
       });
@@ -51,12 +56,52 @@ export class ProviderChatAgent implements ChatAgentPort {
       const content = typeof providerResponse.content === "string" ? providerResponse.content : "";
       const model = providerResponse.model ?? undefined;
 
-      return ok({
+      const chatResult: ChatAgentResult = {
         model,
         content,
         durationMs: Date.now() - startMs,
         tokenUsage: providerResponse.usage ?? undefined,
-      });
+        executionTrace: {
+          calls: [
+            {
+              callIndex: 1,
+              round: 0,
+              messageCount: request.messages?.length ?? 1,
+              estimatedInputTokens:
+                request.messages !== undefined && request.messages.length > 0
+                  ? request.messages.reduce((sum, msg) => sum + estimateTokens(msg.content), 0)
+                  : estimateTokens(request.prompt),
+              toolSchemaTokens: 0,
+              ...(providerResponse.usage?.inputTokens !== undefined
+                ? { reportedInputTokens: providerResponse.usage.inputTokens }
+                : {}),
+              ...(providerResponse.usage?.outputTokens !== undefined
+                ? { reportedOutputTokens: providerResponse.usage.outputTokens }
+                : {}),
+              ...(providerResponse.usage?.totalTokens !== undefined
+                ? { reportedTotalTokens: providerResponse.usage.totalTokens }
+                : {}),
+            },
+          ],
+          messages: [
+            {
+              role: "user",
+              source: "user-prompt",
+              firstCallIndex: 1,
+              contentChars:
+                request.messages !== undefined && request.messages.length > 0
+                  ? request.messages.reduce((sum, msg) => sum + msg.content.length, 0)
+                  : request.prompt.length,
+              estimatedTokens:
+                request.messages !== undefined && request.messages.length > 0
+                  ? request.messages.reduce((sum, msg) => sum + estimateTokens(msg.content), 0)
+                  : estimateTokens(request.prompt),
+            },
+          ],
+        },
+      };
+
+      return ok(chatResult);
     } catch (error) {
       return fail(
         new Error(`Provider "${request.provider}" request threw: ${(error as Error).message}`),

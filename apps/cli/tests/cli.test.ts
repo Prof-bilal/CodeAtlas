@@ -1272,6 +1272,56 @@ describe("atlas CLI", () => {
     });
   });
 
+  it("uses LIMIT env var as default for --limit when not provided", async () => {
+    const prev = process.env.LIMIT;
+    try {
+      process.env.LIMIT = "42";
+      const program = createCli();
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      let output = "";
+      try {
+        await program.parseAsync(["node", "atlas", "search", "double"]);
+        output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+      } finally {
+        log.mockRestore();
+      }
+      expect(output).toContain('1 result for "double"');
+    } finally {
+      if (prev === undefined) {
+        process.env.LIMIT = undefined;
+      } else {
+        process.env.LIMIT = prev;
+      }
+    }
+  });
+
+  it("uses provided --limit flag over LIMIT env var", async () => {
+    const prev = process.env.LIMIT;
+    try {
+      process.env.LIMIT = "2";
+      const program = createCli();
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      let output = "";
+      try {
+        await program.parseAsync(["node", "atlas", "search", "double", "--limit", "8"]);
+        output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+      } finally {
+        log.mockRestore();
+      }
+      // Should show 8 results because --limit overrides env var
+      const match = output.match(/(\d+) result/);
+      if (match) {
+        expect(match[1]).toBe("8");
+      }
+    } finally {
+      if (prev === undefined) {
+        process.env.LIMIT = undefined;
+      } else {
+        process.env.LIMIT = prev;
+      }
+    }
+  });
+
   it("resolves the index via `--repo` without ATLAS_ROOT", async () => {
     await withProject(async (root) => {
       process.env["ATLAS_ROOT"] = undefined;

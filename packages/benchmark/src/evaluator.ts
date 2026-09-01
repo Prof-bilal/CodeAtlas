@@ -10,31 +10,116 @@ function norm(s: string): string {
   return s.toLowerCase().replace(/[_/-]/g, " ").replace(/\s+/g, " ").trim();
 }
 
+/** Common words that never carry matching signal on their own. */
+const STOP_TOKENS = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "that",
+  "this",
+  "from",
+  "into",
+  "when",
+  "how",
+  "are",
+  "was",
+  "not",
+  "but",
+  "has",
+  "have",
+  "its",
+  "it's",
+  "all",
+  "any",
+]);
+
+/**
+ * Split normalized text into significant tokens (len ≥ 3, stop-words removed).
+ */
+function tokens(s: string): string[] {
+  return norm(s)
+    .split(" ")
+    .filter((t) => t.length >= 3 && !STOP_TOKENS.has(t));
+}
+
+/**
+ * Fuzzy token equality: exact, or a shared prefix of ≥ 4 chars (so
+ * "handler" ≈ "handling", "create" ≈ "creating") without confusing short
+ * or unrelated words.
+ */
+function tokenMatches(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (a.length < 4 || b.length < 4) return false;
+  let common = 0;
+  const len = Math.min(a.length, b.length);
+  while (common < len && a[common] === b[common]) common += 1;
+  return common >= 4;
+}
+
+function allTokensPresent(needles: string[], haystackTokens: Set<string>): boolean {
+  return needles.every((n) => [...haystackTokens].some((h) => tokenMatches(n, h)));
+}
+
+/** Basename of a file path with its extension stripped, tokenized. */
+function basenameTokens(file: string): string[] {
+  const base = basename(file).replace(/\.[A-Za-z0-9]{1,8}$/, "");
+  return tokens(base);
+}
+
 // ---------------------------------------------------------------------------
 // File / concept hit detection
 // ---------------------------------------------------------------------------
 
 /**
  * Find which expected files are referenced in the haystack text.
- * Matches against the basename of each expected file.
+ *
+ * Match strategies (first hit wins, in order of strictness):
+ *   1. normalized basename substring (existing behavior — still primary),
+ *   2. basename-without-extension token overlap (so "create logger" matches
+ *      `create-logger.ts` even when the model cites a different extension),
+ *   3. normalized full-path substring (model cited a deeper/suffix path).
  */
 export function fileHits(expectedFiles: readonly string[], haystack: string): string[] {
   const n = norm(haystack);
+  const hayTokens = new Set(tokens(haystack));
   const hits: string[] = [];
   for (const f of expectedFiles) {
-    if (n.includes(norm(basename(f)))) hits.push(f);
+    const base = norm(basename(f));
+    if (n.includes(base)) {
+      hits.push(f);
+      continue;
+    }
+    const bt = basenameTokens(f);
+    if (bt.length > 0 && allTokensPresent(bt, hayTokens)) {
+      hits.push(f);
+      continue;
+    }
+    if (n.includes(norm(f))) hits.push(f);
   }
   return hits;
 }
 
 /**
  * Find which expected concepts appear in the final text.
+ *
+ * Match strategies (first hit wins):
+ *   1. normalized phrase substring (existing behavior — still primary),
+ *   2. token-set match: every significant concept token appears in the text
+ *      under fuzzy token equality ("error handler" matches an answer that
+ *      talks about "error-handling flow").
  */
 export function conceptHits(concepts: readonly string[], finalText: string): string[] {
   const n = norm(finalText);
+  const textTokens = new Set(tokens(finalText));
   const hits: string[] = [];
   for (const c of concepts) {
-    if (n.includes(norm(c))) hits.push(c);
+    if (n.includes(norm(c))) {
+      hits.push(c);
+      continue;
+    }
+    const ct = tokens(c);
+    if (ct.length > 0 && allTokensPresent(ct, textTokens)) hits.push(c);
   }
   return hits;
 }

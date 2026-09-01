@@ -8,6 +8,7 @@ import type {
   ToolCallRecord,
 } from "@atlas/core";
 import { type Result, ok } from "@atlas/shared";
+import { buildObservability, estimateTokens } from "../phase-a";
 
 /**
  * Agents the Ollama runner can use: a single agent for every mode, or one per
@@ -46,6 +47,7 @@ export class OllamaRunner implements BenchmarkRunner {
         provider: "ollama",
         prompt: request.prompt,
         repositoryPath: request.repositoryPath,
+        ...(request.model !== undefined ? { model: request.model } : {}),
       }),
       request.timeoutMs,
     );
@@ -81,6 +83,12 @@ export class OllamaRunner implements BenchmarkRunner {
     const cr = result.value.value;
     const messages = cr.messages ?? [];
     const denied = new Set(cr.deniedToolCalls ?? []);
+    const toolOutputs = new Map<string, string>();
+    for (const msg of messages) {
+      if (msg.role === "tool" && msg.tool_call_id !== undefined) {
+        toolOutputs.set(msg.tool_call_id, msg.content);
+      }
+    }
 
     // Extract tool calls from assistant messages
     const toolCalls: ToolCallRecord[] = [];
@@ -92,20 +100,31 @@ export class OllamaRunner implements BenchmarkRunner {
             callId: tc.id,
             status: denied.has(tc.id) ? "error" : "success",
             isError: denied.has(tc.id),
+            ...(toolOutputs.has(tc.id) ? { output: toolOutputs.get(tc.id) } : {}),
+            ...(toolOutputs.has(tc.id)
+              ? { outputTokens: estimateTokens(toolOutputs.get(tc.id) ?? "") }
+              : {}),
           });
         }
       }
     }
 
-    const tokenUsage = cr.tokenUsage;
+    const trace = cr.executionTrace;
+    // Use cumulative reported tokens from the execution trace when available,
+    // falling back to the last-call tokenUsage. This gives correct totals for
+    // multi-round tool loops where the provider reports per-call usage.
+    const lastCall = trace?.calls?.[trace.calls.length - 1];
+    const inputTokens = lastCall?.cumulativeInputTokens ?? cr.tokenUsage?.inputTokens ?? 0;
+    const outputTokens = lastCall?.cumulativeOutputTokens ?? cr.tokenUsage?.outputTokens ?? 0;
+    const totalTokens = inputTokens + outputTokens;
     const metrics: TokenMetrics = {
-      input: tokenUsage?.inputTokens ?? 0,
-      output: tokenUsage?.outputTokens ?? 0,
+      input: inputTokens,
+      output: outputTokens,
       reasoning: 0,
-      total: tokenUsage?.totalTokens ?? 0,
+      total: totalTokens,
       cacheWrite: 0,
       cacheRead: 0,
-      source: (tokenUsage?.totalTokens ?? 0) > 0 ? "actual" : "unknown",
+      source: totalTokens > 0 ? "actual" : "unknown",
     };
 
     return ok({
@@ -116,6 +135,16 @@ export class OllamaRunner implements BenchmarkRunner {
       exitCode: null,
       finalText: cr.content ?? "",
       toolCalls,
+      observability: buildObservability({
+        mode: request.mode,
+        metrics,
+        durationMs: wallMs,
+        toolCalls,
+        ...(trace !== undefined ? { executionTrace: trace } : {}),
+      }),
+      ...(cr.stopReason !== undefined ? { stopReason: cr.stopReason } : {}),
+      ...(cr.roundCount !== undefined ? { roundCount: cr.roundCount } : {}),
+      ...(cr.dedupeHitCount !== undefined ? { dedupeHitCount: cr.dedupeHitCount } : {}),
     });
   }
 
@@ -171,3 +200,7 @@ function emptyMetrics(): TokenMetrics {
     source: "unknown",
   };
 }
+
+// cumulativeUsage removed: cumulative tokens are now pre-computed in
+// tool-loop.ts call traces (cumulativeInputTokens / cumulativeOutputTokens)
+// and read directly from the last call trace entry.

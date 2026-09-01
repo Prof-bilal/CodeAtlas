@@ -1,8 +1,10 @@
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import type {
+  BenchmarkAgent,
   BenchmarkRunner,
   RunnerRequest,
   RunnerResult,
@@ -18,7 +20,7 @@ import { type Result, ok } from "@atlas/shared";
  * token/cost/latency metrics, and returns structured results.
  */
 export class OpenCodeRunner implements BenchmarkRunner {
-  public readonly name = "opencode" as const;
+  public readonly name: BenchmarkAgent;
 
   private readonly openCodeBin: string;
   private readonly model: string;
@@ -27,17 +29,40 @@ export class OpenCodeRunner implements BenchmarkRunner {
   public constructor(options?: {
     readonly openCodeBin?: string | undefined;
     readonly model?: string | undefined;
+    /** Runner identity (`"opencode"` default; `"kilo"` for the Kilo fork). */
+    readonly name?: BenchmarkAgent | undefined;
+    /**
+     * Global config file the CLI toggles the CodeAtlas MCP entry in. Defaults
+     * to opencode's; Kilo uses `~/.config/kilo/kilo.jsonc`.
+     */
+    readonly configPath?: string | undefined;
+    /**
+     * Kilo's `run` has no `--dir` flag (it uses cwd); opencode requires it.
+     */
+    readonly omitDirFlag?: boolean | undefined;
   }) {
     this.openCodeBin = options?.openCodeBin ?? "opencode";
     this.model = options?.model ?? "opencode/deepseek-v4-flash-free";
-    this.openCodeConfigPath = join(homedir(), ".config", "opencode", "opencode.json");
+    this.name = options?.name ?? "opencode";
+    this.omitDirFlag = options?.omitDirFlag ?? false;
+    this.openCodeConfigPath =
+      options?.configPath ?? join(homedir(), ".config", "opencode", "opencode.json");
   }
+
+  private readonly omitDirFlag: boolean;
 
   public async execute(request: RunnerRequest): Promise<Result<RunnerResult>> {
     let configBackup: string | null = null;
 
-    if (request.mode === "codeatlas") {
-      configBackup = await this.updateGlobalConfigForRepo(request.repositoryPath);
+    // For every mode we may need to toggle the CodeAtlas MCP server in the
+    // global opencode config: baseline must run WITHOUT it (a true baseline),
+    // while context modes enable it pointed at the correct repo.
+    if (
+      request.mode === "baseline" ||
+      request.mode === "codeatlas" ||
+      request.mode === "codeatlas-intel"
+    ) {
+      configBackup = this.configureGlobalConfig(request.repositoryPath, request.mode);
     }
 
     try {
@@ -50,8 +75,7 @@ export class OpenCodeRunner implements BenchmarkRunner {
         "json",
         "--model",
         model,
-        "--dir",
-        request.repositoryPath,
+        ...(this.omitDirFlag ? [] : ["--dir", request.repositoryPath]),
         request.prompt,
       ];
 
@@ -104,15 +128,70 @@ export class OpenCodeRunner implements BenchmarkRunner {
     }
   }
 
-  private async updateGlobalConfigForRepo(repoPath: string): Promise<string | null> {
+  /**
+   * Rewrite the CodeAtlas MCP entry in the global opencode config for the
+   * requested mode, returning the original file content for restoration after
+   * the run.
+   *
+   * - `baseline`: disable the CodeAtlas MCP (a true baseline — the model must
+   *   not receive repository context tools).
+   * - `codeatlas` / `codeatlas-intel`: enable it and point `ATLAS_ROOT` at the
+   *   repository under test. Other MCP servers in the config (e.g. typeui) are
+   *   preserved untouched.
+   */
+  private configureGlobalConfig(
+    repoPath: string,
+    mode: "baseline" | "codeatlas" | "codeatlas-intel",
+  ): string | null {
     if (!existsSync(this.openCodeConfigPath)) return null;
     const original = readFileSync(this.openCodeConfigPath, "utf-8");
-    const config = JSON.parse(original);
-    if (config.mcp?.codeatlas) {
-      config.mcp.codeatlas.environment = { ATLAS_ROOT: repoPath };
-      writeFileSync(this.openCodeConfigPath, JSON.stringify(config, null, 2));
+    const config = JSON.parse(original) as Record<string, unknown>;
+    config["mcp"] ??= {};
+    const mcp = config["mcp"] as Record<string, unknown>;
+    const enable = mode !== "baseline";
+
+    if (mcp["codeatlas"] !== undefined) {
+      const entry = mcp["codeatlas"] as Record<string, unknown>;
+      entry["enabled"] = enable;
+      if (enable) {
+        entry["environment"] ??= {};
+        const env = entry["environment"] as Record<string, unknown>;
+        env["ATLAS_ROOT"] = repoPath;
+        this.forwardBudgetEnv(env);
+      }
+    } else if (enable) {
+      // Best-effort: create the entry if missing, reusing the built MCP server.
+      const here = dirname(fileURLToPath(import.meta.url));
+      const env: Record<string, unknown> = {
+        ATLAS_ROOT: repoPath,
+      };
+      this.forwardBudgetEnv(env);
+      mcp["codeatlas"] = {
+        type: "local",
+        command: ["node", resolve(here, "..", "..", "..", "mcp", "dist", "bin.js")],
+        environment: env,
+        enabled: true,
+      };
     }
+
+    writeFileSync(this.openCodeConfigPath, JSON.stringify(config, null, 2));
     return original;
+  }
+
+  /**
+   * Forward the tool-call budget env vars (if the benchmark operator sets
+   * them) into the CodeAtlas MCP server's environment. This is what carries
+   * the per-session `ToolCallBudget` from the runner to the opencod / kilo /
+   * any-MCP-client path — the shared choke point in `packages/mcp` — instead
+   * of bounding only the in-process ollama tool loop.
+   */
+  private forwardBudgetEnv(env: Record<string, unknown>): void {
+    for (const key of ["ATLAS_MCP_MAX_TOOL_CALLS", "ATLAS_MCP_MAX_READ_RANGE_CALLS"] as const) {
+      const raw = process.env[key];
+      if (raw !== undefined) {
+        env[key] = raw;
+      }
+    }
   }
 
   private spawnAsync(

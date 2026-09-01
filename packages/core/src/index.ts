@@ -15,6 +15,9 @@ export type {
 } from "./ports/agent-mcp.port";
 export type {
   AgentId,
+  ChatAgentCallTrace,
+  ChatAgentExecutionTrace,
+  ChatAgentMessageTrace,
   ChatAgentPort,
   ChatAgentRequest,
   ChatAgentResult,
@@ -212,6 +215,14 @@ export type {
   TaskFile,
   TokenMetrics,
   ToolCallRecord,
+  BenchmarkCallUsage,
+  BenchmarkMetricName,
+  BenchmarkMetricStatus,
+  BenchmarkMetricValue,
+  BenchmarkObservability,
+  DuplicateAttributionBucket,
+  FailureCategory,
+  FailureClassification,
 } from "./ports/benchmark.port";
 export type {
   ClaimCheck,

@@ -126,6 +126,69 @@ export interface ChatAgentRequest {
    * the agent sends this as the message list instead of a single user prompt.
    */
   readonly messages?: readonly ProviderMessage[];
+  /**
+   * Model id override for the provider's configured default model. When
+   * present, agents forward it to the provider request; when absent, the
+   * provider's default model is used (existing behavior, unchanged).
+   */
+  readonly model?: string;
+}
+
+/** One provider call made during a chat-agent run. */
+export interface ChatAgentCallTrace {
+  /** 1-based call index within the run. */
+  readonly callIndex: number;
+  /** 0-based tool-loop round that triggered the call. */
+  readonly round: number;
+  /** Number of provider messages sent on this call. */
+  readonly messageCount: number;
+  /** Estimated input tokens from the full message transcript. */
+  readonly estimatedInputTokens: number;
+  /** Fixed tool-schema overhead offered on this call, when tools were enabled. */
+  readonly toolSchemaTokens: number;
+  /** Provider-reported input tokens for this call, when available. */
+  readonly reportedInputTokens?: number;
+  /** Provider-reported output tokens for this call, when available. */
+  readonly reportedOutputTokens?: number;
+  /** Provider-reported total tokens for this call, when available. */
+  readonly reportedTotalTokens?: number;
+  /** Cumulative provider-reported input tokens up to and including this call. */
+  readonly cumulativeInputTokens?: number;
+  /** Cumulative provider-reported output tokens up to and including this call. */
+  readonly cumulativeOutputTokens?: number;
+  /** Wall-clock duration of this provider call in milliseconds. */
+  readonly roundDurationMs?: number;
+}
+
+/** One logical transcript contribution within a chat-agent run. */
+export interface ChatAgentMessageTrace {
+  /** Provider message role that carried this content. */
+  readonly role: ProviderMessage["role"];
+  /** Logical source of the content. */
+  readonly source:
+    | "user-prompt"
+    | "context-guidance"
+    | "state-summary"
+    | "assistant-tool-call"
+    | "tool-result"
+    | "recovery-note"
+    | "progress-note";
+  /** First 1-based provider call index that included this content. */
+  readonly firstCallIndex: number;
+  /** Character length of this content contribution. */
+  readonly contentChars: number;
+  /** Estimated token count for this content contribution. */
+  readonly estimatedTokens: number;
+  /** Tool name for tool-related traces. */
+  readonly toolName?: string;
+}
+
+/** Execution trace for a chat-agent run. */
+export interface ChatAgentExecutionTrace {
+  /** Provider-call trace in chronological order. */
+  readonly calls: readonly ChatAgentCallTrace[];
+  /** Logical transcript contributions in chronological order. */
+  readonly messages: readonly ChatAgentMessageTrace[];
 }
 
 /** Result of one chat-agent run. */
@@ -160,6 +223,15 @@ export interface ChatAgentResult {
    * Undefined when the agent does not run a tool loop.
    */
   readonly agentState?: unknown;
+  /**
+   * Additive execution trace used by benchmark/reporting code to attribute
+   * token and transcript overhead without changing runtime behavior.
+   */
+  readonly executionTrace?: ChatAgentExecutionTrace;
+  /** Number of tool-loop rounds executed. */
+  readonly roundCount?: number;
+  /** Number of search queries served from dedup cache. */
+  readonly dedupeHitCount?: number;
 }
 
 /**

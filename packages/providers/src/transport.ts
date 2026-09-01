@@ -15,6 +15,30 @@ export interface StreamChunk {
   readonly done: boolean;
 }
 
+/** A metric name and value for Statsd transmission. */
+export interface StatsdMetric {
+  readonly name: string;
+  readonly value: number | string;
+  readonly type: "c" | "g" | "ms" | "s" | "h" | "msr";
+  readonly tags?: readonly string[];
+}
+
+/** Minimal Statsd contract, injectable so services can be tested offline. */
+export interface StatsdTransport {
+  send(metric: StatsdMetric): Promise<void>;
+}
+
+/** Default Statsd transport backed by Node's `dgram` module, sending UDP datagrams. */
+export const statsdTransport: StatsdTransport = {
+  async send(metric) {
+    const dgram = await import("node:dgram");
+    const client = dgram.createSocket("udp4");
+    const body = `${metric.name}:${metric.value}|${metric.type}`;
+    client.send(body, 0, body.length, 8125, "localhost");
+    client.close();
+  },
+};
+
 /** Minimal HTTP contract, injectable so adapters can be tested offline. */
 export interface HttpTransport {
   post(url: string, headers: Record<string, string>, body: unknown): Promise<HttpResponse>;
