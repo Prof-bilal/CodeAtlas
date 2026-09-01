@@ -1,4 +1,6 @@
 import type {
+  ChatAgentCallTrace,
+  ChatAgentMessageTrace,
   ChatAgentPort,
   ChatAgentRequest,
   ChatAgentResult,
@@ -245,6 +247,10 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
+function traceMessage(traces: ChatAgentMessageTrace[], entry: ChatAgentMessageTrace): void {
+  traces.push(entry);
+}
+
 /**
  * Build the objective restatement for the current round based on plan steps.
  *
@@ -329,6 +335,28 @@ export class ToolUsingChatAgent implements ChatAgentPort {
     }
     const toolDefs = tools.length > 0 ? tools : undefined;
     const maxResultChars = this.policy?.maxResultChars ?? MAX_TOOL_RESULT_CHARS;
+    const toolSchemaTokens = toolDefs !== undefined ? estimateTokens(JSON.stringify(toolDefs)) : 0;
+    const callTraces: ChatAgentCallTrace[] = [];
+    const messageTraces: ChatAgentMessageTrace[] = [];
+
+    if (request.prompt !== "") {
+      traceMessage(messageTraces, {
+        role: "user",
+        source: "user-prompt",
+        firstCallIndex: 1,
+        contentChars: request.prompt.length,
+        estimatedTokens: estimateTokens(request.prompt),
+      });
+    }
+    if (messages.length > 0 && messages[0].role === "user") {
+      traceMessage(messageTraces, {
+        role: "user",
+        source: "context-guidance",
+        firstCallIndex: 1,
+        contentChars: CONTEXT_GUIDANCE.length,
+        estimatedTokens: estimateTokens(CONTEXT_GUIDANCE),
+      });
+    }
 
     // Phase 5: Initialize agent state (P5.1)
     let state = createAgentState(request.prompt);
@@ -354,6 +382,9 @@ export class ToolUsingChatAgent implements ChatAgentPort {
     let executedCalls = 0;
     const deniedToolCalls: string[] = [];
     let stopReason: StopReason = "final-answer";
+    let dedupeHitCount = 0;
+    let cumulativeInputTokens = 0;
+    let cumulativeOutputTokens = 0;
 
     // Phase 5: Global budget (P5.4)
     const effectiveMaxToolCalls = this.loopConfig.maxToolCalls ?? this.policy?.maxToolCalls;
@@ -367,6 +398,7 @@ export class ToolUsingChatAgent implements ChatAgentPort {
     const seenResults = new Set<string>();
 
     for (let round = 0; round < this.maxRounds; round++) {
+      const callIndex = callTraces.length + 1;
       // Phase 5: Check global budget (P5.4)
       if (maxTimeMs > 0 && Date.now() - startMs >= maxTimeMs) {
         stopReason = "budget-exhausted";
@@ -386,11 +418,24 @@ export class ToolUsingChatAgent implements ChatAgentPort {
           stateMsg.push(objective);
         }
         stateMsg.push(stateSummary);
-        messages.push({ role: "system", content: stateMsg.join("\n\n") });
+        const stateContent = stateMsg.join("\n\n");
+        messages.push({ role: "system", content: stateContent });
+        traceMessage(messageTraces, {
+          role: "system",
+          source: "state-summary",
+          firstCallIndex: callIndex,
+          contentChars: stateContent.length,
+          estimatedTokens: estimateTokens(stateContent),
+        });
       }
 
+      const estimatedInputTokens =
+        messages.reduce((sum, msg) => sum + estimateTokens(msg.content), 0) + toolSchemaTokens;
+
+      const roundStartMs = performance.now();
       const result = await this.provider.complete({
         provider: request.provider,
+        ...(request.model !== undefined ? { model: request.model } : {}),
         prompt: request.prompt,
         ...(toolDefs !== undefined ? { tools: toolDefs, toolChoice: "auto" } : {}),
         ...(messages.length > 0 ? { messages } : {}),
@@ -407,6 +452,32 @@ export class ToolUsingChatAgent implements ChatAgentPort {
       lastContent = typeof response.content === "string" ? response.content : "";
       lastModel = response.model ?? undefined;
       lastUsage = response.usage ?? undefined;
+      // Accumulate provider-reported tokens across rounds for correct totals.
+      if (response.usage?.inputTokens !== undefined) {
+        cumulativeInputTokens += response.usage.inputTokens;
+      }
+      if (response.usage?.outputTokens !== undefined) {
+        cumulativeOutputTokens += response.usage.outputTokens;
+      }
+      callTraces.push({
+        callIndex,
+        round,
+        messageCount: messages.length,
+        estimatedInputTokens,
+        toolSchemaTokens,
+        roundDurationMs: Math.round(performance.now() - roundStartMs),
+        ...(response.usage?.inputTokens !== undefined
+          ? { reportedInputTokens: response.usage.inputTokens }
+          : {}),
+        ...(response.usage?.outputTokens !== undefined
+          ? { reportedOutputTokens: response.usage.outputTokens }
+          : {}),
+        ...(response.usage?.totalTokens !== undefined
+          ? { reportedTotalTokens: response.usage.totalTokens }
+          : {}),
+        cumulativeInputTokens,
+        cumulativeOutputTokens,
+      });
 
       const toolCalls = response.toolCalls;
 
@@ -420,8 +491,11 @@ export class ToolUsingChatAgent implements ChatAgentPort {
           durationMs: Date.now() - startMs,
           tokenUsage: lastUsage,
           messages: [...messages],
+          executionTrace: { calls: callTraces, messages: messageTraces },
           ...(deniedToolCalls.length > 0 ? { deniedToolCalls: [...deniedToolCalls] } : {}),
           stopReason,
+          roundCount: round + 1,
+          dedupeHitCount,
           agentState: state,
         });
       }
@@ -439,6 +513,13 @@ export class ToolUsingChatAgent implements ChatAgentPort {
               })),
             }
           : {}),
+      });
+      traceMessage(messageTraces, {
+        role: "assistant",
+        source: "assistant-tool-call",
+        firstCallIndex: callIndex + 1,
+        contentChars: lastContent.length + estimateTokens(JSON.stringify(toolCalls)),
+        estimatedTokens: estimateTokens(lastContent) + estimateTokens(JSON.stringify(toolCalls)),
       });
 
       let roundResultChars = 0;
@@ -461,6 +542,7 @@ export class ToolUsingChatAgent implements ChatAgentPort {
           const cached = this.findSimilarQuery(args, coreName);
           if (cached !== undefined) {
             executedCalls += 1;
+            dedupeHitCount += 1;
             this.perToolCounts.set(coreName, (this.perToolCounts.get(coreName) ?? 0) + 1);
             const cachedText = JSON.stringify(cached);
             if (!seenResults.has(cachedText)) {
@@ -473,6 +555,7 @@ export class ToolUsingChatAgent implements ChatAgentPort {
               queryKey: queryKeyOf(args),
               round,
               cached: true,
+              outputChars: cachedText.length,
             });
             messages.push({
               role: "tool",
@@ -482,6 +565,19 @@ export class ToolUsingChatAgent implements ChatAgentPort {
                 _message: "Similar query already executed. Results cached from prior call.",
               }),
               tool_call_id: toolCall.id,
+            });
+            const cachedContent = JSON.stringify({
+              ...(typeof cached === "object" && cached !== null ? cached : { result: cached }),
+              _cached: true,
+              _message: "Similar query already executed. Results cached from prior call.",
+            });
+            traceMessage(messageTraces, {
+              role: "tool",
+              source: "tool-result",
+              firstCallIndex: callIndex + 1,
+              contentChars: cachedContent.length,
+              estimatedTokens: estimateTokens(cachedContent),
+              toolName: coreName,
             });
             continue;
           }
@@ -512,6 +608,7 @@ export class ToolUsingChatAgent implements ChatAgentPort {
           queryKey: queryKeyOf(args),
           round,
           cached: false,
+          outputChars: toolResult.length,
         });
         if (inspected.filePaths.length > 0) {
           for (const fp of inspected.filePaths) {
@@ -529,15 +626,38 @@ export class ToolUsingChatAgent implements ChatAgentPort {
             content: typeof toolResult === "string" ? toolResult : JSON.stringify(toolResult),
             tool_call_id: toolCall.id,
           });
+          traceMessage(messageTraces, {
+            role: "tool",
+            source: "tool-result",
+            firstCallIndex: callIndex + 1,
+            contentChars: toolResult.length,
+            estimatedTokens: estimateTokens(toolResult),
+            toolName: coreName,
+          });
           messages.push({
             role: "system",
             content: `[ResultInspector] ${recoveryMsg}`,
+          });
+          traceMessage(messageTraces, {
+            role: "system",
+            source: "recovery-note",
+            firstCallIndex: callIndex + 1,
+            contentChars: `[ResultInspector] ${recoveryMsg}`.length,
+            estimatedTokens: estimateTokens(`[ResultInspector] ${recoveryMsg}`),
           });
         } else {
           messages.push({
             role: "tool",
             content: typeof toolResult === "string" ? toolResult : JSON.stringify(toolResult),
             tool_call_id: toolCall.id,
+          });
+          traceMessage(messageTraces, {
+            role: "tool",
+            source: "tool-result",
+            firstCallIndex: callIndex + 1,
+            contentChars: toolResult.length,
+            estimatedTokens: estimateTokens(toolResult),
+            toolName: coreName,
           });
         }
 
@@ -567,9 +687,17 @@ export class ToolUsingChatAgent implements ChatAgentPort {
         consecutiveLowGrowthRounds += 1;
         if (consecutiveLowGrowthRounds >= LOW_GROWTH_ROUNDS) {
           stopReason = "low-growth";
+          const progressMessage = `[Progress: After ${round + 1} rounds, you've gathered information but recent searches added little new data. Consider answering with what you have. You can continue searching or provide your answer now.]`;
           messages.push({
             role: "system",
-            content: `[Progress: After ${round + 1} rounds, you've gathered information but recent searches added little new data. Consider answering with what you have. You can continue searching or provide your answer now.]`,
+            content: progressMessage,
+          });
+          traceMessage(messageTraces, {
+            role: "system",
+            source: "progress-note",
+            firstCallIndex: callIndex + 1,
+            contentChars: progressMessage.length,
+            estimatedTokens: estimateTokens(progressMessage),
           });
         }
       } else {
@@ -592,8 +720,11 @@ export class ToolUsingChatAgent implements ChatAgentPort {
       durationMs: Date.now() - startMs,
       tokenUsage: lastUsage,
       messages: [...messages],
+      executionTrace: { calls: callTraces, messages: messageTraces },
       ...(deniedToolCalls.length > 0 ? { deniedToolCalls: [...deniedToolCalls] } : {}),
       stopReason,
+      roundCount: callTraces.length > 0 ? callTraces[callTraces.length - 1].round + 1 : 0,
+      dedupeHitCount,
       agentState: state,
     });
   }
