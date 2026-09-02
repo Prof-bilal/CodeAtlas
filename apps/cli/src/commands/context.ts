@@ -5,6 +5,7 @@ import { createContextToolSourceFromSDK } from "@atlas/mcp";
 import {
   type AssembleOptions,
   type ContextIntegration,
+  type ContextMode,
   type ContextPackage,
   type ContextSlice,
   type Session,
@@ -35,6 +36,7 @@ interface CommonOptions {
   readonly includeOverview?: boolean;
   readonly ai?: boolean;
   readonly plan?: boolean;
+  readonly contextMode?: ContextMode;
 }
 interface ContextOptions extends CommonOptions {
   readonly explain?: boolean;
@@ -47,6 +49,7 @@ interface ExportOptions {
   readonly maxTokensTotal?: number;
   readonly inject?: boolean;
   readonly json?: boolean;
+  readonly contextMode?: ContextMode;
 }
 
 /** What `atlas context export --for <agent>` writes (and where it injects). */
@@ -105,6 +108,7 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
     .option("--explain", "show content-free item sources, scores, and reasons")
     .option("--json", "print the package or explanation as JSON")
+    .option("--context-mode <mode>", parseContextModeHelp(), parseContextMode)
     .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
       Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
     )
@@ -124,6 +128,7 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .requiredOption("--provider <id>", "AI agent provider id")
     .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
     .option("--json", "print the launched session as JSON")
+    .option("--context-mode <mode>", parseContextModeHelp(), parseContextMode)
     .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
       Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
     )
@@ -143,6 +148,7 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .command("attach <sessionId> <task>")
     .description("Attach safe repository context to a CREATED session")
     .option("--json", "print the attached session as JSON")
+    .option("--context-mode <mode>", parseContextModeHelp(), parseContextMode)
     .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
       Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
     )
@@ -164,6 +170,7 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .requiredOption("--for <agent>", exportTargetHelp())
     .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
     .option("--out <file>", "output file (default .codeatlas/exports/<task>-<id>.md)")
+    .option("--context-mode <mode>", parseContextModeHelp(), parseContextMode)
     .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
       Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
     )
@@ -192,6 +199,7 @@ export function registerAgentRouter(program: Command, options: ContextCommandOpt
       .argument("<prompt...>", "what you want the agent to do")
       .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
       .option("--json", "print the launched session as JSON")
+      .option("--context-mode <mode>", parseContextModeHelp(), parseContextMode)
       .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
         Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
       )
@@ -379,6 +387,7 @@ async function runExport(
           ...(options.maxTokensTotal === undefined
             ? {}
             : { budget: { maxTokensTotal: options.maxTokensTotal } }),
+          ...(options.contextMode === undefined ? {} : { contextMode: options.contextMode }),
         });
 
         const exportPath =
@@ -612,6 +621,7 @@ function assembleOptions(options: CommonOptions): AssembleOptions {
       ? {}
       : { includeInstructions: options.includeInstructions }),
     ...(options.includeOverview === undefined ? {} : { includeOverview: options.includeOverview }),
+    ...(options.contextMode === undefined ? {} : { contextMode: options.contextMode }),
   };
 }
 
@@ -633,6 +643,21 @@ function parsePositiveInteger(value: string): number {
   if (!Number.isInteger(parsed) || parsed <= 0)
     throw new Error(`--max-tokens-total must be a positive integer, got "${value}"`);
   return parsed;
+}
+
+const CONTEXT_MODES: readonly ContextMode[] = ["auto", "auto-escalate", "digest", "full", "off"];
+
+/** Validate a `--context-mode` value against the context assembly modes (ADR-016). */
+function parseContextMode(value: string): ContextMode {
+  const mode = value as ContextMode;
+  if (!CONTEXT_MODES.includes(mode)) {
+    throw new Error(`--context-mode must be one of: ${CONTEXT_MODES.join(", ")}. Got "${value}".`);
+  }
+  return mode;
+}
+
+function parseContextModeHelp(): string {
+  return "context assembly mode: auto (default), auto-escalate, digest, full, off";
 }
 
 // ── Plan rendering ─────────────────────────────────────────────────────────

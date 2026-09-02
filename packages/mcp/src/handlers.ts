@@ -1,4 +1,12 @@
-import type { ClaimCheckInput, ContextSDK, Result, Summary, SummaryKind } from "@atlas/sdk";
+import type {
+  ClaimCheckInput,
+  ContextPackage,
+  ContextSDK,
+  Result,
+  SufficiencyResult,
+  Summary,
+  SummaryKind,
+} from "@atlas/sdk";
 import {
   createClassifier,
   createPlanner,
@@ -16,6 +24,7 @@ import {
   ToolInputError,
   optionalBoolean,
   optionalEnum,
+  optionalEnumFromEnv,
   optionalInt,
   optionalNumber,
   optionalString,
@@ -140,6 +149,15 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
   const task = requireString(args, "task");
   const maxItems = optionalInt(args, "maxItems", 1, 50) ?? 20;
   const maxTokens = optionalInt(args, "maxTokens", 100, 50000) ?? 12000;
+  const contextMode: "auto" | "auto-escalate" | "digest" | "full" | "off" | undefined =
+    (optionalEnum(args, "contextMode", ["auto", "auto-escalate", "digest", "full", "off"]) ??
+      optionalEnumFromEnv("ATLAS_CONTEXT_MODE", [
+        "auto",
+        "auto-escalate",
+        "digest",
+        "full",
+        "off",
+      ])) as "auto" | "auto-escalate" | "digest" | "full" | "off" | undefined;
 
   const sdk = h.ctx.requireSDK();
 
@@ -147,42 +165,76 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
   const { assembleContextPackage } = await import("@atlas/sdk");
   const { detectStaleness } = await import("@atlas/sdk");
   const staleness = await detectStaleness(sdk);
-  const pkg = assembleContextPackage({
-    context: sdk,
-    repositoryPath: sdk.config.repositoryPath,
-    task,
-    staleness,
-    options: {
-      budget: { maxItems, maxTokensPerItem: 2000, maxTokensTotal: maxTokens },
-    },
-  });
 
-  // Run the sufficiency gate.
-  const indexedPaths = sdk.files.listFiles().map((f) => f.path);
-  const sufficiency = evaluateSufficiency({
-    planTargets: pkg.items.filter((i) => i.path !== null).map((i) => i.path ?? ""),
-    indexedPaths,
-    searchHits: pkg.items
-      .filter((i) => i.path !== null)
-      .map((i) => ({ path: i.path, score: i.score })),
-    isCodeModification: true,
-    criticalCount: pkg.items.filter((i) => i.tier === "critical").length,
-    closureDependencyCount: pkg.items.filter((i) => i.kind === "dependency").length,
-    isMultiFileTask: pkg.items.filter((i) => i.kind === "file").length > 1,
-  });
+  const assemble = (mode: "auto" | "digest" | "full" | "off"): ContextPackage => {
+    const pkg = assembleContextPackage({
+      context: sdk,
+      repositoryPath: sdk.config.repositoryPath,
+      task,
+      staleness,
+      options: {
+        budget: { maxItems, maxTokensPerItem: 2000, maxTokensTotal: maxTokens },
+        ...(contextMode !== undefined ? { contextMode: mode } : {}),
+      },
+    });
+    return pkg;
+  };
+  const evaluate = (pkg: ContextPackage): SufficiencyResult => {
+    const indexedPaths = sdk.files.listFiles().map((f) => f.path);
+    return evaluateSufficiency({
+      planTargets: pkg.items.filter((i) => i.path !== null).map((i) => i.path ?? ""),
+      indexedPaths,
+      searchHits: pkg.items
+        .filter((i) => i.path !== null)
+        .map((i) => ({ path: i.path, score: i.score })),
+      isCodeModification: true,
+      criticalCount: pkg.items.filter((i) => i.tier === "critical").length,
+      closureDependencyCount: pkg.items.filter((i) => i.kind === "dependency").length,
+      isMultiFileTask: pkg.items.filter((i) => i.kind === "file").length > 1,
+    });
+  };
 
-  const nextSteps = [...sufficiency.nextSteps];
-  if (sufficiency.sufficient) {
-    nextSteps.push("Context is sufficient — proceed with the task.");
+  // Auto-escalate: start with digest, fall back to full if sufficiency is low.
+  // The model gets the best package it can in a single tool call — it does not
+  // need to know about the escalation; it just receives more context when needed.
+  const startMode: "auto" | "digest" | "full" | "off" =
+    contextMode === "auto-escalate" ? "digest" : contextMode === undefined ? "auto" : contextMode;
+
+  const pkg = assemble(startMode);
+  const sufficiency = evaluate(pkg);
+
+  // Escalate only when the digest pass failed the gate AND a full package
+  // actually passes it. A re-assembly is not an escalation when full is just as
+  // insufficient (small repos produce digest-equivalent packages), so the flag
+  // below reflects the outcome, not the attempt.
+  let finalPkg = pkg;
+  let finalSufficiency = sufficiency;
+  let escalated = false;
+  if (contextMode === "auto-escalate" && !sufficiency.sufficient) {
+    const fullPkg = assemble("full");
+    const fullSufficiency = evaluate(fullPkg);
+    if (fullSufficiency.sufficient) {
+      finalPkg = fullPkg;
+      finalSufficiency = fullSufficiency;
+      escalated = true;
+    }
+  }
+
+  const nextSteps = [...finalSufficiency.nextSteps];
+  if (finalSufficiency.sufficient) {
+    nextSteps.push(
+      "Context is SUFFICIENT — stop exploring now and write your final answer. " +
+        "Cite the exact file paths you will reference. Do not read more files unless something is missing.",
+    );
   } else {
     nextSteps.push(
       "Context may be insufficient — consider broader search or dependency expansion.",
     );
   }
 
-  return {
-    task: pkg.task,
-    items: pkg.items.map((item) => ({
+  const result = {
+    task: finalPkg.task,
+    items: finalPkg.items.map((item) => ({
       id: item.id,
       kind: item.kind,
       title: item.title,
@@ -193,19 +245,44 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
       ...(item.tier !== undefined ? { tier: item.tier } : {}),
       tokens: item.tokens,
     })),
-    sufficient: sufficiency.sufficient,
-    sufficiencyFailures: sufficiency.failures.map((f) => ({
+    ...(finalPkg.synthesis !== undefined
+      ? {
+          synthesis: {
+            kind: finalPkg.synthesis.kind,
+            conclusion: finalPkg.synthesis.conclusion,
+            evidence: finalPkg.synthesis.evidence,
+            centralFiles: finalPkg.synthesis.centralFiles,
+          },
+        }
+      : {}),
+    sufficient: finalSufficiency.sufficient,
+    sufficiencyFailures: finalSufficiency.failures.map((f) => ({
       predicate: f.predicate,
       message: f.message,
     })),
     nextSteps,
     budget: {
-      itemsRequested: pkg.budget.itemsRequested,
-      itemsIncluded: pkg.budget.itemsIncluded,
-      tokensEstimated: pkg.budget.tokensEstimated,
-      budgetExceeded: pkg.budget.budgetExceeded,
+      itemsRequested: finalPkg.budget.itemsRequested,
+      itemsIncluded: finalPkg.budget.itemsIncluded,
+      tokensEstimated: finalPkg.budget.tokensEstimated,
+      budgetExceeded: finalPkg.budget.budgetExceeded,
     },
+    // Explicit escalation signal on every result: true only when auto-escalate
+    // re-assembled with full and the full package satisfied the gate.
+    ...(escalated
+      ? { escalated: true as const, escalationFrom: "digest" as const }
+      : { escalated: false }),
   };
+
+  // Cap output at 50K chars (Phase B B5)
+  const serialized = JSON.stringify(result);
+  const MAX_OUTPUT_CHARS = 50_000;
+  if (serialized.length > MAX_OUTPUT_CHARS) {
+    const truncated = serialized.slice(0, MAX_OUTPUT_CHARS);
+    return JSON.parse(`${truncated.slice(0, truncated.lastIndexOf(","))}}`) as unknown;
+  }
+
+  return result;
 }
 
 // ── inspect_symbol ──────────────────────────────────────────────────────────
@@ -625,16 +702,28 @@ async function readFileRange(h: HandlerContext, args: ToolArgs): Promise<unknown
     ...(padding === undefined ? {} : { padding }),
     ...(expectedHash === undefined ? {} : { expectedHash }),
   });
+
+  // Cap output at 20K chars (Phase B B5)
+  const MAX_CONTENT_CHARS = 20_000;
+  let content = range.content;
+  let truncationNote: string | undefined;
+  if (content.length > MAX_CONTENT_CHARS) {
+    content = content.slice(0, MAX_CONTENT_CHARS);
+    const remaining = range.content.length - MAX_CONTENT_CHARS;
+    truncationNote = `[Content truncated at 20K chars — ${remaining} chars omitted. Narrow the line range to see more.]`;
+  }
+
   return {
     path: range.path,
     startLine: range.startLine,
     endLine: range.endLine,
-    content: range.content,
+    content,
     hash: range.hash,
     versionMatch: range.versionMatch,
     stale: range.stale,
     padded: range.padded,
     ...(range.message === undefined ? {} : { message: range.message }),
+    ...(truncationNote === undefined ? {} : { truncationNote }),
     nextSteps: [],
   };
 }

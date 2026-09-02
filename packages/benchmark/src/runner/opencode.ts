@@ -188,7 +188,11 @@ export class OpenCodeRunner implements BenchmarkRunner {
    * of bounding only the in-process ollama tool loop.
    */
   private forwardBudgetEnv(env: Record<string, unknown>): void {
-    for (const key of ["ATLAS_MCP_MAX_TOOL_CALLS", "ATLAS_MCP_MAX_READ_RANGE_CALLS"] as const) {
+    for (const key of [
+      "ATLAS_MCP_MAX_TOOL_CALLS",
+      "ATLAS_MCP_MAX_READ_RANGE_CALLS",
+      "ATLAS_CONTEXT_MODE",
+    ] as const) {
       const raw = process.env[key];
       if (raw !== undefined) {
         env[key] = raw;
@@ -201,17 +205,51 @@ export class OpenCodeRunner implements BenchmarkRunner {
     options: { cwd: string; timeoutMs: number; env?: NodeJS.ProcessEnv },
   ): Promise<{ code: number | null; lines: string[]; timedOut: boolean; stderr: string }> {
     return new Promise((resolve) => {
+      // `detached: true` makes opencode a process-group leader so the timeout
+      // can kill the *whole* tree (opencode + its MCP grandchildren) with a
+      // negative-pid signal. Without this, killing only the opencode child
+      // leaves grandchildren alive holding the inherited stdout/stderr pipe
+      // write-ends open, which prevents Node's `close` event from ever firing
+      // and hangs the promise indefinitely.
       const child = spawn(this.openCodeBin, args, {
         cwd: options.cwd,
         stdio: ["ignore", "pipe", "pipe"],
         env: options.env,
+        detached: true,
       });
 
       const lines: string[] = [];
       let stderr = "";
       let buffer = "";
+      let timedOut = false;
 
-      const timer = setTimeout(() => child.kill("SIGKILL"), options.timeoutMs);
+      const killTree = () => {
+        const pgid = child.pid;
+        if (pgid !== undefined) {
+          try {
+            // Negative PID signals the whole process group (child + any
+            // grandchildren that inherited the pipe, e.g. MCP servers).
+            process.kill(-pgid, "SIGKILL");
+            return;
+          } catch {
+            /* group may already be gone — fall through to direct kill */
+          }
+        }
+        try {
+          child.kill("SIGKILL");
+        } catch {
+          /* already exited */
+        }
+      };
+
+      const timer = setTimeout(() => {
+        timedOut = true;
+        killTree();
+        // Resolve directly so we never hang on a `close` event that is waiting
+        // on grandchildren that held the pipe open.
+        if (buffer.trim() !== "") lines.push(buffer.trim());
+        resolve({ code: null, lines, timedOut, stderr });
+      }, options.timeoutMs);
 
       child.stdout.on("data", (d: Buffer) => {
         const text = String(d);
@@ -231,12 +269,17 @@ export class OpenCodeRunner implements BenchmarkRunner {
       child.on("close", (code, signal) => {
         clearTimeout(timer);
         if (buffer.trim() !== "") lines.push(buffer.trim());
-        resolve({ code, lines, timedOut: signal === "SIGKILL", stderr });
+        resolve({
+          code,
+          lines,
+          timedOut: timedOut || signal === "SIGKILL",
+          stderr,
+        });
       });
 
       child.on("error", () => {
         clearTimeout(timer);
-        resolve({ code: null, lines, timedOut: false, stderr });
+        resolve({ code: null, lines, timedOut, stderr });
       });
     });
   }

@@ -89,6 +89,7 @@ describe("tiered render (snapshot-style)", () => {
         budgetExceeded: false,
       },
       exclusions: { droppedPaths: [], droppedPatterns: [] },
+      truncated: false,
       items: [
         item("critical-file", {
           tier: "critical",

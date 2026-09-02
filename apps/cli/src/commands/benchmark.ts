@@ -7,6 +7,7 @@ import {
   OllamaRunner,
   OpenCodeRunner,
   SINGLE_ABLATION_SCENARIOS,
+  evaluateRetrieval,
   scaffoldTaskFile,
 } from "@atlas/benchmark";
 import type { BenchmarkRunner } from "@atlas/benchmark";
@@ -204,7 +205,18 @@ function openService(): BenchmarkService {
     }),
   );
   runners.set("ollama", createOllamaRunner());
-  return new BenchmarkService({ root: benchmarkRoot(), runners });
+  return new BenchmarkService({
+    root: benchmarkRoot(),
+    runners,
+    retrievalEvaluator: (suite, tasks, repositoryPath) => {
+      const sdk = createContextSDK({ repositoryPath });
+      try {
+        return evaluateRetrieval(sdk, tasks);
+      } finally {
+        sdk.close();
+      }
+    },
+  });
 }
 
 /** Path of the repository's context database (used to detect an existing index). */

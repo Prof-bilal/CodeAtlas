@@ -103,6 +103,18 @@ export function optionalBoolean(args: ToolArgs, key: string): boolean | undefine
   return value;
 }
 
+/** Read an optional environment value that must be one of `values`. */
+export function optionalEnumFromEnv(envKey: string, values: readonly string[]): string | undefined {
+  const value = process.env[envKey];
+  if (value === undefined || value === "") {
+    return undefined;
+  }
+  if (!values.includes(value)) {
+    throw new ToolInputError(`Environment "${envKey}" must be one of: ${values.join(", ")}.`);
+  }
+  return value;
+}
+
 /** Read an optional string that must be one of `values`. */
 export function optionalEnum(
   args: ToolArgs,

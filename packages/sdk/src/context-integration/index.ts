@@ -40,6 +40,11 @@ export {
   type AssembleOptions,
 } from "./assemble";
 export { applyBudget, DEFAULT_CONTEXT_BUDGET } from "./budget";
+export { synthesize, type SynthesisInput } from "./synthesis";
+export type { ContextSynthesis, ContextSynthesisKind } from "./models";
+export type { ContextMode } from "@atlas/core";
+export { createClassifier } from "./classifier";
+
 export {
   buildSymbolOutline,
   lineRangeOfSymbol,
@@ -48,7 +53,6 @@ export {
   TIER_PRIORITY,
   type OutlineSymbol,
 } from "./hierarchy";
-export { createClassifier } from "./classifier";
 export {
   buildDigest,
   type DigestContent,
@@ -358,5 +362,6 @@ function toAssembleOptions(input: BuildPackageInput): AssembleOptions {
     ...(input.includeOverview !== undefined ? { includeOverview: input.includeOverview } : {}),
     ...(input.scopePaths !== undefined ? { scopePaths: input.scopePaths } : {}),
     ...(input.taskCategory !== undefined ? { taskCategory: input.taskCategory } : {}),
+    ...(input.contextMode !== undefined ? { contextMode: input.contextMode } : {}),
   };
 }

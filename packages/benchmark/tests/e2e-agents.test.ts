@@ -1,4 +1,4 @@
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { type IncomingMessage, type ServerResponse, createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -570,5 +570,67 @@ describe("E2E: opencode CLI runner contract", () => {
     expect(result.value.timedOut).toBe(true);
     expect(result.value.exitCode).toBeNull();
     expect(elapsed).toBeLessThan(4000);
+  }, 30_000);
+
+  it("kills the whole process tree (not just the child) on timeout", async () => {
+    // Regression for a hang where the child spawns a grandchild that inherits
+    // its stdout/stderr pipe fds (exactly opencode -> MCP subprocess). Killing
+    // only the child left the grandchild alive holding the pipe write-end open,
+    // so Node's `close` event (which waits for stdio to drain) never fired and
+    // the runner promise hung indefinitely. With `detached + kill(-pgid)` the
+    // whole process group dies and the promise resolves promptly.
+    const dir = tempRoot("atlas-e2e-oc-grandchild-");
+    seedRepo(dir);
+    const bin = join(dir, "fake-opencode-tree.mjs");
+    const pidFile = join(dir, "grandchild.pid");
+    writeFileSync(
+      bin,
+      `#!/usr/bin/env node
+import { spawn } from "node:child_process";
+import { writeFileSync } from "node:fs";
+// Grandchild is a NORMAL child (not its own group) so it is a member of THIS
+// process's group -- mirroring opencode -> MCP server. It inherits our stdout
+// pipe (no read side on our end) and sleeps forever. If the runner kills only
+// us with SIGKILL, this grandchild survives and holds the pipe open.
+const gc = spawn(process.execPath, ["-e", "setInterval(() => {}, 100)"], {
+  stdio: ["ignore", process.stdout, process.stderr],
+});
+writeFileSync(${JSON.stringify(pidFile)}, String(gc.pid));
+// Pretend to do work forever.
+setInterval(() => {}, 100);
+`,
+    );
+    chmodSync(bin, 0o755);
+    const runner = new OpenCodeRunner({ openCodeBin: bin });
+
+    const start = Date.now();
+    const result = await runner.execute({
+      prompt: "hangs holding the pipe open via grandchild",
+      repositoryPath: dir,
+      mode: "baseline",
+      timeoutMs: 400,
+    });
+    const elapsed = Date.now() - start;
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // Must resolve promptly from the timer, not hang on a forever-open pipe.
+    expect(elapsed).toBeLessThan(3000);
+    expect(result.value.timedOut).toBe(true);
+    // The grandchild (group member) must have been killed too -- not orphaned.
+    // A freshly SIGKILL'd process can briefly linger as a zombie pending reaping
+    // by its new parent (PID 1), so retry over a short window.
+    const pid = Number(readFileSync(pidFile, "utf8"));
+    let grandchildAlive = true;
+    for (let i = 0; i < 20; i++) {
+      try {
+        process.kill(pid, 0);
+      } catch {
+        grandchildAlive = false;
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    expect(grandchildAlive).toBe(false);
   }, 30_000);
 });

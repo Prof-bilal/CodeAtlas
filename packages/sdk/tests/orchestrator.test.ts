@@ -67,6 +67,7 @@ function makeContextPackage(task: string): ContextPackage {
       budgetExceeded: false,
     },
     exclusions: { droppedPaths: [], droppedPatterns: [] },
+    truncated: false,
   };
 }
 

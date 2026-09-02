@@ -3,6 +3,7 @@ import type {
   BenchmarkEvaluationEntry,
   BenchmarkPort,
   BenchmarkReport,
+  BenchmarkRetrievalReport,
   BenchmarkRunRequest,
   BenchmarkRunner,
   BenchmarkStatus,
@@ -17,6 +18,7 @@ import { evaluateTask } from "./evaluator";
 import { classifyFailure } from "./failure-classifier";
 import { BenchmarkMetrics } from "./metrics";
 import { renderHtml, renderReport } from "./reporter";
+import type { RetrievalReport } from "./retrieval-metrics";
 import { BenchmarkStore } from "./store";
 
 /** Options for creating a BenchmarkService. */
@@ -27,6 +29,18 @@ export interface BenchmarkServiceOptions {
   readonly runners?: ReadonlyMap<string, BenchmarkRunner> | undefined;
   /** Metrics integration (optional). */
   readonly metrics?: BenchmarkMetrics | undefined;
+  /**
+   * Optional retrieval-quality evaluator. When provided, `runSuite` will
+   * compute recall@k / precision@k / MRR for all CodeAtlas-mode tasks and
+   * attach the report to `BenchmarkSuiteResult.retrieval`.
+   */
+  readonly retrievalEvaluator?:
+    | ((
+        suite: BenchmarkSuite,
+        tasks: TaskDefinition[],
+        repositoryPath: string,
+      ) => RetrievalReport | null)
+    | undefined;
 }
 
 /**
@@ -39,11 +53,19 @@ export class BenchmarkService implements BenchmarkPort {
   private readonly store: BenchmarkStore;
   private readonly runners: ReadonlyMap<string, BenchmarkRunner>;
   private readonly metrics: BenchmarkMetrics;
+  private readonly retrievalEvaluator:
+    | ((
+        suite: BenchmarkSuite,
+        tasks: TaskDefinition[],
+        repositoryPath: string,
+      ) => RetrievalReport | null)
+    | undefined;
 
   public constructor(options: BenchmarkServiceOptions = {}) {
     this.store = new BenchmarkStore(options.root ?? ".codeatlas/benchmarks");
     this.runners = options.runners ?? new Map();
     this.metrics = options.metrics ?? new BenchmarkMetrics();
+    this.retrievalEvaluator = options.retrievalEvaluator;
   }
 
   // -----------------------------------------------------------------------
@@ -125,7 +147,9 @@ export class BenchmarkService implements BenchmarkPort {
     const toolOutputs = rr.toolCalls
       .map((tc) => (tc as unknown as { output?: string }).output ?? "")
       .filter((o: unknown): o is string => typeof o === "string");
-    const evaluation = evaluateTask(task, rr.finalText, toolOutputs, request.repositoryPath);
+    const evaluation = evaluateTask(task, rr.finalText, toolOutputs, request.repositoryPath, {
+      timedOut: rr.timedOut,
+    });
 
     // Classify failure (Phase A2)
     const failureClassification = classifyFailure(
@@ -162,6 +186,7 @@ export class BenchmarkService implements BenchmarkPort {
       finalText: rr.finalText,
       toolCallCount: rr.toolCalls.length,
       toolCalls: rr.toolCalls,
+      evaluation,
       ...(rr.observability !== undefined ? { observability: rr.observability } : {}),
       ...(failureClassification !== undefined ? { failureClassification } : {}),
       ...(rr.stopReason !== undefined ? { stopReason: rr.stopReason } : {}),
@@ -209,6 +234,9 @@ export class BenchmarkService implements BenchmarkPort {
     const models = request.models ?? suite.config.models;
     const matrixModels = models !== undefined && models.length > 1 ? [...models] : undefined;
 
+    // runsPerTask: how many times to run each task×mode×model cell (default: 1)
+    const runsPerTask = suite.config.runsPerTask ?? 1;
+
     this.store.updateSuiteStatus(request.suiteId, "running");
 
     const results: BenchmarkTaskResult[] = [];
@@ -218,13 +246,50 @@ export class BenchmarkService implements BenchmarkPort {
       if (taskFilter !== null && taskDef.id !== taskFilter) continue;
 
       if (matrixModels !== undefined) {
-        // Matrix mode: expand task × mode × model
+        // Matrix mode: expand task × mode × model × run
         for (const mode of modes) {
           for (const model of matrixModels) {
             const matrixTaskId = `${taskDef.id}@${sanitizeModelForId(model)}`;
+            for (let run = 1; run <= runsPerTask; run++) {
+              const runTaskId = runsPerTask > 1 ? `${matrixTaskId}#run${run}` : matrixTaskId;
+              // Skip if result exists and --force not set
+              if (!request.force) {
+                const existing = this.store.loadTaskResult(request.suiteId, runTaskId, mode);
+                if (existing !== null) {
+                  results.push(existing);
+                  const ev = this.buildEvaluationEntry(existing, taskDef);
+                  if (ev !== null) evaluations.push(ev);
+                  continue;
+                }
+              }
+
+              const taskResult = await this.runTask({
+                suiteId: request.suiteId,
+                taskId: taskDef.id,
+                mode,
+                repositoryPath: request.repositoryPath,
+                model,
+              });
+
+              if (taskResult.ok) {
+                // Tag result with run-specific task ID for store persistence
+                const taggedResult = { ...taskResult.value, taskId: runTaskId };
+                this.store.saveTaskResult(request.suiteId, taggedResult);
+                results.push(taggedResult);
+                const ev = this.buildEvaluationEntry(taggedResult, taskDef);
+                if (ev !== null) evaluations.push(ev);
+              }
+            }
+          }
+        }
+      } else {
+        // Single-model mode: expand task × mode × run
+        for (const mode of modes) {
+          for (let run = 1; run <= runsPerTask; run++) {
+            const runTaskId = runsPerTask > 1 ? `${taskDef.id}#run${run}` : taskDef.id;
             // Skip if result exists and --force not set
             if (!request.force) {
-              const existing = this.store.loadTaskResult(request.suiteId, matrixTaskId, mode);
+              const existing = this.store.loadTaskResult(request.suiteId, runTaskId, mode);
               if (existing !== null) {
                 results.push(existing);
                 const ev = this.buildEvaluationEntry(existing, taskDef);
@@ -238,44 +303,14 @@ export class BenchmarkService implements BenchmarkPort {
               taskId: taskDef.id,
               mode,
               repositoryPath: request.repositoryPath,
-              model,
+              model: suite.config.model,
             });
 
             if (taskResult.ok) {
-              // Tag result with matrix task ID for store persistence
-              const taggedResult = { ...taskResult.value, taskId: matrixTaskId };
-              this.store.saveTaskResult(request.suiteId, taggedResult);
-              results.push(taggedResult);
-              const ev = this.buildEvaluationEntry(taggedResult, taskDef);
+              results.push(taskResult.value);
+              const ev = this.buildEvaluationEntry(taskResult.value, taskDef);
               if (ev !== null) evaluations.push(ev);
             }
-          }
-        }
-      } else {
-        // Single-model mode: existing behavior
-        for (const mode of modes) {
-          // Skip if result exists and --force not set
-          if (!request.force) {
-            const existing = this.store.loadTaskResult(request.suiteId, taskDef.id, mode);
-            if (existing !== null) {
-              results.push(existing);
-              const ev = this.buildEvaluationEntry(existing, taskDef);
-              if (ev !== null) evaluations.push(ev);
-              continue;
-            }
-          }
-
-          const taskResult = await this.runTask({
-            suiteId: request.suiteId,
-            taskId: taskDef.id,
-            mode,
-            repositoryPath: request.repositoryPath,
-          });
-
-          if (taskResult.ok) {
-            results.push(taskResult.value);
-            const ev = this.buildEvaluationEntry(taskResult.value, taskDef);
-            if (ev !== null) evaluations.push(ev);
           }
         }
       }
@@ -306,6 +341,31 @@ export class BenchmarkService implements BenchmarkPort {
 
     this.store.updateSuiteStatus(request.suiteId, "completed");
 
+    // Compute retrieval metrics when an evaluator is wired in (L8 / Phase B).
+    let retrieval: BenchmarkRetrievalReport | undefined;
+    if (this.retrievalEvaluator !== undefined) {
+      const suite = this.store.loadSuite(request.suiteId);
+      if (suite !== null) {
+        const taskDefs = this.loadAllTaskDefs(suite);
+        const retrievalReport = this.retrievalEvaluator(suite, taskDefs, request.repositoryPath);
+        if (retrievalReport !== null) {
+          retrieval = {
+            tasks: retrievalReport.tasks.map((t) => ({
+              taskId: t.taskId,
+              category: t.category,
+              hitsAtK: t.hitsAtK,
+              relevant: t.relevant,
+              retrievedPaths: t.retrievedPaths,
+              ranks: t.ranks,
+            })),
+            precisionAtK: retrievalReport.precisionAtK,
+            recallAtK: retrievalReport.recallAtK,
+            meanReciprocalRank: retrievalReport.meanReciprocalRank,
+          };
+        }
+      }
+    }
+
     const suiteResult: BenchmarkSuiteResult = {
       suiteId: request.suiteId,
       tasks: results,
@@ -314,6 +374,7 @@ export class BenchmarkService implements BenchmarkPort {
       costSavings: baseCost - bestCost,
       accuracyDelta: bestCat - baseAvg,
       completedAt: new Date().toISOString(),
+      ...(retrieval !== undefined ? { retrieval } : {}),
     };
 
     this.store.saveRawResults(request.suiteId, suiteResult);
@@ -333,7 +394,8 @@ export class BenchmarkService implements BenchmarkPort {
 
     const taskDefs = this.loadAllTaskDefs(suite);
     const modelCount = suite.config.models?.length ?? 1;
-    const total = taskDefs.length * suite.config.modes.length * modelCount;
+    const runsPerTask = suite.config.runsPerTask ?? 1;
+    const total = taskDefs.length * suite.config.modes.length * modelCount * runsPerTask;
     const results = this.store.listTaskResults(suiteId);
 
     return ok({
@@ -449,7 +511,9 @@ export class BenchmarkService implements BenchmarkPort {
       .map((tc) => (tc as unknown as { output?: string }).output ?? "")
       .filter((o: unknown): o is string => typeof o === "string");
 
-    const evaluation = evaluateTask(taskDef, result.finalText, toolOutputs, "");
+    const evaluation = evaluateTask(taskDef, result.finalText, toolOutputs, "", {
+      timedOut: result.timedOut,
+    });
     return {
       taskId: result.taskId,
       mode: result.mode,

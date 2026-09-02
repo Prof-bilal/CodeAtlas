@@ -154,7 +154,12 @@ export class OllamaRunner implements BenchmarkRunner {
     }
     if (mode === "baseline") return this.agents.baseline;
     if (mode === "codeatlas-intel") {
-      return this.agents["codeatlas-intel"] ?? this.agents.codeatlas;
+      // Removed fallback — codeatlas-intel must be explicitly configured
+      const intel = this.agents["codeatlas-intel"];
+      if (intel === undefined) {
+        throw new Error("codeatlas-intel agent not configured");
+      }
+      return intel;
     }
     return this.agents.codeatlas;
   }

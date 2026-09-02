@@ -313,6 +313,7 @@ export {
   applyPlanAnnotations,
   type ModelAnnotation,
   type PlanAnnotationResult,
+  type ContextMode,
   evaluateSufficiency,
   type SufficiencyFailure,
   type SufficiencyInput,

@@ -1,6 +1,12 @@
 import { sep as pathSep } from "node:path";
 import { rerankByContextTaskCategory } from "@atlas/context";
-import type { ContextTaskCategory, ContextTier, LineRange, Summary } from "@atlas/core";
+import type {
+  ContextMode,
+  ContextTaskCategory,
+  ContextTier,
+  LineRange,
+  Summary,
+} from "@atlas/core";
 import { estimateTokens } from "@atlas/shared";
 import { InvalidQueryError } from "../context/errors";
 import type {
@@ -11,6 +17,7 @@ import type {
 } from "../context/models";
 import type { ContextSDK } from "../context/sdk";
 import { DEFAULT_CONTEXT_BUDGET, applyBudget } from "./budget";
+import { createClassifier } from "./classifier";
 import { type DenyFilterResult, denyFilter } from "./deny";
 import { lineRangeOfSymbol, tierPriorityOf } from "./hierarchy";
 import { type ProjectInstruction, collectInstructions } from "./instructions";
@@ -20,8 +27,10 @@ import type {
   ContextItemSource,
   ContextPackage,
   ContextPackageItem,
+  ContextSynthesis,
   StaleContextSignal,
 } from "./models";
+import { synthesize } from "./synthesis";
 
 /**
  * Dependency items are additive evidence, never the answer: their score is
@@ -66,6 +75,31 @@ function isIdentifierLike(word: string): boolean {
   return word.length >= 4 && /[A-Z0-9_]/.test(word);
 }
 
+/**
+ * Select effective context mode based on repository size (ADR-016 / Phase B B2).
+ *
+ * Auto mode selects:
+ * - <= 800 files  → full (standard assembly; small/mid repos fit comfortably,
+ *   and digesting them loses recall on open-ended discovery tasks — observed
+ *   as a real regression: `routes.ts` dropped out of top-10 digest results on
+ *   a small fixture repo)
+ * - > 800 files   → digest (prevent token explosion on large repos)
+ *
+ * Auto-escalate: start in digest, fall back to full if the sufficiency gate
+ * signals insufficient context (so weak models get the compact package first
+ * but can escalate when the task demands more).
+ */
+function selectContextMode(mode: ContextMode, context: ContextSDK): "digest" | "full" | "off" {
+  if (mode === "off") return "off";
+  if (mode === "digest") return "digest";
+  if (mode === "full") return "full";
+  // "auto" or "auto-escalate": select based on repo size.
+  if (!context.isAvailable) return "digest";
+  const fileCount = context.files.listFiles().length;
+  if (fileCount > 800) return "digest";
+  return "full";
+}
+
 /** Options for assembling a context package. */
 export interface AssembleOptions {
   /** Overrides applied on top of the default budget. */
@@ -78,6 +112,14 @@ export interface AssembleOptions {
   readonly explicitResolution?: boolean;
   /** Include a project-overview item — default true. */
   readonly includeOverview?: boolean;
+  /**
+   * Context assembly mode (ADR-016 / Phase B).
+   * - `auto` (default): select based on repo size
+   * - `digest`: digest + top-5 search hits only
+   * - `full`: all items, dependency chains, full assembly
+   * - `off`: empty package (baseline mode)
+   */
+  readonly contextMode?: ContextMode;
   /**
    * Restrict the package to context items whose path falls under one of these
    * paths (an isolated scope, e.g. a security review scoped to the
@@ -144,9 +186,42 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
   if (task.trim() === "") {
     throw new InvalidQueryError("Task must not be empty.");
   }
-  const budget: ContextBudget = {
-    ...DEFAULT_CONTEXT_BUDGET,
-    ...options.budget,
+
+  // Mode selection (ADR-016 / Phase B B2)
+  const effectiveMode = selectContextMode(options.contextMode ?? "auto", context);
+
+  // Off mode: return empty package immediately
+  if (effectiveMode === "off") {
+    return {
+      task,
+      items: [],
+      staleness,
+      budget: {
+        budget: DEFAULT_CONTEXT_BUDGET,
+        itemsRequested: 0,
+        itemsIncluded: 0,
+        tokensEstimated: 0,
+        itemsDroppedByCount: [],
+        itemsTruncated: [],
+        droppedByTokens: [],
+        budgetExceeded: false,
+      },
+      exclusions: { droppedPaths: [], droppedPatterns: [] },
+      truncated: false,
+    };
+  }
+
+  // Apply mode-specific budget overrides
+  const budget: ContextBudget =
+    effectiveMode === "digest"
+      ? { maxItems: 10, maxTokensPerItem: 2000, maxTokensTotal: 8000, ...options.budget }
+      : { ...DEFAULT_CONTEXT_BUDGET, ...options.budget };
+
+  // Apply mode-specific search limit overrides
+  const effectiveOptions: AssembleOptions = {
+    ...options,
+    searchLimit: effectiveMode === "digest" ? 5 : (options.searchLimit ?? 30),
+    includeOverview: effectiveMode === "digest" ? false : (options.includeOverview ?? true),
   };
 
   const exclusions: { droppedPaths: string[]; droppedPatterns: string[] } = {
@@ -156,7 +231,7 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
 
   // 1. Project instructions — always first, deny-filtered like any file.
   const instructionItems: ContextPackageItem[] = [];
-  if (options.includeInstructions !== false) {
+  if (effectiveOptions.includeInstructions !== false) {
     for (const instruction of collectInstructions(repositoryPath)) {
       const filter = denyFilter(instruction.path, instruction.content);
       if (!filter.accepted) {
@@ -182,7 +257,7 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
   const contextItems: ContextPackageItem[] = [];
   if (context.isAvailable) {
     const relevant = context.getRelevantContext(task);
-    const selections = collectSelections(context, task, options);
+    const selections = collectSelections(context, task, effectiveOptions);
 
     const selectedNodes = new Map<string, number>();
     for (const selection of selections) {
@@ -298,6 +373,23 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
 
   const { items: budgetedItems, record } = applyBudget(ordered, budget);
 
+  // Package-level truncation signal: true when any items were dropped or truncated
+  const truncated =
+    record.droppedByTokens.length > 0 ||
+    record.itemsDroppedByCount.length > 0 ||
+    record.itemsTruncated.length > 0;
+
+  // Synthesis tier (ADR-017): in digest/weak-model mode only, compute a
+  // conclusion + evidence chain from the graph/summaries. Full (frontier)
+  // mode omits synthesis — the model reasons over ranked items. Kept
+  // synchronous: resolve the sync Result and keep only success values.
+  let synthesis: ContextSynthesis | undefined;
+  if (effectiveMode === "digest") {
+    const category = createClassifier()(task).category;
+    const result = synthesize({ context, task, category });
+    synthesis = result.ok ? result.value : undefined;
+  }
+
   return {
     task,
     items: budgetedItems,
@@ -307,6 +399,8 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
       droppedPaths: exclusions.droppedPaths,
       droppedPatterns: exclusions.droppedPatterns,
     },
+    truncated,
+    ...(synthesis !== undefined ? { synthesis } : {}),
   };
 }
 

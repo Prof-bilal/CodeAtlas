@@ -55,8 +55,8 @@ describe("ToolCallBudget", () => {
     b.record("search_files", 300);
     const snap = b.snapshot();
     expect(snap.totalCalls).toBe(3);
-    expect(snap.perTool.read_file_range).toEqual({ calls: 2, bytes: 1000 });
-    expect(snap.perTool.search_files).toEqual({ calls: 1, bytes: 300 });
+    expect(snap.perTool["read_file_range"]).toEqual({ calls: 2, bytes: 1000 });
+    expect(snap.perTool["search_files"]).toEqual({ calls: 1, bytes: 300 });
   });
 });
 
@@ -103,7 +103,7 @@ describe("budget end-to-end via MCP server", () => {
    * through, with the per-session ToolCallBudget enforced before the handler.
    */
   async function withBudgetServer<T>(
-    env: Record<string, string>,
+    _env: Record<string, string>,
     fn: (client: Client) => Promise<T>,
   ): Promise<T> {
     const root = createFixture();
@@ -122,7 +122,7 @@ describe("budget end-to-end via MCP server", () => {
   }
 
   it("rejects a second tool call once the env cap is hit (opencod / kilo path)", async () => {
-    process.env.ATLAS_MCP_MAX_TOOL_CALLS = "1";
+    process.env["ATLAS_MCP_MAX_TOOL_CALLS"] = "1";
     try {
       await withBudgetServer({}, async (client) => {
         // First call within the cap is allowed and the handler runs.
@@ -147,13 +147,13 @@ describe("budget end-to-end via MCP server", () => {
         expect(text).toContain("1");
       });
     } finally {
-      process.env.ATLAS_MCP_MAX_TOOL_CALLS = undefined;
+      process.env["ATLAS_MCP_MAX_TOOL_CALLS"] = undefined;
     }
   });
 
   it("keeps the budget off by default so behaviour is unchanged (no env set)", async () => {
-    const saved = process.env.ATLAS_MCP_MAX_TOOL_CALLS;
-    process.env.ATLAS_MCP_MAX_TOOL_CALLS = undefined;
+    const saved = process.env["ATLAS_MCP_MAX_TOOL_CALLS"];
+    process.env["ATLAS_MCP_MAX_TOOL_CALLS"] = undefined;
     try {
       await withBudgetServer({}, async (client) => {
         for (let i = 0; i < 50; i++) {
@@ -165,7 +165,7 @@ describe("budget end-to-end via MCP server", () => {
         }
       });
     } finally {
-      if (saved !== undefined) process.env.ATLAS_MCP_MAX_TOOL_CALLS = saved;
+      if (saved !== undefined) process.env["ATLAS_MCP_MAX_TOOL_CALLS"] = saved;
     }
   });
 });

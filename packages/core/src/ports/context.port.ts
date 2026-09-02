@@ -11,6 +11,14 @@ import type { ContextItem } from "../domain/entities";
  */
 export type ContextTaskCategory = "debug" | "security" | "architecture" | "understand";
 
+/**
+ * Context assembly mode (ADR-016 / Phase B).
+ *
+ * Controls how much context is assembled for a task based on repository size
+ * and token budget constraints.
+ */
+export type ContextMode = "auto" | "auto-escalate" | "digest" | "full" | "off";
+
 /** Ranks and assembles the context to feed to a language model. */
 export interface ContextBuilderPort {
   /**

@@ -69,6 +69,33 @@ export function renderContextPackage(pkg: ContextPackage): string {
     );
     lines.push("");
   }
+  // Deterministic engine analysis (ADR-017): in digest mode the package leads
+  // with the computed conclusion so a weak model can verify and present rather
+  // than re-derive the whole structure from the excerpts below. This converts
+  // a reasoning task into a verification task; the evidence chain names the
+  // files/symbols to check.
+  if (pkg.synthesis !== undefined) {
+    lines.push("# Engine analysis");
+    lines.push("The engine has analyzed the code structure and concluded:");
+    lines.push(pkg.synthesis.conclusion);
+    lines.push("");
+    if (pkg.synthesis.evidence.length > 0) {
+      lines.push("Evidence chain:");
+      for (const step of pkg.synthesis.evidence) {
+        lines.push(`- ${step}`);
+      }
+      lines.push("");
+    }
+    if (pkg.synthesis.centralFiles.length > 0) {
+      lines.push(`Central files: ${pkg.synthesis.centralFiles.join(", ")}`);
+      lines.push("");
+    }
+    lines.push(
+      "> Verify this conclusion against the excerpts below before answering. " +
+        "If they contradict the conclusion, trust the excerpts.",
+    );
+    lines.push("");
+  }
   for (const item of pkg.items) {
     lines.push(`## ${item.title}`);
     lines.push(item.content);

@@ -69,6 +69,7 @@ export type {
 export type { CachePort } from "./ports/cache.port";
 export type {
   ContextBuilderPort,
+  ContextMode,
   ContextTaskCategory,
 } from "./ports/context.port";
 export type { ContextItem } from "./domain/entities";
@@ -202,6 +203,8 @@ export type {
   BenchmarkStatus,
   BenchmarkSuite,
   BenchmarkSuiteResult,
+  BenchmarkRetrievalReport,
+  BenchmarkRetrievalTaskResult,
   BenchmarkSuiteRunRequest,
   BenchmarkTaskResult,
   ModelBudgetDefaults,

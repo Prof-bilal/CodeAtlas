@@ -125,6 +125,39 @@ export interface ContextPackage {
   readonly staleness: StaleContextSignal;
   readonly budget: BudgetRecord;
   readonly exclusions: ExclusionRecord;
+  /** True when context was truncated (items dropped or truncated to fit budget). */
+  readonly truncated: boolean;
+  /**
+   * Deterministic synthesis (ADR-017): a computed conclusion + evidence chain
+   * derived from the graph, parser, and summaries — NOT AI-generated. Present
+   * only in `digest`/weak-model mode, where the model benefits from the engine
+   * reasoning about code structure on its behalf. `full`/frontier mode omits it
+   * (the model reasons over the ranked items directly). Absent when there is
+   * nothing synthesizable.
+   */
+  readonly synthesis?: ContextSynthesis;
+}
+
+/**
+ * A deterministic conclusion computed by the context engine (ADR-017).
+ *
+ * `conclusion` is a short, model-readable statement of what the engine found
+ * (dependency path, fault site, module map, or relevant file set). `evidence`
+ * is the ordered, human-readable chain of reasoning steps the conclusion rests
+ * on, each citing concrete files/symbols/scores so the agent can verify rather
+ * than trust. `kind` tags which analysis produced it so the delivery layer can
+ * phrase the scaffolding accordingly.
+ */
+export type ContextSynthesisKind = "dependency-path" | "fault-site" | "module-map" | "file-set";
+
+export interface ContextSynthesis {
+  readonly kind: ContextSynthesisKind;
+  /** Short conclusion statement (e.g. "A → B → C is the request path"). */
+  readonly conclusion: string;
+  /** Ordered evidence steps the conclusion is built from. */
+  readonly evidence: readonly string[];
+  /** Files central to the conclusion (for the agent to cite/verify). */
+  readonly centralFiles: readonly string[];
 }
 
 /** The explainability projection of a package (no bulky content). */

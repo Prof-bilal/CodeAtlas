@@ -73,10 +73,10 @@ Options take precedence over environment/config where they overlap.
 | `atlas tools update` | **[implemented]** | Update all installed tools to their latest versions. Skills are updated via `git pull --ff-only`; ecosystem tools (npm/pip/cargo/go) are re-installed through the approved adapter. `--approve` grants blanket approval for the update run; without it, ecosystem tools are skipped and only skills are updated. Reports per-tool status (updated/unchanged/error). `--json` supported. |
 | `atlas tools doctor` | **[implemented]** | Reconcile installed manifests, integration state, and trust; `--json` supported. |
 | `atlas tools configure <tool>` | **[implemented]** | Configure only installed agents/hosts declared by the tool; `--dry-run` renders exact changes, `--json` emits machine-readable output, and `--config-home` supports managed/test user-config roots. |
-| `atlas context <task>` | **[implemented]** | Build and render a deny-filtered, budgeted Context Package (explicit form: `atlas context build <task>`); `explain` renders content-free selection reasons, `json` emits package/explanation data, `--ai` appends a provider-backed AI context briefing (degrades to the deterministic package when no provider is configured), and budget/instruction/overview flags tune SDK assembly. |
-| `atlas context launch <task>` | **[implemented]** | Launch a provider session seeded with the rendered Context Package via `SessionPort`; requires `provider`, supports `repo`, `json`, `--ai` (prepends the briefing to the session prompt), and tuning flags. |
-| `atlas context attach <session-id> <task>` | **[implemented]** | Attach context to a `CREATED` session; `--ai` prepends a briefing to the prompt; live/terminal sessions return a clean exit-1 typed error. |
-| `atlas claude <prompt...>` | **[implemented]** | Launch the `claude` AI CLI seeded with a Context Package for the prompt (sugar over `atlas context launch --provider claude`); `--ai` prepends an AI briefing, `json`/budget/instruction/overview flags match `context launch`. |
+| `atlas context <task>` | **[implemented]** | Build and render a deny-filtered, budgeted Context Package (explicit form: `atlas context build <task>`); `explain` renders content-free selection reasons, `json` emits package/explanation data, `--ai` appends a provider-backed AI context briefing (degrades to the deterministic package when no provider is configured), and budget/instruction/overview flags tune SDK assembly. `--context-mode <mode>` (ADR-016: `auto`/`auto-escalate`/`digest`/`full`/`off`) selects the assembly regime; digest packages include the deterministic engine-analysis synthesis (ADR-017). |
+| `atlas context launch <task>` | **[implemented]** | Launch a provider session seeded with the rendered Context Package via `SessionPort`; requires `provider`, supports `repo`, `json`, `--ai` (prepends the briefing to the session prompt), `--context-mode`, and tuning flags. |
+| `atlas context attach <session-id> <task>` | **[implemented]** | Attach context to a `CREATED` session; `--ai` prepends a briefing to the prompt; `--context-mode` supported; live/terminal sessions return a clean exit-1 typed error. |
+| `atlas claude <prompt...>` | **[implemented]** | Launch the `claude` AI CLI seeded with a Context Package for the prompt (sugar over `atlas context launch --provider claude`); `--ai` prepends an AI briefing, `json`/budget/instruction/overview/`--context-mode` flags match `context launch`. |
 | `atlas gemini <prompt...>` | **[implemented]** | Launch the `gemini` AI CLI seeded with a Context Package for the prompt (`--ai` briefing supported). |
 | `atlas codex <prompt...>` | **[implemented]** | Launch the `codex` AI CLI seeded with a Context Package for the prompt (`--ai` briefing supported). |
 | `atlas opencode <prompt...>` | **[implemented]** | Launch the `opencode` AI CLI seeded with a Context Package for the prompt (`--ai` briefing supported). |
@@ -98,8 +98,9 @@ deny-filtered Context Package for the prompt and starts the agent CLI seeded
 with it. `--ai` prepends an AI context briefing to the prompt (degrades
 cleanly to the deterministic package without a configured provider). Tuning
 flags match `atlas context launch`: `--repo <path>`, `--json`,
-`--max-tokens-total <number>`, `--include-instructions`, `--no-instructions`,
-`--include-overview`, `--no-overview`. These cover the agents that have a
+`--max-tokens-total <number>`, `--context-mode <mode>`,
+`--include-instructions`, `--no-instructions`, `--include-overview`,
+`--no-overview`. These cover the agents that have a
 defined launch adapter (`@atlas/agents`); the interactive **slash surface**
 (`/claude`, `/cursor`, `/grok`, …) inside `atlas tui` remains **v2 / not
 shipped** (untracked, see `atlas tui` above).

@@ -718,6 +718,84 @@ describe("find_relevant_context", () => {
       await expect(HANDLERS.find_relevant_context(ctx, {})).rejects.toThrow(ToolInputError);
     });
   });
+
+  it("auto-escalate mode escalates only when the full pass satisfies the gate", async () => {
+    await withFixture(async (ctx) => {
+      const digest = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Fix the double function",
+        contextMode: "digest",
+      })) as {
+        sufficient: boolean;
+        escalated: boolean;
+        items: Array<{ kind: string }>;
+      };
+      const auto = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Fix the double function",
+        contextMode: "auto-escalate",
+      })) as {
+        task: string;
+        items: Array<{ id: string; kind: string; score: number }>;
+        sufficient: boolean;
+        escalated: boolean;
+        escalationFrom?: string;
+        nextSteps: string[];
+      };
+      expect(auto.task).toBe("Fix the double function");
+      expect(auto.items.length).toBeGreaterThan(0);
+      // The result must always carry an explicit boolean escalation signal.
+      expect(typeof digest.escalated).toBe("boolean");
+      expect(typeof auto.escalated).toBe("boolean");
+      // This small fixture produces digest-equivalent full packages, so the
+      // digest pass is insufficient and the full pass is too — no escalation
+      // happened, and auto-escalate must not claim one.
+      expect(digest.sufficient).toBe(false);
+      expect(auto.sufficient).toBe(false);
+      expect(auto.escalated).toBe(false);
+      expect(auto.escalationFrom).toBeUndefined();
+      expect(auto.nextSteps.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("auto-escalate mode reports no escalation when the digest pass is insufficient", async () => {
+    // Fixture note: the shared 3-file fixture is too small for digest vs full
+    // to differ (both hit the same budget), so the sufficiency verdict is
+    // identical and escalation cannot make it sufficient. The contract under
+    // test is the observable signal, not the verdict: auto-escalate must NOT
+    // claim an escalation that did not happen (regression for the
+    // always-`escalated: true` bug).
+    await withFixture(async (ctx) => {
+      const digest = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Find all functions that call double",
+        contextMode: "digest",
+      })) as {
+        sufficient: boolean;
+        escalated: boolean;
+        items: Array<{ kind: string }>;
+      };
+      const auto = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Find all functions that call double",
+        contextMode: "auto-escalate",
+      })) as {
+        items: Array<{ kind: string }>;
+        sufficient: boolean;
+        escalated: boolean;
+        escalationFrom?: string;
+      };
+      // Every result carries an explicit boolean escalation signal.
+      expect(typeof digest.escalated).toBe("boolean");
+      expect(typeof auto.escalated).toBe("boolean");
+      expect(digest.escalated).toBe(false);
+      // Non-auto-escalate modes never escalate.
+      expect(auto.escalated).toBe(false);
+      expect(auto.escalationFrom).toBeUndefined();
+      // The auto-escalate package is what digest produced (nothing to escalate
+      // from, identical verdicts on this fixture).
+      expect(auto.items.length).toBe(digest.items.length);
+      // All items should be files or symbols, not instructions-only.
+      const nonInstructionItems = auto.items.filter((item) => item.kind !== "instructions");
+      expect(nonInstructionItems.length).toBeGreaterThan(0);
+    });
+  });
 });
 
 // ── inspect_symbol ──────────────────────────────────────────────────────────

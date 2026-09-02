@@ -293,6 +293,13 @@ export interface BenchmarkTaskResult {
   readonly observability?: BenchmarkObservability;
   /** Failure classification derived from the evaluation and ledger. */
   readonly failureClassification?: FailureClassification;
+  /** Evaluation result for this task (Phase B prerequisite). */
+  readonly evaluation?: BenchmarkEvaluation;
+  /** Sufficiency gate verdict for this task (Phase B B4). */
+  readonly sufficiencyVerdict?: {
+    readonly sufficient: boolean;
+    readonly failures: readonly { readonly predicate: string; readonly message: string }[];
+  };
   /** Why the tool loop terminated (Phase A5). */
   readonly stopReason?: string | undefined;
   /** Number of tool-loop rounds executed (Phase A5). */
@@ -503,6 +510,34 @@ export interface BenchmarkSuiteResult {
   readonly accuracyDelta: number;
   /** ISO timestamp. */
   readonly completedAt: string;
+  /**
+   * Retrieval-quality report (recall@k / precision@k / MRR), populated when
+   * the benchmark service was constructed with a retrieval evaluator.
+   * Absent when retrieval could not be scored (no index, no evaluator).
+   */
+  readonly retrieval?: BenchmarkRetrievalReport;
+}
+
+/** Retrieval-quality report attached to a suite result (L8 / Phase B). */
+export interface BenchmarkRetrievalReport {
+  /** Per-task retrieval scores. */
+  readonly tasks: readonly BenchmarkRetrievalTaskResult[];
+  /** Precision@k averaged across tasks. */
+  readonly precisionAtK: Readonly<Record<number, number>>;
+  /** Recall@k averaged across tasks. */
+  readonly recallAtK: Readonly<Record<number, number>>;
+  /** Mean reciprocal rank across tasks. */
+  readonly meanReciprocalRank: number;
+}
+
+/** One task's retrieval-quality measurement inside a suite report. */
+export interface BenchmarkRetrievalTaskResult {
+  readonly taskId: string;
+  readonly category: string;
+  readonly hitsAtK: Readonly<Record<number, number>>;
+  readonly relevant: number;
+  readonly retrievedPaths: readonly string[];
+  readonly ranks: Readonly<Record<string, number | null>>;
 }
 
 /** An evaluation entry tied to a specific task and mode. */

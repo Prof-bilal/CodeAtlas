@@ -386,6 +386,42 @@ describe("assembleContextPackage (via buildPackage)", () => {
       sdk.close();
     }
   });
+  it("attaches a deterministic synthesis in digest mode (ADR-017)", async () => {
+    const repo = tempRepo();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: fakeSessions().port });
+      // "double" matches file content in the fixture; digest mode triggers synthesis.
+      const pkg = await integration.buildPackage({ task: "double", contextMode: "digest" });
+      expect(pkg.synthesis).toBeDefined();
+      expect(pkg.synthesis?.conclusion.length).toBeGreaterThan(0);
+      expect(pkg.synthesis?.evidence.length).toBeGreaterThan(0);
+      expect(["dependency-path", "fault-site", "module-map", "file-set"]).toContain(
+        pkg.synthesis?.kind,
+      );
+    });
+  });
+
+  it("synthesis conclusion references the matched files", async () => {
+    const repo = tempRepo();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: fakeSessions().port });
+      const pkg = await integration.buildPackage({ task: "double", contextMode: "digest" });
+      // centralFiles should draw from the ranked results for the query.
+      expect(pkg.synthesis?.centralFiles.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("omits synthesis in full (frontier) mode", async () => {
+    const repo = tempRepo();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: fakeSessions().port });
+      const pkg = await integration.buildPackage({
+        task: "how does login depend on math",
+        contextMode: "full",
+      });
+      expect(pkg.synthesis).toBeUndefined();
+    });
+  });
 
   it("rejects an empty task", async () => {
     const repo = tempRepo();
@@ -435,6 +471,7 @@ describe("render helpers", () => {
         budgetExceeded: false,
       },
       exclusions: { droppedPaths: [], droppedPatterns: [] },
+      truncated: false,
     };
   }
 
@@ -489,6 +526,38 @@ describe("render helpers", () => {
     };
     const text = renderContextPackage(pkg);
     expect(text).toContain("🔒 1 file(s) excluded by security policy");
+  });
+
+  it("renders the deterministic synthesis when the package carries one (ADR-017)", () => {
+    const pkg = {
+      ...samplePackage(),
+      synthesis: {
+        kind: "dependency-path" as const,
+        conclusion: "auth.ts imports double from math.ts — the login path is math.ts → auth.ts.",
+        evidence: [
+          "auth.ts imports './math' (edge n:file:auth.ts → n:file:math.ts).",
+          "login() calls double() (edge n:s2 → n:s1).",
+        ],
+        centralFiles: ["/src/auth.ts", "/src/math.ts"],
+      },
+    };
+    const text = renderContextPackage(pkg);
+    // Synthesis-led section leads before the ranked excerpts.
+    expect(text.indexOf("# Engine analysis")).toBeLessThan(text.indexOf("## /src/math.ts"));
+    expect(text).toContain("The engine has analyzed the code structure and concluded:");
+    expect(text).toContain("auth.ts imports double from math.ts");
+    expect(text).toContain("Evidence chain:");
+    expect(text).toContain("- auth.ts imports './math'");
+    expect(text).toContain("login() calls double()");
+    expect(text).toContain("Central files: /src/auth.ts, /src/math.ts");
+    expect(text).toContain("Verify this conclusion against the excerpts below before answering.");
+  });
+
+  it("omits the engine-analysis section when the package has no synthesis", () => {
+    const text = renderContextPackage(samplePackage());
+    expect(text).not.toContain("# Engine analysis");
+    expect(text).not.toContain("The engine has analyzed the code structure and concluded:");
+    expect(text).not.toContain("Verify this conclusion against the excerpts below");
   });
 });
 

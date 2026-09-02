@@ -215,6 +215,7 @@ export function evaluateTask(
   finalText: string,
   toolCallOutputs: string[],
   repoAbsPath: string,
+  options?: { timedOut?: boolean },
 ): BenchmarkEvaluation {
   const fileHaystack = `${finalText}\n${toolCallOutputs.join("\n")}`;
   const filesFound = fileHits(task.expected_files, fileHaystack);
@@ -225,6 +226,27 @@ export function evaluateTask(
   const conceptsExpected = task.expected_concepts.length;
   const fileRatio = filesExpected > 0 ? filesFound.length / filesExpected : 0;
   const conceptRatio = conceptsExpected > 0 ? conceptsFound.length / conceptsExpected : 0;
+
+  // A timed-out run never completed the task: cap the score at 0 ("failed")
+  // regardless of file evidence. `filesFound`/`conceptsFound` stay in the
+  // evaluation as diagnostics but do not earn partial credit from a truncated
+  // transcript (Phase B fix: the old scoring gave timed-out baselines an
+  // artifact advantage over completed runs).
+  if (options?.timedOut === true) {
+    const hallucinated = hallucinatedPaths(finalText, repoAbsPath);
+    return {
+      score: 0,
+      status: "failed",
+      filesFound,
+      filesExpected: [...task.expected_files],
+      fileRatio: Math.round(fileRatio * 100) / 100,
+      conceptsFound,
+      conceptsExpected: [...task.expected_concepts],
+      conceptRatio: Math.round(conceptRatio * 100) / 100,
+      citedFiles: cited,
+      ...(hallucinated.length > 0 ? { hallucinatedFiles: hallucinated } : {}),
+    };
+  }
 
   let score: number;
   let status: BenchmarkEvaluation["status"];

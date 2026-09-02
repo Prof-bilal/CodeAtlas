@@ -217,13 +217,25 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "find_relevant_context",
     title: "Find relevant context",
     description:
-      "Retrieve ranked, budgeted context for a task. Returns context items organized by tier (critical/important/supporting) " +
-      "with scores, reasons, and line ranges. Includes a sufficiency gate that reports whether the context is enough to answer. " +
-      "Every result includes 'next_steps' — deterministic hints for what to do next.",
+      "Use this FIRST when you need to understand code. Returns ranked file excerpts relevant to the task, " +
+      "organized by tier (critical/important/supporting) with scores, reasons, and line ranges. " +
+      "Includes a sufficiency gate that reports whether the context is enough to answer. " +
+      "Every result includes 'next_steps' — deterministic hints for what to do next. " +
+      "DISCIPLINE: call this 1-2 times maximum; when 'sufficient' is true, stop exploring and " +
+      "write your final answer citing the exact file paths. Do not keep searching once you can answer.",
     inputSchema: {
       task: boundedString("The task to retrieve context for."),
       maxItems: intRange(1, 50).optional().describe("Maximum context items (default 20)."),
       maxTokens: intRange(100, 50000).optional().describe("Maximum total tokens (default 12000)."),
+      contextMode: z
+        .enum(["auto", "auto-escalate", "digest", "full", "off"])
+        .optional()
+        .describe(
+          "Context packing mode. 'digest' returns fewer, pre-digested items under a tight budget " +
+            "(recommended for smaller/weaker models); 'full' uses the standard budget; " +
+            "'auto' picks by repository size (default); " +
+            "'auto-escalate' starts in digest and falls back to full if sufficiency is low.",
+        ),
     },
     outputSchema: {
       task: z.string().describe("The original task."),
@@ -244,6 +256,23 @@ export const TOOLS: readonly ToolDefinition[] = [
           }),
         )
         .describe("Ranked context items."),
+      synthesis: z
+        .object({
+          kind: z
+            .string()
+            .describe("Analysis kind (dependency-path, fault-site, module-map, file-set)."),
+          conclusion: z
+            .string()
+            .describe("The engine's computed conclusion — verify it, do not trust it."),
+          evidence: z.array(z.string()).describe("Ordered reasoning the conclusion is built from."),
+          centralFiles: z
+            .array(z.string())
+            .describe("Files central to the conclusion (cite/verify these)."),
+        })
+        .optional()
+        .describe(
+          "Deterministic synthesis (present in digest mode): a computed conclusion + evidence chain from the graph/summaries, so the model can verify and present instead of re-deriving everything.",
+        ),
       sufficient: z.boolean().describe("Whether the context is sufficient to answer."),
       sufficiencyFailures: z
         .array(
@@ -262,6 +291,18 @@ export const TOOLS: readonly ToolDefinition[] = [
           budgetExceeded: z.boolean(),
         })
         .describe("Budget enforcement summary."),
+      escalated: z
+        .boolean()
+        .optional()
+        .describe(
+          "True only when `auto-escalate` re-assembled with `full` (instead of the initial digest) and the full package satisfied the sufficiency gate. False/absent when no escalation happened. Present on every result.",
+        ),
+      escalationFrom: z
+        .string()
+        .optional()
+        .describe(
+          "The mode escalation started from (`digest`); present only when `escalated` is true.",
+        ),
     },
   },
   {

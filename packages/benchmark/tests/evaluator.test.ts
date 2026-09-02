@@ -115,6 +115,27 @@ describe("evaluateTask", () => {
     expect(result.status).toBe("partially_correct");
   });
 
+  it("caps timed-out runs at 0 (failed) even with file evidence in the transcript", () => {
+    const result = evaluateTask(
+      task,
+      "The createLogger function in lib/winston.js creates a logger. Transports are used for output.",
+      [],
+      "/nonexistent",
+      { timedOut: true },
+    );
+    expect(result.score).toBe(0);
+    expect(result.status).toBe("failed");
+    // Evidence stays as diagnostics but earns no credit.
+    expect(result.filesFound).toContain("lib/winston.js");
+  });
+
+  it("does not cap non-timed-out runs when the timedOut option is absent or false", () => {
+    const text =
+      "The createLogger function in lib/winston.js creates a logger. Transports are used for output.";
+    expect(evaluateTask(task, text, [], "/nonexistent").score).toBe(2);
+    expect(evaluateTask(task, text, [], "/nonexistent", { timedOut: false }).score).toBe(2);
+  });
+
   it("scores 0 (incorrect) when response is long but ratios are low", () => {
     const result = evaluateTask(
       task,

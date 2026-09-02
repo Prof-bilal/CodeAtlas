@@ -728,6 +728,92 @@ describe("atlas CLI", () => {
     }
   });
 
+  it("forwards --context-mode through context build, launch, and the agent router", async () => {
+    const integration = fakeContextIntegration();
+    const program = createCli({ integration });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "fix auth",
+        "--context-mode",
+        "digest",
+        "--json",
+      ]);
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "fix auth",
+        "--explain",
+        "--context-mode",
+        "digest",
+      ]);
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "launch",
+        "fix auth",
+        "--provider",
+        "claude",
+        "--context-mode",
+        "full",
+      ]);
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "launch",
+        "fix auth",
+        "--provider",
+        "claude",
+        "--context-mode",
+        "auto-escalate",
+      ]);
+      expect(integration.buildPackage).toHaveBeenCalledWith(
+        expect.objectContaining({ task: "fix auth", contextMode: "digest" }),
+      );
+      expect(integration.explain).toHaveBeenCalledWith(
+        expect.objectContaining({ task: "fix auth", contextMode: "digest" }),
+      );
+      expect(integration.launch).toHaveBeenCalledWith(
+        expect.objectContaining({ task: "fix auth", provider: "claude", contextMode: "full" }),
+      );
+      expect(integration.launch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          task: "fix auth",
+          provider: "claude",
+          contextMode: "auto-escalate",
+        }),
+      );
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("rejects an invalid --context-mode value without invoking the integration", async () => {
+    const previousExitCode = process.exitCode;
+    try {
+      const integration = fakeContextIntegration();
+      const program = createCli({ integration });
+      // Commander surfaces parse-arg failures as a CommanderError before any
+      // action runs; the real CLI entry point lets it propagate to a non-zero
+      // exit. Assert the failure mode: the error is thrown and no integration
+      // call happens.
+      await expect(
+        program.parseAsync(["node", "atlas", "context", "fix auth", "--context-mode", "bogus"]),
+      ).rejects.toThrow(/--context-mode must be one of: auto, auto-escalate, digest, full, off/);
+      expect(integration.buildPackage).not.toHaveBeenCalled();
+      expect(integration.explain).not.toHaveBeenCalled();
+      expect(integration.launch).not.toHaveBeenCalled();
+    } finally {
+      process.exitCode = previousExitCode;
+    }
+  });
+
   it("maps unsupported context attach errors to exit code 1 without crashing", async () => {
     const previousExitCode = process.exitCode;
     try {
