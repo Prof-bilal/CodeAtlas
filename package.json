@@ -19,8 +19,6 @@
     "lint:fix": "eslint . --fix",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "benchmark": "node --experimental-strip-types benchmarks/run-benchmark.ts",
-    "benchmark:single": "node --experimental-strip-types benchmarks/run-single.ts",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
     "release:cli": "pnpm --filter codeatlas-cli build && pnpm --filter codeatlas-cli publish --access public",
     "prepare": "husky"

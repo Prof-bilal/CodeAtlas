@@ -99,5 +99,4 @@ CodeAtlas never modifies the target repository except for a gitignored
 - `tools/` — per-tool Agent Toolkit manifests,
 - `skills/` — installed skill directories (git-cloned from their canonical repos).
 
-See [CONTEXT_STORAGE.md](./CONTEXT_STORAGE.md) for the on-disk layout and
-[PUBLISHING.md](./PUBLISHING.md) for the maintainer release process.
+See [CONTEXT_STORAGE.md](./CONTEXT_STORAGE.md) for the on-disk layout.

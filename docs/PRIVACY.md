@@ -1,7 +1,7 @@
 # CodeAtlas Privacy Policy
 
 The privacy contract of the product, mirroring the "Local First" product
-principle ([PRINCIPLES.md](./PRINCIPLES.md)).
+principle (`old-school/plans/PRINCIPLES.md`).
 
 ---
 

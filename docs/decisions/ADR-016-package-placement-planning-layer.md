@@ -5,7 +5,7 @@ Date: 2026-08-30 · Status: Accepted (Phase 2, small-model intelligence audit)
 ## Context
 
 ADR-015 defines `TaskClassifierPort` and `PlannerPort` as type-only contracts
-in `packages/core`. The execution plan (`docs/audit/small-model-intelligence/execution-plan.md`)
+in `packages/core`. The execution plan (`old-school/research/audit/small-model-intelligence/execution-plan.md`)
 specifies that implementations live in `@atlas/sdk` (the existing composition
 root for context-integration), not in new feature packages.
 

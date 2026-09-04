@@ -286,7 +286,7 @@ export class OpenCodeRunner implements BenchmarkRunner {
 }
 
 // ---------------------------------------------------------------------------
-// Event parsing (ported from benchmarks/final-2026-08/run-benchmark.mjs)
+// Event parsing (ported from old-school benchmark harness)
 // ---------------------------------------------------------------------------
 
 interface RawEvent {

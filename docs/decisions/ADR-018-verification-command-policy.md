@@ -11,7 +11,7 @@ hallucinations by running deterministic claim checks (path existence, symbol
 existence, plan coverage) and command runners (typecheck, tests, lint) after
 the model produces an answer.
 
-The execution plan (`docs/audit/small-model-intelligence/execution-plan.md`)
+The execution plan (`old-school/research/audit/small-model-intelligence/execution-plan.md`)
 calls for a verification command policy (ADR-015 in the plan's numbering)
 that governs how verification commands are spawned, validated, and sandboxed.
 

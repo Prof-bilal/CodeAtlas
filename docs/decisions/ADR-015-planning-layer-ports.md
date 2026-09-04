@@ -10,7 +10,7 @@ deterministic plan before answering. Today the context pipeline treats all
 tasks uniformly: a single lexical query feeds the ranker, and the model
 receives flat context with no structural guidance.
 
-The execution plan (`docs/audit/small-model-intelligence/execution-plan.md`)
+The execution plan (`old-school/research/audit/small-model-intelligence/execution-plan.md`)
 calls for a **planning layer** that sits between context assembly and the
 model prompt: classify the task, produce a deterministic plan (steps, impact
 set, unknowns, verification strategy), and attach the plan to the context

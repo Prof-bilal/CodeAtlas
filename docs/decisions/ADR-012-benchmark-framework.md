@@ -66,7 +66,7 @@ Both runners share the same interface (`BenchmarkRunner` from core), returning
 
 ## Consequences
 
-- Existing `benchmarks/final-2026-08/` harnesses remain as reference data; new
+- Existing `old-school/benchmarks/benchmarks/final-2026-08/` harnesses remain as reference data; new
   benchmarks use the canonical `atlas benchmark` workflow.
 - The evaluator is deterministic (no AI scoring); it can be extended with a
   future AI evaluator seam.

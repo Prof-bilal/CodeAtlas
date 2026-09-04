@@ -103,7 +103,7 @@ API routes (JSON, `/api` prefix): `GET /health`, `GET|POST /benchmarks`,
 
 ## Suite results (2026-08)
 
-Run against the pinned clones in `benchmarks/final-2026-08/repos/` with
+Run against the pinned clones in `old-school/benchmarks/benchmarks/final-2026-08/repos/` with
 `opencode/nemotron-3-ultra-free` (free tier — token savings is the economic
 metric; cost is $0 by provider report):
 
@@ -123,19 +123,19 @@ metric; cost is $0 by provider report):
 > (provider-reported). The framework reports numbers as measured; nothing is
 > massaged.
 
-Reproduce any suite: `atlas benchmark run <suite> --repo benchmarks/final-2026-08/repos/repo-0X`
+Reproduce any suite: `atlas benchmark run <suite> --repo old-school/benchmarks/benchmarks/final-2026-08/repos/repo-0X`
 then `atlas benchmark report <suite>`. Task files are versioned inputs; model
 and modes are pinned in `suite.json`.
 
 Related: ADR-012 (`docs/decisions/ADR-012-benchmark-framework.md`),
-`benchmarks/README.md` (pre-framework harness scope).
+`old-school/benchmarks/benchmarks/README.md` (pre-framework harness scope).
 
 ---
 
 # Historical: CodeAtlas MCP MVP — Benchmark Report (2026-08-15)
 
 Benchmark date: 2026-08-15
-Run: `pnpm exec vite-node tests/benchmarks/mcp-benchmark.ts`
+Run: `old-school/benchmarks/mcp-benchmark.ts` (archived; was `tests/benchmarks/mcp-benchmark.ts`)
 Test repository: `tests/fixtures/mcp-audit-repo` (copied to a temp directory)
 
 ## Environment
@@ -270,7 +270,7 @@ file was missed on any task.
 
 The row above exercises the **raw SDK** with auto-refresh disabled. In the MCP
 server, reads auto-refresh the index when the working tree changes (see
-`docs/MCP_AUDIT.md`): the first row corresponds to `autoRefresh: false`. With
+`old-school/audits/MCP_AUDIT.md` (archived)): the first row corresponds to `autoRefresh: false`. With
 auto-refresh enabled, a modified file is re-indexed before the search is
 served, so search reflects the edit without an explicit `atlas update`.
 `read_file_range` always compares the working tree against the persisted hash
@@ -312,7 +312,7 @@ tree. The top search hit is still exactly correct and search stays sub-second
 cost (~1.5 GB RSS at this scale): search is O(entities) in-memory scoring, and
 the resident set grows with the indexed entities. That is the primary
 documented trade-off of the in-memory index at very large scale (see the
-scorecard in `docs/MCP_AUDIT.md`).
+scorecard in `old-school/audits/MCP_AUDIT.md` (archived)).
 
 ## Security
 

@@ -331,7 +331,7 @@ entries + shallow-cloned remote entries in isolated temp workspaces), and the
 "Test in Browser" quick test (scan → index → deterministic retrieval → context
 assembly, optional Ollama answer). `node:http`, zero new runtime dependencies;
 binds `127.0.0.1:8787` by default; composes `@atlas/sdk` + `@atlas/mcp` +
-`@atlas/benchmark` exactly like the CLI. Serves the built UI (`CodeAtlas-ui/
+`@atlas/benchmark` exactly like the CLI. Serves the built UI (`old-school/miscellaneous/CodeAtlas-ui/
 dist`) when present. See [benchmark.md](./benchmark.md) §"HTTP API".
 
 ### MCP — « `@atlas/mcp` » — **[IMPLEMENTED]**

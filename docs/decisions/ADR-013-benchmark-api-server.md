@@ -8,7 +8,7 @@
 
 The benchmark framework (ADR-012) is CLI-only: suites are created, run, and
 reported through `atlas benchmark`, persisted as JSON under
-`.codeatlas/benchmarks/`. The web UI (`CodeAtlas-ui`) is a static marketing and
+`.codeatlas/benchmarks/`. The web UI (`old-school/miscellaneous/CodeAtlas-ui`) is a static marketing and
 docs site whose benchmark pages hardcode pasted numbers.
 
 We want the Atlas Benchmark page to become a live dashboard: list real suites,
@@ -85,7 +85,7 @@ returned with every score and shown in the UI.
 
 ## Consequences
 
-- The UI (`CodeAtlas-ui`) `#/benchmarks` page becomes a live dashboard
+- The UI (`old-school/miscellaneous/CodeAtlas-ui`) `#/benchmarks` page becomes a live dashboard
   (My Benchmarks / Community / Leaderboard, run dialog with live progress,
   suite detail with history, browser benchmark workspace) backed by this API;
   the old hardcoded pages are removed. In dev, Vite proxies `/api`; in

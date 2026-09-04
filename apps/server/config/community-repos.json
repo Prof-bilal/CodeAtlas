@@ -7,7 +7,7 @@
       "description": "Multi-transport async logging library for Node.js. The pinned clone used by the 2026-08 OpenCode benchmark.",
       "url": "https://github.com/winstonjs/winston",
       "source": "local",
-      "path": "benchmarks/final-2026-08/repos/repo-01",
+      "path": "old-school/benchmarks/benchmarks/final-2026-08/repos/repo-01",
       "difficulty": "small",
       "languages": ["javascript", "typescript"]
     },
@@ -17,7 +17,7 @@
       "description": "Complete solution for Node.js command-line interfaces. The pinned clone used by the 2026-08 OpenCode benchmark.",
       "url": "https://github.com/tj/commander.js",
       "source": "local",
-      "path": "benchmarks/final-2026-08/repos/repo-02",
+      "path": "old-school/benchmarks/benchmarks/final-2026-08/repos/repo-02",
       "difficulty": "small",
       "languages": ["javascript", "typescript"]
     },
@@ -27,7 +27,7 @@
       "description": "Promise-based HTTP client for the browser and Node.js. The pinned clone used by the 2026-08 OpenCode benchmark.",
       "url": "https://github.com/axios/axios",
       "source": "local",
-      "path": "benchmarks/final-2026-08/repos/repo-03",
+      "path": "old-school/benchmarks/benchmarks/final-2026-08/repos/repo-03",
       "difficulty": "medium",
       "languages": ["javascript", "typescript"]
     },
@@ -37,7 +37,7 @@
       "description": "Reactive Extensions For JavaScript. The pinned clone used by the 2026-08 OpenCode benchmark.",
       "url": "https://github.com/ReactiveX/rxjs",
       "source": "local",
-      "path": "benchmarks/final-2026-08/repos/repo-04",
+      "path": "old-school/benchmarks/benchmarks/final-2026-08/repos/repo-04",
       "difficulty": "medium",
       "languages": ["typescript"]
     },
@@ -46,7 +46,7 @@
       "name": "fixture-small-app",
       "description": "Generated fixture repository (76 TypeScript files) used by the CodeAtlas scan/index harness.",
       "source": "local",
-      "path": "benchmark-repos/01-small-app",
+      "path": "old-school/benchmarks/benchmark-repos/01-small-app",
       "difficulty": "small",
       "languages": ["typescript"]
     },
@@ -55,7 +55,7 @@
       "name": "fixture-large-project",
       "description": "Generated fixture repository (~4,600 TypeScript files) used by the CodeAtlas scan/index harness.",
       "source": "local",
-      "path": "benchmark-repos/05-large-project",
+      "path": "old-school/benchmarks/benchmark-repos/05-large-project",
       "difficulty": "large",
       "languages": ["typescript"]
     },

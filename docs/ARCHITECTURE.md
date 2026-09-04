@@ -311,7 +311,7 @@ These divergences from a "perfect" target are intentional and documented:
    and the **Agent Session Manager** exist (`atlas sessions`); the
    orchestrator's **router and slash commands** remain planned; the VS Code
    extension (`@atlas/extension`) is implemented as a thin SDK consumer. See
-   [VSCODE.md](./VSCODE.md) and [ROADMAP.md](./ROADMAP.md).
+   [VSCODE.md](./VSCODE.md).
 5. **Direction C (Agent Toolkit) foundations are implemented** — the **Tool
    Registry**, **Tool Manifest System**, **Compatibility Engine**, **Installer**,
    **Configurator**, and **Security/Trust assessor** exist in `@atlas/toolkit`

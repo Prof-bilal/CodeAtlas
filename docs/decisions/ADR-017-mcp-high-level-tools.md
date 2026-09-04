@@ -13,7 +13,7 @@ multi-step reasoning (classify → search → plan → retrieve) on its own.
 Small models perform significantly better when given **high-level tools**
 that encapsulate multi-step workflows: classify a task, build a plan, retrieve
 context with a sufficiency gate, and inspect a symbol's full neighborhood.
-The execution plan (`docs/audit/small-model-intelligence/execution-plan.md`)
+The execution plan (`old-school/research/audit/small-model-intelligence/execution-plan.md`)
 calls for 4 new high-level tools, bringing the total to 11 (within the ≤12
 cap).
 

@@ -29,9 +29,8 @@ Quick links:
   [troubleshooting.md](./troubleshooting.md) — user-facing guides
 - [DEVELOPMENT.md](./DEVELOPMENT.md) — developer setup & commands
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — practical contributor guide
-- [RELEASE_AUDIT.md](./RELEASE_AUDIT.md) — pre-release audit (secrets, hygiene, gates)
 - [SECURITY.md](./SECURITY.md), [PRIVACY.md](./PRIVACY.md) — non-negotiable rules
 - [TESTING.md](./TESTING.md), [CODE_QUALITY.md](./CODE_QUALITY.md) — quality gates
-- [FEATURE_STATUS.md](./FEATURE_STATUS.md), [ROADMAP.md](./ROADMAP.md) — status & plan
+- [FEATURE_STATUS.md](./FEATURE_STATUS.md) — status tags across features
 - [AGENT_CATALOG.md](./AGENT_CATALOG.md) — the implemented analysis agents
 - [decisions/](./decisions/README.md) — Architecture Decision Records

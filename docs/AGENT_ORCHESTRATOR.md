@@ -151,4 +151,4 @@ list:
   the SDK), not the context packages.
 - It should reuse the *context* output where useful (e.g. `/claude fix` may
   ignore `.codeatlas/manifest.json`), but it must never *require* an index.
-- Roadmap: [ROADMAP.md](./ROADMAP.md) Phase 4.
+- Roadmap: `old-school/plans/ROADMAP.md` Phase 4.

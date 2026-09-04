@@ -5,7 +5,7 @@ Date: 2026-08-30 · Status: Accepted (Phase 1, small-model intelligence audit)
 ## Context
 
 The small-model intelligence audit
-(`docs/audit/small-model-intelligence/`) found that context delivery is flat:
+(`old-school/research/audit/small-model-intelligence/`) found that context delivery is flat:
 `ContextItem` is a whole file + score, with no hierarchy, no explanation of
 why a file was selected, and no dependency-closure expansion. Small models
 perform significantly better when context arrives tiered (critical /

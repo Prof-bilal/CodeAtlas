@@ -49,21 +49,8 @@ go-tui-app/
 apps/cli/src/tui/
 apps/cli/src/commands/tui.ts
 apps/cli/tests/tui.test.ts
-# Private working notes between maintainer and assistant — never commit.
-PERFORMANCE_CHECKPOINT.md
-plan.md
-PROMPTS.md
-CodeAtlas Agent Toolkit_ 50 Verified Skills and Reference Integrations.md
 
-# Local agent-session artifacts (ZCode)
-.zcode/
+# Historical archive — see old-school/README.md for context.
 
-# Final benchmark (2026-08) — pinned repository checkouts (own .git dirs)
-benchmarks/final-2026-08/repos/
-benchmarks/beta-final/results/sdk-tool-loop/
-benchmarks/beta-final/results/report.json
-opencode.json/
-AUDIT_METHODOLOGY_INDEX.md
-AUDIT_EXECUTIVE_SUMMARY.md
-BETA_AUDIT_REMEDIATION_PLAN.md
-CodeAtlas-ui/
+
+.commandcode/

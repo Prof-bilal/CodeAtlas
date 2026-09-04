@@ -300,7 +300,7 @@ flat-to-higher. At the 1,288-file scale the pattern flips: targeted context
 ### Indexing stress (extreme corpus)
 
 CodeAtlas indexes real repositories locally. Numbers from the
-[extreme stress benchmark](benchmarks/extreme/) on a shared 7.2 GiB machine
+[extreme stress benchmark](old-school/benchmarks/benchmarks/extreme/) on a shared 7.2 GiB machine
 (1,000 generated TypeScript files, 5 M lines, 251 MB source):
 
 | Metric | Value |
@@ -321,7 +321,7 @@ source) exceeds available memory on this machine and is a known limitation.
 repositories. Real-world projects with mixed languages and fewer files will
 use less memory.
 
-Full results: [`benchmarks/extreme/results.json`](benchmarks/extreme/results.json).
+Full results: [`benchmarks/extreme/results.json`](old-school/benchmarks/benchmarks/extreme/results.json).
 
 ## License
 

@@ -42,9 +42,7 @@ README.md
 | `docs/TOOL_MANIFEST.md` | Tool Manifest (implemented, Task 20): per-installed-tool state schema, `.codeatlas/tools/` layout, untrusted-input validation; consumed by toolkit services. |
 | `docs/CLI.md` | The `atlas` CLI contract, including the implemented SDK-backed Toolkit commands. |
 | `docs/MCP.md` | The MCP server: configuration + full tool reference. |
-| `docs/MCP_AUDIT.md` | MCP production-hardening audit: server hardening summary, the agent-registration matrix (claude/gemini/codex/opencode/cursor/cline), verification commands, test map, limitations. |
-| `docs/benchmark.md` | The `atlas benchmark` framework (ADR-012) + the Benchmark HTTP API & dashboard (ADR-013, `apps/server`): suites, runners (OpenCode/Ollama), task files, metrics, reports, community library, browser quick tests; historical 2026-08-15 MVP report appended. |
-| `docs/plans/atlas-scan-selective-context.md` | **[PLANNED]** Deep Scan → Selective AI Context Delivery — Context Slices, `atlas ask`, `atlas context export --for <agent>`, MCP `get_context_slice`, agent handoff files. |
+| `docs/benchmark.md` | The `atlas benchmark` framework (ADR-012) + the Benchmark HTTP API & dashboard (ADR-013, `apps/server`): suites, runners (OpenCode/Ollama), task files, metrics, reports, community library, browser quick tests. |
 | `docs/VSCODE.md` | The VS Code extension (`@atlas/extension`): what it does and how it consumes the SDK. |
 | `docs/installation.md` | Installing CodeAtlas (published global CLI or from source). |
 | `docs/getting-started.md` | 10-minute end-to-end walkthrough against a real repository. |
@@ -58,17 +56,10 @@ README.md
 | `docs/CODE_QUALITY.md` | Coding standards. |
 | `docs/CHANGE_POLICY.md` | How changes happen. |
 | `docs/FEATURE_STATUS.md` | Status tags across features. |
-| `docs/ROADMAP.md` | Phased roadmap. |
-| `docs/PROJECT_READINESS_PLAN.md` | Productization audit + phased readiness plan (code-verified, 2026-08-17): status legend, maturity snapshot, Phases 0–11 with tasks (priority/deps/complexity/files/acceptance criteria), anti-overbuild list, final report, top-10 next actions. |
-| `docs/PROJECT_CHECKLIST.md` | Short, usable release checklist mirroring the readiness plan (task IDs in parentheses). |
 | `docs/AGENT_COMPATIBILITY.md` | How external agents consume these instructions. |
 | `docs/DEVELOPMENT.md` | Developer setup & commands (prerequisites, install, build/test, debugging, env variables). |
 | `docs/DEVELOPMENT_WORKFLOW.md` | The standard agent workflow + reporting format. |
 | `docs/CONTRIBUTING.md` | Practical contributor guide (setup, standards, PRs, security reporting). |
-| `docs/RELEASE_AUDIT.md` | Pre-release audit: secrets scan, repo hygiene, quality gates, changeset summary. |
-| `docs/DOCUMENTATION_AUDIT.md` | Self-audit of this docs system. |
-| `docs/AUDIT_FEATURE_MATRIX.md` | Independent feature-inventory audit (2026-08-15): every feature vs. source/tests/live CLI, PASS/PLANNED/DEAD verdicts. |
-| `docs/FULL_AUDIT.md` | Independent full audit (2026-08-15): architecture, quality, security, performance, testing, docs, release readiness, findings, roadmap. |
 | `docs/decisions/README.md` | ADR index (format + which decisions are recorded). |
 
 ## 3. Navigating for a task
@@ -96,3 +87,6 @@ README.md
   never mark implemented without looking.
 - Doc changes follow the same review as code (`pnpm check` where relevant,
   link check).
+- Old plans, audits, benchmarks, and research have been archived to
+  `old-school/` (see `old-school/README.md`). They are historical reference
+  only — not current requirements.

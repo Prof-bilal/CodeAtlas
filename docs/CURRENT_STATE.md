@@ -547,7 +547,7 @@ examples/        # README placeholder only (no runnable examples)
 
 - **`@atlas/server`** (ADR-013): a localhost HTTP API ("CodeAtlas Benchmark
   API", `node:http`, zero new runtime deps, default `127.0.0.1:8787`) that
-  backs the rebuilt **Atlas Benchmark** page in the web UI (`CodeAtlas-ui`).
+  backs the rebuilt **Atlas Benchmark** page in the web UI (`old-school/miscellaneous/CodeAtlas-ui`).
   It composes `@atlas/sdk` + `@atlas/mcp` + `@atlas/benchmark` exactly like
   the CLI (added to the ESLint dependency matrix).
 - **Same store as the CLI**: suite list/detail/report read

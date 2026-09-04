@@ -1,0 +1,638 @@
+{
+  "generatedAt": "2026-08-30T03:49:37.221Z",
+  "totals": {
+    "tasks": 24,
+    "correct": 24,
+    "execCalls": 96,
+    "cached": 24,
+    "denied": 24,
+    "progress": 6,
+    "guidanceInjectedAll": true
+  },
+  "perTask": [
+    {
+      "taskId": "SA-T01",
+      "repoId": "small-app",
+      "category": "repository-understanding",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/routes/authRoutes.ts",
+        "src/middleware/auth.ts",
+        "src/services/authService.ts",
+        "src/repositories/sessionRepository.ts",
+        "src/config/auth.ts"
+      ],
+      "durationMs": 63,
+      "tokenGuess": 4241,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "SA-T02",
+      "repoId": "small-app",
+      "category": "bug-fix",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts",
+        "tests/task.test.ts"
+      ],
+      "durationMs": 59,
+      "tokenGuess": 4214,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "SA-T03",
+      "repoId": "small-app",
+      "category": "feature",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/db/schema.ts",
+        "src/models/task.ts",
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts"
+      ],
+      "durationMs": 44,
+      "tokenGuess": 4166,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "SA-T04",
+      "repoId": "small-app",
+      "category": "refactoring",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/routes/taskRoutes.ts",
+        "src/middleware/auth.ts",
+        "src/services/authService.ts"
+      ],
+      "durationMs": 49,
+      "tokenGuess": 4314,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "SA-T05",
+      "repoId": "small-app",
+      "category": "debugging",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/routes/authRoutes.ts",
+        "src/middleware/auth.ts",
+        "src/services/authService.ts"
+      ],
+      "durationMs": 47,
+      "tokenGuess": 4258,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "SA-T06",
+      "repoId": "small-app",
+      "category": "cross-file",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts",
+        "src/db/schema.ts",
+        "src/models/task.ts"
+      ],
+      "durationMs": 42,
+      "tokenGuess": 4289,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "SA-T07",
+      "repoId": "small-app",
+      "category": "security",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/config/auth.ts",
+        "src/services/authService.ts",
+        "src/middleware/auth.ts",
+        "src/config/database.ts",
+        "src/routes/authRoutes.ts"
+      ],
+      "durationMs": 40,
+      "tokenGuess": 4233,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "SA-T08",
+      "repoId": "small-app",
+      "category": "testing",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "tests/task.test.ts",
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts",
+        "src/middleware/auth.ts"
+      ],
+      "durationMs": 32,
+      "tokenGuess": 4227,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MA-T01",
+      "repoId": "medium-api",
+      "category": "repository-understanding",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/events/eventBus.ts",
+        "src/events/handlers/paymentHandler.ts",
+        "src/events/handlers/notificationHandler.ts",
+        "src/core/payments/paymentService.ts",
+        "src/core/notifications/notificationService.ts"
+      ],
+      "durationMs": 174,
+      "tokenGuess": 4508,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MA-T02",
+      "repoId": "medium-api",
+      "category": "bug-fix",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/core/payments/paymentService.ts",
+        "src/database/repositories/paymentRepository.ts",
+        "src/core/payments/paymentValidator.ts"
+      ],
+      "durationMs": 122,
+      "tokenGuess": 4564,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MA-T03",
+      "repoId": "medium-api",
+      "category": "api",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/controllers/taskControllerV2.ts",
+        "src/routes/taskRoutesV2.ts",
+        "src/middleware/auth.ts",
+        "src/database/repositories/taskRepository.ts"
+      ],
+      "durationMs": 122,
+      "tokenGuess": 4598,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MA-T04",
+      "repoId": "medium-api",
+      "category": "refactoring",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/middleware/",
+        "src/routes/",
+        "src/index.ts",
+        "src/app.ts"
+      ],
+      "durationMs": 131,
+      "tokenGuess": 4451,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 1,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MA-T05",
+      "repoId": "medium-api",
+      "category": "database",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/core/notifications/notificationService.ts",
+        "src/database/repositories/notificationRepository.ts",
+        "src/database/schema.ts",
+        "src/database/migrations.ts"
+      ],
+      "durationMs": 139,
+      "tokenGuess": 4565,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MA-T06",
+      "repoId": "medium-api",
+      "category": "debugging",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/core/webhooks/webhookService.ts",
+        "src/utils/retry.ts",
+        "src/utils/logger.ts"
+      ],
+      "durationMs": 137,
+      "tokenGuess": 4540,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MA-T07",
+      "repoId": "medium-api",
+      "category": "security",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/core/apiKeys/apiKeyService.ts",
+        "src/database/repositories/apiKeyRepository.ts",
+        "src/middleware/auth.ts",
+        "src/config/auth.ts"
+      ],
+      "durationMs": 134,
+      "tokenGuess": 4540,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MA-T08",
+      "repoId": "medium-api",
+      "category": "cross-file",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "src/routes/",
+        "src/controllers/",
+        "src/core/",
+        "src/database/",
+        "src/events/"
+      ],
+      "durationMs": 121,
+      "tokenGuess": 4433,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 1,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MR-T01",
+      "repoId": "monorepo",
+      "category": "repository-understanding",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "packages/shared/src/",
+        "packages/auth/src/",
+        "packages/database/src/",
+        "packages/payments/src/",
+        "apps/api/src/",
+        "apps/web/src/",
+        "apps/worker/src/"
+      ],
+      "durationMs": 1419,
+      "tokenGuess": 4797,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 1,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MR-T02",
+      "repoId": "monorepo",
+      "category": "bug-fix",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "apps/web/package.json",
+        "packages/ui/",
+        "pnpm-workspace.yaml"
+      ],
+      "durationMs": 1327,
+      "tokenGuess": 4806,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 1,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MR-T03",
+      "repoId": "monorepo",
+      "category": "feature",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "packages/shared/src/types/task.ts",
+        "packages/database/src/repositories/taskRepository.ts",
+        "packages/database/src/schema.ts",
+        "apps/api/src/controllers/taskController.ts",
+        "apps/worker/src/services/workerService.ts"
+      ],
+      "durationMs": 1581,
+      "tokenGuess": 4881,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MR-T04",
+      "repoId": "monorepo",
+      "category": "refactoring",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "packages/database/src/BaseRepository.ts",
+        "packages/database/src/databaseService.ts"
+      ],
+      "durationMs": 1436,
+      "tokenGuess": 4856,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MR-T05",
+      "repoId": "monorepo",
+      "category": "cross-file",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "apps/api/src/controllers/taskController.ts",
+        "packages/auth/src/authService.ts",
+        "packages/database/src/BaseRepository.ts",
+        "packages/database/src/repositories/taskRepository.ts",
+        "packages/database/src/repositories/userRepository.ts"
+      ],
+      "durationMs": 1373,
+      "tokenGuess": 4878,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MR-T06",
+      "repoId": "monorepo",
+      "category": "database",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "packages/database/src/schema.ts",
+        "packages/database/src/databaseService.ts",
+        "packages/database/src/migrations.ts"
+      ],
+      "durationMs": 1386,
+      "tokenGuess": 4816,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 1,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MR-T07",
+      "repoId": "monorepo",
+      "category": "testing",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "packages/shared/src/result/",
+        "packages/shared/package.json"
+      ],
+      "durationMs": 2088,
+      "tokenGuess": 4796,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 1,
+      "guidanceInjected": true
+    },
+    {
+      "taskId": "MR-T08",
+      "repoId": "monorepo",
+      "category": "security",
+      "ok": true,
+      "error": null,
+      "score": 2,
+      "filesFound": [
+        "packages/auth/src/authService.ts",
+        "packages/auth/src/strategies/",
+        "packages/auth/src/tokens/",
+        "packages/auth/src/guards/"
+      ],
+      "durationMs": 5347,
+      "tokenGuess": 4929,
+      "executedByTool": {
+        "search_symbols": 1,
+        "search_files": 2,
+        "read_file_range": 1
+      },
+      "totalToolExecutions": 4,
+      "cachedServed": 1,
+      "perToolDenials": 1,
+      "progressNotes": 0,
+      "guidanceInjected": true
+    }
+  ]
+}

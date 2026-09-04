@@ -298,7 +298,7 @@ Verify
   can register for an agent.
 
 **Do not implement all installers now.** The MVP ships a safe subset (see
-[ROADMAP.md](./ROADMAP.md) Phase 6). The abstraction is an
+`old-school/plans/ROADMAP.md` Phase 6). The abstraction is an
 **`InstallerPort`** with one adapter per install type, mirroring the existing
 `ProviderPort` / `AgentPort` adapter pattern — so a new ecosystem is a new
 small adapter, not a fork.
@@ -730,6 +730,6 @@ outputs, high churn) feed the **future** Recommendation Engine — see
 | Recommendation | separate future module (planned) |
 | Benchmarking | separate future subsystem (planned) |
 
-See [ROADMAP.md](./ROADMAP.md) Phase 6 (Agent Toolkit) for the task order, and
+See `old-school/plans/ROADMAP.md` Phase 6 (Agent Toolkit) for the task order, and
 [SECURITY.md](./SECURITY.md) for the non-negotiable rules this subsystem is
 subject to.
