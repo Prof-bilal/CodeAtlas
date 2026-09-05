@@ -192,6 +192,7 @@ export type {
 export type {
   BenchmarkAblationConfig,
   BenchmarkAgent,
+  BenchmarkCancelResult,
   BenchmarkConfig,
   BenchmarkEvaluation,
   BenchmarkEvaluationEntry,

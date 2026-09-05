@@ -99,4 +99,27 @@ describe("CodeAtlasExtension", () => {
     expect(records.statusBarItems[0].text).toContain("3 files");
     extension.dispose();
   });
+
+  it("reflects a build failure in the status bar", async () => {
+    const fixture = createEmptyFixture();
+    fixtures.push(fixture);
+    const client = new ContextClient({ repositoryPath: fixture.root });
+    clients.push(client);
+    const { host, records } = createFakeHost();
+
+    const runner: AtlasRunner = {
+      run: async () => ({ ok: false, summary: "parse error" }),
+    };
+
+    const extension = activateExtension({ client, host, runner });
+    expect(records.statusBarItems[0].text).toContain("no index");
+
+    const handler = records.registeredCommands.get("codeatlas.runBuild");
+    expect(handler).toBeDefined();
+    await handler?.();
+
+    expect(records.statusBarItems[0].text).toContain("build failed");
+    expect(records.statusBarItems[0].tooltip).toBe("parse error");
+    extension.dispose();
+  });
 });

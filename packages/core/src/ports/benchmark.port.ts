@@ -26,6 +26,8 @@ export interface BenchmarkPort {
   getStatus(suiteId: string): Promise<Result<BenchmarkStatus>>;
   /** Generate a report for a completed suite. */
   generateReport(suiteId: string, options?: ReportOptions): Promise<Result<BenchmarkReport>>;
+  /** Cancel a running or queued benchmark suite. Stops in-flight tasks early. */
+  cancelSuite(suiteId: string): Promise<Result<BenchmarkCancelResult>>;
   /** Close underlying resources. */
   close(): void;
 }
@@ -151,7 +153,7 @@ export interface BenchmarkSuite {
 }
 
 /** Suite lifecycle status. */
-export type SuiteStatus = "created" | "running" | "completed" | "failed";
+export type SuiteStatus = "created" | "running" | "completed" | "failed" | "cancelled";
 
 // ---------------------------------------------------------------------------
 // Task definition (matches existing benchmark JSON format)
@@ -565,6 +567,16 @@ export interface BenchmarkStatus {
   readonly updatedAt: string;
 }
 
+/** Result of a cancel-suite request. */
+export interface BenchmarkCancelResult {
+  /** Suite identifier. */
+  readonly suiteId: string;
+  /** Suite status after cancellation. */
+  readonly status: SuiteStatus;
+  /** Whether cancellation was applied (false when already finished). */
+  readonly cancelled: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Reporting
 // ---------------------------------------------------------------------------
@@ -622,6 +634,8 @@ export interface RunnerRequest {
   readonly tools?: readonly ToolDefinition[];
   /** Model to use (overrides runner default). */
   readonly model?: string | undefined;
+  /** Signal for cooperative cancellation. Runners should check and abort when fired. */
+  readonly signal?: AbortSignal | undefined;
 }
 
 /** Raw result from a runner. */

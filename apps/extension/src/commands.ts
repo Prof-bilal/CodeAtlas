@@ -1,5 +1,6 @@
 import type { CodeAtlasTarget, ContextClient } from "./client";
 import { isUnavailable } from "./client";
+import type { StatusBarController } from "./status-bar";
 import type { VscodeApi, VscodeDisposable, VscodeQuickPickItem } from "./vscode-host";
 
 /** The CLI actions the extension can drive (`atlas build`, `atlas update`). */
@@ -15,6 +16,8 @@ export interface CommandContext {
   readonly client: ContextClient;
   readonly host: VscodeApi;
   readonly runner: AtlasRunner;
+  /** Direct access to the status bar for intermediate state (e.g. "indexing…"). */
+  readonly statusBar?: StatusBarController;
   /** Re-read the on-disk index and refresh every tree + the status bar. */
   readonly refreshAll: () => void;
 }
@@ -185,18 +188,30 @@ export async function showDependencies(ctx: CommandContext): Promise<void> {
 
 /** `CodeAtlas: Run atlas build` / `Run atlas update`. */
 export async function runCli(ctx: CommandContext, action: AtlasCliAction): Promise<void> {
-  const { client, host, runner, refreshAll } = ctx;
+  const { client, host, runner, statusBar, refreshAll } = ctx;
+  statusBar?.indexing();
   await host.window.showInformationMessage(`Running: atlas ${action} …`);
-  const result = await runner.run(action);
-  if (!result.ok) {
-    await host.window.showErrorMessage(`atlas ${action} failed — ${result.summary}`);
-    return;
+  try {
+    const result = await runner.run(action);
+    if (!result.ok) {
+      client.lastBuildError = result.summary;
+      refreshAll();
+      await host.window.showErrorMessage(`atlas ${action} failed — ${result.summary}`);
+      return;
+    }
+    client.lastBuildError = null;
+    refreshAll();
+    await host.window.showInformationMessage(
+      result.summary === "" ? `atlas ${action} succeeded` : result.summary,
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    client.lastBuildError = message;
+    refreshAll();
+    await host.window.showErrorMessage(`atlas ${action} failed — ${message}`);
+  } finally {
+    refreshAll();
   }
-  client.reload();
-  refreshAll();
-  await host.window.showInformationMessage(
-    result.summary === "" ? `atlas ${action} succeeded` : result.summary,
-  );
 }
 
 /** `CodeAtlas: Refresh` — re-read the index and redraw the trees. */
@@ -209,6 +224,7 @@ export async function refresh(ctx: CommandContext): Promise<void> {
     );
     return;
   }
+  client.lastBuildError = null;
   const status = client.status();
   await host.window.showInformationMessage(
     `CodeAtlas refreshed: ${status.filesIndexed} files, ${status.symbolsIndexed} symbols.`,

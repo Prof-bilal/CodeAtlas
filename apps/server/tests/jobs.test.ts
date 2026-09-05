@@ -90,6 +90,20 @@ describe("JobManager", () => {
     expect(job.stages.map((s) => s.state)).toEqual(["cancelled", "cancelled"]);
   });
 
+  it("rejects cancellation of an already-finished job without corrupting state", async () => {
+    const jobs = manager();
+    const job = jobs.create("benchmark", { stages: [{ id: "a", label: "A" }] }, async (ctx) => {
+      ctx.startStage("a");
+      ctx.finishStage("a", "done");
+      return { ok: true };
+    });
+    await jobs.idle();
+    expect(job.status).toBe("completed");
+    expect(jobs.cancel(job.id)).toBe(false);
+    expect(job.status).toBe("completed");
+    expect(job.stages[0]?.state).toBe("done");
+  });
+
   it("treats exceeding the wall-clock budget as cancellation", async () => {
     let now = 0;
     const jobs = new JobManager({ maxConcurrent: 1, jobTimeoutMs: 100, now: () => now });

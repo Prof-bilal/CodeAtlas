@@ -38,6 +38,7 @@ import {
  *   GET  /benchmarks              list suites + dashboard stats
  *   POST /benchmarks              start a benchmark job (local path)
  *   GET  /benchmarks/:id          suite detail (tasks, evaluations, history)
+ *   GET  /benchmarks/:id/status   suite progress/status by id
  *   GET  /benchmarks/:id/report   markdown/html/json report content
  *   POST /benchmarks/:id/cancel   cancel the suite's active job
  *   GET  /task-files              available task definitions
@@ -226,7 +227,8 @@ function startBenchmarkJob(
         if (cleanup !== null) {
           cleanupRepository({ path: cleanup.path, name: "", temporary: true });
         }
-        if (ctx.job.status === "cancelled" && ctx.job.suiteId !== undefined) {
+        if (ctx.job.cancelRequested && ctx.job.suiteId !== undefined) {
+          store(deps).updateSuiteStatus(ctx.job.suiteId, "cancelled");
           markSuiteInterrupted(config.benchmarkRoot, ctx.job.suiteId);
         }
       }
@@ -338,6 +340,47 @@ async function suiteDetail(deps: RoutesDeps, suiteId: string): Promise<unknown> 
   const activeJob = deps.jobs.findBySuite(suiteId);
 
   return { suite: summary, tasks, repositoryDetail, history, activeJobId: activeJob?.id ?? null };
+}
+
+/**
+ * Checks if a string contains control characters or special URL characters.
+ * Control characters: ASCII 0x00-0x1f and 0x7f
+ * Special chars: space, /, \\, ?, &, #
+ */
+function hasControlOrSpecialChars(str: string): boolean {
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    // Control characters (0x00-0x1f) and DEL (0x7f), space, /, \\, ?, &, #
+    if (
+      code <= 0x1f ||
+      code === 0x7f ||
+      code === 0x20 ||
+      code === 0x2f ||
+      code === 0x5c ||
+      code === 0x3f ||
+      code === 0x26 ||
+      code === 0x23
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function suiteStatus(deps: RoutesDeps, suiteId: string): Promise<unknown> {
+  const trimmed = suiteId.trim();
+  if (trimmed === "" || hasControlOrSpecialChars(trimmed)) {
+    throw new ApiError(400, "invalid_id", "suite id is required");
+  }
+  const service = new BenchmarkService({
+    root: deps.config.benchmarkRoot,
+    runners: deps.runners ?? new Map(),
+  });
+  const result = await service.getStatus(trimmed);
+  if (!result.ok) {
+    throw new ApiError(404, "suite_not_found", result.error.message);
+  }
+  return result.value;
 }
 
 async function suiteReport(deps: RoutesDeps, suiteId: string, format: string): Promise<unknown> {
@@ -513,6 +556,11 @@ export function createRoutes(deps: RoutesDeps): Route[] {
     },
     {
       method: "GET",
+      pattern: "/benchmarks/:id/status",
+      handler: (ctx) => suiteStatus(deps, ctx.params["id"]),
+    },
+    {
+      method: "GET",
       pattern: "/benchmarks/:id/report",
       handler: (ctx) => suiteReport(deps, ctx.params["id"], ctx.query.get("format") ?? "markdown"),
     },
@@ -520,11 +568,13 @@ export function createRoutes(deps: RoutesDeps): Route[] {
       method: "POST",
       pattern: "/benchmarks/:id/cancel",
       handler: (ctx) => {
-        const job = deps.jobs.findBySuite(ctx.params["id"]);
+        const suiteId = ctx.params["id"];
+        const job = deps.jobs.findBySuite(suiteId);
         if (job === undefined) {
-          throw new ApiError(409, "no_active_job", `No active job for suite "${ctx.params["id"]}"`);
+          throw new ApiError(409, "no_active_job", `No active job for suite "${suiteId}"`);
         }
         deps.jobs.cancel(job.id);
+        store(deps).updateSuiteStatus(suiteId, "cancelled");
         return { jobId: job.id, cancelled: true };
       },
     },
@@ -628,11 +678,15 @@ export function createRoutes(deps: RoutesDeps): Route[] {
       pattern: "/jobs/:id/cancel",
       handler: (ctx) => {
         const id = ctx.params["id"];
-        if (deps.jobs.get(id) === undefined) {
+        const job = deps.jobs.get(id);
+        if (job === undefined) {
           throw new ApiError(404, "job_not_found", `Job "${id}" not found`);
         }
         const ok = deps.jobs.cancel(id);
         if (!ok) throw new ApiError(409, "not_cancellable", `Job "${id}" is not running or queued`);
+        if (job.suiteId !== undefined) {
+          store(deps).updateSuiteStatus(job.suiteId, "cancelled");
+        }
         return { jobId: id, cancelled: true };
       },
     },

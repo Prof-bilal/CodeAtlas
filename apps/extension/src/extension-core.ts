@@ -39,6 +39,7 @@ export class CodeAtlasExtension {
       client,
       host,
       runner: this.deps.runner,
+      statusBar: this.statusBar ?? undefined,
       refreshAll: () => this.refresh(),
     });
     for (const command of commands) {

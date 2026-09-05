@@ -1,3 +1,14 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# Hoist all dependencies to the repository root so that the single
+# locked toolchain (typescript, tsup, vitest, eslint, biome, ...) is
+# available to every workspace package's scripts.
+shamefullyHoist: true
+
+# Strict peer dependencies help surface breaking changes early.
+strictPeerDependencies: false
+
+# Keep the lockfile reproducible.
+lockfile: true

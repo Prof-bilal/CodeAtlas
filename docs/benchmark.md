@@ -7,6 +7,24 @@ once **baseline** (the agent without CodeAtlas context) and once **codeatlas**
 (the agent with CodeAtlas in the loop) — with real token/cost/latency numbers
 and automated accuracy scoring.
 
+## Skills (minimal Agent Skills) & the 2026-09 fresh cycle
+
+`@atlas/benchmark` ships a minimal, dependency-free **Skills** capability
+(`packages/benchmark/src/skills/`) implementing the open **Agent Skills**
+pattern for benchmark use: discovery (metadata only) → load (full `SKILL.md` +
+bounded `references/`) → render → task→skill resolution. It is path-safe,
+validated, and exported (`discoverSkills`, `loadSkill`, `renderSkillInstructions`,
+`resolveSkillForTask`, `validateSkill`, …). This lets the benchmark compare a
+task run **with** vs **without** a relevant reusable skill (Config D vs C in the
+fresh cycle).
+
+The **2026-09 fresh comprehensive benchmark cycle** lives in
+`benchmarks/2026-09-fresh/` (report at `benchmarks/2026-09-fresh/report.md`): 4
+configs (Baseline → CodeAtlas Simple → +Tools → +Tools+Skills), 8 domains, 4
+difficulty levels, a seed task catalog, and a 5-skill set under
+`benchmarks/2026-09-fresh/skills/`. Tool selection (web-search/web-fetch/github)
+and per-tool justification are in `benchmarks/2026-09-fresh/configs/tools.json`.
+
 ## Commands
 
 ```

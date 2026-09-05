@@ -40,15 +40,30 @@ export class OllamaRunner implements BenchmarkRunner {
   }
 
   public async execute(request: RunnerRequest): Promise<Result<RunnerResult>> {
+    if (request.signal?.aborted) {
+      return ok({
+        metrics: emptyMetrics(),
+        cost: 0,
+        durationMs: 0,
+        timedOut: false,
+        exitCode: null,
+        finalText: "",
+        toolCalls: [],
+        error: "cancelled",
+      });
+    }
+
     const start = performance.now();
 
+    const agentPromise = this.agentFor(request.mode).run({
+      provider: "ollama",
+      prompt: request.prompt,
+      repositoryPath: request.repositoryPath,
+      ...(request.model !== undefined ? { model: request.model } : {}),
+    });
+
     const result = await withTimeout(
-      this.agentFor(request.mode).run({
-        provider: "ollama",
-        prompt: request.prompt,
-        repositoryPath: request.repositoryPath,
-        ...(request.model !== undefined ? { model: request.model } : {}),
-      }),
+      request.signal !== undefined ? raceWithSignal(agentPromise, request.signal) : agentPromise,
       request.timeoutMs,
     );
 
@@ -204,6 +219,30 @@ function emptyMetrics(): TokenMetrics {
     cacheRead: 0,
     source: "unknown",
   };
+}
+
+/**
+ * Race a promise against an AbortSignal. When the signal fires, the promise
+ * still runs in the background (no cancellation seam in the provider port)
+ * but the caller immediately receives a rejection.
+ */
+function raceWithSignal<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = (): void => {
+      reject(new Error("cancelled"));
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(
+      (value) => {
+        signal.removeEventListener("abort", onAbort);
+        resolve(value);
+      },
+      (err) => {
+        signal.removeEventListener("abort", onAbort);
+        reject(err);
+      },
+    );
+  });
 }
 
 // cumulativeUsage removed: cumulative tokens are now pre-computed in

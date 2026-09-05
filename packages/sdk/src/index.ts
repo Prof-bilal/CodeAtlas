@@ -453,6 +453,7 @@ export { createBenchmarkService } from "./benchmark";
 export type { CreateBenchmarkServiceOptions } from "./benchmark";
 export type {
   BenchmarkAgent,
+  BenchmarkCancelResult,
   BenchmarkConfig,
   BenchmarkEvaluation,
   BenchmarkEvaluationEntry,

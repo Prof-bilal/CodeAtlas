@@ -12,6 +12,13 @@ export interface StatusBarModel {
 export function statusBarModel(client: ContextClient): StatusBarModel {
   const status = client.status();
   if (!status.available) {
+    if (client.lastBuildError !== null) {
+      return {
+        text: "CodeAtlas: build failed",
+        tooltip: client.lastBuildError,
+        command: "codeatlas.runBuild",
+      };
+    }
     return {
       text: "CodeAtlas: no index",
       tooltip: "Run CodeAtlas: Build a project index to get started.",
@@ -37,6 +44,13 @@ export class StatusBarController {
     this.item.text = model.text;
     this.item.tooltip = model.tooltip;
     this.item.command = model.command;
+    this.item.show();
+  }
+
+  public indexing(): void {
+    this.item.text = "CodeAtlas: indexing…";
+    this.item.tooltip = "Atlas is building the index…";
+    this.item.command = "codeatlas.runBuild";
     this.item.show();
   }
 }

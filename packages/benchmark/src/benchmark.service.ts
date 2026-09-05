@@ -1,4 +1,5 @@
 import type {
+  BenchmarkCancelResult,
   BenchmarkConfig,
   BenchmarkEvaluationEntry,
   BenchmarkPort,
@@ -60,6 +61,8 @@ export class BenchmarkService implements BenchmarkPort {
         repositoryPath: string,
       ) => RetrievalReport | null)
     | undefined;
+  /** Abort controllers keyed by suite id for in-flight runSuite/runTask calls. */
+  private readonly activeControllers = new Map<string, AbortController>();
 
   public constructor(options: BenchmarkServiceOptions = {}) {
     this.store = new BenchmarkStore(options.root ?? ".codeatlas/benchmarks");
@@ -113,6 +116,10 @@ export class BenchmarkService implements BenchmarkPort {
       return fail(new Error(`Suite "${request.suiteId}" not found`));
     }
 
+    if (suite.status === "cancelled") {
+      return fail(new Error(`Suite "${request.suiteId}" has been cancelled`));
+    }
+
     const task = this.findTask(suite, request.taskId);
     if (task === null) {
       return fail(new Error(`Task "${request.taskId}" not found in suite`));
@@ -121,6 +128,13 @@ export class BenchmarkService implements BenchmarkPort {
     const runner = this.runners.get(suite.config.agent);
     if (runner === undefined) {
       return fail(new Error(`No runner for agent "${suite.config.agent}"`));
+    }
+
+    // Check cancellation before transitioning to running
+    const signal = this.getOrCreateController(request.suiteId).signal;
+    if (signal.aborted) {
+      this.store.updateSuiteStatus(request.suiteId, "cancelled");
+      return fail(new Error(`Suite "${request.suiteId}" has been cancelled`));
     }
 
     this.store.updateSuiteStatus(request.suiteId, "running");
@@ -134,7 +148,14 @@ export class BenchmarkService implements BenchmarkPort {
       mode: request.mode,
       timeoutMs,
       model: effectiveModel,
+      signal,
     });
+
+    // Check if cancelled during execution
+    if (signal.aborted) {
+      this.store.updateSuiteStatus(request.suiteId, "cancelled");
+      return fail(new Error(`Suite "${request.suiteId}" has been cancelled`));
+    }
 
     if (!runnerResult.ok) {
       this.store.updateSuiteStatus(request.suiteId, "failed");
@@ -237,20 +258,33 @@ export class BenchmarkService implements BenchmarkPort {
     // runsPerTask: how many times to run each task×mode×model cell (default: 1)
     const runsPerTask = suite.config.runsPerTask ?? 1;
 
+    const signal = this.getOrCreateController(request.suiteId).signal;
+    if (signal.aborted) {
+      this.store.updateSuiteStatus(request.suiteId, "cancelled");
+      return fail(new Error(`Suite "${request.suiteId}" has been cancelled`));
+    }
+
     this.store.updateSuiteStatus(request.suiteId, "running");
 
     const results: BenchmarkTaskResult[] = [];
     const evaluations: BenchmarkEvaluationEntry[] = [];
 
     for (const taskDef of taskDefs) {
+      if (signal.aborted) {
+        this.store.updateSuiteStatus(request.suiteId, "cancelled");
+        break;
+      }
       if (taskFilter !== null && taskDef.id !== taskFilter) continue;
 
       if (matrixModels !== undefined) {
         // Matrix mode: expand task × mode × model × run
         for (const mode of modes) {
+          if (signal.aborted) break;
           for (const model of matrixModels) {
+            if (signal.aborted) break;
             const matrixTaskId = `${taskDef.id}@${sanitizeModelForId(model)}`;
             for (let run = 1; run <= runsPerTask; run++) {
+              if (signal.aborted) break;
               const runTaskId = runsPerTask > 1 ? `${matrixTaskId}#run${run}` : matrixTaskId;
               // Skip if result exists and --force not set
               if (!request.force) {
@@ -285,7 +319,9 @@ export class BenchmarkService implements BenchmarkPort {
       } else {
         // Single-model mode: expand task × mode × run
         for (const mode of modes) {
+          if (signal.aborted) break;
           for (let run = 1; run <= runsPerTask; run++) {
+            if (signal.aborted) break;
             const runTaskId = runsPerTask > 1 ? `${taskDef.id}#run${run}` : taskDef.id;
             // Skip if result exists and --force not set
             if (!request.force) {
@@ -314,6 +350,11 @@ export class BenchmarkService implements BenchmarkPort {
           }
         }
       }
+    }
+
+    // If cancelled mid-run, do not overwrite the status set by the abort handler
+    if (signal.aborted) {
+      return fail(new Error(`Suite "${request.suiteId}" has been cancelled`));
     }
 
     // Compute aggregates (supports 2-arm and 3-arm)
@@ -477,7 +518,57 @@ export class BenchmarkService implements BenchmarkPort {
   // -----------------------------------------------------------------------
 
   public close(): void {
-    // no-op for JSON store
+    // Abort any active runs and clean up controllers
+    for (const [id, controller] of this.activeControllers) {
+      controller.abort();
+      this.activeControllers.delete(id);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Cancellation
+  // -----------------------------------------------------------------------
+
+  public async cancelSuite(suiteId: string): Promise<Result<BenchmarkCancelResult>> {
+    const suite = this.store.loadSuite(suiteId);
+    if (suite === null) {
+      return fail(new Error(`Suite "${suiteId}" not found`));
+    }
+
+    const terminal =
+      suite.status === "completed" || suite.status === "failed" || suite.status === "cancelled";
+    if (terminal) {
+      return ok({
+        suiteId,
+        status: suite.status,
+        cancelled: false,
+      });
+    }
+
+    // Abort any in-flight runner process via the signal
+    const controller = this.activeControllers.get(suiteId);
+    if (controller !== undefined) {
+      controller.abort();
+      this.activeControllers.delete(suiteId);
+    }
+
+    // Durably mark cancelled in the store
+    this.store.updateSuiteStatus(suiteId, "cancelled");
+
+    return ok({
+      suiteId,
+      status: "cancelled",
+      cancelled: true,
+    });
+  }
+
+  private getOrCreateController(suiteId: string): AbortController {
+    let controller = this.activeControllers.get(suiteId);
+    if (controller === undefined || controller.signal.aborted) {
+      controller = new AbortController();
+      this.activeControllers.set(suiteId, controller);
+    }
+    return controller;
   }
 
   // -----------------------------------------------------------------------

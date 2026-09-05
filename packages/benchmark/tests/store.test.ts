@@ -94,6 +94,29 @@ describe("BenchmarkStore", () => {
     expect(loaded?.status).toBe("running");
   });
 
+  it("updates suite status to cancelled", () => {
+    const suite: BenchmarkSuite = {
+      id: "test-cancel",
+      name: "Cancel Test",
+      config: {
+        id: "test-cancel",
+        name: "Cancel Test",
+        agent: "opencode",
+        model: "m",
+        modes: ["baseline"],
+      },
+      createdAt: "2026-08-22T00:00:00Z",
+      status: "running",
+      taskFiles: [],
+    };
+
+    store.saveSuite(suite);
+    store.updateSuiteStatus("test-cancel", "cancelled");
+
+    const loaded = store.loadSuite("test-cancel");
+    expect(loaded?.status).toBe("cancelled");
+  });
+
   // -----------------------------------------------------------------------
   // Task results
   // -----------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { BenchmarkRunner } from "@atlas/benchmark";
@@ -295,6 +295,45 @@ describe("Benchmark API", () => {
     expect(badBody.status).toBe(400);
   });
 
+  it("returns suite status with progress for a completed benchmark", async () => {
+    const started = await post("/api/benchmarks", {
+      repositoryPath: fixtureRepo,
+      agent: "opencode",
+      taskFile: "fixture-tasks.json",
+      modes: ["baseline", "codeatlas"],
+    });
+    const { jobId } = (await started.json()) as { jobId: string };
+    const job = await waitForJob(jobId);
+    const suiteId = (job["result"] as { suiteId: string }).suiteId;
+
+    const res = await get(`/api/benchmarks/${suiteId}/status`);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      suiteId: string;
+      status: string;
+      completed: number;
+      total: number;
+      updatedAt: string;
+    };
+    expect(body.suiteId).toBe(suiteId);
+    expect(body.status).toBe("completed");
+    expect(body.completed).toBe(2);
+    expect(body.total).toBe(2);
+    expect(body.updatedAt).toBeTruthy();
+  });
+
+  it("validates suite status requests — unknown id returns 404, bad id returns 400", async () => {
+    // Known id path: 404 from the service layer
+    expect((await get("/api/benchmarks/does-not-exist/status")).status).toBe(404);
+    // Whitespace / control chars inside a single segment: 400 from the handler validation
+    expect((await get("/api/benchmarks/%20/status")).status).toBe(400);
+    expect((await get("/api/benchmarks/a%00b/status")).status).toBe(400);
+    expect((await get("/api/benchmarks/a%0Ab/status")).status).toBe(400);
+    // Empty id segment: router-level 404 (no segment to match :id)
+    const res = await fetch(`${base}/api/benchmarks//status`);
+    expect(res.status).toBe(404);
+  });
+
   it("serves the community library with live availability and real benchmark links", async () => {
     const res = await get("/api/community/repos");
     expect(res.status).toBe(200);
@@ -446,6 +485,13 @@ describe("Benchmark API", () => {
       }
       expect(job["status"]).toBe("cancelled");
       expect(job["suiteId"]).toBeTruthy();
+
+      // Suite status durably persisted as "cancelled" on disk.
+      await new Promise((r) => setTimeout(r, 100));
+      const suiteId = job["suiteId"] as string;
+      const suiteJsonPath = join(benchmarkRoot, "suites", suiteId, "suite.json");
+      const suiteJson = JSON.parse(readFileSync(suiteJsonPath, "utf8")) as { status: string };
+      expect(suiteJson.status).toBe("cancelled");
     } finally {
       await app.close();
     }
@@ -455,5 +501,268 @@ describe("Benchmark API", () => {
     expect((await get("/api/jobs/none")).status).toBe(404);
     const res = await post("/api/jobs/none/cancel", {});
     expect(res.status).toBe(404);
+  });
+
+  it("cancels a queued job without running it", async () => {
+    let blockerResolve: (() => void) | undefined;
+    const blockingRunner: BenchmarkRunner = {
+      name: "opencode",
+      async execute() {
+        await new Promise<void>((r) => {
+          blockerResolve = r;
+        });
+        return fakeRunner.execute({} as never);
+      },
+    };
+    const config = loadConfig({
+      host: "127.0.0.1",
+      port: 0,
+      benchmarkRoot,
+      uiDist: "",
+      jobTimeoutMs: 60_000,
+    });
+    const jobs = new JobManager({ maxConcurrent: 1, maxQueued: 4, jobTimeoutMs: 60_000 });
+    const app = createApp({
+      config,
+      jobs,
+      routes: createRoutes({
+        config,
+        jobs,
+        runners: new Map([["opencode", blockingRunner]]),
+        community,
+      }),
+    });
+    const addr = await app.start();
+    const cancelBase = `http://${addr.host}:${addr.port}`;
+    try {
+      // First job blocks forever — occupies the single concurrency slot.
+      const started1 = await fetch(`${cancelBase}/api/benchmarks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          repositoryPath: fixtureRepo,
+          agent: "opencode",
+          taskFile: "fixture-tasks.json",
+        }),
+      });
+      const { jobId: blockerId } = (await started1.json()) as { jobId: string };
+
+      // Wait for the blocker to be running.
+      const dl = Date.now() + 10_000;
+      for (;;) {
+        const res = await fetch(`${cancelBase}/api/jobs/${blockerId}`);
+        const j = (await res.json()) as Record<string, unknown>;
+        if (j["status"] === "running") break;
+        if (Date.now() > dl) throw new Error("blocker did not start");
+        await new Promise((r) => setTimeout(r, 10));
+      }
+
+      // Second job is queued behind the blocker.
+      const started2 = await fetch(`${cancelBase}/api/benchmarks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          repositoryPath: fixtureRepo,
+          agent: "opencode",
+          taskFile: "fixture-tasks.json",
+        }),
+      });
+      const { jobId: queuedId } = (await started2.json()) as { jobId: string };
+
+      // Cancel the queued job — should succeed immediately.
+      const cancelRes = await fetch(`${cancelBase}/api/jobs/${queuedId}/cancel`, {
+        method: "POST",
+      });
+      expect(cancelRes.status).toBe(200);
+
+      // Release the blocker so the server can clean up.
+      blockerResolve?.();
+
+      // The queued job was cancelled without ever running.
+      const cancelDl = Date.now() + 5_000;
+      let queuedJob: Record<string, unknown> | undefined;
+      for (;;) {
+        const res = await fetch(`${cancelBase}/api/jobs/${queuedId}`);
+        queuedJob = (await res.json()) as Record<string, unknown>;
+        if (queuedJob["status"] !== "running") break;
+        if (Date.now() > cancelDl) throw new Error("queued job did not cancel");
+        await new Promise((r) => setTimeout(r, 10));
+      }
+      expect(queuedJob["status"]).toBe("cancelled");
+      const queuedStages = queuedJob["stages"] as { state: string }[];
+      expect(queuedStages.every((s) => s.state === "cancelled")).toBe(true);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("cancels an in-flight job and marks the suite interrupted", async () => {
+    let release: (() => void) | undefined;
+    const hangingRunner: BenchmarkRunner = {
+      name: "opencode",
+      async execute(request) {
+        if (request.mode === "codeatlas") {
+          await new Promise<void>((r) => {
+            release = r;
+          });
+        }
+        return fakeRunner.execute(request);
+      },
+    };
+    const config = loadConfig({
+      host: "127.0.0.1",
+      port: 0,
+      benchmarkRoot,
+      uiDist: "",
+      jobTimeoutMs: 60_000,
+    });
+    const jobs = new JobManager({ maxConcurrent: 1, maxQueued: 2, jobTimeoutMs: 60_000 });
+    const app = createApp({
+      config,
+      jobs,
+      routes: createRoutes({
+        config,
+        jobs,
+        runners: new Map([["opencode", hangingRunner]]),
+        community,
+      }),
+    });
+    const addr = await app.start();
+    const cancelBase = `http://${addr.host}:${addr.port}`;
+    try {
+      const started = await fetch(`${cancelBase}/api/benchmarks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          repositoryPath: fixtureRepo,
+          agent: "opencode",
+          taskFile: "fixture-tasks.json",
+        }),
+      });
+      const { jobId } = (await started.json()) as { jobId: string };
+
+      // Wait for the job to reach running (prepare/index may complete quickly).
+      const dl = Date.now() + 15_000;
+      for (;;) {
+        const res = await fetch(`${cancelBase}/api/jobs/${jobId}`);
+        const j = (await res.json()) as Record<string, unknown>;
+        if (j["status"] === "running") break;
+        if (Date.now() > dl) throw new Error("job did not start running");
+        await new Promise((r) => setTimeout(r, 10));
+      }
+
+      // Cancel while the runner is blocked.
+      const cancelRes = await fetch(`${cancelBase}/api/jobs/${jobId}/cancel`, {
+        method: "POST",
+      });
+      expect(cancelRes.status).toBe(200);
+
+      // Release the runner so the job body can observe the flag.
+      release?.();
+      await new Promise((r) => setTimeout(r, 20));
+
+      // Wait for the job to settle.
+      const finalDl = Date.now() + 15_000;
+      let job: Record<string, unknown> | undefined;
+      for (;;) {
+        const res = await fetch(`${cancelBase}/api/jobs/${jobId}`);
+        job = (await res.json()) as Record<string, unknown>;
+        const status = job["status"];
+        if (status !== "running" && status !== "queued") break;
+        if (Date.now() > finalDl) throw new Error("cancel did not settle");
+        await new Promise((r) => setTimeout(r, 10));
+      }
+      expect(job["status"]).toBe("cancelled");
+
+      // At least the benchmark stage was cancelled (prepare/index may have completed).
+      const stages = job["stages"] as { id: string; state: string }[];
+      expect(stages.some((s) => s.state === "cancelled")).toBe(true);
+
+      // Suite was marked interrupted in the store — wait for the async finally block
+      // to finish writing the metadata (it runs after the status changes to "cancelled").
+      await new Promise((r) => setTimeout(r, 100));
+      const suiteId = job["suiteId"] as string;
+      expect(suiteId).toBeTruthy();
+      const metaPath = join(benchmarkRoot, "suites", suiteId, "repository.json");
+      const meta = JSON.parse(readFileSync(metaPath, "utf8")) as { interruptedAt?: string };
+      expect(meta.interruptedAt).toBeTruthy();
+
+      // Suite status durably persisted as "cancelled" on disk.
+      const suiteJsonPath = join(benchmarkRoot, "suites", suiteId, "suite.json");
+      const suiteJson = JSON.parse(readFileSync(suiteJsonPath, "utf8")) as { status: string };
+      expect(suiteJson.status).toBe("cancelled");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("returns 409 when cancelling an already-finished job", async () => {
+    const config = loadConfig({
+      host: "127.0.0.1",
+      port: 0,
+      benchmarkRoot,
+      uiDist: "",
+      jobTimeoutMs: 60_000,
+    });
+    const jobs = new JobManager({ maxConcurrent: 1, maxQueued: 4, jobTimeoutMs: 60_000 });
+    const app = createApp({
+      config,
+      jobs,
+      routes: createRoutes({
+        config,
+        jobs,
+        runners: new Map([["opencode", fakeRunner]]),
+        community,
+      }),
+    });
+    const addr = await app.start();
+    const cancelBase = `http://${addr.host}:${addr.port}`;
+    try {
+      // Start and wait for completion.
+      const started = await fetch(`${cancelBase}/api/benchmarks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          repositoryPath: fixtureRepo,
+          agent: "opencode",
+          taskFile: "fixture-tasks.json",
+        }),
+      });
+      const { jobId } = (await started.json()) as { jobId: string };
+
+      // Poll until the job finishes (cannot use shared waitForJob — different server port).
+      let job: Record<string, unknown> | undefined;
+      const pollDl = Date.now() + 30_000;
+      for (;;) {
+        const res = await fetch(`${cancelBase}/api/jobs/${jobId}`);
+        job = (await res.json()) as Record<string, unknown>;
+        const status = job["status"];
+        if (status !== "queued" && status !== "running") break;
+        if (Date.now() > pollDl) throw new Error("job did not finish");
+        await new Promise((r) => setTimeout(r, 25));
+      }
+      expect(job["status"]).toBe("completed");
+
+      // Cancel a completed job → 409.
+      const cancelRes = await fetch(`${cancelBase}/api/jobs/${jobId}/cancel`, {
+        method: "POST",
+      });
+      expect(cancelRes.status).toBe(409);
+      const body = (await cancelRes.json()) as { error: { code: string } };
+      expect(body.error.code).toBe("not_cancellable");
+
+      // Verify the job is still completed — no state corruption.
+      const finalRes = await fetch(`${cancelBase}/api/jobs/${jobId}`);
+      const finalJob = (await finalRes.json()) as Record<string, unknown>;
+      expect(finalJob["status"]).toBe("completed");
+
+      // Suite status is still "completed" — not corrupted to "cancelled".
+      const suiteId = finalJob["suiteId"] as string;
+      const suiteJsonPath = join(benchmarkRoot, "suites", suiteId, "suite.json");
+      const suiteJson = JSON.parse(readFileSync(suiteJsonPath, "utf8")) as { status: string };
+      expect(suiteJson.status).toBe("completed");
+    } finally {
+      await app.close();
+    }
   });
 });

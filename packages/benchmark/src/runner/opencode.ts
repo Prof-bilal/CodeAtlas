@@ -52,6 +52,19 @@ export class OpenCodeRunner implements BenchmarkRunner {
   private readonly omitDirFlag: boolean;
 
   public async execute(request: RunnerRequest): Promise<Result<RunnerResult>> {
+    if (request.signal?.aborted) {
+      return ok({
+        metrics: emptyMetrics(),
+        cost: 0,
+        durationMs: 0,
+        timedOut: false,
+        exitCode: null,
+        finalText: "",
+        toolCalls: [],
+        error: "cancelled",
+      });
+    }
+
     let configBackup: string | null = null;
 
     // For every mode we may need to toggle the CodeAtlas MCP server in the
@@ -84,6 +97,7 @@ export class OpenCodeRunner implements BenchmarkRunner {
         cwd: request.repositoryPath,
         timeoutMs: request.timeoutMs,
         env,
+        ...(request.signal !== undefined ? { signal: request.signal } : {}),
       });
       const wallMs = Math.round(performance.now() - start);
 
@@ -202,7 +216,7 @@ export class OpenCodeRunner implements BenchmarkRunner {
 
   private spawnAsync(
     args: string[],
-    options: { cwd: string; timeoutMs: number; env?: NodeJS.ProcessEnv },
+    options: { cwd: string; timeoutMs: number; env?: NodeJS.ProcessEnv; signal?: AbortSignal },
   ): Promise<{ code: number | null; lines: string[]; timedOut: boolean; stderr: string }> {
     return new Promise((resolve) => {
       // `detached: true` makes opencode a process-group leader so the timeout
@@ -242,6 +256,11 @@ export class OpenCodeRunner implements BenchmarkRunner {
         }
       };
 
+      const onAbort = (): void => {
+        killTree();
+      };
+      options.signal?.addEventListener("abort", onAbort);
+
       const timer = setTimeout(() => {
         timedOut = true;
         killTree();
@@ -268,6 +287,7 @@ export class OpenCodeRunner implements BenchmarkRunner {
 
       child.on("close", (code, signal) => {
         clearTimeout(timer);
+        options.signal?.removeEventListener("abort", onAbort);
         if (buffer.trim() !== "") lines.push(buffer.trim());
         resolve({
           code,
@@ -279,6 +299,7 @@ export class OpenCodeRunner implements BenchmarkRunner {
 
       child.on("error", () => {
         clearTimeout(timer);
+        options.signal?.removeEventListener("abort", onAbort);
         resolve({ code: null, lines, timedOut, stderr });
       });
     });
@@ -400,5 +421,17 @@ function parseRunEvents(lines: string[]): {
     metrics,
     finalText: texts[texts.length - 1] ?? "",
     toolCalls,
+  };
+}
+
+function emptyMetrics(): TokenMetrics {
+  return {
+    input: 0,
+    output: 0,
+    reasoning: 0,
+    total: 0,
+    cacheWrite: 0,
+    cacheRead: 0,
+    source: "unknown",
   };
 }

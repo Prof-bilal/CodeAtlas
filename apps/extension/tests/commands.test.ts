@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { ContextClient } from "../src/client";
 import { type AtlasRunner, type CommandContext, registerCommands } from "../src/commands";
+import { StatusBarController } from "../src/status-bar";
 import type { VscodeApi } from "../src/vscode-host";
-import { type FakeHostRecords, createFakeHost } from "./fake-host";
+import { type FakeHostRecords, createFakeHost, fakeStatusBarItem } from "./fake-host";
 import { type Fixture, createEmptyFixture, createFixture } from "./fixture";
 
 const ALL_COMMANDS = [
@@ -107,6 +108,32 @@ describe("registerCommands", () => {
     expect(runningMessage).toBe(true);
   });
 
+  it("records a build error when the run fails", async () => {
+    const fixture = createEmptyFixture();
+    fixtures.push(fixture);
+    const client = new ContextClient({ repositoryPath: fixture.root });
+    const { host, records } = createFakeHost();
+    const failingRunner: AtlasRunner = {
+      run: async () => ({ ok: false, summary: "compilation failed" }),
+    };
+    const ctx: CommandContext = {
+      client,
+      host,
+      runner: failingRunner,
+      refreshAll: () => {},
+    };
+    registerCommands(ctx);
+
+    const handler = records.registeredCommands.get("codeatlas.runBuild");
+    expect(handler).toBeDefined();
+    await handler?.();
+
+    expect(client.lastBuildError).toBe("compilation failed");
+    const errorMessage = records.messages.some((m) => m.startsWith("error:"));
+    expect(errorMessage).toBe(true);
+    client.close();
+  });
+
   it("bails out of search with a hint when no index exists", async () => {
     const fixture = createEmptyFixture();
     fixtures.push(fixture);
@@ -127,5 +154,138 @@ describe("registerCommands", () => {
     await invoke(h, "codeatlas.searchSymbols");
     expect(h.records.quickPickItems.length).toBeGreaterThan(0);
     expect(h.records.openedDocs).toContainEqual({ path: "/src/math.ts", line: 1 });
+  });
+});
+
+describe("runCli status bar lifecycle", () => {
+  it("shows 'indexing…' while the build is running", async () => {
+    const fixture = createEmptyFixture();
+    fixtures.push(fixture);
+    const client = new ContextClient({ repositoryPath: fixture.root });
+    const { host, records } = createFakeHost();
+
+    let done!: () => void;
+    const promise = new Promise<void>((resolve) => {
+      done = resolve;
+    });
+    const slowRunner: AtlasRunner = {
+      run: async () => {
+        await promise;
+        return { ok: true, summary: "done" };
+      },
+    };
+    const item = fakeStatusBarItem();
+    const statusBar = new StatusBarController(item);
+    const ctx: CommandContext = {
+      client,
+      host,
+      runner: slowRunner,
+      statusBar,
+      refreshAll: () => {
+        statusBar.render(client);
+      },
+    };
+    registerCommands(ctx);
+
+    const handler = records.registeredCommands.get("codeatlas.runBuild");
+    const runPromise = handler();
+
+    expect(item.text).toBe("CodeAtlas: indexing…");
+    expect(item.shown).toBe(true);
+
+    done();
+    await runPromise;
+
+    expect(item.text).not.toContain("indexing");
+    client.close();
+  });
+
+  it("shows 'build failed' after a failing run completes", async () => {
+    const fixture = createEmptyFixture();
+    fixtures.push(fixture);
+    const client = new ContextClient({ repositoryPath: fixture.root });
+    const { host, records } = createFakeHost();
+    const failingRunner: AtlasRunner = {
+      run: async () => ({ ok: false, summary: "compilation failed" }),
+    };
+    const item = fakeStatusBarItem();
+    const statusBar = new StatusBarController(item);
+    const ctx: CommandContext = {
+      client,
+      host,
+      runner: failingRunner,
+      statusBar,
+      refreshAll: () => {
+        statusBar.render(client);
+      },
+    };
+    registerCommands(ctx);
+
+    const handler = records.registeredCommands.get("codeatlas.runBuild");
+    await handler();
+
+    expect(item.text).toContain("build failed");
+    expect(item.tooltip).toBe("compilation failed");
+    client.close();
+  });
+
+  it("shows 'build failed' when the runner throws", async () => {
+    const fixture = createEmptyFixture();
+    fixtures.push(fixture);
+    const client = new ContextClient({ repositoryPath: fixture.root });
+    const { host, records } = createFakeHost();
+    const throwingRunner: AtlasRunner = {
+      run: async () => {
+        throw new Error("cli not found");
+      },
+    };
+    const item = fakeStatusBarItem();
+    const statusBar = new StatusBarController(item);
+    const ctx: CommandContext = {
+      client,
+      host,
+      runner: throwingRunner,
+      statusBar,
+      refreshAll: () => {
+        statusBar.render(client);
+      },
+    };
+    registerCommands(ctx);
+
+    const handler = records.registeredCommands.get("codeatlas.runBuild");
+    await handler();
+
+    expect(client.lastBuildError).toBe("cli not found");
+    expect(item.text).toContain("build failed");
+    expect(item.tooltip).toBe("cli not found");
+    expect(records.messages.some((m) => m.startsWith("error:"))).toBe(true);
+    client.close();
+  });
+});
+
+describe("refresh clears stale build error", () => {
+  it("clears lastBuildError when the index is available", async () => {
+    const fixture = createFixture();
+    fixtures.push(fixture);
+    const client = new ContextClient({ repositoryPath: fixture.root });
+    client.lastBuildError = "previous failure";
+    const { host, records } = createFakeHost();
+    let refreshes = 0;
+    const ctx: CommandContext = {
+      client,
+      host,
+      runner: { run: async () => ({ ok: true, summary: "" }) },
+      refreshAll: () => {
+        refreshes += 1;
+      },
+    };
+    registerCommands(ctx);
+
+    const handler = records.registeredCommands.get("codeatlas.refresh");
+    await handler();
+
+    expect(client.lastBuildError).toBeNull();
+    expect(refreshes).toBe(1);
+    client.close();
   });
 });

@@ -55,3 +55,24 @@ export {
   describeComparison,
   type SignificanceResult,
 } from "./significance";
+export {
+  MAX_SKILL_MARKDOWN_BYTES,
+  MAX_SKILL_REFERENCE_BYTES,
+  MAX_REFERENCE_FILES,
+  discoverSkills,
+  isValidSkillId,
+  loadSkill,
+  renderSkillInstructions,
+  resolveSkillForTask,
+  splitFrontmatter,
+  tryReadSkill,
+  validateSkill,
+  SKILL_FILENAME,
+} from "./skills";
+export type {
+  DiscoveredSkill,
+  Skill,
+  SkillManifest,
+  SkillReference,
+  SkillResolution,
+} from "./skills";

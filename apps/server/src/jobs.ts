@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { JobStore } from "./job-store";
 
 /**
  * In-memory job manager for long-running benchmark work.
@@ -91,6 +92,8 @@ export interface JobManagerOptions {
   readonly maxQueued?: number;
   readonly jobTimeoutMs?: number;
   readonly now?: () => number;
+  /** Durable store for job records. When provided, state changes are persisted. */
+  readonly store?: JobStore | undefined;
 }
 
 interface QueuedJob {
@@ -106,12 +109,14 @@ export class JobManager {
   private readonly maxQueued: number;
   private readonly jobTimeoutMs: number;
   private readonly now: () => number;
+  private readonly store: JobStore | undefined;
 
   public constructor(options: JobManagerOptions = {}) {
     this.maxConcurrent = options.maxConcurrent ?? 1;
     this.maxQueued = options.maxQueued ?? 8;
     this.jobTimeoutMs = options.jobTimeoutMs ?? 60 * 60 * 1000;
     this.now = options.now ?? (() => Date.now());
+    this.store = options.store;
   }
 
   /** Create a job record and schedule `body` (enqueue → run when a slot frees). */
@@ -146,6 +151,7 @@ export class JobManager {
     };
     this.jobs.set(job.id, job);
     this.queue.push({ id: job.id, body });
+    this.persist(job);
     this.pump();
     return job;
   }
@@ -181,6 +187,7 @@ export class JobManager {
       const idx = this.queue.findIndex((q) => q.id === id);
       if (idx >= 0) this.queue.splice(idx, 1);
     }
+    this.persist(job);
     return true;
   }
 
@@ -194,6 +201,11 @@ export class JobManager {
   // -----------------------------------------------------------------------
   // Internals
   // -----------------------------------------------------------------------
+
+  /** Persist job state to the durable store (if configured). */
+  private persist(job: JobRecord): void {
+    this.store?.save(job);
+  }
 
   private pump(): void {
     while (this.running.size < this.maxConcurrent && this.queue.length > 0) {
@@ -214,6 +226,7 @@ export class JobManager {
     job.status = "running";
     job.startedAt = new Date(startedAtMs).toISOString();
     job.updatedAt = job.startedAt;
+    this.persist(job);
 
     const timedOut = (): boolean => this.now() - startedAtMs > this.jobTimeoutMs;
 
@@ -281,6 +294,7 @@ export class JobManager {
       job.currentTask = undefined;
       job.endedAt = new Date(this.now()).toISOString();
       job.updatedAt = job.endedAt;
+      this.persist(job);
       this.running.delete(job.id);
       this.pump();
     }

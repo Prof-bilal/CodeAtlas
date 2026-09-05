@@ -75,9 +75,19 @@ export function isUnavailable(error: unknown): boolean {
  */
 export class ContextClient {
   private sdk: ContextSDK | null = null;
+  private _lastBuildError: string | null = null;
 
   /** Open (or reuse) a session for a project on first use. */
   public constructor(private readonly options: ContextSDKOptions) {}
+
+  /** The last build/update error message, or `null` when the latest run succeeded. */
+  public get lastBuildError(): string | null {
+    return this._lastBuildError;
+  }
+
+  public set lastBuildError(value: string | null) {
+    this._lastBuildError = value;
+  }
 
   /** The resolved repository/db paths, when a session is open. */
   public get paths(): ResolvedProjectPaths {

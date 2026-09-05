@@ -554,6 +554,7 @@ export async function runBenchmarkJob(
   }
 
   ctx.startStage("benchmark");
+  ctx.throwIfCancelled();
   ctx.setProgress(0, plan.length);
   let ran = 0;
   let reused = 0;
