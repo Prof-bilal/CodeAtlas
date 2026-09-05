@@ -1,0 +1,134 @@
+{
+  "taskId": "EXT-EXPERT-01",
+  "category": "repository-understanding",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 48888,
+    "output": 3131,
+    "reasoning": 0,
+    "total": 342835,
+    "cacheWrite": 0,
+    "cacheRead": 290816,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 186173,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Now I have all the evidence. Here's the assessment:\n\n---\n\n## Assessment: pnpm config compatibility with current recommended version\n\n### Current state\n\n| File | Setting | Value |\n|---|---|---|\n| `package.json:9` | `packageManager` | `pnpm@9.15.0` |\n| `.npmrc:4` | `shamefully-hoist` | `true` |\n| `.npmrc:7` | `strict-peer-dependencies` | `false` |\n| `.npmrc:10` | `lockfile` | `true` |\n| `ci.yml:23` | pnpm version | `9.15.0` |\n| `pnpm-lock.yaml` header | settings | `autoInstallPeers: true, excludeLinksFromLockfile: false` |\n\n### What would break\n\n**Upgrading to pnpm 11+ (latest stable: 11.25.0) would silently break two settings.**\n\nPer https://pnpm.io/settings (the 11.x/12.x docs):\n\n> Only auth and registry settings are read from `.npmrc` files. All other settings (like `hoistPattern`, `nodeLinker`, `shamefullyHoist`, etc.) must be configured in `pnpm-workspace.yaml` or the global `~/.config/pnpm/config.yaml`.\n\nThe migration guide at https://pnpm.io/migration confirms this explicitly:\n\n> **Splits `.npmrc` into auth/registry vs. everything else.** v11 only reads auth and registry settings from `.npmrc`. Every other setting (`hoist-pattern`, `node-linker`, `save-exact`, …) is moved into `pnpm-workspace.yaml` with a camelCase key.\n\nConcretely:\n\n| Setting | Behavior on pnpm 9.15.0 | Behavior on pnpm 11+ if left in `.npmrc` |\n|---|---|---|\n| `shamefully-hoist=true` | Read, hoisting enabled | **Silently ignored** — reverts to default `false`. Dependencies stop hoisting to root. Toolchain packages (typescript, vitest, eslint, biome) become inaccessible to workspace package scripts. **Builds break.** |\n| `strict-peer-dependencies=false` | Read, peer mismatches are warnings | **Silently ignored** — reverts to default `true`. Peer dependency mismatches become hard errors. **Install breaks.** |\n| `lockfile=true` | Read, lockfile enabled | **Silently ignored** — but `lockfile: true` is already the default, so no functional change. |\n\n### Recommendation\n\nA change is warranted **if and when** the project upgrades past pnpm 9.x. The minimal fix:\n\n1. **Move the two non-auth settings from `.npmrc` into `pnpm-workspace.yaml`:**\n   ```yaml\n   packages:\n     - \"apps/*\"\n     - \"packages/*\"\n   shamefullyHoist: true\n   strictPeerDependencies: false\n   ```\n\n2. **Remove or reduce `.npmrc` to auth-only content.** Since this project has no auth/registry settings in `.npmrc`, the file can be deleted entirely.\n\n3. **`lockfile=true` can be dropped** — it's the default on all versions.\n\n4. **Optionally bump `packageManager` and CI** to the latest stable. As of today that's `pnpm@11.25.0` (the `latest` npm tag; pnpm 12.x is available via `next-12` but not yet the npm default — https://www.npmjs.com/package/pnpm).\n\n### If staying on pnpm 9.x\n\nNo change needed. The current `.npmrc` works correctly on pnpm 9.15.0. All three settings are read, and the behavior matches intent. The `autoInstallPeers: true` in the lockfile header is redundant (it's the default since pnpm 9) but harmless.\n\n### Sources consulted\n\n- https://pnpm.io/settings — current config reference (12.x), confirms `.npmrc` scope narrowed to auth/registry only\n- https://pnpm.io/migration — migration guide from v10 to v11, documents the `.npmrc` split\n- https://pnpm.io/10.x/npmrc — pnpm 10 docs, confirms the narrower scope started in v11\n- https://pnpm.io/settings/node-modules#shamefullyhoist — `shamefullyHoist` defaults to `false`\n- https://pnpm.io/settings/peer-dependencies#strictpeerdependencies — `strictPeerDependencies` defaults to `true`\n- https://pnpm.io/settings/store#lockfile — `lockfile` defaults to `true`\n- https://www.npmjs.com/package/pnpm — confirms `latest` tag is 11.25.0\n- https://github.com/pnpm/pnpm/releases — release history showing 11.25.0 and 12.3.2 as current stable versions",
+  "toolCallCount": 13,
+  "toolCalls": [
+    {
+      "name": "websearch",
+      "callId": "call_287363cc3b3942f9b18c855c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "task",
+      "callId": "call_a799c5a53e044ad6b13135f8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "webfetch",
+      "callId": "call_8ebfc6faf01344c8a7e0ed6b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "webfetch",
+      "callId": "call_51e579f3cc7644e8a1f8b926",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "webfetch",
+      "callId": "call_dc442faf3ff448479a8cce12",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "webfetch",
+      "callId": "call_761a1557e26746b8bc9c8108",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "webfetch",
+      "callId": "call_954773f7ecb949cbac0128fa",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "webfetch",
+      "callId": "call_ae35345023844eb3a8497677",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c3cc1614627f4d9cb8eea5bc",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e7010866f55144efa8c86755",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_458313e2d6d246ab9cd2c412",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_9dc640e40ec14cac8c38f8fb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "webfetch",
+      "callId": "call_e1f1f86c4eca4217bb921d9f",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "pnpm-workspace.yaml",
+      ".npmrc"
+    ],
+    "filesExpected": [
+      "pnpm-workspace.yaml",
+      ".npmrc"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "pnpm",
+      "workspace",
+      "documentation",
+      "config"
+    ],
+    "conceptsExpected": [
+      "pnpm",
+      "workspace",
+      "documentation",
+      "deprecated",
+      "config"
+    ],
+    "conceptRatio": 0.8,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T12:53:40.447Z"
+}

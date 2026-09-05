@@ -1,0 +1,177 @@
+{
+  "taskId": "BACKEND-MEDIUM-01",
+  "category": "code-modification",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 72856,
+    "output": 47795,
+    "reasoning": 0,
+    "total": 474443,
+    "cacheWrite": 0,
+    "cacheRead": 353792,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 606251,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Let me look specifically at what changed in the source code:",
+  "toolCallCount": 20,
+  "toolCalls": [
+    {
+      "name": "todowrite",
+      "callId": "call_929e59d6c39d4d72bb602bc5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "task",
+      "callId": "call_aa92c1f5bd7e44359d5f2ac2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f9ebda360dc443db9b21bb34",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_7c3ba7acaa3b46e7a80ecf01",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_161f4617642d46b09995427a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f142924c1066434a9eb945d5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_0bf0ce9d0bbe4ca791b2ff95",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8f5c365300b748ae9dd72ec6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e2142e2f16714d9aa361e72a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_599c8a5261dd42109380aa38",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_eb8c8c43cc5040e0aa72dd1d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_2b2dfe41770940e2b96346ab",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_74f693b22637476792dc2c7d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_43f849ff9e544784b917c65d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_e75c32c84017494486e5da01",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b58650a769b74d4cad3dcb26",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_08a66dccb34a4993a1a6f102",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_e91306d5bf27474fa1315830",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_028b5573acd3406e8e35e5d5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_4348003dad7e43bcb1be541c",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 0,
+    "status": "incorrect",
+    "filesFound": [],
+    "filesExpected": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts",
+      "src/middleware/auth.ts"
+    ],
+    "fileRatio": 0,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "ownership",
+      "authorization",
+      "filter",
+      "userId"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts"
+    ]
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 474,443 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-04T17:45:52.824Z"
+}

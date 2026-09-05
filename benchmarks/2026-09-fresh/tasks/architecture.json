@@ -1,0 +1,55 @@
+[
+  {
+    "id": "ARCH-EASY-01",
+    "domain": "architecture",
+    "difficulty": "easy",
+    "repository": "codeatlas",
+    "commit": "HEAD (in-tree monorepo)",
+    "description": "Explain how a consumer reads indexed context in this monorepo and which package owns persistence. Cite the files inspected.",
+    "expected_behavior": "A correct answer names the SDK read interface, the owning persistence package, and the dependency direction, citing files.",
+    "files_likely_involved": ["packages/sdk/src", "packages/storage/src", "packages/core/src"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": null,
+    "prompt": "Describe how a consumer (for example a CLI command or an MCP server) reads indexed context from this repository. Which package is the single read interface that consumers are supposed to use, where is the persistent context actually stored and owned, and what is the dependency direction between them? Cite the specific files you inspected and quote the concrete seam (function/class) a consumer calls.",
+    "success_criteria": [
+      "Names the read seam (SDK composition root) and the persistence owner",
+      "States the dependency direction correctly",
+      "Cites the actual files inspected"
+    ],
+    "regression_tests": [],
+    "evaluation_method": "Automated scoring from expected_files/expected_concepts hits + cited paths.",
+    "expected_files": ["packages/sdk/src/context/index.ts", "packages/storage/src/index.ts"],
+    "expected_concepts": ["SDK", "context", "storage", "read interface", "dependency"],
+    "gold_impact_files": [],
+    "forbidden_changes": [],
+    "max_seconds": 600
+  },
+  {
+    "id": "ARCH-MEDIUM-01",
+    "domain": "architecture",
+    "difficulty": "medium",
+    "repository": "codeatlas",
+    "commit": "HEAD (in-tree monorepo)",
+    "description": "Recommend where a new 'expose an extra kind of query over the context store' feature belongs, tracing the port/implementation/SDK boundaries.",
+    "expected_behavior": "A correct recommendation places the new query behind a core port, implemented in the owning feature package, composed and exposed only via the SDK — with a concrete ownership proposal.",
+    "files_likely_involved": ["packages/core/src/ports", "packages/sdk/src/container.ts", "packages/storage/src"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": null,
+    "prompt": "A new feature is proposed: expose an additional read query over the stored context (for example, a new relationship or metric that consumers can query). Decide where this should live in this monorepo's structure: where does the interface belong, where does the implementation belong, how does it get composed so consumers can reach it, and what dependency rules apply? Explain the ownership boundaries you are relying on and cite the files that define them. Recommend a concrete, safe place to start.",
+    "success_criteria": [
+      "Identifies the port/implementation/composition boundaries",
+      "Names the owner package and the SDK seam",
+      "Respects dependency direction in the recommendation",
+      "Cites the files that define the boundaries"
+    ],
+    "regression_tests": [],
+    "evaluation_method": "Automated scoring from expected hits + cited files; manual review of correctness of the ownership claim.",
+    "expected_files": ["packages/core/src/ports", "packages/sdk/src/container.ts"],
+    "expected_concepts": ["port", "SDK", "composition", "ownership", "dependency direction"],
+    "gold_impact_files": [],
+    "forbidden_changes": [],
+    "max_seconds": 780
+  }
+]

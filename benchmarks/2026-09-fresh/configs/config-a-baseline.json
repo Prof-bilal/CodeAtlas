@@ -1,0 +1,17 @@
+{
+  "id": "fresh-2026-09-config-a-baseline",
+  "name": "2026-09 Fresh — Config A: Baseline (no CodeAtlas, no tools, no skills)",
+  "agent": "opencode",
+  "model": "<set-me: e.g. opencode/your-model-free>",
+  "modes": ["baseline"],
+  "taskTimeoutMs": 840000,
+  "runsPerTask": 5,
+  "harness": {
+    "label": "A — Baseline",
+    "codeatlas": false,
+    "tools": false,
+    "skills": false,
+    "description": "Agent without CodeAtlas. MCP disabled for a true baseline. Same model/task/repo/env/timeout as every other config."
+  },
+  "budgetDefaults": { "opencode": { "maxDurationMs": 840000 } }
+}

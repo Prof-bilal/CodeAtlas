@@ -1,0 +1,84 @@
+{
+  "taskId": "DEBUGGING-EXPERT-01",
+  "category": "bug-investigation",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 29477,
+    "output": 32738,
+    "reasoning": 0,
+    "total": 130055,
+    "cacheWrite": 0,
+    "cacheRead": 67840,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 429108,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Let me run the tests to see the current state:",
+  "toolCallCount": 5,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_8c8356d91c3c46608df862f8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5cd0e6a8a7b6459b925b23a1",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_baf89af4af7442fb887df846",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ea2e1aeeb09f41c4b71cf886",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_dffba87a189141619a4003f2",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 0,
+    "status": "incorrect",
+    "filesFound": [],
+    "filesExpected": [
+      "src/services/authService.ts",
+      "src/middleware/auth.ts",
+      "src/utils/cache.ts"
+    ],
+    "fileRatio": 0,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "logout",
+      "cache",
+      "invalidate",
+      "session",
+      "authorization"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 130,055 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T16:18:47.676Z"
+}

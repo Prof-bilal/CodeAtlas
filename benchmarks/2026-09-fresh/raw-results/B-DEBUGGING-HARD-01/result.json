@@ -1,0 +1,232 @@
+{
+  "taskId": "DEBUGGING-HARD-01",
+  "category": "bug-investigation",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 51561,
+    "output": 39182,
+    "reasoning": 0,
+    "total": 485751,
+    "cacheWrite": 0,
+    "cacheRead": 395008,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 561448,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Let me run the tests to see if there are failures:",
+  "toolCallCount": 30,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_fb01a10de12e4bb1bdc2f302",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_141e49e1231047e987b55a43",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2f5453ca2bb94a269802bb82",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5c535362e601492291041f60",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a453376242e3446e9f26823d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3de4f574a3b24792b07e6193",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_7cf6b5712e1b4f91818a5949",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_99586f3464c54f4ba92c3c87",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_aec5a9a6e88f4d7181c9f69d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a539b9d204e44ba3bd1c6de7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_da23f25eeb3c406ebde0b85c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_48057fe96a0a44e88de72bc0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_b99138ffdcc04a778114df5f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_def4e2a413ee4a9f8a368d8d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_417d31beb29d4f1a8fb2050d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e083ada6cb934538b7a12643",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_fe8e53dd03714c3884fc0eb7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_cf9ca25917d842acb8ca8825",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_19d463704e494b11b9e59c16",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_0de8ac5edecc4883bac6d8bf",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2ce144bb54f04fc08c44c21b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_4c9e8fd66ebd494e82007ffd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_0fe816abad304365a0fb1109",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3cba590cc1044705a0766815",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c98f02c413264b4b93c4bfd2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a03e74c88565442b8d316a99",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_eff45a6c6b7b4f3e8dbd222b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_7e94433559d04e0c8eaf62ac",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_4af9efdcd0f54e69bf58222d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_1184195badcb47ceabdfbb57",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 0,
+    "status": "incorrect",
+    "filesFound": [],
+    "filesExpected": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts"
+    ],
+    "fileRatio": 0,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "root cause",
+      "cached",
+      "collision",
+      "create"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 485,751 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T03:46:03.018Z"
+}

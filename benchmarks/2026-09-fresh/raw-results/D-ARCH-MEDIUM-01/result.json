@@ -1,0 +1,135 @@
+{
+  "taskId": "ARCH-MEDIUM-01",
+  "category": "repository-understanding",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 46471,
+    "output": 2359,
+    "reasoning": 0,
+    "total": 195838,
+    "cacheWrite": 0,
+    "cacheRead": 147008,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 74896,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Now I have a complete picture of the architecture. Here's the analysis and recommendation.\n\n---\n\n## Where a New Read Query Lives\n\nThe architecture enforces a strict layered dependency direction:\n\n```\ncli → sdk → feature packages → core → shared\n```\n\nA new read query over stored context (e.g., a new relationship or metric consumers can query) must follow this exact chain. Here's where each piece belongs, with the files that define the boundaries.\n\n---\n\n### 1. Interface (the contract) — `packages/core/src/ports/`\n\n**Why:** `core` owns all port interfaces (`MODULES.md:19-27`, `DEPENDENCIES.md:17`). It is type-only, contains zero infrastructure, and every feature package implements its ports (`ARCHITECTURE.md:115-122`). Adding a new query means extending an existing port or adding a new one here — this is the only place feature packages and the SDK can both see.\n\n**Concrete location:** Add a method to the relevant existing port in `packages/core/src/ports/`:\n- If the query reads data already in the context DB (files, symbols, dependencies, modules, summaries, relationships) — extend `ContextDatabasePort` (`context-db.port.ts:95-108`) or `SearchPort` (`search.port.ts:25-33`).\n- If the query is a new domain concept (e.g., a \"metric\" or \"relationship graph\") — define a new port interface in a new file `packages/core/src/ports/<feature>.port.ts`, following the pattern of `search.port.ts` or `graph.port.ts`.\n\nThe `core` port must **not** contain implementation — only the TypeScript interface and any supporting types (`MODULES.md:19-27`).\n\n---\n\n### 2. Implementation — `packages/<feature>/`\n\n**Why:** Feature packages implement `core` ports and import only `core` + `shared` (`DEPENDENCIES.md:21-29`, `MODULES.md:30-150`). No feature package may import another feature package — the SDK composes them (`DEPENDENCIES.md:39-42`).\n\n**Concrete location:** A new package `packages/<feature>/` implementing the port. If the query is small enough to live inside an existing feature package (e.g., a new method on `@atlas/search` or `@atlas/context`), extend that package rather than creating a new one (`ARCHITECTURE.md:282` — \"if an existing abstraction can solve the problem, extend it\").\n\nIf the query needs database access, the implementation reads through `ContextDatabasePort` (injected), not raw SQLite. The storage layer (`@atlas/storage`) owns the schema; only `@atlas/storage` may modify tables or add migrations (`MODULES.md:87-93`, `ARCHITECTURE.md:307-308`).\n\n---\n\n### 3. Composition (how consumers reach it) — `packages/sdk/`\n\n**Why:** The SDK is the public façade / composition root (`ARCHITECTURE.md:153-162`). `createContextSDK` is the single read interface all consumers use — CLI, MCP, editors, agents (`CONTEXT_SDK.md:1-8`). Consumers must **never** reach feature packages or the database directly (`MODULES.md:273-288`).\n\n**Concrete location:** Wire the new feature into `ContextSDKFacade` in `packages/sdk/src/context/sdk.ts`:\n1. Add a new sub-API interface (like `FileContextAPI`, `SearchContextAPI`, etc.) at `sdk.ts:106-215`.\n2. Instantiate the feature in the facade constructor (`sdk.ts:284-318`), injecting the `ContextDatabasePort` or other ports it needs.\n3. Expose it on the `ContextSDK` interface (`sdk.ts:234-269`).\n\nIf the feature package needs to be registered in the Container, add it to `packages/sdk/src/container.ts` — but for a pure read query that only reads from the existing `ContextDatabasePort`, no new Container registration is needed; the SDK facade instantiates it internally using the injected port.\n\n---\n\n### 4. Consumer exposure — `apps/cli`, `@atlas/mcp`, `@atlas/extension`\n\nEach consumer is a thin adapter over the SDK:\n\n| Consumer | Allowed imports | How it exposes the query |\n|---|---|---|\n| CLI (`apps/cli`) | `sdk`, `mcp`, `benchmark` only (`DEPENDENCIES.md:32-33`) | New subcommand in `apps/cli/src/commands/` that calls `context.<newSubAPI>.<method>()` |\n| MCP (`@atlas/mcp`) | `sdk` only (`DEPENDENCIES.md:34`) | New MCP tool in `packages/mcp/src/` that calls `context.<newSubAPI>.<method>()` |\n| VS Code (`apps/extension`) | `sdk` only (`MODULES.md:348-356`) | New tree view or palette command calling the SDK |\n\nNone of these packages import feature packages directly.\n\n---\n\n### 5. Dependency rules summary (citing sources)\n\n| Rule | Source |\n|---|---|\n| Feature packages import only `core` + `shared` | `DEPENDENCIES.md:17-29` |\n| `sdk` imports feature packages; `cli` imports only `sdk` | `DEPENDENCIES.md:31-34` |\n| Ports are the only inter-module communication | `MODULES.md:379-381` |\n| No cycles, no sideways coupling | `DEPENDENCIES.md:38-39` |\n| No infrastructure in `core` | `MODULES.md:19-27` |\n| Only `@atlas/storage` may modify the schema | `MODULES.md:87-93` |\n| Consumers read through `createContextSDK`, never the DB | `CONTEXT_SDK.md:1-8` |\n| ESLint `no-restricted-imports` enforces the matrix | `DEPENDENCIES.md:10-12` |\n\n---\n\n### Recommended concrete starting point\n\n**If the new query reads data already in the context DB** (most likely case):\n\n1. **Extend** the existing `SearchPort` or `ContextDatabasePort` in `packages/core/src/ports/` with the new method signature and any new types.\n2. **Implement** it in the existing feature package that already handles that domain — `@atlas/search` for query/ranking logic, `@atlas/context` for assembly logic, or `@atlas/storage` for a new DB-level read.\n3. **Wire** it into `ContextSDKFacade` in `packages/sdk/src/context/sdk.ts` as a new sub-API or method on an existing sub-API.\n4. **Expose** via the CLI, MCP, or both, depending on which consumers need it.\n\n**If the query requires new persistence** (e.g., a new table or relationship type):\n\n1. The schema change belongs in `@atlas/storage` (`schema.ts` + `migrations.ts`) with a backward-compatible migration (`MODULES.md:87-93`).\n2. The new repository method goes in `@atlas/storage` implementing a new/extended port from `core`.\n3. Everything else follows the same chain above.\n\nStart with a single, small, additive change — one port method, one implementation, one SDK sub-API method, one CLI subcommand or MCP tool — then verify with `pnpm check` and tests. This matches the \"small change → test → verify → continue\" principle (`AGENTS.md:4.11`).",
+  "toolCallCount": 12,
+  "toolCalls": [
+    {
+      "name": "read",
+      "callId": "call_1be1fc6757ae4daeb5d3a796",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_990269470f1745d4a07f966e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_dad73b49b22f4be9b6a47e11",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_4623366ad4c14e208e2ca8f9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_eed353407cc9464096ebddcf",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_0c5707c6cd6840b190f919c7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8703b9d783004353b1d4240c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_48bc944fd36c42508791c4cd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_fe51fd572bb64dc58ec4b4bd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_1d34323e84594b49a6c474c4",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a70d72a91cd745c9b4d6a44d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_6a99081e83a04ac392111766",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "packages/core/src/ports",
+      "packages/sdk/src/container.ts"
+    ],
+    "filesExpected": [
+      "packages/core/src/ports",
+      "packages/sdk/src/container.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "port",
+      "SDK",
+      "composition",
+      "dependency direction"
+    ],
+    "conceptsExpected": [
+      "port",
+      "SDK",
+      "composition",
+      "ownership",
+      "dependency direction"
+    ],
+    "conceptRatio": 0.8,
+    "citedFiles": [
+      "packages/sdk/src/context/sdk.ts",
+      "packages/sdk/src/container.ts"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "packages/sdk/src/context/sdk.ts",
+      "packages/sdk/src/container.ts"
+    ],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T16:54:24.293Z"
+}

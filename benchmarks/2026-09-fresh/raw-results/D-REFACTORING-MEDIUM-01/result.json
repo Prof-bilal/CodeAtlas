@@ -1,0 +1,165 @@
+{
+  "taskId": "REFACTORING-MEDIUM-01",
+  "category": "code-modification",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 36982,
+    "output": 2179,
+    "reasoning": 0,
+    "total": 237881,
+    "cacheWrite": 0,
+    "cacheRead": 198720,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 155939,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Done. All route-related tests pass identically (same 2 pre-existing failures in unrelated modules).\n\n**What changed:** In `src/routes/routeHelpers.ts:16-23`, `asyncHandler` now composes `wrapAsync` instead of duplicating its try/catch:\n\n```ts\n// Before: duplicated try/catch\nexport function asyncHandler(handler) {\n  return async (req, res, next) => {\n    try {\n      if (!req.user) { /* 401 */ return; }\n      await handler(req, res);\n    } catch (error: any) {\n      res.status(error.statusCode || 500).json({ error: error.message });\n    }\n  };\n}\n\n// After: composes wrapAsync\nexport function asyncHandler(handler) {\n  return wrapAsync(async (req, res) => {\n    if (!req.user) { /* 401 */ return; }\n    await handler(req, res);\n  });\n}\n```\n\nError handling now lives in one place (`wrapAsync`). `asyncHandler` adds the auth check on top. No observable behavior change.",
+  "toolCallCount": 16,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_1bab4a0e11814334b51fac60",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_4b0bfaeca4b04b8383d9b0e9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b03b43ada0a741d4acae76dd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_cd3bbe944e3f40cda990e7ac",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2a24d66f89fe488b80483dfa",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b972944bb4d24a43a6f8a19a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_5b08b02fd53d4ecabb796aaa",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_76cd050259724716af139b8c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_26354e0cce0b4a43908c3a7c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_d523e7fca5ce420186698cf5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8e16421a74e749bbb04a0d57",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8b6ebe83263c4d5bb3b76650",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a698fc22884e437095be4edb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_7cc3319dd78146568a0838a0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_12a6424f87c9400b8fa02f3e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_10a11dc760db4186bd169185",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 1,
+    "status": "partially_correct",
+    "filesFound": [
+      "src/middleware/errorHandler.ts"
+    ],
+    "filesExpected": [
+      "src/routes/taskRoutes.ts",
+      "src/routes/tagRoutes.ts",
+      "src/middleware/errorHandler.ts"
+    ],
+    "fileRatio": 0.33,
+    "conceptsFound": [
+      "duplication",
+      "error handling",
+      "behavior"
+    ],
+    "conceptsExpected": [
+      "refactor",
+      "duplication",
+      "shared",
+      "error handling",
+      "behavior"
+    ],
+    "conceptRatio": 0.6,
+    "citedFiles": [
+      "src/routes/routeHelpers.ts"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "src/routes/routeHelpers.ts"
+    ],
+    "goldImpactFiles": [
+      "src/routes/taskRoutes.ts",
+      "src/routes/tagRoutes.ts",
+      "src/middleware/errorHandler.ts"
+    ]
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0.33 with 237,881 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T16:31:14.906Z"
+}

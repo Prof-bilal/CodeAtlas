@@ -1,0 +1,367 @@
+{
+  "repository": "pilot-2026-09-fresh",
+  "name": "pilot-config-D",
+  "version": "1.0.0",
+  "files": 16,
+  "tasks": [
+    {
+      "id": "FRONTEND-MEDIUM-01",
+      "category": "code-modification",
+      "prompt": "## Reusable skill applied to this task\n\nname: frontend-debugging\ndescription: Debug React and Next.js frontend issues, hydration, state bugs and UI regressions\nversion: 1.0.0\nallowed-tools: [web_search, web_fetch]\n\nFollow these instructions for this task where relevant:\n\n# Frontend Debugging\n\nUse this when the task involves diagnosing or fixing a frontend/UI bug.\n\n## Workflow\n1. **Reproduce first.** Identify the exact user action and observed vs expected behavior before touching code.\n2. **Locate the component.** Find the component(s) that render the symptom; trace ownership of the relevant state.\n3. **Trace state, not just UI.** Map where state is created, mutated, and read. Include hooks, context/providers, and derived values. A UI bug is usually a state/derived-data bug.\n4. **Check the render path.** For React: re-renders, keys, conditional mounts, effect deps. For Next.js: client vs server boundaries, hydration-sensitive paths, caching.\n5. **Form a hypothesis.** State the root cause as: \"value X is wrong because source Y mutates it without Z observing it.\"\n6. **Apply the smallest fix** that changes the observed behavior, without altering unrelated UI.\n\n## Checklist\n- [ ] Reproduced with a concrete repro case (action → observed → expected)\n- [ ] Identified all components that render the symptom\n- [ ] Traced state source → mutation → read sites\n- [ ] Checked hydration path (SSR client/server mismatch) where relevant\n- [ ] Fix is minimal and localized\n- [ ] Ran the frontend tests / typecheck\n- [ ] Manually verified the original repro is fixed and no adjacent UI broke\n\n## Verification\nExisting frontend tests must pass. Provide the repro steps you used so the fix can be re-verified identically.\n\n## Common failure prevention\n- Don't fix the symptom in a render component when the source is state/cache.\n- Don't introduce unnecessary re-renders to mask a state bug.\n- On hydration bugs, confirm the fix is server/client-consistent, not just one side.\n\n---\n\nIn this VS Code extension, the status-bar indicator can show stale 'indexing' or 'not ready' state after an indexing run has actually completed. Find where the extension updates its status UI, makes sure it is updated after a run finishes, and that a failure still reflects a failure. Keep the change small and do not alter unrelated UI.",
+      "expected_files": [
+        "apps/extension/src/status-bar.ts",
+        "apps/extension/src/extension-core.ts"
+      ],
+      "expected_concepts": [
+        "status bar",
+        "update",
+        "indexing",
+        "complete",
+        "refresh"
+      ],
+      "evaluation_method": "Automated scoring from expected hits; manual review of the status update lifecycle.",
+      "gold_impact_files": [
+        "apps/extension/src/status-bar.ts",
+        "apps/extension/src/extension-core.ts"
+      ],
+      "forbidden_changes": [],
+      "max_seconds": 720
+    },
+    {
+      "id": "FRONTEND-HARD-01",
+      "category": "code-modification",
+      "prompt": "## Reusable skill applied to this task\n\nname: frontend-debugging\ndescription: Debug React and Next.js frontend issues, hydration, state bugs and UI regressions\nversion: 1.0.0\nallowed-tools: [web_search, web_fetch]\n\nFollow these instructions for this task where relevant:\n\n# Frontend Debugging\n\nUse this when the task involves diagnosing or fixing a frontend/UI bug.\n\n## Workflow\n1. **Reproduce first.** Identify the exact user action and observed vs expected behavior before touching code.\n2. **Locate the component.** Find the component(s) that render the symptom; trace ownership of the relevant state.\n3. **Trace state, not just UI.** Map where state is created, mutated, and read. Include hooks, context/providers, and derived values. A UI bug is usually a state/derived-data bug.\n4. **Check the render path.** For React: re-renders, keys, conditional mounts, effect deps. For Next.js: client vs server boundaries, hydration-sensitive paths, caching.\n5. **Form a hypothesis.** State the root cause as: \"value X is wrong because source Y mutates it without Z observing it.\"\n6. **Apply the smallest fix** that changes the observed behavior, without altering unrelated UI.\n\n## Checklist\n- [ ] Reproduced with a concrete repro case (action → observed → expected)\n- [ ] Identified all components that render the symptom\n- [ ] Traced state source → mutation → read sites\n- [ ] Checked hydration path (SSR client/server mismatch) where relevant\n- [ ] Fix is minimal and localized\n- [ ] Ran the frontend tests / typecheck\n- [ ] Manually verified the original repro is fixed and no adjacent UI broke\n\n## Verification\nExisting frontend tests must pass. Provide the repro steps you used so the fix can be re-verified identically.\n\n## Common failure prevention\n- Don't fix the symptom in a render component when the source is state/cache.\n- Don't introduce unnecessary re-renders to mask a state bug.\n- On hydration bugs, confirm the fix is server/client-consistent, not just one side.\n\n---\n\nA user reports that after an interaction that triggers a background load, part of the UI shows stale values even though the API has returned fresh data. The bug is reproducible with the provided repro steps. Trace how the state flows from the API response through hooks to the rendered components, identify the root cause, and apply the smallest fix. Do not change the API/client contract.",
+      "expected_files": [],
+      "expected_concepts": [
+        "state",
+        "hooks",
+        "stale",
+        "root cause",
+        "render"
+      ],
+      "evaluation_method": "Automated scoring from expected hits + test outputs; manual root-cause review.",
+      "gold_impact_files": [],
+      "forbidden_changes": [],
+      "max_seconds": 900
+    },
+    {
+      "id": "BACKEND-EASY-01",
+      "category": "code-modification",
+      "prompt": "## Reusable skill applied to this task\n\nname: backend-api\ndescription: Build, modify and debug backend APIs, business logic, validation, auth and error handling\nversion: 1.0.0\nallowed-tools: [web_search, web_fetch, github]\n\nFollow these instructions for this task where relevant:\n\n# Backend API\n\nUse this when the task involves API endpoints, business logic, validation, authentication/authorization, database interaction, or error handling on the server.\n\n## Workflow\n1. **Trace the request path.** Follow a single request through route → middleware → controller/service → repository → data store → response.\n2. **Identify the contract.** What should the request accept, what should the response contain, and what status codes are expected on success and each error path?\n3. **Verify authz + validation boundaries.** Check who may call the endpoint and what validation runs BEFORE business logic.\n4. **Check data access rules.** Confirm which repository/database paths are read and where transactions/rollbacks happen.\n5. **Form a hypothesis.** State root cause as \"endpoint returns X because logic Y does not handle case Z.\"\n6. **Implement + test.** Add or fix logic, add/adjust handler and service tests.\n\n## Checklist\n- [ ] Traced one full request through every layer\n- [ ] Documented the intended contract (inputs, outputs, status codes)\n- [ ] Authz: only the correct roles/ownership can reach it\n- [ ] Validation: malformed input rejected before side effects\n- [ ] Errors: failures map to correct status and safe message\n- [ ] Database: transactions/rollback correct for multi-step writes\n- [ ] Added/adjusted tests\n- [ ] Ran backend tests / typecheck\n\n## Verification\nThe endpoint behaves per contract for success + validation + authz + error cases. Cite the files changed.\n\n## Common failure prevention\n- Don't put authorization inside the response formatting; it must gate the action.\n- Don't leak stack traces / internals in error responses.\n- Don't ignore the failing test set — run them and see them green.\n\n---\n\nWhen the task-creation endpoint receives a request with an empty or missing task title, it should be rejected with a 400 (and not create anything). Today that validation is missing or too late. Add the earliest reasonable validation so an empty title cannot reach business logic, and keep the happy path working. Then add a test that proves an empty title is rejected with 400 and a valid title still creates the task.",
+      "expected_files": [
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts"
+      ],
+      "expected_concepts": [
+        "validation",
+        "400",
+        "task title",
+        "reject"
+      ],
+      "evaluation_method": "Automated: score from expected_files/expected_concepts hits in final text + test outputs. Manual: the added test must run green and assert 400 on empty title.",
+      "gold_impact_files": [
+        "src/routes/taskRoutes.ts"
+      ],
+      "forbidden_changes": [],
+      "max_seconds": 600
+    },
+    {
+      "id": "BACKEND-MEDIUM-01",
+      "category": "code-modification",
+      "prompt": "## Reusable skill applied to this task\n\nname: backend-api\ndescription: Build, modify and debug backend APIs, business logic, validation, auth and error handling\nversion: 1.0.0\nallowed-tools: [web_search, web_fetch, github]\n\nFollow these instructions for this task where relevant:\n\n# Backend API\n\nUse this when the task involves API endpoints, business logic, validation, authentication/authorization, database interaction, or error handling on the server.\n\n## Workflow\n1. **Trace the request path.** Follow a single request through route → middleware → controller/service → repository → data store → response.\n2. **Identify the contract.** What should the request accept, what should the response contain, and what status codes are expected on success and each error path?\n3. **Verify authz + validation boundaries.** Check who may call the endpoint and what validation runs BEFORE business logic.\n4. **Check data access rules.** Confirm which repository/database paths are read and where transactions/rollbacks happen.\n5. **Form a hypothesis.** State root cause as \"endpoint returns X because logic Y does not handle case Z.\"\n6. **Implement + test.** Add or fix logic, add/adjust handler and service tests.\n\n## Checklist\n- [ ] Traced one full request through every layer\n- [ ] Documented the intended contract (inputs, outputs, status codes)\n- [ ] Authz: only the correct roles/ownership can reach it\n- [ ] Validation: malformed input rejected before side effects\n- [ ] Errors: failures map to correct status and safe message\n- [ ] Database: transactions/rollback correct for multi-step writes\n- [ ] Added/adjusted tests\n- [ ] Ran backend tests / typecheck\n\n## Verification\nThe endpoint behaves per contract for success + validation + authz + error cases. Cite the files changed.\n\n## Common failure prevention\n- Don't put authorization inside the response formatting; it must gate the action.\n- Don't leak stack traces / internals in error responses.\n- Don't ignore the failing test set — run them and see them green.\n\n---\n\nAfter a recent change, the 'list my tasks' endpoint returns tasks that belong to other users when an authenticated user calls it. Users should only ever see tasks they own (or that they are explicitly allowed to see). Find why ownership is no longer enforced and fix it at the correct layer. Add a regression test where user A cannot see user B's tasks, and confirm the existing happy path still works.",
+      "expected_files": [
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts",
+        "src/middleware/auth.ts"
+      ],
+      "expected_concepts": [
+        "ownership",
+        "authorization",
+        "filter",
+        "userId"
+      ],
+      "evaluation_method": "Automated scoring from expected hits + test outputs; manual review ensures the fix is at the correct layer (not client-side).",
+      "gold_impact_files": [
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts"
+      ],
+      "forbidden_changes": [
+        "src/models/task.ts"
+      ],
+      "max_seconds": 720
+    },
+    {
+      "id": "DEBUGGING-HARD-01",
+      "category": "bug-investigation",
+      "prompt": "## Reusable skill applied to this task\n\nname: repository-debugging\ndescription: Debug and investigate issues in unfamiliar repositories, trace behavior across modules and layers\nversion: 1.0.0\nallowed-tools: [web_search, web_fetch, github]\n\nFollow these instructions for this task where relevant:\n\n# Repository Debugging\n\nUse this when the task is to diagnose a defect in a codebase you do not already know, where the bug interacts across files, modules, or layers.\n\n## Workflow\n1. **Map the architecture first.** Identify entry points, module boundaries, and the data/control flow before hunting the bug. Cite the files you inspected so the reasoning is auditable.\n2. **Reproduce with what you can see.** Establish the failing behavior from tests, logs, or a minimal scenario.\n3. **Follow the dependency/ownership chain.** Trace symbol usage across call sites, imports, and infrastructure boundaries (config → handler → service → store).\n4. **Differ local vs upstream vs misuse.** Decide whether the defect is in this repo, in a dependency behavior, or in how the app uses a dependency. Use external research only when the repo cannot answer (see Config C/D tools).\n5. **Propose the root cause** with evidence from specific files/lines, not vibes.\n6. **Make the smallest correct change; do not re-architect while debugging.**\n\n## Checklist\n- [ ] Produced an architecture/flow map with cited files\n- [ ] Reproduced the failure concretely\n- [ ] Traced the behavior across the relevant modules\n- [ ] Distinguished repo bug / dependency behavior / misuse\n- [ ] Root cause stated with file+line evidence\n- [ ] Change is minimal and behavior-preserving elsewhere\n- [ ] Relevant tests pass; regression noted if any\n\n## Verification\nGive the reproduction path and the file/line evidence. State explicitly what you verified did NOT change.\n\n## Common failure prevention\n- Don't fix the nearest-looking file; confirm it is on the failing path.\n- Don't assume the docs/README describe current behavior — the code is the source of truth.\n\n---\n\nCreating a task works the first time, but a second create within the same process can fail or return a conflicting result only sometimes. There is no obvious error in the handler. Investigate the create path end to end, find the actual root cause (not just a retry/hand-wave), and apply the smallest fix that makes repeated creates reliable. Explain the root cause with references to the specific files and lines involved.",
+      "expected_files": [
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts"
+      ],
+      "expected_concepts": [
+        "root cause",
+        "cached",
+        "collision",
+        "create"
+      ],
+      "evaluation_method": "Manual + automated: score from expected_concepts (root cause reasoning, evidence); verify script confirms the fix.",
+      "gold_impact_files": [],
+      "forbidden_changes": [
+        "src/routes/taskRoutes.ts"
+      ],
+      "max_seconds": 900
+    },
+    {
+      "id": "DEBUGGING-EXPERT-01",
+      "category": "bug-investigation",
+      "prompt": "## Reusable skill applied to this task\n\nname: repository-debugging\ndescription: Debug and investigate issues in unfamiliar repositories, trace behavior across modules and layers\nversion: 1.0.0\nallowed-tools: [web_search, web_fetch, github]\n\nFollow these instructions for this task where relevant:\n\n# Repository Debugging\n\nUse this when the task is to diagnose a defect in a codebase you do not already know, where the bug interacts across files, modules, or layers.\n\n## Workflow\n1. **Map the architecture first.** Identify entry points, module boundaries, and the data/control flow before hunting the bug. Cite the files you inspected so the reasoning is auditable.\n2. **Reproduce with what you can see.** Establish the failing behavior from tests, logs, or a minimal scenario.\n3. **Follow the dependency/ownership chain.** Trace symbol usage across call sites, imports, and infrastructure boundaries (config → handler → service → store).\n4. **Differ local vs upstream vs misuse.** Decide whether the defect is in this repo, in a dependency behavior, or in how the app uses a dependency. Use external research only when the repo cannot answer (see Config C/D tools).\n5. **Propose the root cause** with evidence from specific files/lines, not vibes.\n6. **Make the smallest correct change; do not re-architect while debugging.**\n\n## Checklist\n- [ ] Produced an architecture/flow map with cited files\n- [ ] Reproduced the failure concretely\n- [ ] Traced the behavior across the relevant modules\n- [ ] Distinguished repo bug / dependency behavior / misuse\n- [ ] Root cause stated with file+line evidence\n- [ ] Change is minimal and behavior-preserving elsewhere\n- [ ] Relevant tests pass; regression noted if any\n\n## Verification\nGive the reproduction path and the file/line evidence. State explicitly what you verified did NOT change.\n\n## Common failure prevention\n- Don't fix the nearest-looking file; confirm it is on the failing path.\n- Don't assume the docs/README describe current behavior — the code is the source of truth.\n\n---\n\nAfter a user logs out, some authenticated endpoints still accept their previous session for a short time, even though the logout endpoint reports success. A user who logs out must be fully signed out on every path. Find where the stale identity can still be honored, trace it across layers, and make the fix so the removal is honored everywhere. Add a test that logs out and asserts every protected path now rejects the old session.",
+      "expected_files": [
+        "src/services/authService.ts",
+        "src/middleware/auth.ts",
+        "src/utils/cache.ts"
+      ],
+      "expected_concepts": [
+        "logout",
+        "cache",
+        "invalidate",
+        "session",
+        "authorization"
+      ],
+      "evaluation_method": "Manual + automated; verify script checks post-logout rejection on all protected paths.",
+      "gold_impact_files": [],
+      "forbidden_changes": [
+        "src/scripts/seed*"
+      ],
+      "max_seconds": 900
+    },
+    {
+      "id": "FULLSTACK-MEDIUM-01",
+      "category": "feature-planning",
+      "prompt": "## Reusable skill applied to this task\n\nname: backend-api\ndescription: Build, modify and debug backend APIs, business logic, validation, auth and error handling\nversion: 1.0.0\nallowed-tools: [web_search, web_fetch, github]\n\nFollow these instructions for this task where relevant:\n\n# Backend API\n\nUse this when the task involves API endpoints, business logic, validation, authentication/authorization, database interaction, or error handling on the server.\n\n## Workflow\n1. **Trace the request path.** Follow a single request through route → middleware → controller/service → repository → data store → response.\n2. **Identify the contract.** What should the request accept, what should the response contain, and what status codes are expected on success and each error path?\n3. **Verify authz + validation boundaries.** Check who may call the endpoint and what validation runs BEFORE business logic.\n4. **Check data access rules.** Confirm which repository/database paths are read and where transactions/rollbacks happen.\n5. **Form a hypothesis.** State root cause as \"endpoint returns X because logic Y does not handle case Z.\"\n6. **Implement + test.** Add or fix logic, add/adjust handler and service tests.\n\n## Checklist\n- [ ] Traced one full request through every layer\n- [ ] Documented the intended contract (inputs, outputs, status codes)\n- [ ] Authz: only the correct roles/ownership can reach it\n- [ ] Validation: malformed input rejected before side effects\n- [ ] Errors: failures map to correct status and safe message\n- [ ] Database: transactions/rollback correct for multi-step writes\n- [ ] Added/adjusted tests\n- [ ] Ran backend tests / typecheck\n\n## Verification\nThe endpoint behaves per contract for success + validation + authz + error cases. Cite the files changed.\n\n## Common failure prevention\n- Don't put authorization inside the response formatting; it must gate the action.\n- Don't leak stack traces / internals in error responses.\n- Don't ignore the failing test set — run them and see them green.\n\n---\n\nThis server already exposes an HTTP API over the benchmark framework. Add a read-only endpoint that returns the progress/status of a benchmark suite by id. Validate the input (a bad/missing id must not crash or return a 500), pull the data from the existing service layer, and add a test for the happy path and the validation path. Match the API conventions the existing routes already use.",
+      "expected_files": [
+        "apps/server/src/routes.ts",
+        "apps/server/src/benchmark.ts",
+        "packages/benchmark/src/store.ts"
+      ],
+      "expected_concepts": [
+        "endpoint",
+        "route",
+        "progress",
+        "status",
+        "validation",
+        "service"
+      ],
+      "evaluation_method": "Automated scoring from expected hits + test outputs; manual review of conventions.",
+      "gold_impact_files": [
+        "apps/server/src/routes.ts"
+      ],
+      "forbidden_changes": [],
+      "max_seconds": 900
+    },
+    {
+      "id": "FULLSTACK-EXPERT-01",
+      "category": "feature-planning",
+      "prompt": "## Reusable skill applied to this task\n\nname: backend-api\ndescription: Build, modify and debug backend APIs, business logic, validation, auth and error handling\nversion: 1.0.0\nallowed-tools: [web_search, web_fetch, github]\n\nFollow these instructions for this task where relevant:\n\n# Backend API\n\nUse this when the task involves API endpoints, business logic, validation, authentication/authorization, database interaction, or error handling on the server.\n\n## Workflow\n1. **Trace the request path.** Follow a single request through route → middleware → controller/service → repository → data store → response.\n2. **Identify the contract.** What should the request accept, what should the response contain, and what status codes are expected on success and each error path?\n3. **Verify authz + validation boundaries.** Check who may call the endpoint and what validation runs BEFORE business logic.\n4. **Check data access rules.** Confirm which repository/database paths are read and where transactions/rollbacks happen.\n5. **Form a hypothesis.** State root cause as \"endpoint returns X because logic Y does not handle case Z.\"\n6. **Implement + test.** Add or fix logic, add/adjust handler and service tests.\n\n## Checklist\n- [ ] Traced one full request through every layer\n- [ ] Documented the intended contract (inputs, outputs, status codes)\n- [ ] Authz: only the correct roles/ownership can reach it\n- [ ] Validation: malformed input rejected before side effects\n- [ ] Errors: failures map to correct status and safe message\n- [ ] Database: transactions/rollback correct for multi-step writes\n- [ ] Added/adjusted tests\n- [ ] Ran backend tests / typecheck\n\n## Verification\nThe endpoint behaves per contract for success + validation + authz + error cases. Cite the files changed.\n\n## Common failure prevention\n- Don't put authorization inside the response formatting; it must gate the action.\n- Don't leak stack traces / internals in error responses.\n- Don't ignore the failing test set — run them and see them green.\n\n---\n\nImplement a 'cancel job' capability in this server: a client can request cancellation of a benchmark job by id. The request must be validated, must mark the job cancelled durably in the store, and the background job loop must observe that state and stop an in-flight (not just queued) job as early as it safely can. If a cancellation cannot be applied (e.g. the job already finished), return a sensible response and do not corrupt state. This touches the API layer, the job/process layer, and the store — trace the ownership and wire it through cleanly. Add tests for: cancelling a queued job, cancelling an in-flight job, and cancelling an already-finished job.",
+      "expected_files": [
+        "apps/server/src/jobs.ts",
+        "apps/server/src/routes.ts",
+        "packages/benchmark/src/store.ts"
+      ],
+      "expected_concepts": [
+        "cancel",
+        "job",
+        "durable",
+        "in-flight",
+        "rollback",
+        "state"
+      ],
+      "evaluation_method": "Automated scoring from expected hits + test outputs; manual review of the concurrency/cancellation design.",
+      "gold_impact_files": [
+        "apps/server/src/routes.ts",
+        "apps/server/src/jobs.ts"
+      ],
+      "forbidden_changes": [],
+      "max_seconds": 1200
+    },
+    {
+      "id": "REFACTORING-MEDIUM-01",
+      "category": "code-modification",
+      "prompt": "## Reusable skill applied to this task\n\nname: refactoring\ndescription: Refactor code safely, reduce duplication, preserve behavior, improve structure across multiple files\nversion: 1.0.0\nallowed-tools: []\ndisallowed-tools: []\n\nFollow these instructions for this task where relevant:\n\n# Refactoring\n\nUse this when the task is a refactor: restructuring, de-duplication, renaming, or improving structure while preserving observable behavior.\n\n## Workflow\n1. **Establish a safety net.** Identify which tests cover the code being restructured. If none exist, note it and prefer behavior-preserving transformations; add a regression test where it is cheap and high-value.\n2. **Map current behavior.** Enumerate inputs, outputs, and side effects of every call site you will touch.\n3. **Refactor in small, behavior-preserving steps** (compose → extract → move), so each step is independently reviewable and each preserves the tests.\n4. **Do not mix refactor with feature change.** If you must, separate them and say so explicitly.\n5. **Re-run the relevant tests after each step.**\n\n## Checklist\n- [ ] Safety net identified (tests that cover the change surface)\n- [ ] Call sites enumerated and behavior mapped\n- [ ] Refactor split into small behavior-preserving steps\n- [ ] No undocumented behavior change introduced\n- [ ] Relevant tests pass at each step\n- [ ] Reported any coverage gap created or left\n\n## Verification\nThe same tests pass before and after. List which tests cover the refactored area and the commands that prove parity.\n\n## Common failure prevention\n- Don't \"improve\" semantics while restructuring — flag any semantic change explicitly.\n- Don't refactor unrelated modules in the same change.\n- Don't drop tests that document edge behavior.\n\n---\n\nThe two resource route files repeat similar error-handling/response-wrap code instead of sharing it. Refactor so the common handling lives in one place and both routes use it. Do not change observable behavior on success or error paths, and confirm with the existing tests that behavior is preserved. Keep the change free of unrelated edits.",
+      "expected_files": [
+        "src/routes/taskRoutes.ts",
+        "src/routes/tagRoutes.ts",
+        "src/middleware/errorHandler.ts"
+      ],
+      "expected_concepts": [
+        "refactor",
+        "duplication",
+        "shared",
+        "error handling",
+        "behavior"
+      ],
+      "evaluation_method": "Automated scoring; reviewer checks behavior parity and scope discipline.",
+      "gold_impact_files": [
+        "src/routes/taskRoutes.ts",
+        "src/routes/tagRoutes.ts",
+        "src/middleware/errorHandler.ts"
+      ],
+      "forbidden_changes": [
+        "src/models/*",
+        "src/db/*"
+      ],
+      "max_seconds": 720
+    },
+    {
+      "id": "REFACTORING-HARD-01",
+      "category": "code-modification",
+      "prompt": "## Reusable skill applied to this task\n\nname: refactoring\ndescription: Refactor code safely, reduce duplication, preserve behavior, improve structure across multiple files\nversion: 1.0.0\nallowed-tools: []\ndisallowed-tools: []\n\nFollow these instructions for this task where relevant:\n\n# Refactoring\n\nUse this when the task is a refactor: restructuring, de-duplication, renaming, or improving structure while preserving observable behavior.\n\n## Workflow\n1. **Establish a safety net.** Identify which tests cover the code being restructured. If none exist, note it and prefer behavior-preserving transformations; add a regression test where it is cheap and high-value.\n2. **Map current behavior.** Enumerate inputs, outputs, and side effects of every call site you will touch.\n3. **Refactor in small, behavior-preserving steps** (compose → extract → move), so each step is independently reviewable and each preserves the tests.\n4. **Do not mix refactor with feature change.** If you must, separate them and say so explicitly.\n5. **Re-run the relevant tests after each step.**\n\n## Checklist\n- [ ] Safety net identified (tests that cover the change surface)\n- [ ] Call sites enumerated and behavior mapped\n- [ ] Refactor split into small behavior-preserving steps\n- [ ] No undocumented behavior change introduced\n- [ ] Relevant tests pass at each step\n- [ ] Reported any coverage gap created or left\n\n## Verification\nThe same tests pass before and after. List which tests cover the refactored area and the commands that prove parity.\n\n## Common failure prevention\n- Don't \"improve\" semantics while restructuring — flag any semantic change explicitly.\n- Don't refactor unrelated modules in the same change.\n- Don't drop tests that document edge behavior.\n\n---\n\nTwo endpoints implement pagination on their own and the copies have drifted. Centralize pagination into a single shared utility and make both endpoints use it with identical semantics. The most important requirement is behavior parity: totals, page bounds, and edge cases (empty pages, last page, filters) must be exactly preserved. Prove parity with tests that run both the old and new behaviors or assert the same observable outcomes.",
+      "expected_files": [
+        "src/utils/pagination.ts",
+        "src/services/taskService.ts",
+        "src/services/tagService.ts"
+      ],
+      "expected_concepts": [
+        "pagination",
+        "parity",
+        "centralize",
+        "edge cases",
+        "behavior"
+      ],
+      "evaluation_method": "Automated scoring; reviewer audits parity tests for genuine equality (not weakened).",
+      "gold_impact_files": [
+        "src/utils/pagination.ts",
+        "src/routes/taskRoutes.ts",
+        "src/routes/tagRoutes.ts"
+      ],
+      "forbidden_changes": [
+        "src/db/*"
+      ],
+      "max_seconds": 840
+    },
+    {
+      "id": "TESTING-MEDIUM-01",
+      "category": "testing",
+      "prompt": "## Reusable skill applied to this task\n\nname: testing\ndescription: Write missing tests, fix broken tests, understand existing test architecture, prevent regressions\nversion: 1.0.0\nallowed-tools: [web_search]\n\nFollow these instructions for this task where relevant:\n\n# Testing\n\nUse this when the task involves writing missing tests, fixing broken tests, understanding existing test architecture, or regression prevention.\n\n## Workflow\n1. **Find the existing test architecture.** Locate the test runner, config, naming conventions, and closest existing tests to the code under test. Match the conventions.\n2. **Understand the behavior under test first.** Read the implementation and identify the behavior/spec that should be locked in.\n3. **Write tests that assert observable behavior**, not implementation details, unless the contract is explicit.\n4. **Cover the edges the code already handles** (validation, authz, error paths, boundary values) — not just the happy path.\n5. **For a broken test: diagnose root cause** (stale assertion, production bug, test-order dependence, flake) before editing. Fixing a test to make it pass is only correct when the assertion or fixture was wrong.\n6. **Run the focused suite; then confirm no unrelated failures.**\n\n## Checklist\n- [ ] Identified the test framework/config/conventions in this repo\n- [ ] Named and placed tests per existing conventions\n- [ ] Asserted observable behavior, including edge/error cases\n- [ ] Broken test: root-cause isolated (flaky vs prod bug vs wrong assertion)\n- [ ] Focused suite green; no regressions in related suites\n\n## Verification\nReport exact commands run and their results (e.g. `vitest run <file>`). Tests must actually execute, not be skipped.\n\n## Common failure prevention\n- Don't weaken or delete a failing test to make the suite green.\n- Don't mock away the behavior you claim to test (mocks should isolate I/O, not logic).\n- Keep tests deterministic (no reliance on wall-clock/ordering unless intended).\n\n---\n\nThe task-creation endpoint is documented to reject an empty title, but there is little test coverage proving it. Add tests that lock in this contract: an empty or missing title must be rejected, and a valid title must create the task. The tests must actually fail if someone removed the validation, so assert on behavior an end-user can observe rather than on implementation details.",
+      "expected_files": [
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts"
+      ],
+      "expected_concepts": [
+        "validation",
+        "title",
+        "reject",
+        "400",
+        "test"
+      ],
+      "evaluation_method": "Automated scoring; reviewer checks regression-sensitivity (tests fail without the validation).",
+      "gold_impact_files": [],
+      "forbidden_changes": [
+        "src/app.ts"
+      ],
+      "max_seconds": 720
+    },
+    {
+      "id": "TESTING-HARD-01",
+      "category": "testing",
+      "prompt": "## Reusable skill applied to this task\n\nname: testing\ndescription: Write missing tests, fix broken tests, understand existing test architecture, prevent regressions\nversion: 1.0.0\nallowed-tools: [web_search]\n\nFollow these instructions for this task where relevant:\n\n# Testing\n\nUse this when the task involves writing missing tests, fixing broken tests, understanding existing test architecture, or regression prevention.\n\n## Workflow\n1. **Find the existing test architecture.** Locate the test runner, config, naming conventions, and closest existing tests to the code under test. Match the conventions.\n2. **Understand the behavior under test first.** Read the implementation and identify the behavior/spec that should be locked in.\n3. **Write tests that assert observable behavior**, not implementation details, unless the contract is explicit.\n4. **Cover the edges the code already handles** (validation, authz, error paths, boundary values) — not just the happy path.\n5. **For a broken test: diagnose root cause** (stale assertion, production bug, test-order dependence, flake) before editing. Fixing a test to make it pass is only correct when the assertion or fixture was wrong.\n6. **Run the focused suite; then confirm no unrelated failures.**\n\n## Checklist\n- [ ] Identified the test framework/config/conventions in this repo\n- [ ] Named and placed tests per existing conventions\n- [ ] Asserted observable behavior, including edge/error cases\n- [ ] Broken test: root-cause isolated (flaky vs prod bug vs wrong assertion)\n- [ ] Focused suite green; no regressions in related suites\n\n## Verification\nReport exact commands run and their results (e.g. `vitest run <file>`). Tests must actually execute, not be skipped.\n\n## Common failure prevention\n- Don't weaken or delete a failing test to make the suite green.\n- Don't mock away the behavior you claim to test (mocks should isolate I/O, not logic).\n- Keep tests deterministic (no reliance on wall-clock/ordering unless intended).\n\n---\n\nThere is a test intended to cover the rule that a user can only see their own tasks. It passes, but it does not actually protect the rule: if the ownership enforcement were deleted from the production code, the test would still pass. Find that test, explain why it fails to guard the behavior, and rewrite it so it genuinely fails when ownership enforcement is removed. Keep the rest of the suite honest.",
+      "expected_files": [
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts"
+      ],
+      "expected_concepts": [
+        "ownership",
+        "test",
+        "weak",
+        "cross-user",
+        "enforcement"
+      ],
+      "evaluation_method": "Automated scoring; reviewer verifies the mutability check by removing enforcement in a sandbox.",
+      "gold_impact_files": [],
+      "forbidden_changes": [
+        "src/middleware/auth.ts"
+      ],
+      "max_seconds": 840
+    },
+    {
+      "id": "EXT-HARD-01",
+      "category": "repository-understanding",
+      "prompt": "This repository configures the vitest test runner in two places. Review those configurations and, using the current vitest documentation (not memory), determine whether any of the options they use are deprecated, renamed, or behaving differently in the current major version. For each finding, cite the specific repo file and the upstream doc you checked. Do not make changes — this is an assessment. If everything is current, say so explicitly and cite what you verified.",
+      "expected_files": [
+        "vitest.config.ts",
+        "vitest.benchmark.config.mts"
+      ],
+      "expected_concepts": [
+        "vitest",
+        "deprecated",
+        "workspace",
+        "documentation",
+        "config"
+      ],
+      "evaluation_method": "Automated scoring from expected hits (files + concepts like 'deprecated'/'workspace'/'docs'); manual check that web citations are real, current URLs.",
+      "gold_impact_files": [],
+      "forbidden_changes": [],
+      "max_seconds": 900
+    },
+    {
+      "id": "EXT-EXPERT-01",
+      "category": "repository-understanding",
+      "prompt": "This project is a pnpm workspace and relies on several pnpm/package-manager settings at the repository root. Using the current upstream documentation, assess whether config would break or behave differently in the current recommended version of the tool. If a change is warranted, propose the minimal one; if not, say so with evidence. For anything you cite, give the real upstream URL you actually checked.",
+      "expected_files": [
+        "pnpm-workspace.yaml",
+        ".npmrc"
+      ],
+      "expected_concepts": [
+        "pnpm",
+        "workspace",
+        "documentation",
+        "deprecated",
+        "config"
+      ],
+      "evaluation_method": "Automated scoring from expected hits (files + concepts like 'pnpm','workspace','deprecated','documentation'); manual review that web citations are real.",
+      "gold_impact_files": [],
+      "forbidden_changes": [],
+      "max_seconds": 900
+    },
+    {
+      "id": "ARCH-EASY-01",
+      "category": "repository-understanding",
+      "prompt": "Describe how a consumer (for example a CLI command or an MCP server) reads indexed context from this repository. Which package is the single read interface that consumers are supposed to use, where is the persistent context actually stored and owned, and what is the dependency direction between them? Cite the specific files you inspected and quote the concrete seam (function/class) a consumer calls.",
+      "expected_files": [
+        "packages/sdk/src/context/index.ts",
+        "packages/storage/src/index.ts"
+      ],
+      "expected_concepts": [
+        "SDK",
+        "context",
+        "storage",
+        "read interface",
+        "dependency"
+      ],
+      "evaluation_method": "Automated scoring from expected_files/expected_concepts hits + cited paths.",
+      "gold_impact_files": [],
+      "forbidden_changes": [],
+      "max_seconds": 600
+    },
+    {
+      "id": "ARCH-MEDIUM-01",
+      "category": "repository-understanding",
+      "prompt": "A new feature is proposed: expose an additional read query over the stored context (for example, a new relationship or metric that consumers can query). Decide where this should live in this monorepo's structure: where does the interface belong, where does the implementation belong, how does it get composed so consumers can reach it, and what dependency rules apply? Explain the ownership boundaries you are relying on and cite the files that define them. Recommend a concrete, safe place to start.",
+      "expected_files": [
+        "packages/core/src/ports",
+        "packages/sdk/src/container.ts"
+      ],
+      "expected_concepts": [
+        "port",
+        "SDK",
+        "composition",
+        "ownership",
+        "dependency direction"
+      ],
+      "evaluation_method": "Automated scoring from expected hits + cited files; manual review of correctness of the ownership claim.",
+      "gold_impact_files": [],
+      "forbidden_changes": [],
+      "max_seconds": 780
+    }
+  ]
+}

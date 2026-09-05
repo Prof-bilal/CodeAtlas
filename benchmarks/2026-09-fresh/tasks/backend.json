@@ -1,0 +1,80 @@
+[
+  {
+    "id": "BACKEND-EASY-01",
+    "domain": "backend",
+    "difficulty": "easy",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD (in-tree fixture; rekord SHA on first run)",
+    "description": "Add request-body validation to the task creation endpoint: reject an empty title with HTTP 400 before handler logic runs; valid input unchanged.",
+    "expected_behavior": "POST creates a task with a non-empty title; a missing/empty title returns 400 without side effects.",
+    "files_likely_involved": ["src/routes/taskRoutes.ts", "src/services/taskService.ts", "src/validation.ts"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "backend-api",
+    "prompt": "When the task-creation endpoint receives a request with an empty or missing task title, it should be rejected with a 400 (and not create anything). Today that validation is missing or too late. Add the earliest reasonable validation so an empty title cannot reach business logic, and keep the happy path working. Then add a test that proves an empty title is rejected with 400 and a valid title still creates the task.",
+    "success_criteria": [
+      "Empty/missing title -> HTTP 400",
+      "Valid title still creates the task (unchanged behavior)",
+      "A test covering both cases was added and passes"
+    ],
+    "regression_tests": ["run the app test suite after the change"],
+    "evaluation_method": "Automated: score from expected_files/expected_concepts hits in final text + test outputs. Manual: the added test must run green and assert 400 on empty title.",
+    "expected_files": ["src/routes/taskRoutes.ts", "src/services/taskService.ts"],
+    "expected_concepts": ["validation", "400", "task title", "reject"],
+    "gold_impact_files": ["src/routes/taskRoutes.ts"],
+    "forbidden_changes": [],
+    "max_seconds": 600
+  },
+  {
+    "id": "BACKEND-MEDIUM-01",
+    "domain": "backend",
+    "difficulty": "medium",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD (in-tree fixture)",
+    "description": "A regression: the 'list tasks' endpoint returns tasks not owned by the authenticated user. Fix ownership filtering and add a regression test.",
+    "expected_behavior": "An authenticated user only sees tasks they own; admin/invited roles follow the documented rules.",
+    "files_likely_involved": ["src/routes/taskRoutes.ts", "src/services/taskService.ts", "src/repositories/taskRepository.ts"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "backend-api",
+    "prompt": "After a recent change, the 'list my tasks' endpoint returns tasks that belong to other users when an authenticated user calls it. Users should only ever see tasks they own (or that they are explicitly allowed to see). Find why ownership is no longer enforced and fix it at the correct layer. Add a regression test where user A cannot see user B's tasks, and confirm the existing happy path still works.",
+    "success_criteria": [
+      "User A's list contains only user A's tasks",
+      "User A cannot retrieve/see user B's tasks via the list endpoint",
+      "A regression test demonstrates isolation and passes"
+    ],
+    "regression_tests": ["authenticated list contains at least the user's own tasks"],
+    "evaluation_method": "Automated scoring from expected hits + test outputs; manual review ensures the fix is at the correct layer (not client-side).",
+    "expected_files": ["src/services/taskService.ts", "src/repositories/taskRepository.ts", "src/middleware/auth.ts"],
+    "expected_concepts": ["ownership", "authorization", "filter", "userId"],
+    "gold_impact_files": ["src/routes/taskRoutes.ts", "src/services/taskService.ts", "src/repositories/taskRepository.ts"],
+    "forbidden_changes": ["src/models/task.ts"],
+    "max_seconds": 720
+  },
+  {
+    "id": "BACKEND-HARD-01",
+    "domain": "backend",
+    "difficulty": "hard",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD (in-tree fixture)",
+    "description": "Pagination metadata (total) is wrong when combined with tag filtering. Trace across serializer/pagination/service and fix.",
+    "expected_behavior": "The pagination 'total' reflects the filtered result count, not the pre-filter count.",
+    "files_likely_involved": ["src/services/taskService.ts", "src/utils/pagination.ts", "src/repositories/taskRepository.ts"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "backend-api",
+    "prompt": "When the tasks endpoint is called with a tag filter, the returned pagination 'total' is higher than the number of matching tasks. The total should reflect only the tasks that match the current filters, and pagination should page through that filtered set correctly. Trace where the total is computed relative to where filtering is applied, correct the mismatch, and add a test that pages through a filtered set and asserts the correct total on each page.",
+    "success_criteria": [
+      "Filtered total == number of tasks matching the filters",
+      "Paging through the filtered set returns consistent, non-overlapping pages",
+      "No-page-filter path behavior is unchanged"
+    ],
+    "regression_tests": ["unfiltered pagination still yields the previous totals"],
+    "evaluation_method": "Automated scoring from expected hits + test outputs; manual review of the filter/offset logic.",
+    "expected_files": ["src/services/taskService.ts", "src/utils/pagination.ts", "src/repositories/taskRepository.ts"],
+    "expected_concepts": ["pagination", "filter", "total", "offset", "count"],
+    "gold_impact_files": ["src/services/taskService.ts", "src/repositories/taskRepository.ts"],
+    "forbidden_changes": ["src/utils/pagination.ts"],
+    "max_seconds": 840
+  }
+]

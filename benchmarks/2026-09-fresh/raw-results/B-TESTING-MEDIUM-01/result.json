@@ -1,0 +1,122 @@
+{
+  "taskId": "TESTING-MEDIUM-01",
+  "category": "testing",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 26099,
+    "output": 3843,
+    "reasoning": 0,
+    "total": 216054,
+    "cacheWrite": 0,
+    "cacheRead": 186112,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 119061,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "All 6 tests pass. Created `tests/taskTitleContract.test.ts` with 6 contract tests:\n\n| Test | Expected |\n|------|----------|\n| Empty string `title: ''` | 400 + error mentioning \"title\" |\n| Missing `title` key | 400 + error mentioning \"title\" |\n| Whitespace-only `title: '   '` | 400 + error mentioning \"title\" |\n| Empty body `{}` | 400 + error mentioning \"title\" |\n| Valid title `'Buy groceries'` | 201 + task id |\n| Valid title preserves text | 201 + exact title in response |\n\nEvery assertion is on observable HTTP behavior (status codes, response body content). No mock-call assertions — if someone removes the validation middleware, the 4 rejection tests immediately fail (verified: removing `createTaskValidation` caused 4 of 6 tests to fail with `expected 201 to be 400`).",
+  "toolCallCount": 10,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_cd88a13903cf4e538e2d7007",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8299ad52806d4c3db4890853",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_1ef3c84b45ca41e6bf6dde70",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_5d69394cb5844d25b00d5b86",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "write",
+      "callId": "call_5fa30613341c4dcb896162ef",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_6b12feb4fbb5480cade04e3a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_3ffa544bf51343da8d6dda73",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_176e5ccb16014533a8feff76",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_3972fa88edfc4d349de60b4d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_2bf33cd75cf94d34b4ac943e",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "filesExpected": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "validation",
+      "title",
+      "reject",
+      "400",
+      "test"
+    ],
+    "conceptsExpected": [
+      "validation",
+      "title",
+      "reject",
+      "400",
+      "test"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [
+      "tests/taskTitleContract.test.ts"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "tests/taskTitleContract.test.ts"
+    ],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T04:43:56.815Z"
+}

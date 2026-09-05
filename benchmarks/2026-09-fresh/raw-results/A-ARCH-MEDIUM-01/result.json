@@ -1,0 +1,53 @@
+{
+  "taskId": "ARCH-MEDIUM-01",
+  "category": "repository-understanding",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "reasoning": 0,
+    "total": 0,
+    "cacheWrite": 0,
+    "cacheRead": 0,
+    "source": "unknown"
+  },
+  "cost": 0,
+  "durationMs": 23860,
+  "timedOut": false,
+  "exitCode": null,
+  "finalText": "",
+  "toolCallCount": 0,
+  "toolCalls": [],
+  "evaluation": {
+    "score": 0,
+    "status": "failed",
+    "filesFound": [],
+    "filesExpected": [
+      "packages/core/src/ports",
+      "packages/sdk/src/container.ts"
+    ],
+    "fileRatio": 0,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "port",
+      "SDK",
+      "composition",
+      "ownership",
+      "dependency direction"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "tool_loop_underuse",
+    "reason": "Only 0 tool call(s) made; model stopped exploring too early (score: 0).",
+    "proposedFix": "Investigate prompt guidance or CONTEXT_GUIDANCE to encourage more tool exploration on complex tasks."
+  },
+  "error": "exit code null",
+  "stderr": "",
+  "recordedAt": "2026-09-05T03:07:04.761Z"
+}

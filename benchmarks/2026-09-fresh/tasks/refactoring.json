@@ -1,0 +1,56 @@
+[
+  {
+    "id": "REFACTORING-MEDIUM-01",
+    "domain": "refactoring",
+    "difficulty": "medium",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD (in-tree fixture)",
+    "description": "Reduce duplication in the error-handling path across route handlers by extracting a shared helper, preserving behavior exactly.",
+    "expected_behavior": "Error handling is centralized; behavior on success and error paths is unchanged; tests pass.",
+    "files_likely_involved": ["src/routes/taskRoutes.ts", "src/routes/tagRoutes.ts", "src/middleware/errorHandler.ts"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "refactoring",
+    "prompt": "The two resource route files repeat similar error-handling/response-wrap code instead of sharing it. Refactor so the common handling lives in one place and both routes use it. Do not change observable behavior on success or error paths, and confirm with the existing tests that behavior is preserved. Keep the change free of unrelated edits.",
+    "success_criteria": [
+      "Duplication removed; both routes use the shared helper",
+      "Success + error responses unchanged (behavior parity)",
+      "Tests pass and demonstrate parity",
+      "No unrelated modules edited"
+    ],
+    "regression_tests": ["existing route/service tests pass before and after"],
+    "evaluation_method": "Automated scoring; reviewer checks behavior parity and scope discipline.",
+    "expected_files": ["src/routes/taskRoutes.ts", "src/routes/tagRoutes.ts", "src/middleware/errorHandler.ts"],
+    "expected_concepts": ["refactor", "duplication", "shared", "error handling", "behavior"],
+    "gold_impact_files": ["src/routes/taskRoutes.ts", "src/routes/tagRoutes.ts", "src/middleware/errorHandler.ts"],
+    "forbidden_changes": ["src/models/*", "src/db/*"],
+    "max_seconds": 720
+  },
+  {
+    "id": "REFACTORING-HARD-01",
+    "domain": "refactoring",
+    "difficulty": "hard",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD (in-tree fixture)",
+    "description": "Pagination logic is duplicated across two endpoints with subtle drift. Centralize it into one behavior-preserving utility and prove parity.",
+    "expected_behavior": "Both endpoints use one pagination utility with identical semantics; totals/pages unchanged; parity proven by tests.",
+    "files_likely_involved": ["src/routes/taskRoutes.ts", "src/routes/tagRoutes.ts", "src/utils/pagination.ts", "src/services"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "refactoring",
+    "prompt": "Two endpoints implement pagination on their own and the copies have drifted. Centralize pagination into a single shared utility and make both endpoints use it with identical semantics. The most important requirement is behavior parity: totals, page bounds, and edge cases (empty pages, last page, filters) must be exactly preserved. Prove parity with tests that run both the old and new behaviors or assert the same observable outcomes.",
+    "success_criteria": [
+      "One pagination utility; both endpoints use it",
+      "Edge cases (empty page, last page, filtered) behave identically",
+      "Parity demonstrated with tests, not asserted",
+      "No API contract change"
+    ],
+    "regression_tests": ["unfiltered + filtered pagination parity checks"],
+    "evaluation_method": "Automated scoring; reviewer audits parity tests for genuine equality (not weakened).",
+    "expected_files": ["src/utils/pagination.ts", "src/services/taskService.ts", "src/services/tagService.ts"],
+    "expected_concepts": ["pagination", "parity", "centralize", "edge cases", "behavior"],
+    "gold_impact_files": ["src/utils/pagination.ts", "src/routes/taskRoutes.ts", "src/routes/tagRoutes.ts"],
+    "forbidden_changes": ["src/db/*"],
+    "max_seconds": 840
+  }
+]

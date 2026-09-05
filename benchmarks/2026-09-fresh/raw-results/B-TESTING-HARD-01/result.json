@@ -1,0 +1,123 @@
+{
+  "taskId": "TESTING-HARD-01",
+  "category": "testing",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 31674,
+    "output": 5808,
+    "reasoning": 0,
+    "total": 230634,
+    "cacheWrite": 0,
+    "cacheRead": 193152,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 223653,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Let me verify the test genuinely fails when ownership enforcement is removed:",
+  "toolCallCount": 11,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_fbc7e37c582e426cb0ce5309",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_74e24bc1202f424bb406f294",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a3b68c0ea9d14c73a2f84bc9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_7818190508cb4201a021e1e2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_b8beb3f8964541e38a7bd91e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_95098f83fe054fad91d74521",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_2ada5162f7484414bf103985",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_06fcc233add14760832c5ad3",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c18eb958970140f5b9d093e5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_4a12b2eeaba744e188f67b60",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_764cffe5916649849afbd31e",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 1,
+    "status": "partially_correct",
+    "filesFound": [],
+    "filesExpected": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts"
+    ],
+    "fileRatio": 0,
+    "conceptsFound": [
+      "ownership",
+      "test",
+      "enforcement"
+    ],
+    "conceptsExpected": [
+      "ownership",
+      "test",
+      "weak",
+      "cross-user",
+      "enforcement"
+    ],
+    "conceptRatio": 0.6,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 230,634 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "\u001b[93m\u001b[1m! \u001b[0mpermission requested: external_directory (/tmp/*); auto-rejecting\n",
+  "recordedAt": "2026-09-05T04:47:41.503Z"
+}

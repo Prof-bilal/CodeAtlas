@@ -1,0 +1,69 @@
+{
+  "taskId": "ARCH-EASY-01",
+  "category": "repository-understanding",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 9113,
+    "output": 142,
+    "reasoning": 0,
+    "total": 12327,
+    "cacheWrite": 0,
+    "cacheRead": 3072,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 1200070,
+  "timedOut": true,
+  "exitCode": null,
+  "finalText": "",
+  "toolCallCount": 3,
+  "toolCalls": [
+    {
+      "name": "read",
+      "callId": "call_b27abb3ba94e47bcad22e6f1",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_0e5574ee17b5478ebbd8ae67",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ca09580d835d452bbc6ffb00",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 0,
+    "status": "failed",
+    "filesFound": [],
+    "filesExpected": [
+      "packages/sdk/src/context/index.ts",
+      "packages/storage/src/index.ts"
+    ],
+    "fileRatio": 0,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "SDK",
+      "context",
+      "storage",
+      "read interface",
+      "dependency"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "Task timed out after 1200070ms",
+    "proposedFix": "Increase task timeout or reduce context budget to finish within time limit."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T13:14:04.904Z"
+}

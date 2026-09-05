@@ -1,0 +1,218 @@
+{
+  "taskId": "FRONTEND-MEDIUM-01",
+  "category": "code-modification",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 58619,
+    "output": 25344,
+    "reasoning": 0,
+    "total": 1005883,
+    "cacheWrite": 0,
+    "cacheRead": 921920,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 571847,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Here's a summary of the changes:\n\n**Bug:** `runCli` in `commands.ts` had no `catch` block. When `runner.run()` threw an exception (e.g., CLI binary not found, timeout), `client.lastBuildError` was never set and no error notification was shown. The `finally` block's `refreshAll()` still updated the status bar, but it rendered \"no index\" (or stale counts from a prior build) instead of \"build failed\" — leaving the user with a misleading \"not ready\" state after the run had actually finished.\n\n**Fix (2 files, small and scoped):**\n\n1. **`apps/extension/src/commands.ts:205-208`** — Added a `catch` block that captures the runner exception, records it in `client.lastBuildError`, and shows an error notification. The existing `finally` block then runs `refreshAll()` → `statusBar.render()`, which now picks up the error and displays \"build failed\" with the exception message in the tooltip.\n\n2. **`apps/extension/tests/commands.test.ts`** — Added a test (\"shows 'build failed' when the runner throws\") that verifies the status bar transitions from \"indexing…\" to \"build failed\" when the runner throws, that `lastBuildError` is set, and that an error notification is shown.",
+  "toolCallCount": 26,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_acea535882fb42519e6f0d67",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_9bf8ff8ee88848baabd46824",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_04db2448147146539f5e4406",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_61632724b31d445884233b05",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c8d868a83a924d58b8fd7978",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2559a4a9581546e48616f66c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8c05d8ae9fe14923864e367d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_6acfd28bbe8f40be93a87097",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3f5d6491d0d0424fba1671bc",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8b7a1bfa74774e13bc054d1a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_f2aaf0f5e9894c9899baa2ed",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_bbc3c1769f104568bc960465",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_b1a53ae22b654dd2a395cf37",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b4af6b71f4764de59e976de0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_7b17a60a04094b91a345788c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_24d592b5c3134bfd9011bd1a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_3ce1e5f8d19a46fa86eb453b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_a74332ddc74545608d517ed2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_b4e67f5dafc84b0d8aea6d08",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_733f19087bda42e482c8362b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e35c6e175a4445a7903f92e2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_bf9adcdff13f4e18b000da4b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_9ed520b510df40308288740c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_f438cd53072548749069a5b4",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_5440dd076faf4ea280a35354",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_dcb63ed0346e4f3d94e38a18",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "apps/extension/src/status-bar.ts"
+    ],
+    "filesExpected": [
+      "apps/extension/src/status-bar.ts",
+      "apps/extension/src/extension-core.ts"
+    ],
+    "fileRatio": 0.5,
+    "conceptsFound": [
+      "status bar",
+      "update",
+      "indexing",
+      "refresh"
+    ],
+    "conceptsExpected": [
+      "status bar",
+      "update",
+      "indexing",
+      "complete",
+      "refresh"
+    ],
+    "conceptRatio": 0.8,
+    "citedFiles": [],
+    "hallucinatedFiles": [
+      "src/commands.ts",
+      "tests/commands.test.ts"
+    ],
+    "wrongFiles": [],
+    "goldImpactFiles": [
+      "apps/extension/src/status-bar.ts",
+      "apps/extension/src/extension-core.ts"
+    ]
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T05:04:30.278Z"
+}

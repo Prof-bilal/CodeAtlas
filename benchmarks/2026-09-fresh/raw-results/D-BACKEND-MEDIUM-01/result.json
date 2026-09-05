@@ -1,0 +1,363 @@
+{
+  "taskId": "BACKEND-MEDIUM-01",
+  "category": "code-modification",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 102745,
+    "output": 54653,
+    "reasoning": 0,
+    "total": 1914134,
+    "cacheWrite": 0,
+    "cacheRead": 1756736,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 988869,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "All 33 task-related tests pass. The 2 pre-existing failures (`date.test.ts`, `advanced.test.ts`, `modules.test.ts`) are unrelated.\n\n## Summary\n\n**Root cause**: The `GET /api/tasks` endpoint relied solely on the repository's SQL `WHERE user_id = $1` filter for ownership. There was no defensive guard in the service layer, and zero tests verifying that a user only sees their own tasks. If the repository method were ever swapped (e.g., to `findByAssignedTo` which filters only by `assigned_to` with no `user_id` guard), tasks would leak across users silently.\n\n**Fix** (`src/services/taskService.ts:67`): Added a defensive `tasks.filter(task => task.userId === userId)` after the repository call in `TaskService.findAll`. This ensures only the authenticated user's tasks are returned regardless of what the repository returns.\n\n**Regression tests** (6 new tests):\n\n| File | Test | What it verifies |\n|---|---|---|\n| `tests/task.test.ts` | `should not return tasks belonging to other users` | Service filters out other users' tasks even if the repository returns them |\n| `tests/taskRoutes.test.ts` | `should return only the authenticated user tasks (happy path)` | Happy path: user sees their tasks |\n| `tests/taskRoutes.test.ts` | `should not return tasks belonging to other users` | Route-level: user A cannot see user B's tasks |\n| `tests/taskRoutes.test.ts` | `should call findByUser with the authenticated user id` | Correct userId is passed through the stack |",
+  "toolCallCount": 49,
+  "toolCalls": [
+    {
+      "name": "todowrite",
+      "callId": "call_5cbfb829bf09463eb1c5329b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3eb0269a4e6f47ff8fe3d891",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_5154ed6b17834cbb8bc51c62",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_aad8b389365543fea4006d80",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_f1ba26d2a194497ab92251d9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b72fd39d086048b48ae5586d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5e38d5826137441d8ef996a3",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3c034de7074d4a10b029a19e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b1e28aa584274146b61b08b7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e674d0d956f74d258349d1e3",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5db400cf510848919261fb40",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_417224d0c058448bad007ac1",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_4b87117a8f3147b6a69dcb38",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_d5b0da4005344a41945b38f2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_c88df7780419484daef36e70",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_594a57e62a5942639eb751cd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "grep",
+      "callId": "call_077eb2670ce9426ea12601fa",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_cd40071585d142ecb68ba557",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_c16af77ff16549c7990a81c9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_70f4b145b247494f9d1c0ca0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_d37b37963831457aac08101f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_186a4f936ecd433fb4ae1ca5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_f0a3db07135d4edabf2d85d5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_9dbece2237a04b0f93ab4510",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a0f55baf4aff4ac69aade177",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a17e4bfdda114a5ea852a4bd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ad9c764f92464581bc1b9f9a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_6606bf14271c4b689a97098b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_399fc9d1de284506882cb441",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_7ca61c55bb2a4e628b8aa821",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_457a473f98734283acd94672",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_9365d55c37fc49eeb94ca6ac",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_dd866277bee047b88bbae3fb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "grep",
+      "callId": "call_d54ff19ad3624cb8abfc2e16",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f96f443aec244d718360b977",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_1d0fe0ce5ff74f168d785391",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_5a2f24b9e36b4501b2bca406",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_c12b992c997644cf8c018ff9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_f7eb274079ef4874992a23ad",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_8c3cb357b26546fd8f68332d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_d0726ccdd2cb4b5b96df86ba",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_5402727f3e4c42b6b034c24d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f8d527b8e5d34609b6f5c521",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_ad6be06afe01404280a4e87d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_06352bb61095465786a2865b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_f70cdfc0145b4b829548b966",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_45956d1997b24c3cbd39a42d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_b9e91ca39d4a47a3896f1bce",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_474cd51aab14433088474e15",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts",
+      "src/middleware/auth.ts"
+    ],
+    "filesExpected": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts",
+      "src/middleware/auth.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "ownership",
+      "authorization",
+      "filter",
+      "userId"
+    ],
+    "conceptsExpected": [
+      "ownership",
+      "authorization",
+      "filter",
+      "userId"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [
+      "src/services/taskService.ts",
+      "tests/task.test.ts",
+      "tests/taskRoutes.test.ts"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "tests/task.test.ts",
+      "tests/taskRoutes.test.ts"
+    ],
+    "goldImpactFiles": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts"
+    ]
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T14:01:34.561Z"
+}

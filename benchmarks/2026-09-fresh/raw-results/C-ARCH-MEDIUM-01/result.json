@@ -1,0 +1,180 @@
+{
+  "taskId": "ARCH-MEDIUM-01",
+  "category": "repository-understanding",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 65932,
+    "output": 3011,
+    "reasoning": 0,
+    "total": 452303,
+    "cacheWrite": 0,
+    "cacheRead": 383360,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 73294,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Here is the analysis.\n\n---\n\n## Where a new read query belongs — four-layer decision\n\nThe repo follows a strict clean-architecture layering enforced by ESLint (`no-restricted-imports`). Every addition must respect these ownership boundaries:\n\n### 1. Interface (the port) → `packages/core/src/ports/`\n\n**Every** extension seam is a TypeScript interface in `core`. `core` is type-only: no infrastructure, no implementation (`docs/MODULES.md:19-27`, `docs/ARCHITECTURE.md:116-121`).\n\n- If the new query is a **new kind of read operation** (e.g. a new metric, a new relationship traversal), add the method signature to the existing `ContextDatabasePort` in `packages/core/src/ports/context-db.port.ts:95-107` if it's a persistence-level concern, or define a **new port** in the same directory if it's a distinct domain concern (the pattern used for `SearchPort`, `GraphPort`, `UsagePort`, `MetricsPort`, etc.).\n- If the new query **extends an existing SDK sub-API** (e.g. `context.dependencies` gains a new traversal method), the port change goes in `context-db.port.ts` (the persistence contract) or the relevant feature port.\n\nThe entity types it returns should be defined in `packages/core/src/domain/entities.ts` (or as a new interface alongside existing ones like `PersistedDependency`, `PersistedRelationship` in `context-db.port.ts:17-37`).\n\n### 2. Implementation → the matching feature package\n\nThe implementation goes in the feature package that **owns the domain concept**:\n\n| Query type | Implementation package | Port it implements |\n|---|---|---|\n| New persisted relationship / DB-level metric | `@atlas/storage` | `ContextDatabasePort` |\n| New search dimension (e.g. a new hit kind) | `@atlas/search` | `SearchPort` |\n| New graph traversal | `@atlas/graph` | `GraphPort` |\n| New context assembly step | `@atlas/context` | `ContextBuilderPort` |\n| New computed metric (non-DB) | New feature package or existing one matching the domain | New port in `core` |\n\nRule: feature packages import **only `core` + `shared`** — no sideways coupling between feature packages (`docs/DEPENDENCIES.md:14-31`).\n\n### 3. Composition → `packages/sdk`\n\nThe SDK wires implementations behind ports (`docs/MODULES.md:267-288`, `docs/ARCHITECTURE.md:153-162`). Two composition points:\n\n- **`Container`** (`packages/sdk/src/container.ts:48-69`): registers the implementation behind its port for internal wiring.\n- **`createContextSDK`** (`packages/sdk/src/context/sdk.ts:890-892`): the stable read façade consumers actually use. The new query gets a method on the appropriate sub-API interface (`ContextSDK.files`, `.symbols`, `.dependencies`, `.modules`, `.summaries`, `.search`, `.project`) or on the `ContextSDK` facade itself.\n\nThe SDK reads through `ReadRepositories` (`packages/sdk/src/context/repositories.ts:29-222`), which wraps `ContextDatabasePort`. If the new query touches the DB, `ReadRepositories` gets the read method; the SDK sub-API delegates to it.\n\n### 4. Consumer surface → CLI, MCP, VS Code\n\nConsumers import **only `@atlas/sdk`** (`docs/DEPENDENCIES.md:32-35`):\n\n- **CLI** (`apps/cli`): add a flag or subcommand to the relevant `atlas` command.\n- **MCP** (`packages/mcp`): expose as a new MCP tool (maps 1:1 to SDK sub-APIs per `docs/CONTEXT_SDK.md:289-299`).\n- **VS Code** (`apps/extension`): expose in the relevant tree view.\n\n---\n\n## Ownership boundaries being relied on\n\n| Boundary | Defined in | Enforcement |\n|---|---|---|\n| Ports are type-only contracts in `core` | `docs/MODULES.md:19-27` | `core` imports only `shared` |\n| Feature packages implement ports, import only `core`+`shared` | `docs/DEPENDENCIES.md:14-31` | ESLint `no-restricted-imports` |\n| SDK composes implementations behind ports | `docs/MODULES.md:267-288`, `docs/ARCHITECTURE.md:153-162` | ESLint matrix |\n| Consumers use only `@atlas/sdk` | `docs/DEPENDENCIES.md:32-35`, `docs/CONTEXT_SDK.md:1-6` | ESLint matrix |\n| Persistence lives in `@atlas/storage` | `docs/MODULES.md:87-93` | Ownership doc |\n| No cycles, no sideways coupling | `docs/DEPENDENCIES.md:38-39` | ESLint `no-restricted-imports` |\n\n---\n\n## Concrete, safe starting point\n\n**Best first step: extend `ContextDatabasePort` with a new read method, implement it in `@atlas/storage`, surface it through `ReadRepositories` and the SDK's `ContextSDK` façade.**\n\nConcretely, for a new \"relationship metric\" (e.g. \"which modules are most tightly coupled\"):\n\n1. **`packages/core/src/ports/context-db.port.ts`** — add a method like `queryRelationships(options): readonly PersistedRelationship[]` or a new typed metric interface to `ContextDatabasePort`.\n2. **`packages/storage`** — implement the SQL query behind the existing `ContextStore` (it owns all 8 tables including `Relationships`).\n3. **`packages/sdk/src/context/repositories.ts`** — add a `ReadRepositories` method that calls the new port method.\n4. **`packages/sdk/src/context/sdk.ts`** — expose it on the relevant sub-API (likely `dependencies` or `modules`, or a new `relationships` sub-API).\n5. **`apps/cli`** — wire a flag/subcommand (e.g. `atlas dependencies --related`).\n6. **`packages/mcp`** — optionally add an MCP tool.\n\nThis path touches the fewest packages, respects every dependency rule, requires no new packages, no schema migration (if querying existing `Relationships` data), and is fully testable with the existing in-memory SQLite fixtures.",
+  "toolCallCount": 17,
+  "toolCalls": [
+    {
+      "name": "todowrite",
+      "callId": "call_b6e75d3061c4498184528102",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5ce2bffd4ede4031a478632b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5056eb96de494987ab961db3",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_af710eec315a49ca9a923d57",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a0199be64f10451fa4acf133",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_47fb87c6dfb34db69838721c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_1a6b811f668d4061901db9e8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_9e2f4d1199fd4fe2b79d942f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2c2c9f4118ba4e278e81c3e8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_837fe31faa584d68955f6acb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_fc32d84f4a4243a88249811f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_14c9d800db0b4c1e9a2c14af",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b4bf5c47161046c4b0348b12",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_9120adff7eea4514b4678286",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_7cd1da9bab7243a3baff951b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_d4d5ed5efd3c4167a01f50f6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_7faf43e52ddc41749772fbbb",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "packages/core/src/ports",
+      "packages/sdk/src/container.ts"
+    ],
+    "filesExpected": [
+      "packages/core/src/ports",
+      "packages/sdk/src/container.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "port",
+      "SDK",
+      "composition",
+      "ownership",
+      "dependency direction"
+    ],
+    "conceptsExpected": [
+      "port",
+      "SDK",
+      "composition",
+      "ownership",
+      "dependency direction"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [
+      "docs/MODULES.md",
+      "docs/ARCHITECTURE.md",
+      "packages/core/src/ports/context-db.port.ts",
+      "packages/core/src/domain/entities.ts",
+      "docs/DEPENDENCIES.md",
+      "packages/sdk/src/container.ts",
+      "packages/sdk/src/context/sdk.ts",
+      "packages/sdk/src/context/repositories.ts",
+      "docs/CONTEXT_SDK.md"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "docs/MODULES.md",
+      "docs/ARCHITECTURE.md",
+      "packages/core/src/ports/context-db.port.ts",
+      "packages/core/src/domain/entities.ts",
+      "docs/DEPENDENCIES.md",
+      "packages/sdk/src/container.ts",
+      "packages/sdk/src/context/sdk.ts",
+      "packages/sdk/src/context/repositories.ts",
+      "docs/CONTEXT_SDK.md"
+    ],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T13:15:47.992Z"
+}

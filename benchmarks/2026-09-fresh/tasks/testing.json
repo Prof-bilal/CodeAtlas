@@ -1,0 +1,60 @@
+[
+  {
+    "id": "TESTING-MEDIUM-01",
+    "domain": "testing",
+    "difficulty": "medium",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD (in-tree fixture)",
+    "description": "Identify untested behavior in the task-creation validation path and add tests that would catch a regression where an empty title is accepted.",
+    "expected_behavior": "New tests assert rejection of empty/missing title and acceptance of a valid title; they fail if the validation is removed.",
+    "files_likely_involved": ["tests", "src/routes/taskRoutes.ts", "src/services/taskService.ts"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "testing",
+    "prompt": "The task-creation endpoint is documented to reject an empty title, but there is little test coverage proving it. Add tests that lock in this contract: an empty or missing title must be rejected, and a valid title must create the task. The tests must actually fail if someone removed the validation, so assert on behavior an end-user can observe rather than on implementation details.",
+    "success_criteria": [
+      "Tests cover empty-title rejection and valid-title success",
+      "Tests assert observable behavior (status codes / store effects)",
+      "Tests fail when the validation is removed (regression-sensitivity)",
+      "Existing suite remains green with the added tests"
+    ],
+    "regression_tests": ["entire test suite still passes"],
+    "evaluation_method": "Automated scoring; reviewer checks regression-sensitivity (tests fail without the validation).",
+    "expected_files": ["src/routes/taskRoutes.ts", "src/services/taskService.ts"],
+    "expected_concepts": ["validation", "title", "reject", "400", "test"],
+    "gold_impact_files": [],
+    "forbidden_changes": ["src/app.ts"],
+    "max_seconds": 720
+  },
+  {
+    "id": "TESTING-HARD-01",
+    "domain": "testing",
+    "difficulty": "hard",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD + repo_prep (a weak test exists in disposable copy)",
+    "description": "A test for task ownership looks like coverage but passes even when the ownership enforcement is removed. Find and rewrite it to actually guard the rule.",
+    "expected_behavior": "The rewritten test fails when the ownership filter is removed, proving it guards the behavior.",
+    "files_likely_involved": ["tests", "src/services/taskService.ts", "src/repositories/taskRepository.ts"],
+    "repo_prep": {
+      "note": "Evaluator-only. The disposable copy includes a task-ownership test that only checks the shape of the response (e.g. array length or presence of a field) and would pass even without ownership filtering. The prompt does not reveal this.",
+      "defect": "An existing 'ownership' test asserts implementation detail (e.g. that filtering helper was called, or a shallow condition) which a removal of enforcement would not break."
+    },
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "testing",
+    "prompt": "There is a test intended to cover the rule that a user can only see their own tasks. It passes, but it does not actually protect the rule: if the ownership enforcement were deleted from the production code, the test would still pass. Find that test, explain why it fails to guard the behavior, and rewrite it so it genuinely fails when ownership enforcement is removed. Keep the rest of the suite honest.",
+    "success_criteria": [
+      "Identified the weak ownership test and explained why it doesn't guard the rule",
+      "Rewritten test observes cross-user data (fails if enforcement removed)",
+      "Other tests unchanged/green",
+      "Claim about 'fails if removed' is demonstrated"
+    ],
+    "regression_tests": ["product still passes its own tests"],
+    "evaluation_method": "Automated scoring; reviewer verifies the mutability check by removing enforcement in a sandbox.",
+    "expected_files": ["src/services/taskService.ts", "src/repositories/taskRepository.ts"],
+    "expected_concepts": ["ownership", "test", "weak", "cross-user", "enforcement"],
+    "gold_impact_files": [],
+    "forbidden_changes": ["src/middleware/auth.ts"],
+    "max_seconds": 840
+  }
+]

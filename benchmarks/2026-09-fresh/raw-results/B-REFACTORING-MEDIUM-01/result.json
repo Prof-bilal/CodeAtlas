@@ -1,0 +1,212 @@
+{
+  "taskId": "REFACTORING-MEDIUM-01",
+  "category": "code-modification",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 25178,
+    "output": 6632,
+    "reasoning": 0,
+    "total": 323394,
+    "cacheWrite": 0,
+    "cacheRead": 291584,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 164332,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Done. Here's the summary:\n\n**`routeHelpers.ts`** — Added `checkValidation(req, res)` that centralizes the `validationResult` → 400 error response pattern.\n\n**`tagRoutes.ts`** — Removed `validationResult` import, added `checkValidation` from `routeHelpers`. Replaced 3 inline validation checks with `checkValidation(req, res)`.\n\n**`taskRoutes.ts`** — Removed `NextFunction`/`validationResult` imports, deleted the local `handleValidationErrors` middleware, added `checkValidation` from `routeHelpers`. Used `checkValidation` in both `POST /` and `PUT /:id`.\n\nAll 9 route tests pass; the 3 pre-existing failures (date/TTL timing) are unrelated.",
+  "toolCallCount": 25,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_4881c78ffab74140b31b5e4d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_579186cd23e04ae9a009ac88",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_470a6a784f804d8abf4cc681",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_19879b33faf44331a16dd27a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f808f2c9962c4587b5685f8e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "task",
+      "callId": "call_69c789cc3c73494d9d1bdc1d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_7fd38a321fc64532a7c8eaea",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_823437810dd14f2883b5a911",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_e2c6f330285b48e9b7b1143a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_12c1c82c57ff4b01badedd27",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_f36bdd22b63240a18afe60ef",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_babb9250a68e466598f9e070",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_c99377b48e7f4c90a611cb01",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_a13e9bad0a6c40f2893f633f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_9ab032f725d74ceabc3bf404",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_1c05b532670e4ef6ac0b6ad9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_2f222d069cb24cbd84b997a6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_d8f598cbdd7d404ab0cd9b09",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_1b4cc3d0e9ae4d42b3d5719a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_253b7d9e9d214dd486948ac0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_c6450f13c9c5456a87f691bc",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_2d017dd89ed94c1abaea78a5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2b93c4bc3e4d4a51ae5d5044",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_7d95ef8b14014382a8b2e8de",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5a02c02039384b9187792baf",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 1,
+    "status": "partially_correct",
+    "filesFound": [
+      "src/routes/taskRoutes.ts",
+      "src/routes/tagRoutes.ts",
+      "src/middleware/errorHandler.ts"
+    ],
+    "filesExpected": [
+      "src/routes/taskRoutes.ts",
+      "src/routes/tagRoutes.ts",
+      "src/middleware/errorHandler.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "refactor",
+      "duplication",
+      "shared",
+      "error handling",
+      "behavior"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": [
+      "src/routes/taskRoutes.ts",
+      "src/routes/tagRoutes.ts",
+      "src/middleware/errorHandler.ts"
+    ]
+  },
+  "failureClassification": {
+    "category": "insufficient_signal",
+    "reason": "score 1, fileRatio 1, conceptRatio 0; no dominant failure pattern.",
+    "proposedFix": "Collect more data or adjust classification thresholds."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T04:37:41.945Z"
+}

@@ -1,0 +1,267 @@
+{
+  "taskId": "BACKEND-EASY-01",
+  "category": "code-modification",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 48815,
+    "output": 10685,
+    "reasoning": 0,
+    "total": 1009836,
+    "cacheWrite": 0,
+    "cacheRead": 950336,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 234212,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Done. Here's a summary of the changes:\n\n### Problem\nThe `validationResult` check lived **inside the route handler** (`taskRoutes.ts:97-101`), meaning the handler was always invoked even when validation failed — validation was \"too late.\"\n\n### Fix (`src/routes/taskRoutes.ts`)\n1. **Added `handleValidationErrors` middleware** (line 10-17) — a proper Express middleware that checks `validationResult(req)` and short-circuits with 400 + error array before the handler runs.\n2. **Appended it to `createTaskValidation`** (line 26) — so it runs as the last step of validation, before the handler is ever called.\n3. **Removed the inline `validationResult` check** from the `POST /` handler (was lines 97-101) — no longer needed.\n\n### Tests (`tests/taskRoutes.test.ts` — new file)\n- `should reject empty title with 400` — sends `title: \"\"`\n- `should reject missing title with 400` — omits `title` entirely\n- `should reject whitespace-only title with 400` — sends `title: \"   \"`\n- `should create a task with valid title` — sends valid title, expects 201\n\nAll 4 tests pass. The 2 pre-existing failures (`date.test.ts`, `modules.test.ts`) are unrelated.",
+  "toolCallCount": 34,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_3ccd7f6a2a28499da828729f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_9116cd51497342c5bf78267e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_677c06a9356f45179fb61eb2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_4e1af9b8ab104bdc8d611a13",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ce806eab89e64b14b31c6dda",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_9d24240e175a49799106a071",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_07259547b46a449aa2a621e4",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_9ad40530ffbc4b90965e0c19",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_d6c668dacda14f78a0d371c2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_2864a5d8126b47c5a487388b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_56857384753d40459411c744",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_160551c1ca8b4184980b3ecb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "write",
+      "callId": "call_ac1fe1ce8cdd4b11a7583da9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_a4ddaa50f7ba4e7985c771a2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_c233080cee8f43e2bc06dfb1",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_eb90f52a8e9c4b9799b70c7d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_9af22da850c44a61b1532ef1",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_d6436d4649004d1d8ca9e5ff",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e279a4a9ec214fabadfa72e2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a96b5b00b37140619a5cf0ee",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_0719728b25b347baa84bd18b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_80ff54815dbf4c0994b97931",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_657e01543d804bc798658d4c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b90db15c76aa4fb7984556a6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3867ed7b3dd04e49935c5712",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_76dafdcc53864c9e9fd26548",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "write",
+      "callId": "call_3876e8f751b14d4dbaaba7f4",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_8ef290bede4641b58e8c2ad2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "write",
+      "callId": "call_62b58f8e7f374ee089bf7d14",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_6d9bb4d722f84312a4620b3b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_789b2feafc2041ceb83271cd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_948f0dd80b16463cb9276e85",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_72f24314535043a6895fefa0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_3f4541a919aa4226b8f3fcda",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "filesExpected": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "validation",
+      "400",
+      "task title",
+      "reject"
+    ],
+    "conceptsExpected": [
+      "validation",
+      "400",
+      "task title",
+      "reject"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [
+      "src/routes/taskRoutes.ts",
+      "tests/taskRoutes.test.ts"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "tests/taskRoutes.test.ts"
+    ],
+    "goldImpactFiles": [
+      "src/routes/taskRoutes.ts"
+    ]
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-04T17:35:40.526Z"
+}

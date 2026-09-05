@@ -1,0 +1,58 @@
+[
+  {
+    "id": "EXT-HARD-01",
+    "domain": "external-knowledge",
+    "difficulty": "hard",
+    "repository": "codeatlas",
+    "commit": "HEAD (in-tree monorepo; uses vitest)",
+    "description": "Verify the repo's vitest usage against the CURRENT upstream documentation and identify deprecated patterns. Requires web research (Config C/D).",
+    "expected_behavior": "The agent researches the current vitest docs (web-search + web-fetch), then reports which of the repo's vitest usages are current vs deprecated, citing both the repo files and the docs.",
+    "files_likely_involved": ["vitest.config.ts", "vitest.benchmark.config.mts", "package.json"],
+    "external_knowledge_required": true,
+    "external_knowledge_note": "Current vitest configuration API and deprecation status for project references / workspace / benchmark mode.",
+    "tools_allowed": ["web-search", "web-fetch"],
+    "skill": null,
+    "prompt": "This repository configures the vitest test runner in two places. Review those configurations and, using the current vitest documentation (not memory), determine whether any of the options they use are deprecated, renamed, or behaving differently in the current major version. For each finding, cite the specific repo file and the upstream doc you checked. Do not make changes — this is an assessment. If everything is current, say so explicitly and cite what you verified.",
+    "success_criteria": [
+      "Checked the repo's vitest config files",
+      "Researched current vitest docs via web tools (cited)",
+      "Each finding maps (repo file, upstream doc) OR states 'all current' with citations",
+      "No edits made (assessment task)"
+    ],
+    "regression_tests": [],
+    "evaluation_method": "Automated scoring from expected hits (files + concepts like 'deprecated'/'workspace'/'docs'); manual check that web citations are real, current URLs.",
+    "expected_files": ["vitest.config.ts", "vitest.benchmark.config.mts"],
+    "expected_concepts": ["vitest", "deprecated", "workspace", "documentation", "config"],
+    "gold_impact_files": [],
+    "forbidden_changes": [],
+    "max_seconds": 900
+  },
+  {
+    "id": "EXT-EXPERT-01",
+    "domain": "external-knowledge",
+    "difficulty": "expert",
+    "repository": "codeatlas",
+    "commit": "HEAD (in-tree monorepo)",
+    "description": "Research the current recommended migration path for a package manager feature the repo relies on, and assess whether the repo's usage would break. Needs web research.",
+    "expected_behavior": "The agent researches current upstream guidance, assesses the repo's existing usage against it, states whether a change is needed, and (if so) proposes the minimal change — without inventing APIs.",
+    "files_likely_involved": ["pnpm-workspace.yaml", ".npmrc", "package.json"],
+    "external_knowledge_required": true,
+    "external_knowledge_note": "Current pnpm workspace/settings behavior and any deprecations affecting the options this repo uses.",
+    "tools_allowed": ["web-search", "web-fetch"],
+    "skill": null,
+    "prompt": "This project is a pnpm workspace and relies on several pnpm/package-manager settings at the repository root. Using the current upstream documentation, assess whether config would break or behave differently in the current recommended version of the tool. If a change is warranted, propose the minimal one; if not, say so with evidence. For anything you cite, give the real upstream URL you actually checked.",
+    "success_criteria": [
+      "Researched current pnpm behavior via web tools with real citations",
+      "Assessment distinguishes 'current' vs 'needs change' with evidence",
+      "Any proposed change is minimal and sourced",
+      "No invented APIs/options"
+    ],
+    "regression_tests": [],
+    "evaluation_method": "Automated scoring from expected hits (files + concepts like 'pnpm','workspace','deprecated','documentation'); manual review that web citations are real.",
+    "expected_files": ["pnpm-workspace.yaml", ".npmrc"],
+    "expected_concepts": ["pnpm", "workspace", "documentation", "deprecated", "config"],
+    "gold_impact_files": [],
+    "forbidden_changes": [],
+    "max_seconds": 900
+  }
+]

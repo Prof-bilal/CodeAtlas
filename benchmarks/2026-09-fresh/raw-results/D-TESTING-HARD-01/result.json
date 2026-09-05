@@ -1,0 +1,142 @@
+{
+  "taskId": "TESTING-HARD-01",
+  "category": "testing",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 28961,
+    "output": 3566,
+    "reasoning": 0,
+    "total": 317327,
+    "cacheWrite": 0,
+    "cacheRead": 284800,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 150832,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "All `task.test.ts` tests pass (17/17). The 3 failures in other test files are pre-existing and unrelated to this change.\n\n---\n\n**What was wrong:** The old `findAll` ownership test mocked `taskRepository.findByUser` to return a mix of own-user and other-user tasks. But the real `findByUser` already filters by `WHERE user_id = $1` at the SQL level — it would never return another user's tasks. So the test was only exercising the JS defense-in-depth filter (`tasks.filter(t => t.userId === userId)` at `taskService.ts:78`), and if that filter were deleted, the mock would still return the same data, making the test pass anyway.\n\n**What I changed** (`tests/task.test.ts:180-196`):\n- Mock `findByUser` to return **only** the user's own tasks (matching real DB behavior)\n- Assert that `findByUser` is called with the correct `mockUserId` — so if the userId isn't passed through, the test fails\n\n**Verification:** Temporarily removed both the `userId` argument and the JS filter from the service → 2 tests fail. Restored → all 17 pass.",
+  "toolCallCount": 13,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_b82533e977b9471c9ad1646b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3cd3f9853a5840b387b80577",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c5b2f9fc1a2542699bc4b6c7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2a638990ed054490bd866588",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_91624bea856d41848f6a5957",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_9e3788d9b7f44f599b8eb3bc",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_7c7e0eef339f44e0945f985d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_724cf6ed94f64bdda5c69629",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_8c04ca18e2a1488eb10efa2a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_61c37f2e7d98441ea8d7a30c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_7e20f29fa5c24f78898c6099",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_bbddd0ab6507464cbe55c0f3",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_488b999eb80e4a74b3ee7007",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 1,
+    "status": "partially_correct",
+    "filesFound": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts"
+    ],
+    "filesExpected": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "ownership",
+      "test"
+    ],
+    "conceptsExpected": [
+      "ownership",
+      "test",
+      "weak",
+      "cross-user",
+      "enforcement"
+    ],
+    "conceptRatio": 0.4,
+    "citedFiles": [
+      "tests/task.test.ts"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "tests/task.test.ts"
+    ],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "insufficient_signal",
+    "reason": "score 1, fileRatio 1, conceptRatio 0.4; no dominant failure pattern.",
+    "proposedFix": "Collect more data or adjust classification thresholds."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T16:46:09.780Z"
+}

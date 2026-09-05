@@ -1,0 +1,232 @@
+{
+  "taskId": "REFACTORING-MEDIUM-01",
+  "category": "code-modification",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 38981,
+    "output": 6168,
+    "reasoning": 0,
+    "total": 623773,
+    "cacheWrite": 0,
+    "cacheRead": 578624,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 210944,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Done. Here's what changed:\n\n**`routeHelpers.ts`** — Added `wrapAsync(handler)`, a try/catch wrapper that catches errors and returns `{ error }` with the appropriate status code. This is the error-only variant of `asyncHandler` (which also enforces `req.user` auth).\n\n**`authRoutes.ts`** — Replaced all 6 handlers' duplicated inline try/catch, `validationResult` checks, and `req.user` null checks with the shared helpers:\n- `wrapAsync` for error wrapping (all 6 routes)\n- `checkValidation` for validation (register, login)\n- Removed redundant `req.user` null checks on `/me` and `/change-password` (already handled by the `authenticate` middleware in the chain)\n- Removed `validationResult` import (now handled by `checkValidation`)\n\nAll 47 route-related tests pass. The 2 pre-existing failures in `date.test.ts` and `modules.test.ts` are unrelated.",
+  "toolCallCount": 28,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_01aab445b2ed444382b24b96",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_d020094fe3ad4768b5fc19e8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_45ff79a12b944d11a0ed63a4",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_69b1eb3ca558440c926e8db9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a067322871764146bf7c2e74",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_c573fb96c6a94c2ebe6b8775",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c5ec93004e644ac5b00e4638",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ee809a1f6ce5421c90527269",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_eafa153abecd4076bf325d48",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "grep",
+      "callId": "call_74e17e944bc949ada064d966",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_65c87f332959461cab9a1ca3",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_00931a2298964d5aa9d48ddd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c83c4e3dfe4b47b8ac4a1134",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_9b7bd44f0899488b886570c8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_de85bba249cb4e7586b06182",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_71365815b2c34d2193145ab1",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_86401674871c45cdbfce469d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_9837fbe1481b4af4a72f7f2f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_db7dcc99d8b140e2b848018f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_a4d0aff2c6e84c78979a9668",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_0701d9f56184409bbac95b8c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_181383ec8eca4571807efdce",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_3746a2075f4047b3a1bf767f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_378c7be4db1e41b1b9ee5cdc",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8b4d16c3c4534c6d8d802321",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_068eef196478464bbf19fb52",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_94168d62c518479f9d5a6344",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_753c2b5d8dd54f52ac742332",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 1,
+    "status": "partially_correct",
+    "filesFound": [
+      "src/middleware/errorHandler.ts"
+    ],
+    "filesExpected": [
+      "src/routes/taskRoutes.ts",
+      "src/routes/tagRoutes.ts",
+      "src/middleware/errorHandler.ts"
+    ],
+    "fileRatio": 0.33,
+    "conceptsFound": [
+      "duplication",
+      "shared",
+      "error handling"
+    ],
+    "conceptsExpected": [
+      "refactor",
+      "duplication",
+      "shared",
+      "error handling",
+      "behavior"
+    ],
+    "conceptRatio": 0.6,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": [
+      "src/routes/taskRoutes.ts",
+      "src/routes/tagRoutes.ts",
+      "src/middleware/errorHandler.ts"
+    ]
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0.33 with 623,773 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T05:41:41.098Z"
+}

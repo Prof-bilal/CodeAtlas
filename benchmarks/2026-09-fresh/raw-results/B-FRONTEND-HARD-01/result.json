@@ -1,0 +1,165 @@
+{
+  "taskId": "FRONTEND-HARD-01",
+  "category": "code-modification",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 47648,
+    "output": 32420,
+    "reasoning": 0,
+    "total": 488452,
+    "cacheWrite": 0,
+    "cacheRead": 408384,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 839421,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "## Summary\n\n### State flow traced\n\n```\nAPI.list() → Promise<TaskItem[]> → .then(setTasks) → setTasks(value)\n                                                          ↓\n                                              replaces entire state array\n```\n\n1. **Mount** (`useEffect`, line 22): `API.list().then(setTasks)` loads seed data into `tasks`\n2. **Add** (line 26): `setTasks((prev) => [...prev, next])` — uses functional updater, correctly reads latest state\n3. **Reload** (line 33): `API.list().then(setTasks)` — passes `setTasks` directly, calling `setTasks(fresh)` which **wholesale replaces** the state array\n\n### Root cause\n\n`src/App.tsx:34` (original): `API.list().then(setTasks)` calls `setTasks(freshValue)`, replacing the entire `tasks` state. When a user adds a task locally via `add()` and then triggers a background `reload()`, the API response overwrites the locally-added task. The locally-added task vanishes — the UI shows stale values (only seed tasks) even though the API returned fresh data.\n\n### Fix applied (line 33–40)\n\nChanged `reload` to use a **functional updater** that merges the fresh API response with existing state:\n\n```ts\nAPI.list().then((fresh) =>\n    setTasks((prev) => [\n        ...fresh,                                    // API is source of truth for known IDs\n        ...prev.filter((p) => !fresh.some((f) => f.id === p.id)), // preserve locally-added tasks\n    ]),\n);\n```\n\n- API data takes precedence for matching task IDs (server is authoritative)\n- Locally-added tasks (unique IDs from `Date.now()`) are preserved across reloads\n- The API/client contract is unchanged — `API.list()` still returns `TaskItem[]`, the client still calls `.then()`",
+  "toolCallCount": 18,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_4598be0663824716864b2da5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_cd9a0a5b38c94eaba66d5e07",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_447c40c597624b4db5c307df",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_de4af72742aa4dbea7764669",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_c360474fcf2d43f38fc9ae7d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_531bdbc2d66b4a5ca4266f52",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5c9d783346844a8db968bf8f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_232e75183e27403ba03916ec",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_cb660af3f5134a239b5a4857",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a24521cd0c2342888bbfdf3b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_0ff3e977acaf40519fa4c911",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_588e783cfdf3435ab3e13c21",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_a8a67fe45cb846a2ad602435",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e2d96f3eb1b043cc9f8290f0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_27ff5f56545c4017ad1b5196",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_f0a2f7b779714a3d88ef382d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_8621142fa6b24993bb51a5c1",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_9ccbe0729174403daba4868d",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 1,
+    "status": "partially_correct",
+    "filesFound": [],
+    "filesExpected": [],
+    "fileRatio": 0,
+    "conceptsFound": [
+      "state",
+      "stale",
+      "root cause"
+    ],
+    "conceptsExpected": [
+      "state",
+      "hooks",
+      "stale",
+      "root cause",
+      "render"
+    ],
+    "conceptRatio": 0.6,
+    "citedFiles": [],
+    "hallucinatedFiles": [
+      "src/App.ts"
+    ],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 488,452 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T03:21:40.284Z"
+}

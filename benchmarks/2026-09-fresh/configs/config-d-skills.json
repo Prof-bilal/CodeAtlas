@@ -1,0 +1,19 @@
+{
+  "id": "fresh-2026-09-config-d-skills",
+  "name": "2026-09 Fresh — Config D: CodeAtlas + Tools + Skills",
+  "agent": "opencode",
+  "model": "<set-me: e.g. opencode/your-model-free>",
+  "modes": ["codeatlas"],
+  "taskTimeoutMs": 840000,
+  "runsPerTask": 5,
+  "harness": {
+    "label": "D — CodeAtlas + Tools + Skills",
+    "codeatlas": true,
+    "tools": true,
+    "skills": true,
+    "toolsConfig": "configs/tools.json",
+    "skillsDir": "skills",
+    "description": "The complete harness: CodeAtlas context + selected tools + are domain skill injected into the prompt via the benchmark Skills loader. Same everything else as Config C; only that a relevant work-flow skill is added."
+  },
+  "budgetDefaults": { "opencode": { "maxDurationMs": 840000 } }
+}

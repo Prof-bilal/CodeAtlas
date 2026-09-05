@@ -1,0 +1,159 @@
+{
+  "taskId": "BACKEND-MEDIUM-01",
+  "category": "code-modification",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 45068,
+    "output": 44415,
+    "reasoning": 0,
+    "total": 325643,
+    "cacheWrite": 0,
+    "cacheRead": 236160,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 776863,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Let me check the app setup and git log for clues.",
+  "toolCallCount": 17,
+  "toolCalls": [
+    {
+      "name": "todowrite",
+      "callId": "call_25507e12bc9f44c19a61fae2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "task",
+      "callId": "call_bc24e986a5354d5c8b0b5c47",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_294e05f9eef243dea980f8e2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_bba80486494c4986bc4c6d3e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_9b6f7aa125a4438eb465f840",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_98f158dfb98948d2bedaed54",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_91e7947580a94bcc848faf13",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_da529550504f4a2b998739d6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_77488aa0cf8a49c0bfb124f5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_da8b2e8f716641f1b5e489e6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_0592e6fd228e41a09d91eb87",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_4d623e45b44143599e2f266c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_42d925826c4f42529c9b25ec",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_0618bcf689e8438cbedb86f3",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a264dce9096e4543996f57ce",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_76d6c1dd94e544839417e028",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_95c987b1481649f68b3ae25d",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 0,
+    "status": "incorrect",
+    "filesFound": [],
+    "filesExpected": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts",
+      "src/middleware/auth.ts"
+    ],
+    "fileRatio": 0,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "ownership",
+      "authorization",
+      "filter",
+      "userId"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts"
+    ]
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 325,643 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T03:36:38.427Z"
+}

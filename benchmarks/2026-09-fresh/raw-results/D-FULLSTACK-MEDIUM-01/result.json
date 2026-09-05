@@ -1,0 +1,153 @@
+{
+  "taskId": "FULLSTACK-MEDIUM-01",
+  "category": "feature-planning",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 28178,
+    "output": 3822,
+    "reasoning": 0,
+    "total": 233920,
+    "cacheWrite": 0,
+    "cacheRead": 201920,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 240128,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "After thorough analysis, I've found that **this endpoint already exists** and is well-implemented. Let me present the findings.\n\n---\n\n## Analysis\n\n### Existing endpoint: `GET /benchmarks/:id/status`\n\n| Aspect | Status | Location |\n|--------|--------|----------|\n| Route registration | Done | `apps/server/src/routes.ts:532-535` |\n| Handler with validation | Done | `apps/server/src/routes.ts:345-359` |\n| Input validation (400) | Done | Trim + regex for whitespace/control chars |\n| Not-found (404) | Done | Via `service.getStatus()` returning `Result.fail` |\n| Service layer call | Done | `BenchmarkService.getStatus()` → `BenchmarkStore` |\n| Happy-path test | Done | `apps/server/tests/api.test.ts:298-323` |\n| Validation test | Done | `apps/server/tests/api.test.ts:325-335` |\n\n### One gap identified\n\nThe `BenchmarkStatus` interface (`packages/core/src/ports/benchmark.port.ts:565`) includes an optional `currentTask` field, but neither the service method nor the route handler populate it. During an active run, the `JobRecord.currentTask` is updated via `JobContext.setCurrentTask()`, so the data exists at the job layer but isn't surfaced through the status endpoint.\n\n### Proposed plan\n\nSince the endpoint already exists with validation, service integration, and tests, the only meaningful improvement is to **surface `currentTask`** from the active job into the status response:\n\n1. **`apps/server/src/routes.ts`** — Modify `suiteStatus` to look up the active job via `deps.jobs.findBySuite(suiteId)` and include `currentTask` in the response when available.\n\n2. **`apps/server/tests/api.test.ts`** — Add a test that verifies `currentTask` is present during a running benchmark and absent for a completed one.\n\n3. **Run tests** — `pnpm test` in `apps/server` to verify everything passes.\n\nThis is a minimal, scoped change that follows existing conventions exactly.\n\n---\n\nWould you like me to proceed with this plan, or were you expecting a different/additional endpoint?",
+  "toolCallCount": 14,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_e9f6b0e0f3c04f8a8f0af4d9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_68d9dcc50608428cbc819dec",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_1ae167d3954043fc836133f5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_bad77ac09c8648529d835662",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c388f1117e67429d84582aa2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_4d004233ffef43c0948e7098",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_1e4cc2a46438401989289461",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "grep",
+      "callId": "call_d0bba385afbe4e729c31c69b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b30800940af34f35b4fe0fbf",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_63f4c8d3081641cdae3b9a8e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_46e333e74f364c159aaf8446",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e28a82d58a824f3abdb6762d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5a8a92f3c95a4849a300dfc9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "invalid",
+      "callId": "call_41270cecf1194deab177d8d3",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "apps/server/src/routes.ts",
+      "apps/server/src/benchmark.ts"
+    ],
+    "filesExpected": [
+      "apps/server/src/routes.ts",
+      "apps/server/src/benchmark.ts",
+      "packages/benchmark/src/store.ts"
+    ],
+    "fileRatio": 0.67,
+    "conceptsFound": [
+      "endpoint",
+      "route",
+      "status",
+      "validation",
+      "service"
+    ],
+    "conceptsExpected": [
+      "endpoint",
+      "route",
+      "progress",
+      "status",
+      "validation",
+      "service"
+    ],
+    "conceptRatio": 0.83,
+    "citedFiles": [
+      "packages/core/src/ports/benchmark.port.ts"
+    ],
+    "hallucinatedFiles": [
+      "src/routes.ts",
+      "tests/api.test.ts"
+    ],
+    "wrongFiles": [
+      "packages/core/src/ports/benchmark.port.ts"
+    ],
+    "goldImpactFiles": [
+      "apps/server/src/routes.ts"
+    ]
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T16:23:08.711Z"
+}

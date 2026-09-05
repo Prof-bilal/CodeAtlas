@@ -1,0 +1,100 @@
+{
+  "taskId": "ARCH-EASY-01",
+  "category": "repository-understanding",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 36196,
+    "output": 981,
+    "reasoning": 0,
+    "total": 91449,
+    "cacheWrite": 0,
+    "cacheRead": 54272,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 34682,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "## How Consumers Read Indexed Context\n\n**Single read interface:** The `createContextSDK` factory function in `@atlas/sdk` (`packages/sdk/src/context/sdk.ts:890`). Every consumer — CLI, MCP server, VS Code extension, and agents — calls this to obtain a `ContextSDK` façade. Consumers import only `@atlas/sdk`; they never reach for `@atlas/search`, `@atlas/storage`, or `@atlas/summary` directly.\n\n```ts\nimport { createContextSDK } from \"@atlas/sdk\";\nconst context = createContextSDK({ repositoryPath: \"/path/to/repo\" });\nconst hits = context.search.search(\"authentication\");\n```\n\n**Where persistent context lives:** `.codeatlas/context.db` inside the repository root — a SQLite database written and owned by `@atlas/storage` (`ContextStore` implementing `ContextDatabasePort`). The database is a **cache of the repository** (deletable and rebuildable), not an authoritative store.\n\n**Dependency direction:**\n\n```\ncli / mcp / extension / agents\n        │  (imports only @atlas/sdk)\n        ▼\n    createContextSDK  (@atlas/sdk)\n        │  (imports feature packages)\n        ▼\n    ReadRepositories / WriteRepositories\n        │\n        ▼\n    ContextDatabasePort  ←  @atlas/storage implements\n        │\n        ▼\n    .codeatlas/context.db  (SQLite)\n```\n\n**Key files inspected:**\n- `docs/CONTEXT_SDK.md:4-6` — \"This is the single interface consumers use to access repository context — CLI, MCP, editors, and agents must not touch the SQLite database directly.\"\n- `docs/ARCHITECTURE.md:332-338` — dependency direction: `cli → sdk → feature packages → core → shared`.\n- `docs/MODULES.md:273-288` — Context API/SDK ownership definition.\n- `docs/CONTEXT_STORAGE.md:79-80` — `@atlas/storage` owns the context database.\n- `packages/sdk/src/context/sdk.ts:890-892` — the concrete `createContextSDK` seam consumers call.\n\nThe layering is strict: consumers → `ContextSDKFacade` → `ReadRepositories`/`WriteRepositories` → `ContextDatabasePort` → `@atlas/storage` → SQLite.",
+  "toolCallCount": 5,
+  "toolCalls": [
+    {
+      "name": "read",
+      "callId": "call_6ad35133a7d54dd0918ce4e7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_fa87bc1b73094bca930ad5bd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_30c414bc1eb049ebaf91e5f2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_03c2238fd0e344c0928afa63",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_4499dbba28dc4c219d589793",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "packages/sdk/src/context/index.ts",
+      "packages/storage/src/index.ts"
+    ],
+    "filesExpected": [
+      "packages/sdk/src/context/index.ts",
+      "packages/storage/src/index.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "SDK",
+      "context",
+      "storage",
+      "read interface",
+      "dependency"
+    ],
+    "conceptsExpected": [
+      "SDK",
+      "context",
+      "storage",
+      "read interface",
+      "dependency"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [
+      "packages/sdk/src/context/sdk.ts",
+      "docs/CONTEXT_SDK.md",
+      "docs/ARCHITECTURE.md",
+      "docs/MODULES.md",
+      "docs/CONTEXT_STORAGE.md"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "packages/sdk/src/context/sdk.ts",
+      "docs/CONTEXT_SDK.md",
+      "docs/ARCHITECTURE.md",
+      "docs/MODULES.md",
+      "docs/CONTEXT_STORAGE.md"
+    ],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T16:52:44.177Z"
+}

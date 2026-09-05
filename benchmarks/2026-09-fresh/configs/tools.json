@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "note": "Selected external tools for the 2026-09 fresh benchmark, Config C and D. Keep the set small (3). Selection rationale, per-tool documentation, and 'do not duplicate CodeAtlas' analysis are all recorded below.",
+  "rule": "Repository intelligence (code search, symbol search, dependency analysis, code navigation, docs retrieval over the LOCAL repo) is already provided by CodeAtlas and is NOT duplicated here. External tools are restricted to knowledge OUTSIDE the repo under test.",
+  "tools": [
+    {
+      "id": "web-search",
+      "mcp": "tavily-mcp",
+      "tool": "Web Search",
+      "capability": "Search the web for documentation, package APIs, technical references, and known issues.",
+      "purpose": "Give the agent current, external knowledge it cannot get from the repo: framework/package APIs, migration guides, library behavior, troubleshooting known bugs.",
+      "why_selected": "Production-grade search API with clean LLM-oriented results (recentness + relevance), wide adoption, low fixture cost, and a maintained MCP server. Directly serves the EXTERNAL KNOWLEDGE domain that CodeAtlas cannot cover (CodeAtlas is repository-local by design).",
+      "alternatives_considered": [
+        "Brave Search MCP — official-ish, needs API key; similar capability, narrower result metadata.",
+        "DuckDuckGo/exa MCP servers — less maintained or lower result quality signals."
+      ],
+      "expected_benefit": "Higher correctness on external-knowledge tasks; faster, cheaper than the model guessing APIs from memory.",
+      "potential_downside": "Free-tier rate limits; requires an API key (CI/benchmark runner must have it); can surface stale or SEO-polluted results if not steered.",
+      "token_cost": "LOW — only top-k results are returned; keep max_results = 5.",
+      "latency_cost": "LOW-to-MEDIUM — one HTTP round trip, typically < 1s.",
+      "failure_modes": ["Rate limited (429)", "Result ordering biased to recency over relevance", "Needs keyword steering to avoid irrelevant hits"],
+      "required_credentials": ["TAVILY_API_KEY"],
+      "config": { "maxResults": 5, "searchDepth": "advanced" }
+    },
+    {
+      "id": "web-fetch",
+      "mcp": "fetch",
+      "tool": "Web Fetch / browser-lite",
+      "capability": "Retrieve a specific URL and extract its readable main content.",
+      "purpose": "Fetch the exact documentation/issue/API page identified by web-search (or by a known URL) and read it, converting HTML to markdown text.",
+      "why_selected": "High value, low latency, tiny token footprint. A coding agent constantly needs the exact body of a doc page, not just a snippet. Replaces heavyweight browsing for the common case.",
+      "alternatives_considered": [
+        "Playwright MCP browser — full browser interaction; much higher latency + large context dumps; only justified if JS-rendered interactive pages prove necessary. DEFERRED, re-evaluate only if page-rendering failures dominate."
+      ],
+      "expected_benefit": "Precise, correct external info; avoids the model inventing API details; unblocks 'follow the link' workflows on top of web-search.",
+      "potential_downside": "Readability extraction can mangle code-heavy/JS-rendered pages; must be restricted to a safe URL allowlist to avoid SSRF and prompt-injection via fetched page text.",
+      "token_cost": "MEDIUM — a full doc page can be 2–8k tokens; the allowlist keeps pages bounded.",
+      "latency_cost": "LOW-to-MEDIUM — one HTTP fetch + readability pass.",
+      "failure_modes": ["JS-rendered page returns empty content", "Redirect loops", "Timeout on large pages", "Prompt-injection from untrusted page content (mitigate: separate tool turn, strip instructions)"],
+      "required_credentials": ["none"],
+      "config": { "maxPageBytes": 200000, "allowedHosts": ["developer.mozilla.org", "react.dev", "nextjs.org", "raw.githubusercontent.com", "github.com", "www.npmjs.com", "npmjs.com", "axios-http.com", "nodejs.org"] }
+    },
+    {
+      "id": "github",
+      "mcp": "github",
+      "tool": "GitHub",
+      "capability": "Query external GitHub repositories: issues, PRs, releases, tags, code search on other repos, repo metadata.",
+      "purpose": "External open-source research: reproduce a known issue, learn an upstream API from a pinned repo, check a library's current release/API, or confirm a regression against upstream. Used only for repositories NOT the one under local test.",
+      "why_selected": "The benchmark's EXTERNAL KNOWLEDGE domain benefits strongly from ground-truth upstream access, and GitHub is the canonical host. Complements CodeAtlas by covering code that ISN'T on disk (CodeAtlas is local-only).",
+      "alternatives_considered": [
+        "Shell `gh` CLI — capability overlap, but not an MCP tool the agent can call uniformly in the harness; more brittle across runners.",
+        "Sourcegraph MCP — powerful code search but heavier to self-host/set up; larger token cost."
+      ],
+      "expected_benefit": "High confidence on external-knowledge and 'check upstream behavior' tasks; lets the agent differ between a local bug and an upstream behavior.",
+      "potential_downside": "Requires a GitHub token (rate limits); overlaps slightly with CodeAtlas for ALREADY-CLONED repos — the benchmark explicitly restricts it to external repos only to avoid double retrieval.",
+      "token_cost": "LOW-to-MEDIUM — summaries and file bodies are scoped; keep file reads small.",
+      "latency_cost": "MEDIUM — multiple GitHub REST/GraphQL round trips.",
+      "failure_modes": ["Rate limiting (unauthenticated)", "Large monorepo responses can flood context", "Code search query syntax errors"],
+      "required_credentials": ["GITHUB_TOKEN"],
+      "config": { "restrictToExternalRepos": true }
+    }
+  ],
+  "explicitly_not_selected": [
+    {
+      "id": "playwright",
+      "reason": "High latency and large context cost; only valuable for interactive JS-rendered workflows. Not needed by the seed task set. Re-evaluate only if page-render failures dominate web-fetch results."
+    },
+    {
+      "id": "extra-search-servers (exa, duckduckgo, firecrawl)",
+      "reason": "Niche value, lower maintenance/adoption, or token-bloat — not justified over the three selected tools for the target domains."
+    },
+    {
+      "id": "code-search / repo-intelligence MCPs",
+      "reason": "Repository code intelligence is CodeAtlas's job. Adding redundant code-search MCP servers would double retrieval and muddy the incremental-value comparison (Phase 13)."
+    }
+  ]
+}

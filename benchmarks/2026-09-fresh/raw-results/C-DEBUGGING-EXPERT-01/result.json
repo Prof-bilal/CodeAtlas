@@ -1,0 +1,96 @@
+{
+  "taskId": "DEBUGGING-EXPERT-01",
+  "category": "bug-investigation",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 27008,
+    "output": 33691,
+    "reasoning": 0,
+    "total": 124315,
+    "cacheWrite": 0,
+    "cacheRead": 63616,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 384246,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "",
+  "toolCallCount": 7,
+  "toolCalls": [
+    {
+      "name": "todowrite",
+      "callId": "call_c0d9154a27de40d0b7023b1f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "task",
+      "callId": "call_562aa1d3a53c4ed79eb1b2aa",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_7b33a61d55da40a8952bd744",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_019b4c60fc1d4d3785d06bb7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3b80fc0d4662438581e015f8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e6873951df9c419c89f130d4",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c46e84cbd61f44ae9896e9b9",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 0,
+    "status": "failed",
+    "filesFound": [],
+    "filesExpected": [
+      "src/services/authService.ts",
+      "src/middleware/auth.ts",
+      "src/utils/cache.ts"
+    ],
+    "fileRatio": 0,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "logout",
+      "cache",
+      "invalidate",
+      "session",
+      "authorization"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 124,315 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T05:29:32.207Z"
+}

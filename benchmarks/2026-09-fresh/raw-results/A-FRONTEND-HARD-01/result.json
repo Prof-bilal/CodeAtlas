@@ -1,0 +1,106 @@
+{
+  "taskId": "FRONTEND-HARD-01",
+  "category": "code-modification",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 16154,
+    "output": 7297,
+    "reasoning": 0,
+    "total": 108507,
+    "cacheWrite": 0,
+    "cacheRead": 85056,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 150096,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "No test files exist in this fixture. The fix is complete.\n\n**Summary**:\n\n- **Bug**: `App.tsx:31` — `API.list().then(setTasks)` in the `add` handler overwrites the optimistic state (`setTasks((prev) => [...prev, next])` on line 29) with the raw API response, discarding the just-added task.\n- **Fix**: Removed the background `API.list().then(setTasks)` call from `add`. The optimistic update on line 29 is sufficient; `reload` handles server-fresh data.\n- **No API/client contract change**: `API.list()` and its return type are untouched.",
+  "toolCallCount": 9,
+  "toolCalls": [
+    {
+      "name": "read",
+      "callId": "call_253e46a2f5ee45429f58598f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_c36f0631c3794e8abe5f10d7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_64a1ba8cc06a48049786f665",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2c1f7b761b464a26accf2d38",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_babe4a2cb0d145e59d9b11ee",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e19cce0971fd488a9a550fea",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_2b705cefc72146219a1eec3f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_fc3e6f8e1fc94f6bbd790e7d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_3d4b713fb3d74a20a076ee93",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 1,
+    "status": "partially_correct",
+    "filesFound": [],
+    "filesExpected": [],
+    "fileRatio": 0,
+    "conceptsFound": [
+      "state"
+    ],
+    "conceptsExpected": [
+      "state",
+      "hooks",
+      "stale",
+      "root cause",
+      "render"
+    ],
+    "conceptRatio": 0.2,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 108,507 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-04T17:31:16.413Z"
+}

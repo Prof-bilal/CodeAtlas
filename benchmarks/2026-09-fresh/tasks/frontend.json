@@ -1,0 +1,56 @@
+[
+  {
+    "id": "FRONTEND-MEDIUM-01",
+    "domain": "frontend",
+    "difficulty": "medium",
+    "repository": "codeatlas",
+    "commit": "HEAD (in-tree VS Code extension; non-React UI proxy)",
+    "description": "In-tree UI-state task (VS Code status bar) used as a frontend-adjacent fixture until a React fixture is pinned. Status bar does not refresh after a re-index.",
+    "expected_behavior": "The status indicator updates after indexing completes; the change is minimal and UI behavior elsewhere is unchanged.",
+    "files_likely_involved": ["apps/extension/src/status-bar.ts", "apps/extension/src/extension-core.ts"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "frontend-debugging",
+    "prompt": "In this VS Code extension, the status-bar indicator can show stale 'indexing' or 'not ready' state after an indexing run has actually completed. Find where the extension updates its status UI, makes sure it is updated after a run finishes, and that a failure still reflects a failure. Keep the change small and do not alter unrelated UI.",
+    "success_criteria": [
+      "Status UI reflects completion after an indexing run",
+      "Failure states still render as failure",
+      "Change is localized to the status update path"
+    ],
+    "regression_tests": ["extension tests (if any) pass; typecheck passes"],
+    "evaluation_method": "Automated scoring from expected hits; manual review of the status update lifecycle.",
+    "expected_files": ["apps/extension/src/status-bar.ts", "apps/extension/src/extension-core.ts"],
+    "expected_concepts": ["status bar", "update", "indexing", "complete", "refresh"],
+    "gold_impact_files": ["apps/extension/src/status-bar.ts", "apps/extension/src/extension-core.ts"],
+    "forbidden_changes": [],
+    "max_seconds": 720
+  },
+  {
+    "id": "FRONTEND-HARD-01",
+    "domain": "frontend",
+    "difficulty": "hard",
+    "repository": "<pin-me: small React app>",
+    "commit": "<pin-me>",
+    "status": "needs-clone",
+    "description": "Repro of a state bug across components/hooks/API in a pinned React app. Requires a pinned React fixture (recorded in tasks/README).",
+    "expected_behavior": "The agent traces the state bug across components/hooks/API, fixes it minimally, and the app's own tests pass.",
+    "files_likely_involved": ["<to be recorded on pin>"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "frontend-debugging",
+    "prompt": "A user reports that after an interaction that triggers a background load, part of the UI shows stale values even though the API has returned fresh data. The bug is reproducible with the provided repro steps. Trace how the state flows from the API response through hooks to the rendered components, identify the root cause, and apply the smallest fix. Do not change the API/client contract.",
+    "success_criteria": [
+      "Root cause traced across the relevant components/hooks",
+      "UI reflects fresh data after the triggering interaction",
+      "The app's own tests pass",
+      "Fix does not alter unrelated flows"
+    ],
+    "regression_tests": ["app test suite green"],
+    "evaluation_method": "Automated scoring from expected hits + test outputs; manual root-cause review.",
+    "expected_files": ["<to be recorded on pin>"],
+    "expected_concepts": ["state", "hooks", "stale", "root cause", "render"],
+    "gold_impact_files": [],
+    "forbidden_changes": [],
+    "max_seconds": 900
+  }
+]

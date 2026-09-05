@@ -1,0 +1,57 @@
+{
+  "taskId": "BACKEND-MEDIUM-01",
+  "category": "code-modification",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "reasoning": 0,
+    "total": 0,
+    "cacheWrite": 0,
+    "cacheRead": 0,
+    "source": "unknown"
+  },
+  "cost": 0,
+  "durationMs": 6596,
+  "timedOut": false,
+  "exitCode": null,
+  "finalText": "",
+  "toolCallCount": 0,
+  "toolCalls": [],
+  "evaluation": {
+    "score": 0,
+    "status": "failed",
+    "filesFound": [],
+    "filesExpected": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts",
+      "src/middleware/auth.ts"
+    ],
+    "fileRatio": 0,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "ownership",
+      "authorization",
+      "filter",
+      "userId"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts"
+    ]
+  },
+  "failureClassification": {
+    "category": "tool_loop_underuse",
+    "reason": "Only 0 tool call(s) made; model stopped exploring too early (score: 0).",
+    "proposedFix": "Investigate prompt guidance or CONTEXT_GUIDANCE to encourage more tool exploration on complex tasks."
+  },
+  "error": "exit code null",
+  "stderr": "",
+  "recordedAt": "2026-09-05T05:22:14.422Z"
+}

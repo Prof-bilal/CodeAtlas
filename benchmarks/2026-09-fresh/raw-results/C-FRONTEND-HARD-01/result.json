@@ -1,0 +1,105 @@
+{
+  "taskId": "FRONTEND-HARD-01",
+  "category": "code-modification",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 57134,
+    "output": 42907,
+    "reasoning": 0,
+    "total": 299081,
+    "cacheWrite": 0,
+    "cacheRead": 199040,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 927921,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "No tests or build config exist for this fixture (pre-existing). The TypeScript check of the fixture source itself compiled cleanly — the only `tsc` error was from the monorepo root's `tsup.config.base.ts`, unrelated.\n\n---\n\n**Root cause summary:**\n\nThe original `useEffect` on line 23 passed `setTasks` directly as the `.then` callback:\n\n```js\nAPI.list().then(setTasks);  // direct value — replaces state wholesale\n```\n\nWhen a user adds a task locally (via `add`) and then clicks **Reload**, the `reload` callback correctly uses a functional updater `(prev) => [...]` to merge. But if the mount effect's `API.list().then(setTasks)` microtask fires after the user's `add` call is batched, the direct `setTasks(freshData)` **overwrites** the entire state — dropping the locally-added task. On the next render, that task is gone even though the API returned the expected fresh data.\n\n**Fix:** Changed the mount effect to use the same functional-merger pattern as `reload`, so fresh API data is applied additively without clobbering local state:\n\n```js\n// Before (line 23):\nAPI.list().then(setTasks);\n\n// After (lines 23-28):\nAPI.list().then((fresh) =>\n  setTasks((prev) => [\n    ...fresh,\n    ...prev.filter((p) => !fresh.some((f) => f.id === p.id)),\n  ]),\n);\n```\n\nThis is a one-expression change in `src/App.tsx:23` — no API/client contract changes, no new dependencies, smallest possible fix.",
+  "toolCallCount": 8,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_0aa454ed20494b6e84ae17ce",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_d3fc65450b734e80956119b8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_39a63383b1bd46c6b1b97291",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_53c529169e8c4c719a480ee1",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_0575e92e8f1545949ad11172",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_b304a6c2a62549e8951b2ea0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_3736b94b8a9e4785a9d16bb9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_92e934cc2138430393872fa3",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 1,
+    "status": "partially_correct",
+    "filesFound": [],
+    "filesExpected": [],
+    "fileRatio": 0,
+    "conceptsFound": [
+      "state",
+      "root cause",
+      "render"
+    ],
+    "conceptsExpected": [
+      "state",
+      "hooks",
+      "stale",
+      "root cause",
+      "render"
+    ],
+    "conceptRatio": 0.6,
+    "citedFiles": [],
+    "hallucinatedFiles": [
+      "src/App.ts"
+    ],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 299,081 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T05:19:59.594Z"
+}

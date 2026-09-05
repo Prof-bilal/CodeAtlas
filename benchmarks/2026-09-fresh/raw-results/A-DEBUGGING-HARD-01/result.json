@@ -1,0 +1,131 @@
+{
+  "taskId": "DEBUGGING-HARD-01",
+  "category": "bug-investigation",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 27788,
+    "output": 2520,
+    "reasoning": 0,
+    "total": 264100,
+    "cacheWrite": 0,
+    "cacheRead": 233792,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 212634,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "## Root Cause\n\n**File:** `src/repositories/taskRepository.ts`, lines 4–7 and 22–27 (original)\n\nA **module-level variable** `recentTaskRow` acts as a single-slot cache:\n\n```\nLine 4-7:   let recentTaskRow: Record<string, unknown> | undefined;\nLine 43:    recentTaskRow = row as Record<string, unknown>;   // stored after INSERT\nLine 22-27: if (recentTaskRow !== undefined) {               // checked on next call\n              const cached = recentTaskRow;\n              recentTaskRow = undefined;\n              return this.mapRowToTask(cached as any);       // returns STALE row, no INSERT\n            }\n```\n\nThe behavior is **alternating**:\n\n| Call # | `recentTaskRow` state | What happens |\n|--------|----------------------|--------------|\n| 1st `create()` | `undefined` | Executes INSERT, stores result in cache, returns new row. **Correct.** |\n| 2nd `create()` | populated | **Returns the stale cached row** (the 1st task's data) without ever hitting the DB. Then clears the cache. **Wrong.** |\n| 3rd `create()` | `undefined` | Executes INSERT again. **Correct.** |\n| 4th `create()` | populated | Returns stale data again. **Wrong.** |\n\nThis explains the \"sometimes\" behavior — **odd-numbered creates work, even-numbered creates silently return the previous task's data**. The handler (`taskService.ts:17`) blindly trusts the repository result, so no error surfaces.\n\n## Fix Applied\n\nRemoved the module-level `recentTaskRow` variable (lines 4–7) and the early-return cache logic (lines 22–27 and 43). The `create()` method now always executes the INSERT query — the only correct behavior.\n\n**All 16 task tests pass.** The 3 pre-existing failures in `date.test.ts`, `modules.test.ts`, and `advanced.test.ts` are unrelated utility bugs that existed before this change.",
+  "toolCallCount": 12,
+  "toolCalls": [
+    {
+      "name": "todowrite",
+      "callId": "call_588bce1854024b05aa21d714",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "task",
+      "callId": "call_3abecab386b442e49b3939bb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c3bb4d406bac46a2ad35f194",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3ad66cdc8331472a9d1f7992",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_39813afc3c394e9c9ce98a39",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_b18f7bc708d84778b2c063d5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_36cb163feef242b194473da2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_f7be412ba022411586447058",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ba409145b3d74a49a7fe10b7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_25d15e4394294b3fa39cdc5b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_b6a31b3719c0434990b251a8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_a4ce762c722344db8ab778a5",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts"
+    ],
+    "filesExpected": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "root cause",
+      "cached",
+      "create"
+    ],
+    "conceptsExpected": [
+      "root cause",
+      "cached",
+      "collision",
+      "create"
+    ],
+    "conceptRatio": 0.75,
+    "citedFiles": [
+      "src/repositories/taskRepository.ts"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "src/repositories/taskRepository.ts"
+    ],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-04T17:49:49.678Z"
+}

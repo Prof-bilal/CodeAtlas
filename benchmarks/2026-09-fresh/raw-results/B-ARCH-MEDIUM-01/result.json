@@ -1,0 +1,84 @@
+{
+  "taskId": "ARCH-MEDIUM-01",
+  "category": "repository-understanding",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 5209,
+    "output": 1232,
+    "reasoning": 0,
+    "total": 28841,
+    "cacheWrite": 0,
+    "cacheRead": 22400,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 96499,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Here's the analysis:\n\n## Where a New Read Query Lives\n\nThe architecture enforces a strict layering: **`cli → sdk → feature packages → core → shared`**, with dependency rules enforced by ESLint (`eslint.config.mjs:31-72`).\n\n### 1. Interface (Port) → `packages/core/src/ports/`\n\nIf the query requires a **new capability** (not just a new method on an existing port), define a new port interface here. Ports are pure TypeScript interfaces with zero infrastructure — they import only `@atlas/shared` types. Export the types from `packages/core/src/index.ts`.\n\n**If the query fits an existing port** (e.g., `ContextDatabasePort` already has `search`, `loadContext`, etc.), add the method there instead. Check `packages/core/src/ports/context-db.port.ts` first.\n\n### 2. Implementation → a feature package in `packages/`\n\nThe implementing class lives in a feature package (or an existing one like `@atlas/context`, `@atlas/search`, `@atlas/storage`). It imports **only `@atlas/core` + `@atlas/shared`** — never sibling feature packages. Dependencies arrive via constructor injection (other ports, not concrete classes).\n\n### 3. Composition → `packages/sdk/`\n\nThe SDK is the **sole composition root and public facade**. Consumers (CLI, MCP, VS Code extension, agents) reach everything through `createContextSDK()` in `packages/sdk/src/context/sdk.ts`. The new query gets wired as a method on the appropriate sub-API (e.g., `DependencyContextAPI`, `SymbolContextAPI`, or a new sub-API). The SDK internally uses `ReadRepositories` (wrapping `ContextDatabasePort`) — it never touches SQLite directly.\n\n### 4. Consumer surface → `apps/cli`, `packages/mcp`, `apps/extension`\n\nCLI commands import only `@atlas/sdk`. MCP tools import only `@atlas/sdk`. The VS Code extension imports only `@atlas/sdk`. No consumer reaches past the SDK.\n\n## Ownership Boundaries (key files)\n\n| Boundary | File |\n|---|---|\n| Port definitions | `packages/core/src/ports/*.port.ts` |\n| Domain entities | `packages/core/src/domain/entities.ts` |\n| Core barrel export | `packages/core/src/index.ts` |\n| SDK facade | `packages/sdk/src/context/sdk.ts` |\n| SDK models | `packages/sdk/src/context/models.ts` |\n| SDK repositories | `packages/sdk/src/context/repositories.ts` |\n| ESLint enforcement | `eslint.config.mjs:31-72` |\n| Architecture docs | `docs/ARCHITECTURE.md` |\n| Module ownership | `docs/MODULES.md` |\n| Dependency rules | `docs/DEPENDENCIES.md` |\n\n## Concrete, Safe Starting Point\n\n**If the query reads existing indexed data** (files, symbols, dependencies, graphs):\n\n1. Add the method to the existing port in `packages/core/src/ports/context-db.port.ts`\n2. Implement the query logic in the SDK's `ReadRepositories` class (`packages/sdk/src/context/repositories.ts`)\n3. Expose it on the relevant sub-API in `packages/sdk/src/context/sdk.ts`\n4. Add a CLI command in `apps/cli/src/commands/` that calls `sdk.<subApi>.<method>()`\n\n**If the query requires new data** (a new relationship or metric not currently stored):\n\n1. Define a new port in `packages/core/src/ports/` (e.g., `relationship.port.ts`)\n2. Add any new domain entities to `packages/core/src/domain/entities.ts`\n3. Implement in a new or existing feature package (e.g., extend `@atlas/context`)\n4. Compose in the SDK's container or as a new sub-API\n5. Wire the CLI command\n\n**Start with option 1** — it's lower risk, touches fewer layers, and validates the pattern before introducing new storage or indexing concerns.",
+  "toolCallCount": 1,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_74168fb96b48495d9417e9fe",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "packages/core/src/ports",
+      "packages/sdk/src/container.ts"
+    ],
+    "filesExpected": [
+      "packages/core/src/ports",
+      "packages/sdk/src/container.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "port",
+      "SDK",
+      "composition",
+      "ownership",
+      "dependency direction"
+    ],
+    "conceptsExpected": [
+      "port",
+      "SDK",
+      "composition",
+      "ownership",
+      "dependency direction"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [
+      "packages/core/src/index.ts",
+      "packages/core/src/ports/context-db.port.ts",
+      "packages/sdk/src/context/sdk.ts",
+      "packages/core/src/domain/entities.ts",
+      "packages/sdk/src/context/models.ts",
+      "packages/sdk/src/context/repositories.ts",
+      "docs/ARCHITECTURE.md",
+      "docs/MODULES.md",
+      "docs/DEPENDENCIES.md"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "packages/core/src/index.ts",
+      "packages/core/src/ports/context-db.port.ts",
+      "packages/sdk/src/context/sdk.ts",
+      "packages/core/src/domain/entities.ts",
+      "packages/sdk/src/context/models.ts",
+      "packages/sdk/src/context/repositories.ts",
+      "docs/ARCHITECTURE.md",
+      "docs/MODULES.md",
+      "docs/DEPENDENCIES.md"
+    ],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T04:54:34.694Z"
+}

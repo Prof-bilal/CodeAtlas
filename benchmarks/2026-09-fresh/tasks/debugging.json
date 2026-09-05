@@ -1,0 +1,64 @@
+[
+  {
+    "id": "DEBUGGING-HARD-01",
+    "domain": "debugging",
+    "difficulty": "hard",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD + repo_prep (defect planted in disposable copy)",
+    "description": "A planted defect makes task creation intermittently fail under a specific condition. Diagnose the root cause; do not just patch the symptom.",
+    "expected_behavior": "The agent identifies the actual root cause (with file:line evidence), fixes it minimally, and the verify script passes.",
+    "files_likely_involved": ["src", "CONFIG: see repo_prep"],
+    "repo_prep": {
+      "note": "Evaluator-only. Before this task runs, inject the documented defect into a disposable copy (see tasks/README for the prep script), then start the agent from that copy. The prompt below does not reveal the defect.",
+      "defect": "In task creation, the uniqueness/ID generation path reuses a cached value for the second request in the same process under a specific state, so two rapid creates collide intermittently."
+    },
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "repository-debugging",
+    "prompt": "Creating a task works the first time, but a second create within the same process can fail or return a conflicting result only sometimes. There is no obvious error in the handler. Investigate the create path end to end, find the actual root cause (not just a retry/hand-wave), and apply the smallest fix that makes repeated creates reliable. Explain the root cause with references to the specific files and lines involved.",
+    "success_criteria": [
+      "Root cause identified with file+line evidence",
+      "Repeated creates are reliable in a single process",
+      "Fix is minimal and does not change unrelated behavior",
+      "Claimed verification actually ran and passed"
+    ],
+    "regression_tests": ["normal single create still works; existing tests pass"],
+    "evaluation_method": "Manual + automated: score from expected_concepts (root cause reasoning, evidence); verify script confirms the fix.",
+    "expected_files": ["src/services/taskService.ts", "src/repositories/taskRepository.ts"],
+    "expected_concepts": ["root cause", "cached", "collision", "create"],
+    "gold_impact_files": [],
+    "forbidden_changes": ["src/routes/taskRoutes.ts"],
+    "max_seconds": 900
+  },
+  {
+    "id": "DEBUGGING-EXPERT-01",
+    "domain": "debugging",
+    "difficulty": "expert",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD + repo_prep (defect planted in disposable copy)",
+    "description": "A subtle auth bug: a logout does not fully invalidate a session across the app's caching layer. Diagnose across layers.",
+    "expected_behavior": "After logout, the user's session is unusable for every access path; fix spans more than one file.",
+    "files_likely_involved": ["src  (auth service, middleware, cache)", "CONFIG: repo_prep"],
+    "repo_prep": {
+      "note": "Evaluator-only. Plant: after logout removes the session from the store, a cached identity remains valid for reads through the auth middleware cache. Start the agent on the disposable copy.",
+      "defect": "Logout deletes the session record but an in-memory cache still serves the cached identity, so authenticated reads still succeed for a window."
+    },
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "repository-debugging",
+    "prompt": "After a user logs out, some authenticated endpoints still accept their previous session for a short time, even though the logout endpoint reports success. A user who logs out must be fully signed out on every path. Find where the stale identity can still be honored, trace it across layers, and make the fix so the removal is honored everywhere. Add a test that logs out and asserts every protected path now rejects the old session.",
+    "success_criteria": [
+      "After logout, all protected paths reject the old session",
+      "Root cause spans at least two layers and is explained",
+      "The added test passes",
+      "Long-lived sessions (not logged out) are unaffected"
+    ],
+    "regression_tests": ["a session not logged out still works"],
+    "evaluation_method": "Manual + automated; verify script checks post-logout rejection on all protected paths.",
+    "expected_files": ["src/services/authService.ts", "src/middleware/auth.ts", "src/utils/cache.ts"],
+    "expected_concepts": ["logout", "cache", "invalidate", "session", "authorization"],
+    "gold_impact_files": [],
+    "forbidden_changes": ["src/scripts/seed*"],
+    "max_seconds": 900
+  }
+]

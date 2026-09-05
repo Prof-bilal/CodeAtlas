@@ -1,0 +1,158 @@
+{
+  "taskId": "TESTING-MEDIUM-01",
+  "category": "testing",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 38515,
+    "output": 5763,
+    "reasoning": 0,
+    "total": 399734,
+    "cacheWrite": 0,
+    "cacheRead": 355456,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 183755,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "All 11 new tests pass. The 2 failures (`date.test.ts`, `modules.test.ts`) are pre-existing and unrelated to my changes.\n\n**Summary of the new contract test file** (`tests/taskTitleValidation.contract.test.ts`):\n\n| Group | Tests | What it asserts (end-user observable) |\n|---|---|---|\n| **Rejection: 400 status** | 5 | Empty string, missing key, whitespace-only, empty body, >255 chars → HTTP 400 + `errors` array with title-related message |\n| **Rejection: no task created** | 2 | Response contains no `id` or `title` fields |\n| **Acceptance: 201 + task** | 4 | Single char, normal title, preserves exact text, trims whitespace → HTTP 201 with complete task object |\n\n**Validation-removal check**: When I temporarily removed the title validation middleware, 5 of 11 tests failed immediately — the contract is properly locked in. The tests assert on HTTP status codes and response shape, not on internal calls like `taskRepository.create`.",
+  "toolCallCount": 16,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_135c810df90143d3b733765c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_7bb5bcfedb0044ab89954e29",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_81f601b3aed1423395813593",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2a90040002964849a9396568",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_6fb2ba7cbf7e4ab3b6abb61e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2493af75d5ef4d6aac247429",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e8af9498753247668aa0069c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_378d44f67b1142f188cf7e20",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "write",
+      "callId": "call_2553b9464ffc462b8e8495f4",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_9e2c7c75f056421188084f1b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_4397f5a8c8b649abbf326f66",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_b0a723d43c9a41b49f744bbc",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_d3dd398fa6634114aef2ac2b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_bf7de96fda9c460c92f1bdb4",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_93b2a8f4f5ae4d86868446dd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_6808c0f973a549d5821810c2",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "filesExpected": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "validation",
+      "title",
+      "reject",
+      "400",
+      "test"
+    ],
+    "conceptsExpected": [
+      "validation",
+      "title",
+      "reject",
+      "400",
+      "test"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [
+      "tests/taskTitleValidation.contract.test.ts"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "tests/taskTitleValidation.contract.test.ts"
+    ],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T16:43:12.639Z"
+}

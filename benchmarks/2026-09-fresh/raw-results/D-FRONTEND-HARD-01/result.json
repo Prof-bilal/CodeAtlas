@@ -1,0 +1,92 @@
+{
+  "taskId": "FRONTEND-HARD-01",
+  "category": "code-modification",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 12765,
+    "output": 32413,
+    "reasoning": 0,
+    "total": 85306,
+    "cacheWrite": 0,
+    "cacheRead": 40128,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 512129,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "",
+  "toolCallCount": 7,
+  "toolCalls": [
+    {
+      "name": "skill",
+      "callId": "call_b2da105461444722b9639714",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5b638cc45e7c4a708980d06f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_ac9e7fc49b9444c8af587438",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_83d478ae98e047d98410cade",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_826b8fd28af44d8e96425d36",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ad81257071af4d42b0a27055",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_0bcb5c9802414fe589ea3e75",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 0,
+    "status": "failed",
+    "filesFound": [],
+    "filesExpected": [],
+    "fileRatio": 0,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "state",
+      "hooks",
+      "stale",
+      "root cause",
+      "render"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 85,306 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T13:39:07.219Z"
+}

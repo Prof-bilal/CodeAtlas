@@ -1,0 +1,306 @@
+{
+  "taskId": "FRONTEND-MEDIUM-01",
+  "category": "code-modification",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 42679,
+    "output": 16608,
+    "reasoning": 0,
+    "total": 1248471,
+    "cacheWrite": 0,
+    "cacheRead": 1189184,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 460114,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "All 50 tests pass, typecheck and lint are clean. Here's a summary of the changes:\n\n### Changes made\n\n**`apps/extension/src/status-bar.ts`** — Added `indexing()` method to `StatusBarController` that sets the status bar to `\"CodeAtlas: indexing…\"` with a tooltip, giving immediate visual feedback when a build/update starts.\n\n**`apps/extension/src/commands.ts`** — Two fixes:\n1. **`runCli`**: Calls `statusBar?.indexing()` before `runner.run()` so the status bar immediately reflects that work is in progress, instead of showing the stale previous state.\n2. **`refresh`**: Clears `client.lastBuildError` when the index is available, so a prior build failure doesn't persist in the status bar after a manual refresh.\n\n**`apps/extension/src/extension-core.ts`** — Passes `statusBar` through `CommandContext` so the command handlers can update it directly for intermediate states.\n\n**`apps/extension/tests/commands.test.ts`** — Three new tests:\n- Verifies the status bar shows `\"indexing…\"` while the CLI is running (using a slow runner with a deferred promise)\n- Verifies the status bar shows `\"build failed\"` after a failing run completes\n- Verifies the `refresh` command clears a stale `lastBuildError` when the index is available",
+  "toolCallCount": 40,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_f47c751906e646aa9ffd8a32",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8c3e0160230b42ddb9e1cc00",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_1bf071412d064b8f879e7a4a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_38ee6a352cb4435c94cc4798",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_05d067517f2b40a59a5fc0b2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c4e944634087493aae67c02c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_10a522e31d50422c83210537",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_fae9ce10a4784a978f0e3e5a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2b4bde10a36d472c88debafb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a44d8cc433874e128bdcf47a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_65fbebbd2b6b4342be4bf08e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_ffba1b81c4d1473c8d3fbc67",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_dd0da9496d03475abb3a9803",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_2786cb62431a4a70a409ecb8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_faaf86a8aae9454bbfcfb927",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_eda2ee2e7ffb4ce99d2c062d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_7897beb69bfd4deebd65117e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_bbd7e1da5ebf45abbcc31df9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_a0cbfcfd0f564ef99fbb751b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_33d9e1e751c240c7a2812286",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_128faec2e5fd4134be23a6aa",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_da9a07ef74894806be9c90aa",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_633e5bf1f10c4d30ba48a184",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_7dff9a5ae22048a98dbfdb5c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f0b1abb414a54f2fac2154d4",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_5e8bf87531a345499d3e1520",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5f78e5b2cee747c9a973b2de",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_ad54c9aa020a4c5c99c62f45",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_c0aa6b6dd6af4e9e8c40a229",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_6128945b318b4527883a7bc5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_4d9b5710632a40d7a3daebcc",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_c90624146a48413d850f2428",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_18bf713898ea4564a37344d7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_aa6fd8e31cc14fdcaae10050",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_0327419db71e461390f26823",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_c2ce18cff76f4e10aac45a92",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3cebaa193058440e83df295b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_129f749f11d74e4199083862",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_7f5ff7c3e0b44c2b82b16da6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_c1cb53e846204c0bb5a4b336",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "apps/extension/src/status-bar.ts",
+      "apps/extension/src/extension-core.ts"
+    ],
+    "filesExpected": [
+      "apps/extension/src/status-bar.ts",
+      "apps/extension/src/extension-core.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "status bar",
+      "update",
+      "indexing",
+      "complete",
+      "refresh"
+    ],
+    "conceptsExpected": [
+      "status bar",
+      "update",
+      "indexing",
+      "complete",
+      "refresh"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [],
+    "hallucinatedFiles": [
+      "src/status-bar.ts",
+      "src/commands.ts",
+      "src/extension-core.ts",
+      "tests/commands.test.ts"
+    ],
+    "wrongFiles": [],
+    "goldImpactFiles": [
+      "apps/extension/src/status-bar.ts",
+      "apps/extension/src/extension-core.ts"
+    ]
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-04T17:28:26.562Z"
+}

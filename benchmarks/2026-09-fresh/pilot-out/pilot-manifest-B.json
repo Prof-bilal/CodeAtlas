@@ -1,0 +1,114 @@
+[
+  {
+    "id": "FRONTEND-MEDIUM-01",
+    "domain": "frontend",
+    "difficulty": "medium",
+    "repo": "codeatlas",
+    "skill": null
+  },
+  {
+    "id": "FRONTEND-HARD-01",
+    "domain": "frontend",
+    "difficulty": "hard",
+    "repo": "frontend-fixture",
+    "skill": null
+  },
+  {
+    "id": "BACKEND-EASY-01",
+    "domain": "backend",
+    "difficulty": "easy",
+    "repo": "01-small-app",
+    "skill": null
+  },
+  {
+    "id": "BACKEND-MEDIUM-01",
+    "domain": "backend",
+    "difficulty": "medium",
+    "repo": "01-small-app",
+    "skill": null
+  },
+  {
+    "id": "DEBUGGING-HARD-01",
+    "domain": "debugging",
+    "difficulty": "hard",
+    "repo": "01-small-app-debug1",
+    "skill": null
+  },
+  {
+    "id": "DEBUGGING-EXPERT-01",
+    "domain": "debugging",
+    "difficulty": "expert",
+    "repo": "01-small-app-debug2",
+    "skill": null
+  },
+  {
+    "id": "FULLSTACK-MEDIUM-01",
+    "domain": "full-stack",
+    "difficulty": "medium",
+    "repo": "codeatlas",
+    "skill": null
+  },
+  {
+    "id": "FULLSTACK-EXPERT-01",
+    "domain": "full-stack",
+    "difficulty": "expert",
+    "repo": "codeatlas",
+    "skill": null
+  },
+  {
+    "id": "REFACTORING-MEDIUM-01",
+    "domain": "refactoring",
+    "difficulty": "medium",
+    "repo": "01-small-app",
+    "skill": null
+  },
+  {
+    "id": "REFACTORING-HARD-01",
+    "domain": "refactoring",
+    "difficulty": "hard",
+    "repo": "01-small-app",
+    "skill": null
+  },
+  {
+    "id": "TESTING-MEDIUM-01",
+    "domain": "testing",
+    "difficulty": "medium",
+    "repo": "01-small-app",
+    "skill": null
+  },
+  {
+    "id": "TESTING-HARD-01",
+    "domain": "testing",
+    "difficulty": "hard",
+    "repo": "01-small-app-testing1",
+    "skill": null
+  },
+  {
+    "id": "EXT-HARD-01",
+    "domain": "external-knowledge",
+    "difficulty": "hard",
+    "repo": "codeatlas",
+    "skill": null
+  },
+  {
+    "id": "EXT-EXPERT-01",
+    "domain": "external-knowledge",
+    "difficulty": "expert",
+    "repo": "codeatlas",
+    "skill": null
+  },
+  {
+    "id": "ARCH-EASY-01",
+    "domain": "architecture",
+    "difficulty": "easy",
+    "repo": "codeatlas",
+    "skill": null
+  },
+  {
+    "id": "ARCH-MEDIUM-01",
+    "domain": "architecture",
+    "difficulty": "medium",
+    "repo": "codeatlas",
+    "skill": null
+  }
+]

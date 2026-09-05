@@ -1,0 +1,293 @@
+{
+  "taskId": "TESTING-HARD-01",
+  "category": "testing",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 116272,
+    "output": 61995,
+    "reasoning": 0,
+    "total": 1965403,
+    "cacheWrite": 0,
+    "cacheRead": 1787136,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 1200120,
+  "timedOut": true,
+  "exitCode": null,
+  "finalText": "Let me look for route or API tests:",
+  "toolCallCount": 40,
+  "toolCalls": [
+    {
+      "name": "read",
+      "callId": "call_f3a161398ee24e5a96748f36",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_1bf379d0420649dc97b60b0f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_a9b2373a84714162ad2b2798",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_00cb00cf3ffd4037b5e80727",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_67570b14cd03436699107632",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_3418c2cb94fc441ead414095",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_926e92726202456fa2a53e91",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_9e699cd82ae2443da98087ab",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_6b6b767a064b408c9f0ede51",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_00115603ed424ed2860c5092",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_875354e0a0ec4374b8ab7fd5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_9eb064b2a0b54cc58b5c83f2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_633b4e9b9d9e492abbbfaf59",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_5823a352689a4d2aa4902a87",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_72934f6a50594a33ac9c587f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_72911ad3e8584b698d0a69ab",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_20b68b2bbb684e90b1326409",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_16643b76677f49faa3dea891",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b68a428a4a98435d9969eef9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_783404af785142c6a9ecc7b5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f463329351274c7ea6c3252c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_da728a69e98146899ebf826d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_221138a2300d44ed91257fbb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_81be613fcab34b5595a8665a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b895da5984e3461d98fc3090",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_4ca175dac43a46478249f1f8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_e1c98275c3e14c72802f054b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_eebe3cbc218b495c8d7ea942",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_426924403cac4713ab42a8d0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f63ccee9232f46538a42ac2d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c8421d9345b14d4f8311d4fa",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a2e963d938594554822a0904",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e8bfe408b8b14690938b4102",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_a19f18eed9024c7d8c17d207",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "grep",
+      "callId": "call_7d1ee514176e4a22930e8efe",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_45b9262f1c1b488cb970942b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_effdff6aff8740b4bfecb2ba",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "grep",
+      "callId": "call_28d933ad69e74cbe83442a7b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "grep",
+      "callId": "call_0e81d602e6f145abbbd28494",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_8f1e58581ae343088d21b698",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 0,
+    "status": "failed",
+    "filesFound": [],
+    "filesExpected": [
+      "src/services/taskService.ts",
+      "src/repositories/taskRepository.ts"
+    ],
+    "fileRatio": 0,
+    "conceptsFound": [
+      "test"
+    ],
+    "conceptsExpected": [
+      "ownership",
+      "test",
+      "weak",
+      "cross-user",
+      "enforcement"
+    ],
+    "conceptRatio": 0.2,
+    "citedFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "Task timed out after 1200120ms",
+    "proposedFix": "Increase task timeout or reduce context budget to finish within time limit."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T13:02:26.738Z"
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "id": "FULLSTACK-MEDIUM-01",
+    "domain": "full-stack",
+    "difficulty": "medium",
+    "repository": "codeatlas",
+    "commit": "HEAD (in-tree server: API -> benchmark service -> store)",
+    "description": "Add a read endpoint exposing suite progress, wired through route -> service -> store, with validation and a test.",
+    "expected_behavior": "A new HTTP endpoint returns accurate suite progress; validation rejects bad input; a test covers it.",
+    "files_likely_involved": ["apps/server/src/routes.ts", "apps/server/src/benchmark.ts", "packages/benchmark/src/store.ts"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "backend-api",
+    "prompt": "This server already exposes an HTTP API over the benchmark framework. Add a read-only endpoint that returns the progress/status of a benchmark suite by id. Validate the input (a bad/missing id must not crash or return a 500), pull the data from the existing service layer, and add a test for the happy path and the validation path. Match the API conventions the existing routes already use.",
+    "success_criteria": [
+      "New endpoint returns correct suite progress for a known id",
+      "Invalid input returns a clean error (not a 500)",
+      "A test covers happy path and validation path and passes",
+      "Code follows existing route/API conventions"
+    ],
+    "regression_tests": ["existing server route tests pass; server typechecks/builds"],
+    "evaluation_method": "Automated scoring from expected hits + test outputs; manual review of conventions.",
+    "expected_files": ["apps/server/src/routes.ts", "apps/server/src/benchmark.ts", "packages/benchmark/src/store.ts"],
+    "expected_concepts": ["endpoint", "route", "progress", "status", "validation", "service"],
+    "gold_impact_files": ["apps/server/src/routes.ts"],
+    "forbidden_changes": [],
+    "max_seconds": 900
+  },
+  {
+    "id": "FULLSTACK-EXPERT-01",
+    "domain": "full-stack",
+    "difficulty": "expert",
+    "repository": "codeatlas",
+    "commit": "HEAD (in-tree server)",
+    "description": "Implement a cancel workflow spanning API -> job queue -> store, with rollback on failure. Cross-layer feature.",
+    "expected_behavior": "A cancel request marks the job cancelled in the store and the job loop honors it for a running/in-flight job; a failed cancel rolls back cleanly.",
+    "files_likely_involved": ["apps/server/src/routes.ts", "apps/server/src/jobs.ts", "apps/server/src/process.ts", "packages/benchmark/src/store.ts"],
+    "external_knowledge_required": false,
+    "tools_allowed": [],
+    "skill": "backend-api",
+    "prompt": "Implement a 'cancel job' capability in this server: a client can request cancellation of a benchmark job by id. The request must be validated, must mark the job cancelled durably in the store, and the background job loop must observe that state and stop an in-flight (not just queued) job as early as it safely can. If a cancellation cannot be applied (e.g. the job already finished), return a sensible response and do not corrupt state. This touches the API layer, the job/process layer, and the store — trace the ownership and wire it through cleanly. Add tests for: cancelling a queued job, cancelling an in-flight job, and cancelling an already-finished job.",
+    "success_criteria": [
+      "Queued job cancellation prevents it from running",
+      "In-flight job cancellation stops it safely at an early opportunity",
+      "Already-finished job returns a clean 'cannot cancel' response without corruption",
+      "All three added tests pass; rollback path is clean"
+    ],
+    "regression_tests": ["server builds; existing route/job tests pass"],
+    "evaluation_method": "Automated scoring from expected hits + test outputs; manual review of the concurrency/cancellation design.",
+    "expected_files": ["apps/server/src/jobs.ts", "apps/server/src/routes.ts", "packages/benchmark/src/store.ts"],
+    "expected_concepts": ["cancel", "job", "durable", "in-flight", "rollback", "state"],
+    "gold_impact_files": ["apps/server/src/routes.ts", "apps/server/src/jobs.ts"],
+    "forbidden_changes": [],
+    "max_seconds": 1200
+  }
+]

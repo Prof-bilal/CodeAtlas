@@ -1,0 +1,367 @@
+{
+  "repository": "pilot-2026-09-fresh",
+  "name": "pilot-config-A",
+  "version": "1.0.0",
+  "files": 16,
+  "tasks": [
+    {
+      "id": "FRONTEND-MEDIUM-01",
+      "category": "code-modification",
+      "prompt": "In this VS Code extension, the status-bar indicator can show stale 'indexing' or 'not ready' state after an indexing run has actually completed. Find where the extension updates its status UI, makes sure it is updated after a run finishes, and that a failure still reflects a failure. Keep the change small and do not alter unrelated UI.",
+      "expected_files": [
+        "apps/extension/src/status-bar.ts",
+        "apps/extension/src/extension-core.ts"
+      ],
+      "expected_concepts": [
+        "status bar",
+        "update",
+        "indexing",
+        "complete",
+        "refresh"
+      ],
+      "evaluation_method": "Automated scoring from expected hits; manual review of the status update lifecycle.",
+      "gold_impact_files": [
+        "apps/extension/src/status-bar.ts",
+        "apps/extension/src/extension-core.ts"
+      ],
+      "forbidden_changes": [],
+      "max_seconds": 720
+    },
+    {
+      "id": "FRONTEND-HARD-01",
+      "category": "code-modification",
+      "prompt": "A user reports that after an interaction that triggers a background load, part of the UI shows stale values even though the API has returned fresh data. The bug is reproducible with the provided repro steps. Trace how the state flows from the API response through hooks to the rendered components, identify the root cause, and apply the smallest fix. Do not change the API/client contract.",
+      "expected_files": [],
+      "expected_concepts": [
+        "state",
+        "hooks",
+        "stale",
+        "root cause",
+        "render"
+      ],
+      "evaluation_method": "Automated scoring from expected hits + test outputs; manual root-cause review.",
+      "gold_impact_files": [],
+      "forbidden_changes": [],
+      "max_seconds": 900
+    },
+    {
+      "id": "BACKEND-EASY-01",
+      "category": "code-modification",
+      "prompt": "When the task-creation endpoint receives a request with an empty or missing task title, it should be rejected with a 400 (and not create anything). Today that validation is missing or too late. Add the earliest reasonable validation so an empty title cannot reach business logic, and keep the happy path working. Then add a test that proves an empty title is rejected with 400 and a valid title still creates the task.",
+      "expected_files": [
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts"
+      ],
+      "expected_concepts": [
+        "validation",
+        "400",
+        "task title",
+        "reject"
+      ],
+      "evaluation_method": "Automated: score from expected_files/expected_concepts hits in final text + test outputs. Manual: the added test must run green and assert 400 on empty title.",
+      "gold_impact_files": [
+        "src/routes/taskRoutes.ts"
+      ],
+      "forbidden_changes": [],
+      "max_seconds": 600
+    },
+    {
+      "id": "BACKEND-MEDIUM-01",
+      "category": "code-modification",
+      "prompt": "After a recent change, the 'list my tasks' endpoint returns tasks that belong to other users when an authenticated user calls it. Users should only ever see tasks they own (or that they are explicitly allowed to see). Find why ownership is no longer enforced and fix it at the correct layer. Add a regression test where user A cannot see user B's tasks, and confirm the existing happy path still works.",
+      "expected_files": [
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts",
+        "src/middleware/auth.ts"
+      ],
+      "expected_concepts": [
+        "ownership",
+        "authorization",
+        "filter",
+        "userId"
+      ],
+      "evaluation_method": "Automated scoring from expected hits + test outputs; manual review ensures the fix is at the correct layer (not client-side).",
+      "gold_impact_files": [
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts"
+      ],
+      "forbidden_changes": [
+        "src/models/task.ts"
+      ],
+      "max_seconds": 720
+    },
+    {
+      "id": "DEBUGGING-HARD-01",
+      "category": "bug-investigation",
+      "prompt": "Creating a task works the first time, but a second create within the same process can fail or return a conflicting result only sometimes. There is no obvious error in the handler. Investigate the create path end to end, find the actual root cause (not just a retry/hand-wave), and apply the smallest fix that makes repeated creates reliable. Explain the root cause with references to the specific files and lines involved.",
+      "expected_files": [
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts"
+      ],
+      "expected_concepts": [
+        "root cause",
+        "cached",
+        "collision",
+        "create"
+      ],
+      "evaluation_method": "Manual + automated: score from expected_concepts (root cause reasoning, evidence); verify script confirms the fix.",
+      "gold_impact_files": [],
+      "forbidden_changes": [
+        "src/routes/taskRoutes.ts"
+      ],
+      "max_seconds": 900
+    },
+    {
+      "id": "DEBUGGING-EXPERT-01",
+      "category": "bug-investigation",
+      "prompt": "After a user logs out, some authenticated endpoints still accept their previous session for a short time, even though the logout endpoint reports success. A user who logs out must be fully signed out on every path. Find where the stale identity can still be honored, trace it across layers, and make the fix so the removal is honored everywhere. Add a test that logs out and asserts every protected path now rejects the old session.",
+      "expected_files": [
+        "src/services/authService.ts",
+        "src/middleware/auth.ts",
+        "src/utils/cache.ts"
+      ],
+      "expected_concepts": [
+        "logout",
+        "cache",
+        "invalidate",
+        "session",
+        "authorization"
+      ],
+      "evaluation_method": "Manual + automated; verify script checks post-logout rejection on all protected paths.",
+      "gold_impact_files": [],
+      "forbidden_changes": [
+        "src/scripts/seed*"
+      ],
+      "max_seconds": 900
+    },
+    {
+      "id": "FULLSTACK-MEDIUM-01",
+      "category": "feature-planning",
+      "prompt": "This server already exposes an HTTP API over the benchmark framework. Add a read-only endpoint that returns the progress/status of a benchmark suite by id. Validate the input (a bad/missing id must not crash or return a 500), pull the data from the existing service layer, and add a test for the happy path and the validation path. Match the API conventions the existing routes already use.",
+      "expected_files": [
+        "apps/server/src/routes.ts",
+        "apps/server/src/benchmark.ts",
+        "packages/benchmark/src/store.ts"
+      ],
+      "expected_concepts": [
+        "endpoint",
+        "route",
+        "progress",
+        "status",
+        "validation",
+        "service"
+      ],
+      "evaluation_method": "Automated scoring from expected hits + test outputs; manual review of conventions.",
+      "gold_impact_files": [
+        "apps/server/src/routes.ts"
+      ],
+      "forbidden_changes": [],
+      "max_seconds": 900
+    },
+    {
+      "id": "FULLSTACK-EXPERT-01",
+      "category": "feature-planning",
+      "prompt": "Implement a 'cancel job' capability in this server: a client can request cancellation of a benchmark job by id. The request must be validated, must mark the job cancelled durably in the store, and the background job loop must observe that state and stop an in-flight (not just queued) job as early as it safely can. If a cancellation cannot be applied (e.g. the job already finished), return a sensible response and do not corrupt state. This touches the API layer, the job/process layer, and the store — trace the ownership and wire it through cleanly. Add tests for: cancelling a queued job, cancelling an in-flight job, and cancelling an already-finished job.",
+      "expected_files": [
+        "apps/server/src/jobs.ts",
+        "apps/server/src/routes.ts",
+        "packages/benchmark/src/store.ts"
+      ],
+      "expected_concepts": [
+        "cancel",
+        "job",
+        "durable",
+        "in-flight",
+        "rollback",
+        "state"
+      ],
+      "evaluation_method": "Automated scoring from expected hits + test outputs; manual review of the concurrency/cancellation design.",
+      "gold_impact_files": [
+        "apps/server/src/routes.ts",
+        "apps/server/src/jobs.ts"
+      ],
+      "forbidden_changes": [],
+      "max_seconds": 1200
+    },
+    {
+      "id": "REFACTORING-MEDIUM-01",
+      "category": "code-modification",
+      "prompt": "The two resource route files repeat similar error-handling/response-wrap code instead of sharing it. Refactor so the common handling lives in one place and both routes use it. Do not change observable behavior on success or error paths, and confirm with the existing tests that behavior is preserved. Keep the change free of unrelated edits.",
+      "expected_files": [
+        "src/routes/taskRoutes.ts",
+        "src/routes/tagRoutes.ts",
+        "src/middleware/errorHandler.ts"
+      ],
+      "expected_concepts": [
+        "refactor",
+        "duplication",
+        "shared",
+        "error handling",
+        "behavior"
+      ],
+      "evaluation_method": "Automated scoring; reviewer checks behavior parity and scope discipline.",
+      "gold_impact_files": [
+        "src/routes/taskRoutes.ts",
+        "src/routes/tagRoutes.ts",
+        "src/middleware/errorHandler.ts"
+      ],
+      "forbidden_changes": [
+        "src/models/*",
+        "src/db/*"
+      ],
+      "max_seconds": 720
+    },
+    {
+      "id": "REFACTORING-HARD-01",
+      "category": "code-modification",
+      "prompt": "Two endpoints implement pagination on their own and the copies have drifted. Centralize pagination into a single shared utility and make both endpoints use it with identical semantics. The most important requirement is behavior parity: totals, page bounds, and edge cases (empty pages, last page, filters) must be exactly preserved. Prove parity with tests that run both the old and new behaviors or assert the same observable outcomes.",
+      "expected_files": [
+        "src/utils/pagination.ts",
+        "src/services/taskService.ts",
+        "src/services/tagService.ts"
+      ],
+      "expected_concepts": [
+        "pagination",
+        "parity",
+        "centralize",
+        "edge cases",
+        "behavior"
+      ],
+      "evaluation_method": "Automated scoring; reviewer audits parity tests for genuine equality (not weakened).",
+      "gold_impact_files": [
+        "src/utils/pagination.ts",
+        "src/routes/taskRoutes.ts",
+        "src/routes/tagRoutes.ts"
+      ],
+      "forbidden_changes": [
+        "src/db/*"
+      ],
+      "max_seconds": 840
+    },
+    {
+      "id": "TESTING-MEDIUM-01",
+      "category": "testing",
+      "prompt": "The task-creation endpoint is documented to reject an empty title, but there is little test coverage proving it. Add tests that lock in this contract: an empty or missing title must be rejected, and a valid title must create the task. The tests must actually fail if someone removed the validation, so assert on behavior an end-user can observe rather than on implementation details.",
+      "expected_files": [
+        "src/routes/taskRoutes.ts",
+        "src/services/taskService.ts"
+      ],
+      "expected_concepts": [
+        "validation",
+        "title",
+        "reject",
+        "400",
+        "test"
+      ],
+      "evaluation_method": "Automated scoring; reviewer checks regression-sensitivity (tests fail without the validation).",
+      "gold_impact_files": [],
+      "forbidden_changes": [
+        "src/app.ts"
+      ],
+      "max_seconds": 720
+    },
+    {
+      "id": "TESTING-HARD-01",
+      "category": "testing",
+      "prompt": "There is a test intended to cover the rule that a user can only see their own tasks. It passes, but it does not actually protect the rule: if the ownership enforcement were deleted from the production code, the test would still pass. Find that test, explain why it fails to guard the behavior, and rewrite it so it genuinely fails when ownership enforcement is removed. Keep the rest of the suite honest.",
+      "expected_files": [
+        "src/services/taskService.ts",
+        "src/repositories/taskRepository.ts"
+      ],
+      "expected_concepts": [
+        "ownership",
+        "test",
+        "weak",
+        "cross-user",
+        "enforcement"
+      ],
+      "evaluation_method": "Automated scoring; reviewer verifies the mutability check by removing enforcement in a sandbox.",
+      "gold_impact_files": [],
+      "forbidden_changes": [
+        "src/middleware/auth.ts"
+      ],
+      "max_seconds": 840
+    },
+    {
+      "id": "EXT-HARD-01",
+      "category": "repository-understanding",
+      "prompt": "This repository configures the vitest test runner in two places. Review those configurations and, using the current vitest documentation (not memory), determine whether any of the options they use are deprecated, renamed, or behaving differently in the current major version. For each finding, cite the specific repo file and the upstream doc you checked. Do not make changes — this is an assessment. If everything is current, say so explicitly and cite what you verified.",
+      "expected_files": [
+        "vitest.config.ts",
+        "vitest.benchmark.config.mts"
+      ],
+      "expected_concepts": [
+        "vitest",
+        "deprecated",
+        "workspace",
+        "documentation",
+        "config"
+      ],
+      "evaluation_method": "Automated scoring from expected hits (files + concepts like 'deprecated'/'workspace'/'docs'); manual check that web citations are real, current URLs.",
+      "gold_impact_files": [],
+      "forbidden_changes": [],
+      "max_seconds": 900
+    },
+    {
+      "id": "EXT-EXPERT-01",
+      "category": "repository-understanding",
+      "prompt": "This project is a pnpm workspace and relies on several pnpm/package-manager settings at the repository root. Using the current upstream documentation, assess whether config would break or behave differently in the current recommended version of the tool. If a change is warranted, propose the minimal one; if not, say so with evidence. For anything you cite, give the real upstream URL you actually checked.",
+      "expected_files": [
+        "pnpm-workspace.yaml",
+        ".npmrc"
+      ],
+      "expected_concepts": [
+        "pnpm",
+        "workspace",
+        "documentation",
+        "deprecated",
+        "config"
+      ],
+      "evaluation_method": "Automated scoring from expected hits (files + concepts like 'pnpm','workspace','deprecated','documentation'); manual review that web citations are real.",
+      "gold_impact_files": [],
+      "forbidden_changes": [],
+      "max_seconds": 900
+    },
+    {
+      "id": "ARCH-EASY-01",
+      "category": "repository-understanding",
+      "prompt": "Describe how a consumer (for example a CLI command or an MCP server) reads indexed context from this repository. Which package is the single read interface that consumers are supposed to use, where is the persistent context actually stored and owned, and what is the dependency direction between them? Cite the specific files you inspected and quote the concrete seam (function/class) a consumer calls.",
+      "expected_files": [
+        "packages/sdk/src/context/index.ts",
+        "packages/storage/src/index.ts"
+      ],
+      "expected_concepts": [
+        "SDK",
+        "context",
+        "storage",
+        "read interface",
+        "dependency"
+      ],
+      "evaluation_method": "Automated scoring from expected_files/expected_concepts hits + cited paths.",
+      "gold_impact_files": [],
+      "forbidden_changes": [],
+      "max_seconds": 600
+    },
+    {
+      "id": "ARCH-MEDIUM-01",
+      "category": "repository-understanding",
+      "prompt": "A new feature is proposed: expose an additional read query over the stored context (for example, a new relationship or metric that consumers can query). Decide where this should live in this monorepo's structure: where does the interface belong, where does the implementation belong, how does it get composed so consumers can reach it, and what dependency rules apply? Explain the ownership boundaries you are relying on and cite the files that define them. Recommend a concrete, safe place to start.",
+      "expected_files": [
+        "packages/core/src/ports",
+        "packages/sdk/src/container.ts"
+      ],
+      "expected_concepts": [
+        "port",
+        "SDK",
+        "composition",
+        "ownership",
+        "dependency direction"
+      ],
+      "evaluation_method": "Automated scoring from expected hits + cited files; manual review of correctness of the ownership claim.",
+      "gold_impact_files": [],
+      "forbidden_changes": [],
+      "max_seconds": 780
+    }
+  ]
+}

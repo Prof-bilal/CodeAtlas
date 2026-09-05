@@ -1,0 +1,145 @@
+{
+  "taskId": "TESTING-MEDIUM-01",
+  "category": "testing",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 32232,
+    "output": 5497,
+    "reasoning": 0,
+    "total": 332257,
+    "cacheWrite": 0,
+    "cacheRead": 294528,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 122372,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Done. Here's what was added to `tests/taskRoutes.test.ts`:\n\n**5 new tests** (lines 123-177) beyond the 4 that already existed:\n\n| Test | What it asserts |\n|---|---|\n| Empty body `{}` | HTTP 400, error mentions title, no task id, repository not called |\n| Title > 255 chars | HTTP 400, error mentions title, no task id, repository not called |\n| Empty title (no persistence) | HTTP 400, no task id, repository not called |\n| Missing title (no persistence) | HTTP 400, no task id, repository not called |\n| Whitespace-only title (no persistence) | HTTP 400, no task id, repository not called |\n\n**Verified:** removing `createTaskValidation` from the route causes 8 of 9 tests to fail. All assertions use observable behavior (HTTP status, response body shape, error messages) rather than internal implementation details. The `not.toHaveBeenCalled()` on `taskRepository.create` guards against validation being bypassed to the persistence layer.",
+  "toolCallCount": 14,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_7bceafe02955401f86a409a8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_89febb7faa7649f892d70093",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_4a2408eb67324136875bdee7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_c70948db64f34901b73987d6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5cb248ce2db14b60b3b78436",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_0773068f898840cb9017a5ff",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_67e64f408f324ecbb84453d6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_f23e76b0351e42208f924668",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_0a1b7b06f05b49b99e74adf5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_a056d43d1b08421eaba1402d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_4a4a808ded00448cbadd9f77",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_4625e209f5de4bd2b2091ef0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_b8363497bbd349b2bcf59d43",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_68489382522c4301a0bc36be",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "filesExpected": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "validation",
+      "title",
+      "400",
+      "test"
+    ],
+    "conceptsExpected": [
+      "validation",
+      "title",
+      "reject",
+      "400",
+      "test"
+    ],
+    "conceptRatio": 0.8,
+    "citedFiles": [
+      "tests/taskRoutes.test.ts"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "tests/taskRoutes.test.ts"
+    ],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T02:59:12.798Z"
+}

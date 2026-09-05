@@ -1,0 +1,77 @@
+{
+  "taskId": "ARCH-EASY-01",
+  "category": "repository-understanding",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 4576,
+    "output": 903,
+    "reasoning": 0,
+    "total": 27879,
+    "cacheWrite": 0,
+    "cacheRead": 22400,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 91934,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "## How Consumers Read Indexed Context\n\n### Single Read Interface\n\n**`@atlas/sdk`** is the single read interface. Consumers call:\n\n```ts\nimport { createContextSDK } from \"@atlas/sdk\";\nconst ctx = createContextSDK({ dbPath, repositoryPath, metrics, usage });\n```\n\nDefined at `packages/sdk/src/context/sdk.ts:890`:\n```ts\nexport function createContextSDK(options: ContextSDKOptions = {}): ContextSDK {\n  return ContextSDKFacade.open(options);\n}\n```\n\nThe returned `ContextSDK` interface (`packages/sdk/src/context/sdk.ts:234-269`) exposes sub-APIs: `files`, `symbols`, `dependencies`, `modules`, `summaries`, `search`, `project`, `write`, `status()`, `freshness()`, `refresh()`, `close()`.\n\n### Persistent Context Storage\n\nOwned by **`@atlas/storage`**. The database file lives at:\n\n```\n<repositoryPath>/.codeatlas/context.db\n```\n\nResolved in `packages/sdk/src/context/sdk.ts:88-96` via `resolveContextConfig()`. The SDK opens it by instantiating `ContextStore` from `@atlas/storage` at line 100:\n```ts\nreturn existsSync(dbPath) ? new ContextStore({ filePath: dbPath }) : null;\n```\n\n`ContextStore` (`packages/storage/src/context-store.ts:41`) implements the `ContextDatabasePort` contract from `@atlas/core`.\n\n### Dependency Direction\n\n```\nCLI / MCP / VS Code extension / agents\n    ↓ imports only @atlas/sdk\n@atlas/sdk\n    ↓ imports\n@atlas/storage\n    ↓ imports only @atlas/core + @atlas/shared\n```\n\nSDK depends on storage; storage never imports SDK. Enforced by ESLint per `docs/DEPENDENCIES.md`.\n\n### Consumer Examples\n\n- **CLI** (`apps/cli/src/commands/search.ts:182`): `context.search.search(query, request)`\n- **MCP** (`packages/mcp/src/context.ts:55-135`): lazy `createContextSDK()` on first tool call\n- **VS Code extension** (`apps/extension/src/client.ts:210`): `this.sdk = createContextSDK(this.options)`\n\nConsumers never touch SQLite directly. The SDK is the sole read seam.",
+  "toolCallCount": 1,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_45ae6e68f321413192543c03",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "packages/sdk/src/context/index.ts",
+      "packages/storage/src/index.ts"
+    ],
+    "filesExpected": [
+      "packages/sdk/src/context/index.ts",
+      "packages/storage/src/index.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "SDK",
+      "context",
+      "storage",
+      "read interface",
+      "dependency"
+    ],
+    "conceptsExpected": [
+      "SDK",
+      "context",
+      "storage",
+      "read interface",
+      "dependency"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [
+      "packages/sdk/src/context/sdk.ts",
+      "packages/storage/src/context-store.ts",
+      "docs/DEPENDENCIES.md",
+      "packages/mcp/src/context.ts"
+    ],
+    "hallucinatedFiles": [
+      "src/commands/search.ts",
+      "src/client.ts"
+    ],
+    "wrongFiles": [
+      "packages/sdk/src/context/sdk.ts",
+      "packages/storage/src/context-store.ts",
+      "docs/DEPENDENCIES.md",
+      "packages/mcp/src/context.ts"
+    ],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-05T04:52:29.927Z"
+}
