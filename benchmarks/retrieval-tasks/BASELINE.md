@@ -37,7 +37,25 @@ Evaluator: score 2 iff fileRatio≥0.5 AND concept≥0.5
 | 10k files | _capture_ | _capture_ | _capture_ | _capture_ | _capture_ |
 | 50k files | _capture_ | _capture_ | _capture_ | _capture_ | _capture_ |
 
+## How to capture (Phase 6)
+
+```bash
+# 1. Build the index
+atlas build
+
+# 2. Run retrieval evaluation (needs .codeatlas/context.db)
+tsx benchmarks/retrieval-tasks/evaluate-retrieval.ts .
+
+# 3. Run scale grid (synthetic repos)
+tsx benchmarks/scale-grid/generate.mjs
+
+# 4. Run n≥3 B-config reruns via benchmark service
+# (use the benchmark CLI or programmatic API)
+```
+
 ## Log
 
 - 2026-09-06: set created (30 tasks), smoke `evaluate.mjs` green; metric
   baselines open pending a built index + harness run (Phase 6).
+- 2026-09-06: Phase 6 evaluation script added (`evaluate-retrieval.ts`);
+  full scoring available once index is built.

@@ -7,39 +7,29 @@ import { z } from "zod";
  */
 
 export type ToolName =
-  | "analyze_task"
-  | "create_plan"
   | "find_relevant_context"
   | "inspect_symbol"
-  | "verify_answer"
   | "search_symbols"
   | "search_files"
   | "get_summary"
   | "get_dependencies"
-  | "explain_module"
   | "project_overview"
   | "read_file_range";
 
 export const TOOL_NAMES: readonly ToolName[] = [
-  "analyze_task",
-  "create_plan",
   "find_relevant_context",
   "inspect_symbol",
-  "verify_answer",
   "search_symbols",
   "search_files",
   "get_summary",
   "get_dependencies",
-  "explain_module",
   "project_overview",
   "read_file_range",
 ];
 
 /**
- * Deprecated aliases still accepted by the server (Phase 4 compat window).
- * Each maps the deprecated name to the canonical tool it delegates to. The
- * canonical tool is advertised under `canonicalToolName`; the deprecated name
- * keeps working until the release cut removes it.
+ * Canonical aliases accepted by the server. Each maps a canonical name to the
+ * legacy tool it delegates to.
  */
 export const TOOL_ALIASES: Readonly<Record<string, ToolName>> = {
   context_for: "find_relevant_context",
@@ -55,9 +45,9 @@ export function resolveToolName(name: string): ToolName {
 }
 
 /**
- * Every name advertised on `tools/list`: the 12 legacy tools plus the 4
- * canonical aliases (Phase 4 compat window). Consumers asserting the protocol
- * surface should compare against this, not `TOOL_NAMES` alone.
+ * Every name advertised on `tools/list`: the 8 legacy tools plus the 4
+ * canonical aliases. Consumers asserting the protocol surface should compare
+ * against this, not `TOOL_NAMES` alone.
  */
 export const PROTOCOL_TOOL_NAMES: readonly string[] = [
   ...TOOL_NAMES,
@@ -175,13 +165,7 @@ const fileHit = {
     .describe("Coarse confidence band from the normalized score."),
 };
 
-/** A file entry inside an `explain_module` result (no relevance score). */
-const moduleFile = {
-  path: z.string().describe("Absolute path of the file."),
-  language: z.string().describe("Detected language."),
-};
-
-/** The normalized summary shape returned by `get_summary` / `explain_module`. */
+/** The normalized summary shape returned by `get_summary`. */
 const summaryShape = {
   kind: z.string().describe("Summary scope (file/folder/module/project)."),
   target: z.string().describe('Path or "project" the summary covers.'),
@@ -211,74 +195,8 @@ const dependencyShape = {
     .describe("Ordered node ids from the seed to this edge's far endpoint (depth>1)."),
 };
 
-/** A dependency edge as exposed by `explain_module` (uses the SDK field name). */
-const moduleDependencyShape = {
-  from: z.string().describe("Source node id."),
-  to: z.string().describe("Target node id."),
-  kind: z.string().describe("Edge kind (imports, calls, extends, ...)."),
-  fromLabel: z.string().describe("Human-readable source label."),
-  toLabel: z.string().describe("Human-readable target label."),
-};
-
 export const TOOLS: readonly ToolDefinition[] = [
-  // ── High-level tools (planning layer) ──────────────────────────────────────
-  {
-    name: "analyze_task",
-    title: "Analyze task",
-    description:
-      "DEPRECATED (Phase 6 release cut; use `context_for`/`find_relevant_context` instead — see docs/MCP_MIGRATION.md). " +
-      "Classify a task (debug/security/architecture/understand), extract file paths, symbol names, and keywords. " +
-      "Deterministic, no AI, no index required. " +
-      "Returns category, subcategory, confidence, reasoning, and extracted entities.",
-    inputSchema: {
-      task: boundedString("The user task or question to classify."),
-    },
-    outputSchema: {
-      category: z
-        .string()
-        .describe("High-level task category (debug, security, architecture, understand)."),
-      subcategory: z.string().describe("Finer-grained subcategory label."),
-      confidence: z.number().describe("Classification confidence (0..1)."),
-      reasoning: z.string().describe("Deterministic explanation of the classification."),
-      entities: z
-        .object({
-          filePaths: z.array(z.string()).describe("File paths mentioned in the task."),
-          symbolNames: z.array(z.string()).describe("Symbol name candidates."),
-          keywords: z.array(z.string()).describe("Lowercase keyword fallbacks."),
-        })
-        .describe("Extracted entities from the task text."),
-      nextSteps: z.array(z.string()).describe("Suggested next steps for the model."),
-    },
-  },
-  {
-    name: "create_plan",
-    title: "Create plan",
-    description:
-      "DEPRECATED (Phase 6 release cut; use `context_for` + `dependencies_of depth:2` instead — see docs/MCP_MIGRATION.md). " +
-      "Generate a deterministic plan for a task: classify it, build an impact set from search + dependency closure, " +
-      "and produce ordered steps with rationale and verification strategy. Requires an indexed project. " +
-      "Returns steps, impact set, unknowns, and verification strategy.",
-    inputSchema: {
-      task: boundedString("The user task to plan for."),
-    },
-    outputSchema: {
-      category: z.string().describe("Task category."),
-      steps: z
-        .array(
-          z.object({
-            order: z.number().describe("Step order (1-based)."),
-            action: z.string().describe("What to do."),
-            targetFiles: z.array(z.string()).describe("Files this step touches."),
-            rationale: z.string().describe("Why this step."),
-          }),
-        )
-        .describe("Ordered plan steps."),
-      impactSet: z.array(z.string()).describe("Files the plan expects to touch."),
-      unknowns: z.array(z.string()).describe("Things the plan cannot resolve deterministically."),
-      verificationStrategy: z.string().describe("Recommended verification approach."),
-      nextSteps: z.array(z.string()).describe("Suggested next steps."),
-    },
-  },
+  // ── High-level tools ───────────────────────────────────────────────────────
   {
     name: "find_relevant_context",
     title: "Find relevant context",
@@ -457,83 +375,6 @@ export const TOOLS: readonly ToolDefinition[] = [
       nextSteps: z.array(z.string()).describe("Suggested next steps."),
     },
   },
-  {
-    name: "verify_answer",
-    title: "Verify answer",
-    description:
-      "DEPRECATED (Phase 6 release cut; harness-layer helper — run your own checks instead — see docs/MCP_MIGRATION.md). " +
-      "Run claim checks and optional verification commands against an answer. " +
-      "Detects hallucinated file paths, missing symbols, plan coverage gaps, and output contract violations. " +
-      "Optionally runs typecheck/tests/lint via allow-listed commands from .codeatlas/verify.json. " +
-      "Returns a verification report with per-check pass/fail, command results, and an overall verdict.",
-    inputSchema: {
-      task: boundedString("The task the answer addresses."),
-      citedPaths: z
-        .array(boundedString("A file path cited in the answer."))
-        .optional()
-        .describe("File paths the answer claims to reference."),
-      citedSymbols: z
-        .array(boundedString("A symbol name cited in the answer."))
-        .optional()
-        .describe("Symbol names the answer claims to reference."),
-      planTargets: z
-        .array(boundedString("A plan target the answer should cover."))
-        .optional()
-        .describe("Plan step targets the answer should address."),
-      outputContract: z
-        .array(
-          z.object({
-            kind: boundedString("Contract kind (contains-text, contains-function, no-errors)."),
-            value: boundedString("Value to check against."),
-          }),
-        )
-        .optional()
-        .describe("Output contract assertions."),
-    },
-    outputSchema: {
-      task: z.string().describe("The task that was verified."),
-      strategy: z
-        .enum(["none", "claim-checks", "command-runners"])
-        .describe("Verification strategy used."),
-      claims: z
-        .object({
-          checks: z
-            .array(
-              z.object({
-                id: z.string().describe("Claim check id."),
-                kind: z.string().describe("Claim kind."),
-                target: z.string().describe("What was checked."),
-                passed: z.boolean().describe("Whether the claim passed."),
-                detail: z.string().describe("Human-readable result."),
-              }),
-            )
-            .describe("All claim checks run."),
-          passed: z.number().describe("Number of passing checks."),
-          failed: z.number().describe("Number of failing checks."),
-          allPassed: z.boolean().describe("True when all checks passed."),
-        })
-        .describe("Claim check results."),
-      commands: z
-        .array(
-          z.object({
-            command: z.string().describe("Command that was run."),
-            args: z.array(z.string()).describe("Arguments passed."),
-            exitCode: z.number().describe("Exit code (0 = success)."),
-            stdout: z.string().describe("Captured stdout (may be truncated)."),
-            stderr: z.string().describe("Captured stderr (may be truncated)."),
-            timedOut: z.boolean().describe("Whether the command timed out."),
-            durationMs: z.number().describe("Wall-clock duration in ms."),
-            preExisting: z.boolean().describe("True when this was a pre-existing failure."),
-          }),
-        )
-        .describe("Command run results."),
-      verdict: z
-        .enum(["pass", "fail", "partial", "skipped", "error"])
-        .describe("Overall verification verdict."),
-      summary: z.string().describe("Human-readable summary."),
-      nextSteps: z.array(z.string()).describe("Suggested next steps."),
-    },
-  },
   // ── Low-level tools (atomic operations) ────────────────────────────────────
   {
     name: "search_symbols",
@@ -670,58 +511,6 @@ export const TOOLS: readonly ToolDefinition[] = [
       nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
       timings: timingsField,
-    },
-  },
-  {
-    name: "explain_module",
-    title: "Explain module",
-    description:
-      "DEPRECATED (Phase 6 release cut; use `overview` + `search_files` + `dependencies_of` instead — see docs/MCP_MIGRATION.md). " +
-      "Get a picture of a directory/package: module record, files (max 50), key symbols (max 50), and dependency edges. " +
-      "Use when you need to understand a whole module before editing. Typical: 1 call per task. " +
-      "Use project_overview for a project-level summary instead.",
-    inputSchema: {
-      path: boundedString("Path of the module/folder to explain."),
-      includeSummary: z
-        .boolean()
-        .optional()
-        .describe("Include the stored module summary when present (default true)."),
-      includeDependencies: z
-        .boolean()
-        .optional()
-        .describe("Include dependency edges touching the module's files (default true)."),
-    },
-    outputSchema: {
-      path: z.string().describe("The module/folder path requested."),
-      module: z.any().nullable().describe("The persisted module record, or null."),
-      fileCount: z.number().describe("Files in the module."),
-      files: z.array(z.object(moduleFile)).describe("Files in the module."),
-      symbolCount: z.number().describe("Symbols in the module."),
-      symbols: z
-        .array(
-          z.object({
-            id: z.string(),
-            name: z.string(),
-            kind: z.string(),
-            filePath: z.string(),
-            location: z.object({ startLine: z.number(), endLine: z.number() }),
-          }),
-        )
-        .describe("Symbols defined in the module."),
-      dependencyCount: z.number().describe("Dependency edges touching the module's files."),
-      dependencies: z.array(z.object(moduleDependencyShape)).describe("Dependency edges."),
-      summary: z.object(summaryShape).nullable().describe("Stored module summary, or null."),
-      nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
-      freshness: freshnessField,
-      timings: timingsField,
-      fileOverflow: z
-        .string()
-        .optional()
-        .describe("Present when more files exist than were returned."),
-      symbolOverflow: z
-        .string()
-        .optional()
-        .describe("Present when more symbols exist than were returned."),
     },
   },
   {

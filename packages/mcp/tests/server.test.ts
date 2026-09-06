@@ -58,11 +58,12 @@ function isTextBlock(block: unknown): block is { readonly type: "text"; readonly
 }
 
 describe("MCP server protocol", () => {
-  it("advertises exactly the twelve tools over tools/list", async () => {
+  it("advertises exactly the twelve tool names over tools/list", async () => {
     await withConnection(async ({ client }) => {
       const { tools } = await client.listTools();
       const names = tools.map((tool) => tool.name).sort();
       expect(names).toEqual([...PROTOCOL_TOOL_NAMES].sort());
+      expect(names).toHaveLength(12);
       for (const tool of tools) {
         expect(tool.description ?? "").not.toHaveLength(0);
         expect(tool.inputSchema).toBeDefined();

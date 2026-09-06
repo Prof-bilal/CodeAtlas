@@ -144,14 +144,18 @@ describe("MCP audit fixture", () => {
       );
       expect(paymentFiles.hits.some((hit) => hit.path.includes("payment-validator.ts"))).toBe(true);
 
-      const module = structured<{ fileCount: number; symbolCount: number }>(
+      const overview = structured<{
+        counts: { files: number; symbols: number; modules: number };
+        modules: Array<{ path: string }>;
+      }>(
         await conn.client.callTool({
-          name: "explain_module",
-          arguments: { path: join(conn.root, "src", "auth") },
+          name: "project_overview",
+          arguments: { detail: "full" },
         }),
       );
-      expect(module.fileCount).toBeGreaterThanOrEqual(4);
-      expect(module.symbolCount).toBeGreaterThan(0);
+      expect(overview.counts.files).toBeGreaterThanOrEqual(4);
+      expect(overview.counts.symbols).toBeGreaterThan(0);
+      expect(overview.modules.length).toBeGreaterThan(0);
     } finally {
       await closeConnection(conn);
     }

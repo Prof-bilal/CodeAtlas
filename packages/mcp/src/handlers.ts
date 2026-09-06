@@ -1,5 +1,4 @@
 import type {
-  ClaimCheckInput,
   ContextPackage,
   ContextSDK,
   Result,
@@ -7,13 +6,7 @@ import type {
   Summary,
   SummaryKind,
 } from "@atlas/sdk";
-import {
-  createClassifier,
-  createPlanner,
-  createVerifier,
-  evaluateSufficiency,
-  loadVerifyConfig,
-} from "@atlas/sdk";
+import { evaluateSufficiency } from "@atlas/sdk";
 import type { CodeAtlasContext } from "./context";
 import { isDeniedPath } from "./deny";
 import type { Logger } from "./log";
@@ -78,82 +71,15 @@ export interface DependencyShape {
 export const HANDLERS: Readonly<
   Record<ToolName, (h: HandlerContext, args: ToolArgs) => Promise<unknown>>
 > = {
-  analyze_task: analyzeTask,
-  create_plan: createPlan,
   find_relevant_context: findRelevantContext,
   inspect_symbol: inspectSymbol,
-  verify_answer: verifyAnswer,
   search_symbols: searchSymbols,
   search_files: searchFiles,
   get_summary: getSummary,
   get_dependencies: getDependencies,
-  explain_module: explainModule,
   project_overview: projectOverview,
   read_file_range: readFileRange,
 };
-
-// ── analyze_task ────────────────────────────────────────────────────────────
-
-async function analyzeTask(_h: HandlerContext, args: ToolArgs): Promise<unknown> {
-  const task = requireString(args, "task");
-  const classify = createClassifier();
-  const classification = classify(task);
-
-  const nextSteps: string[] = [];
-  if (classification.confidence < 0.4) {
-    nextSteps.push("Low classification confidence — consider rephrasing the task for clarity.");
-  }
-  if (classification.entities.filePaths.length > 0) {
-    nextSteps.push(`Search for files: ${classification.entities.filePaths.join(", ")}`);
-  }
-  if (classification.entities.symbolNames.length > 0) {
-    nextSteps.push(`Search for symbols: ${classification.entities.symbolNames.join(", ")}`);
-  }
-  nextSteps.push("Use create_plan to build a deterministic plan for this task.");
-
-  return {
-    category: classification.category,
-    subcategory: classification.subcategory,
-    confidence: classification.confidence,
-    reasoning: classification.reasoning,
-    entities: classification.entities,
-    nextSteps,
-  };
-}
-
-// ── create_plan ─────────────────────────────────────────────────────────────
-
-async function createPlan(h: HandlerContext, args: ToolArgs): Promise<unknown> {
-  const task = requireString(args, "task");
-  const sdk = h.ctx.requireSDK();
-
-  const classify = createClassifier();
-  const classification = classify(task);
-  const planner = createPlanner(sdk);
-  const planResult = planner.plan(task, classification);
-
-  const nextSteps: string[] = [];
-  if (planResult.unknowns.length > 0) {
-    nextSteps.push(`Unknowns detected: ${planResult.unknowns.join("; ")}`);
-  }
-  if (planResult.impactSet.length > 0) {
-    nextSteps.push(
-      `Review impact set (${planResult.impactSet.length} files) and use find_relevant_context for detailed context.`,
-    );
-  }
-  if (planResult.verificationStrategy !== "none") {
-    nextSteps.push(`Verification strategy: ${planResult.verificationStrategy}`);
-  }
-
-  return {
-    category: classification.category,
-    steps: planResult.steps,
-    impactSet: planResult.impactSet,
-    unknowns: planResult.unknowns,
-    verificationStrategy: planResult.verificationStrategy,
-    nextSteps,
-  };
-}
 
 // ── find_relevant_context ───────────────────────────────────────────────────
 
@@ -668,59 +594,6 @@ async function getDependencies(h: HandlerContext, args: ToolArgs): Promise<unkno
   };
 }
 
-// ── explain_module ───────────────────────────────────────────────────────────
-
-async function explainModule(h: HandlerContext, args: ToolArgs): Promise<unknown> {
-  const path = requireString(args, "path");
-  const includeSummary = optionalBoolean(args, "includeSummary") ?? true;
-  const includeDependencies = optionalBoolean(args, "includeDependencies") ?? true;
-
-  const sdk = h.ctx.requireSDK();
-  const explanation = sdk.modules.explain(path, {
-    includeSummary,
-    includeDependencies,
-  });
-
-  // Phase 4 cap discipline (was 200/200): module dumps are bounded so a
-  // large package cannot blow up the response; overflow is reported honestly.
-  const MAX_SYMBOLS = 50;
-  const MAX_FILES = 50;
-  const symbols = explanation.symbols.slice(0, MAX_SYMBOLS);
-  const files = explanation.files.slice(0, MAX_FILES);
-
-  return {
-    path,
-    module: explanation.module,
-    fileCount: explanation.fileCount,
-    files: files.map((file) => ({ path: file.path, language: file.language })),
-    symbolCount: explanation.symbolCount,
-    symbols: symbols.map((symbol) => ({
-      id: symbol.id,
-      name: symbol.name,
-      kind: symbol.kind,
-      filePath: symbol.filePath,
-      location: {
-        startLine: symbol.location.startLine,
-        endLine: symbol.location.endLine,
-      },
-    })),
-    dependencyCount: explanation.dependencyCount,
-    dependencies: explanation.dependencies,
-    summary: explanation.summary === null ? null : toSummaryShape(explanation.summary),
-    ...(explanation.fileCount > MAX_FILES
-      ? {
-          fileOverflow: `${explanation.fileCount} total files (showing first ${MAX_FILES})`,
-        }
-      : {}),
-    ...(explanation.symbolCount > MAX_SYMBOLS
-      ? {
-          symbolOverflow: `${explanation.symbolCount} total symbols (showing first ${MAX_SYMBOLS})`,
-        }
-      : {}),
-    nextSteps: [],
-  };
-}
-
 // ── project_overview ─────────────────────────────────────────────────────────
 
 async function projectOverview(h: HandlerContext, args: ToolArgs): Promise<unknown> {
@@ -773,9 +646,7 @@ async function projectOverview(h: HandlerContext, args: ToolArgs): Promise<unkno
     // warning so agents prefer summary + targeted search/dependencies.
     const moduleCount = (overview.modules ?? []).length;
     result["warning"] =
-      `detail:"full" returns module/file/symbol listings (${moduleCount} modules, ` +
-      `${files.length} files indexed) and can be large; prefer "summary" plus ` +
-      `search_files/search_symbols/dependencies_of for targeted reads.`;
+      `detail:"full" returns module/file/symbol listings (${moduleCount} modules, ${files.length} files indexed) and can be large; prefer "summary" plus search_files/search_symbols/dependencies_of for targeted reads.`;
   }
   result["nextSteps"] = [];
   return result;
@@ -882,112 +753,4 @@ function resolveNode(
     }
   }
   return null;
-}
-
-// ── verify_answer ────────────────────────────────────────────────────────────
-
-async function verifyAnswer(h: HandlerContext, args: ToolArgs): Promise<unknown> {
-  const task = requireString(args, "task");
-  const citedPaths = optionalStringArray(args, "citedPaths") ?? [];
-  const citedSymbols = optionalStringArray(args, "citedSymbols") ?? [];
-  const planTargets = optionalStringArray(args, "planTargets") ?? [];
-  const outputContractRaw = optionalArray(args, "outputContract") as
-    | Array<{ kind?: string; value?: string }>
-    | undefined;
-
-  const outputContract = outputContractRaw?.map((c) => ({
-    kind: String(c.kind ?? ""),
-    value: String(c.value ?? ""),
-  }));
-
-  const sdk = h.ctx.requireSDK();
-  const projectRoot = h.ctx.root;
-
-  // Resolve symbols from the context index
-  const resolveSymbols = async (): Promise<readonly string[]> => {
-    try {
-      const overview = sdk.project.overview("summary");
-      return (overview.topSymbols ?? []).map((s) => s.name);
-    } catch {
-      return [];
-    }
-  };
-
-  const verifier = createVerifier({
-    resolveSymbols,
-    getAnswerText: () => task,
-    computeFingerprint: async () => `${projectRoot}:${Date.now()}`,
-    log: (msg) => h.logger.info(msg),
-  });
-
-  // Load verify config
-  const config = loadVerifyConfig(projectRoot) ?? undefined;
-
-  const claimInput: ClaimCheckInput = {
-    task,
-    citedPaths,
-    citedSymbols,
-    planTargets,
-    ...(outputContract ? { outputContract } : {}),
-  };
-
-  const report = await verifier.verify(claimInput, config, projectRoot);
-
-  return {
-    task: report.task,
-    strategy: report.strategy,
-    claims: {
-      checks: report.claims.checks.map((c) => ({
-        id: c.id,
-        kind: c.kind,
-        target: c.target,
-        passed: c.passed,
-        detail: c.detail,
-      })),
-      passed: report.claims.passed,
-      failed: report.claims.failed,
-      allPassed: report.claims.allPassed,
-    },
-    commands: report.commands.map((c) => ({
-      command: c.command,
-      args: [...c.args],
-      exitCode: c.exitCode,
-      stdout: c.stdout,
-      stderr: c.stderr,
-      timedOut: c.timedOut,
-      durationMs: c.durationMs,
-      preExisting: c.preExisting,
-    })),
-    verdict: report.verdict,
-    summary: report.summary,
-    nextSteps: buildVerifyNextSteps(report),
-  };
-}
-
-function buildVerifyNextSteps(report: { verdict: string; claims: { failed: number } }): string[] {
-  const steps: string[] = [];
-  if (report.verdict === "fail") {
-    if (report.claims.failed > 0) {
-      steps.push("Fix hallucinated paths or symbols cited in the answer");
-    }
-    steps.push("Re-run verification after correcting the answer");
-  }
-  if (report.verdict === "partial") {
-    steps.push("Pre-existing failures detected; consider running atlas doctor");
-  }
-  return steps;
-}
-
-function optionalStringArray(args: ToolArgs, key: string): string[] | undefined {
-  const val = args[key];
-  if (val === undefined || val === null) return undefined;
-  if (!Array.isArray(val)) return undefined;
-  return val.map((v) => String(v));
-}
-
-function optionalArray(args: ToolArgs, key: string): unknown[] | undefined {
-  const val = args[key];
-  if (val === undefined || val === null) return undefined;
-  if (!Array.isArray(val)) return undefined;
-  return val;
 }

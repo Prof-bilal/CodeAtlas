@@ -1,23 +1,34 @@
-# CodeAtlas MCP Migration Guide (V2 — Phase 4)
+# CodeAtlas MCP Migration Guide (V2 — Phase 6 Release)
 
-> Source: `CODEATLAS-MCP-V2-IMPLEMENTATION-PLAN.md` §12 + §17 Phase 4.
-> Status: **compat window** — all 12 legacy tool names still work. Canonical
-> aliases are registered alongside them. The 4 deprecated tools log a
-> server-side warning on every call. Removal happens at the Phase 6 release
-> cut (one minor version after this lands).
+> Source: `CODEATLAS-MCP-V2-IMPLEMENTATION-PLAN.md` §12 + §17 Phase 4 + Phase 6.
+> Status: **release cut** — the 4 deprecated tools have been removed from the
+> protocol. Calls to `analyze_task`, `create_plan`, `verify_answer`, and
+> `explain_module` now return `Method not found`.
 
-## Canonical names (use these for new integrations)
+## Protocol surface (Phase 6)
 
-| Legacy (still works) | Canonical (preferred) | Notes |
+**8 legacy tools + 4 canonical aliases = 12 advertised names.**
+
+| Legacy | Canonical (preferred) | Notes |
 |---|---|---|
 | `find_relevant_context` | `context_for` | Identical I/O. Add `brief: true` for pointer-only items. |
-| `get_dependencies` | `dependencies_of` | Identical I/O + new `depth 1..3` (default 1). |
-| `project_overview` | `overview` | Identical I/O. `detail:"full"` now returns a `warning`. |
+| `get_dependencies` | `dependencies_of` | Identical I/O + `depth 1..3` (default 1). |
+| `project_overview` | `overview` | Identical I/O. `detail:"full"` returns a `warning`. |
 | `read_file_range` | `read_range` | Identical I/O. |
 
-Both spellings return identical results until the release cut removes the
-legacy names. `PROTOCOL_TOOL_NAMES` in `packages/mcp/src/tools.ts` is the
-contract test source of truth (12 legacy + 4 aliases = 16 advertised names).
+Both spellings return identical results. `PROTOCOL_TOOL_NAMES` in
+`packages/mcp/src/tools.ts` is the contract test source of truth.
+
+## Removed tools (Phase 6 release cut)
+
+| Tool | Replacement |
+|---|---|
+| `analyze_task` | `context_for` (classification is internal to assembly; call it directly). |
+| `create_plan` | `context_for` + `dependencies_of` with `depth: 2`. The planner's impact-set logic stays in `@atlas/sdk` for internal use. |
+| `verify_answer` | Run your own checks. The verifier package stays in the repo for harness use. |
+| `explain_module` | `overview` + `search_files` + `dependencies_of` (scoped by path). |
+
+Calls to removed tools return `Method not found` with a pointer to this document.
 
 ## New / changed parameters
 
@@ -32,26 +43,8 @@ contract test source of truth (12 legacy + 4 aliases = 16 advertised names).
   string steering callers to `summary` + targeted reads.
 - `inspect_symbol`: `callers`/`callees` capped at 25 each with
   `callerOverflow`/`calleeOverflow` strings + `confidence` (`high`/`medium`/`low`).
-- `explain_module`: caps tightened 200/200 → 50/50 with existing
-  `fileOverflow`/`symbolOverflow` strings.
 
-## Deprecated tools (removed at the Phase 6 cut)
-
-| Tool | Replacement |
-|---|---|
-| `analyze_task` | `context_for` (classification is internal to assembly; call it directly). |
-| `create_plan` | `context_for` + `dependencies_of` with `depth: 2`. The planner's impact-set logic stays in `@atlas/sdk` for internal use. |
-| `verify_answer` | Run your own checks. The verifier package stays in the repo for harness use. |
-| `explain_module` | `overview` + `search_files` + `dependencies_of` (scoped by path). |
-
-Each deprecated tool's `description` in `tools/list` carries a `DEPRECATED`
-prefix naming its replacement. The server logs
-`deprecated tool called: <name>` at `warn` level per call. No `Method not
-found` shim is needed yet because the tools are still registered — at the
-release cut they will be unregistered and calls will return `Method not
-found` with this doc's URL in the message.
-
-## Score / envelope changes (already live, repeated here)
+## Score / envelope changes (already live)
 
 - Scores normalized to **0..1** (`score`), raw 0..100 dual-emitted as
   `rawScore`, plus `confidence` (`high`/`medium`/`low`).

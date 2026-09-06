@@ -385,38 +385,6 @@ describe("get_dependencies", () => {
   });
 });
 
-describe("explain_module", () => {
-  it("explains a folder with files, symbols, dependencies, and summary", async () => {
-    await withFixture(async (ctx) => {
-      const result = (await HANDLERS.explain_module(ctx, { path: "/src" })) as {
-        fileCount: number;
-        symbolCount: number;
-        dependencyCount: number;
-        module: { path: string; moduleType: string } | null;
-        summary: { kind: string } | null;
-      };
-      expect(result.module?.path).toBe("/src");
-      expect(result.module?.moduleType).toBe("folder");
-      expect(result.fileCount).toBe(2);
-      expect(result.symbolCount).toBe(3);
-      expect(result.dependencyCount).toBe(2);
-      expect(result.summary?.kind).toBe("module");
-    });
-  });
-
-  it("can exclude the summary and dependencies", async () => {
-    await withFixture(async (ctx) => {
-      const result = (await HANDLERS.explain_module(ctx, {
-        path: "/src",
-        includeSummary: false,
-        includeDependencies: false,
-      })) as { summary: unknown; dependencies: unknown };
-      expect(result.summary).toBeNull();
-      expect(result.dependencies).toHaveLength(0);
-    });
-  });
-});
-
 describe("project_overview", () => {
   it("returns counts, languages, and the stored project summary", async () => {
     await withFixture(async (ctx) => {
@@ -605,95 +573,6 @@ describe("read_file_range", () => {
       expect(result.versionMatch).toBe(false);
       expect(result.message).toContain("changed");
       expect(result.content).toContain("extra");
-    });
-  });
-});
-
-// ── analyze_task ────────────────────────────────────────────────────────────
-
-describe("analyze_task", () => {
-  it("classifies a debug task", async () => {
-    await withFixture(async (ctx) => {
-      const result = (await HANDLERS.analyze_task(ctx, {
-        task: "Fix the crash in src/auth.ts when login fails",
-      })) as {
-        category: string;
-        confidence: number;
-        reasoning: string;
-        entities: { filePaths: string[]; symbolNames: string[]; keywords: string[] };
-        nextSteps: string[];
-      };
-      expect(result.category).toBe("debug");
-      expect(result.confidence).toBeGreaterThan(0);
-      expect(result.reasoning.length).toBeGreaterThan(0);
-      expect(result.entities.filePaths).toContain("src/auth.ts");
-      expect(result.nextSteps.length).toBeGreaterThan(0);
-    });
-  });
-
-  it("classifies a security task", async () => {
-    await withFixture(async (ctx) => {
-      const result = (await HANDLERS.analyze_task(ctx, {
-        task: "Fix the SQL injection vulnerability in the search endpoint",
-      })) as { category: string };
-      expect(result.category).toBe("security");
-    });
-  });
-
-  it("extracts symbol names from the task", async () => {
-    await withFixture(async (ctx) => {
-      const result = (await HANDLERS.analyze_task(ctx, {
-        task: "Fix `UserService.create` in src/user.ts",
-      })) as { entities: { symbolNames: string[]; filePaths: string[] } };
-      expect(result.entities.symbolNames).toContain("UserService");
-      expect(result.entities.filePaths).toContain("src/user.ts");
-    });
-  });
-
-  it("requires a task argument", async () => {
-    await withFixture(async (ctx) => {
-      await expect(HANDLERS.analyze_task(ctx, {})).rejects.toThrow(ToolInputError);
-    });
-  });
-});
-
-// ── create_plan ─────────────────────────────────────────────────────────────
-
-describe("create_plan", () => {
-  it("produces a plan with steps and impact set", async () => {
-    await withFixture(async (ctx) => {
-      const result = (await HANDLERS.create_plan(ctx, {
-        task: "Fix the login bug",
-      })) as {
-        category: string;
-        steps: Array<{ order: number; action: string; rationale: string }>;
-        impactSet: string[];
-        unknowns: string[];
-        verificationStrategy: string;
-        nextSteps: string[];
-      };
-      expect(result.category).toBe("debug");
-      expect(result.steps.length).toBeGreaterThan(0);
-      expect(result.impactSet.length).toBeGreaterThan(0);
-      expect(result.verificationStrategy).toBeDefined();
-      expect(result.nextSteps.length).toBeGreaterThan(0);
-    });
-  });
-
-  it("includes steps with sequential order", async () => {
-    await withFixture(async (ctx) => {
-      const result = (await HANDLERS.create_plan(ctx, {
-        task: "Fix the bug",
-      })) as { steps: Array<{ order: number }> };
-      for (let i = 0; i < result.steps.length; i++) {
-        expect(result.steps[i]?.order).toBe(i + 1);
-      }
-    });
-  });
-
-  it("requires a task argument", async () => {
-    await withFixture(async (ctx) => {
-      await expect(HANDLERS.create_plan(ctx, {})).rejects.toThrow(ToolInputError);
     });
   });
 });

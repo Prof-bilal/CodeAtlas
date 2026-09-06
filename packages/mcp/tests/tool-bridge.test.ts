@@ -174,12 +174,12 @@ function handlerContext(sdk: ContextSDK, logger: ReturnType<typeof createLogger>
 }
 
 describe("createContextToolSource", () => {
-  it("returns the 12 legacy tools plus 4 canonical aliases", () => {
+  it("returns the 8 legacy tools plus 4 canonical aliases", () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
     const toolSource = createContextToolSource(handlerContext(sdk, logger));
     const tools = toolSource.listTools();
-    expect(tools.length).toBe(16);
+    expect(tools.length).toBe(12);
     const names = tools.map((t) => t.function.name);
     for (const canonical of ["context_for", "dependencies_of", "read_range", "overview"]) {
       expect(names).toContain(canonical);
@@ -195,11 +195,8 @@ describe("createContextToolSource", () => {
       .map((t) => t.function.name)
       .sort();
     expect(names).toEqual([
-      "analyze_task",
       "context_for",
-      "create_plan",
       "dependencies_of",
-      "explain_module",
       "find_relevant_context",
       "get_dependencies",
       "get_summary",
@@ -210,7 +207,6 @@ describe("createContextToolSource", () => {
       "read_range",
       "search_files",
       "search_symbols",
-      "verify_answer",
     ]);
   });
 

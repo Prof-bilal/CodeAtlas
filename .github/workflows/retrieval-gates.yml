@@ -1,4 +1,4 @@
-name: Retrieval gates (Phase 0/6, informational)
+name: Retrieval gates (Phase 6, blocking)
 
 on:
   push:
@@ -21,8 +21,76 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
       - name: Validate held-out retrieval set
         run: node benchmarks/retrieval-tasks/evaluate.mjs benchmarks/retrieval-tasks/tasks.json
 
-      - name: Scale-grid probe (small, measure-only)
+  retrieval-eval:
+    runs-on: ubuntu-latest
+    needs: retrieval-smoke
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Build context index
+        run: pnpm exec atlas build
+
+      - name: Run retrieval evaluation
+        run: pnpm exec tsx benchmarks/retrieval-tasks/evaluate-retrieval.ts . benchmarks/retrieval-tasks/tasks.json
+
+  scale-grid:
+    runs-on: ubuntu-latest
+    needs: retrieval-smoke
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run scale grid
         run: pnpm exec tsx benchmarks/scale-grid/generate.mjs
+
+  contract-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run MCP tool contract tests
+        run: pnpm --filter @atlas/mcp test

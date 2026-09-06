@@ -7,26 +7,31 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Releases are cut from the published `codeatlas-cli`; the changelog tracks the
 npm versions.
 
-## [Unreleased] (MCP V2 Phase 4 — compat window)
+## [Unreleased] (MCP V2 Phase 6 — release cut)
 
 ### Added
 
-- `get_dependencies` / `dependencies_of`: bounded multi-hop traversal via new
-  `depth` (1..3, default 1) with per-edge `hop` + `path` attribution
-  (SDK `DependencyQuery.depth`, `DependencyContext.hop/path`).
-- `inspect_symbol`: `confidence` band + 25-each caller/callee caps with
-  `callerOverflow` / `calleeOverflow`.
-- `project_overview` / `overview` `detail:"full"`: explicit `warning` steering
-  callers to summary + targeted reads.
-- `docs/MCP_MIGRATION.md`: canonical alias table, `depth` semantics, deprecated
-  tool replacements, Phase 6 removal schedule.
+- `benchmarks/retrieval-tasks/evaluate-retrieval.ts`: full P@k/MRR/R@k
+  retrieval evaluation script against a built index.
+- `.github/workflows/retrieval-gates.yml`: blocking CI gate with retrieval
+  smoke, retrieval eval, scale grid, and contract test jobs.
+
+### Removed
+
+- **Phase 6 release cut:** removed `analyze_task`, `create_plan`,
+  `verify_answer`, `explain_module` from the MCP protocol. Calls to these
+  tools now return `Method not found`. See `docs/MCP_MIGRATION.md`.
+- Removed `moduleFile` and `moduleDependencyShape` types (only used by
+  `explain_module`).
+- Removed `createClassifier`, `createPlanner`, `createVerifier`,
+  `loadVerifyConfig` imports from handlers (only used by removed tools).
 
 ### Changed
 
-- `explain_module` caps tightened 200/200 → 50/50 (overflow strings unchanged).
-- `analyze_task`, `create_plan`, `verify_answer`, `explain_module` marked
-  DEPRECATED in `tools/list` descriptions + server-side `warn` per call; all
-  four stay registered until the Phase 6 release cut (see migration doc).
+- MCP protocol surface reduced from 16 (12 legacy + 4 aliases) to 12
+  (8 legacy + 4 aliases) advertised tool names.
+- `docs/MCP_MIGRATION.md` updated to reflect Phase 6 release cut.
+- `benchmarks/retrieval-tasks/BASELINE.md` updated with capture instructions.
 
 ## [0.4.0-beta.0] - 2026-08-23
 

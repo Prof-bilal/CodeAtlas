@@ -261,7 +261,6 @@ describe("MCP output schema conformance", () => {
         { name: "search_files", args: { query: "app.ts" } },
         { name: "get_summary", args: { target: appPath } },
         { name: "get_dependencies", args: {} },
-        { name: "explain_module", args: { path: join(root, "src") } },
         { name: "project_overview", args: { detail: "full" } },
         { name: "read_file_range", args: { path: appPath, startLine: 1, endLine: 5 } },
       ];
