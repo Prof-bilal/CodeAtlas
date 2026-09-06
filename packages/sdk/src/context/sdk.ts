@@ -375,7 +375,24 @@ class ContextSDKFacade implements ContextSDK {
     this.requireSearchable(query);
     this.rebuildSearch();
     const startedAt = performance.now();
-    const hits = this.searchService.search(query, options);
+    let hits: readonly SearchResult[];
+    // Identifier fast lane (Phase 2d): a single identifier-like symbol query
+    // (e.g. `UserRepository`, `createUserRoutes`) gets a strict exact-name
+    // pass first, so typos and prefix noise never push the true definition
+    // below an import/export lookalike. Falls back to the normal fuzzy lexical
+    // search when the strict pass finds nothing.
+    if (
+      options?.types?.length === 1 &&
+      options.types[0] === "symbol" &&
+      isIdentifierLikeQuery(query)
+    ) {
+      hits = this.exactSymbolHits(query, options);
+      if (hits.length === 0) {
+        hits = this.searchService.search(query, options);
+      }
+    } else {
+      hits = this.searchService.search(query, options);
+    }
     this.metrics?.recordSearch({ latencyMs: Math.round(performance.now() - startedAt) });
     const kind = options?.kind;
     if (kind === undefined) {
@@ -389,6 +406,46 @@ class ContextSDKFacade implements ContextSDK {
       const symbolId = symbolIdFromTarget(hit.targetId);
       return symbolId !== null && symbols.get(symbolId)?.kind === kind;
     });
+  }
+
+  /**
+   * Strict exact-name symbol pass: scan the persisted symbol rows for names
+   * equal to the query and return them as search hits (score 100). Respects
+   * the caller's `limit`, `minScore`, and `kind` filter. Deterministic:
+   * definition-kind symbols outrank import/export references at the same name.
+   */
+  private exactSymbolHits(
+    query: string,
+    options: SearchRequest & { readonly kind?: string },
+  ): readonly SearchResult[] {
+    const limit = options.limit ?? 20; // matches the search service default
+    const kind = options.kind;
+    const needle = query.trim().toLowerCase();
+    const symbolById = new Map<string, PersistedSymbol>();
+    for (const symbol of this.reads.listSymbols()) {
+      symbolById.set(symbol.id, symbol);
+    }
+    const ranked: Array<{ symbol: PersistedSymbol; score: number }> = [];
+    for (const symbol of symbolById.values()) {
+      if (symbol.name.toLowerCase() !== needle) {
+        continue;
+      }
+      if (kind !== undefined && symbol.kind !== kind) {
+        continue;
+      }
+      const score = definitionKinds.has(symbol.kind) ? 100 : 90;
+      ranked.push({ symbol, score });
+    }
+    ranked.sort(
+      (left, right) => right.score - left.score || (left.symbol.id < right.symbol.id ? -1 : 1),
+    );
+    return ranked.slice(0, limit).map(({ symbol, score }) => ({
+      kind: "symbol" as const,
+      title: symbol.name,
+      path: symbol.filePath as FilePath,
+      targetId: `symbol:${symbol.id}`,
+      score,
+    }));
   }
 
   /** All indexed source files, optionally restricted to one path subtree. */
@@ -506,6 +563,7 @@ class ContextSDKFacade implements ContextSDK {
       const direction = options?.direction ?? "both";
       const relation = options?.relation;
       const limit = options?.limit;
+      const depth = Math.min(3, Math.max(1, Math.floor(options?.depth ?? 1)));
 
       let nodeIds: ReadonlySet<string> | null = null;
       let nodeFound = true;
@@ -523,12 +581,14 @@ class ContextSDKFacade implements ContextSDK {
       }
 
       const allEdges = this.reads.listDependencies();
-      const filtered = allEdges.filter(({ edge }) => {
-        if (nodeIds === null) {
-          return true;
-        }
-        const isFrom = nodeIds.has(edge.from);
-        const isTo = nodeIds.has(edge.to);
+      const matchesRelation = (kind: string): boolean =>
+        relation === undefined || kind === relation;
+      const edgeTouches = (
+        edge: { readonly from: string; readonly to: string },
+        ids: ReadonlySet<string>,
+      ): boolean => {
+        const isFrom = ids.has(edge.from);
+        const isTo = ids.has(edge.to);
         if (direction === "outgoing") {
           return isFrom;
         }
@@ -536,15 +596,105 @@ class ContextSDKFacade implements ContextSDK {
           return isTo;
         }
         return isFrom || isTo;
-      });
-      const byRelation =
-        relation === undefined ? filtered : filtered.filter(({ edge }) => edge.kind === relation);
-      const selected = limit === undefined ? byRelation : byRelation.slice(0, limit);
+      };
 
+      // Depth-1 (or unfiltered): direct adjacency only, preserving legacy order.
+      if (nodeIds === null || depth <= 1 || !nodeFound) {
+        const filtered = allEdges.filter(({ edge }) => {
+          if (nodeIds === null) {
+            return true;
+          }
+          return edgeTouches(edge, nodeIds as ReadonlySet<string>);
+        });
+        const byRelation =
+          relation === undefined
+            ? filtered
+            : filtered.filter(({ edge }) => matchesRelation(edge.kind));
+        const selected = limit === undefined ? byRelation : byRelation.slice(0, limit);
+        const seedList = nodeIds === null ? [] : [...(nodeIds as ReadonlySet<string>)];
+        return {
+          edges: selected.map((entry) => {
+            const base = toDependencyContext(entry);
+            if (nodeIds === null) {
+              return base;
+            }
+            const seed = seedList.find((id) => id === entry.edge.from || id === entry.edge.to);
+            if (seed === undefined) {
+              return { ...base, hop: 1 as const };
+            }
+            return {
+              ...base,
+              hop: 1 as const,
+              path: [seed, entry.edge.from === seed ? entry.edge.to : entry.edge.from],
+            };
+          }),
+          nodeFound,
+          total: allEdges.length,
+          depth,
+        };
+      }
+
+      // Depth 2..3: bounded BFS from the seed node(s), cycle-safe.
+      // Outgoing follows from->to, incoming follows to->from, both follows either.
+      const seeds = [...(nodeIds as ReadonlySet<string>)];
+      const visited = new Set<string>(seeds);
+      const collected: Array<{
+        edge: (typeof allEdges)[number];
+        hop: number;
+        path: string[];
+      }> = [];
+      let frontier: Array<{ nodeId: string; path: string[] }> = seeds.map((s) => ({
+        nodeId: s,
+        path: [s],
+      }));
+      for (let hop = 1; hop <= depth && frontier.length > 0; hop += 1) {
+        const nextFrontier: Array<{ nodeId: string; path: string[] }> = [];
+        for (const { nodeId, path } of frontier) {
+          const singleton = new Set([nodeId]);
+          for (const entry of allEdges) {
+            if (!matchesRelation(entry.edge.kind)) {
+              continue;
+            }
+            if (!edgeTouches(entry.edge, singleton)) {
+              continue;
+            }
+            // Determine the far endpoint relative to traversal direction.
+            let far: string | null = null;
+            if (direction === "outgoing" && entry.edge.from === nodeId) {
+              far = entry.edge.to;
+            } else if (direction === "incoming" && entry.edge.to === nodeId) {
+              far = entry.edge.from;
+            } else if (direction === "both") {
+              far = entry.edge.from === nodeId ? entry.edge.to : entry.edge.from;
+            }
+            if (far === null) {
+              continue;
+            }
+            collected.push({ edge: entry, hop, path: [...path, far] });
+            if (!visited.has(far)) {
+              visited.add(far);
+              nextFrontier.push({ nodeId: far, path: [...path, far] });
+            }
+            if (limit !== undefined && collected.length >= limit) {
+              break;
+            }
+          }
+          if (limit !== undefined && collected.length >= limit) {
+            break;
+          }
+        }
+        frontier = nextFrontier;
+      }
+      const selected = limit === undefined ? collected : collected.slice(0, limit);
       return {
-        edges: selected.map(toDependencyContext),
+        edges: selected.map(({ edge, hop, path }) => ({
+          ...toDependencyContext(edge),
+          hop,
+          path,
+        })),
         nodeFound,
         total: allEdges.length,
+        depth,
       };
     },
   };
@@ -685,12 +835,17 @@ class ContextSDKFacade implements ContextSDK {
       }
       const counts = this.reads.counts();
       const summary = this.reads.findSummary("project", "");
+      const unresolvedRaw = snapshot.metadata?.["unresolvedImports"];
+      const unresolvedImports = unresolvedRaw === undefined ? undefined : Number(unresolvedRaw);
       const base: ProjectOverview = {
         repositoryPath: this.config.repositoryPath,
         savedAt: snapshot.savedAt,
         schemaVersion: snapshot.version,
         languages,
         counts,
+        ...(unresolvedImports !== undefined && Number.isFinite(unresolvedImports)
+          ? { unresolvedImports }
+          : {}),
         ...(summary !== undefined ? { summary } : {}),
       };
       if (detail !== "full") {
@@ -948,3 +1103,33 @@ function symbolIdFromTarget(targetId: string | null): string | null {
   }
   return targetId.slice("symbol:".length);
 }
+
+/**
+ * True when a query is a single identifier-like token: one word of ≥ 3 chars
+ * containing an uppercase letter, a digit, or an underscore (camelCase /
+ * PascalCase / snake_case symbol names). Natural-language sentences and bare
+ * lowercase prose words do not qualify, so the exact-name fast lane never
+ * shadows the fuzzy lexical search for them.
+ */
+function isIdentifierLikeQuery(query: string): boolean {
+  const trimmed = query.trim();
+  if (trimmed.length < 3 || /\s/.test(trimmed)) {
+    return false;
+  }
+  return /[A-Z0-9_]/.test(trimmed);
+}
+
+/** Symbol kinds that declare a definition (outrank import/export references). */
+const definitionKinds = new Set([
+  "class",
+  "interface",
+  "function",
+  "method",
+  "constructor",
+  "property",
+  "variable",
+  "constant",
+  "enum",
+  "enum-member",
+  "type-alias",
+]);

@@ -9,7 +9,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createLogger } from "../src/log";
 import { type CodeAtlasMcpServer, createMcpServer } from "../src/server";
-import { TOOL_NAMES } from "../src/tools";
+import { PROTOCOL_TOOL_NAMES } from "../src/tools";
 import { silentLogger } from "./fixture";
 
 const tempRoots: string[] = [];
@@ -84,7 +84,7 @@ describe("MCP startup behavior", () => {
       expect(info?.version).toBe(VERSION);
 
       const { tools } = await conn.client.listTools();
-      expect(tools.map((tool) => tool.name).sort()).toEqual([...TOOL_NAMES].sort());
+      expect(tools.map((tool) => tool.name).sort()).toEqual([...PROTOCOL_TOOL_NAMES].sort());
       for (const tool of tools) {
         expect(tool.description ?? "").not.toHaveLength(0);
         expect(tool.inputSchema.type).toBe("object");
@@ -303,7 +303,7 @@ describe("MCP stdio binary (built dist/bin.js)", () => {
       const toolNames = ((listed.result?.["tools"] ?? []) as Array<{ name: string }>)
         .map((tool) => tool.name)
         .sort();
-      expect(toolNames).toEqual([...TOOL_NAMES].sort());
+      expect(toolNames).toEqual([...PROTOCOL_TOOL_NAMES].sort());
 
       child.stdin.write(
         frame({

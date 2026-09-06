@@ -159,6 +159,36 @@ describe("indexProject", () => {
     expect(second.value.unchanged).toBe(1);
   });
 
+  it("parses JavaScript through the JS bridge (allowJs) instead of leaving it content-only", async () => {
+    const root = await mkdtemp(join(tmpdir(), "atlas-indexer-js-"));
+    roots.push(root);
+    await mkdir(join(root, "src"));
+    await writeFile(
+      join(root, "src", "utils.js"),
+      "export function helper(value) { return value * 2; }\n",
+    );
+    await writeFile(
+      join(root, "src", "main.ts"),
+      "import { helper } from './utils'; export const answer = helper(21);\n",
+    );
+
+    const result = await indexProject({ repositoryPath: root, mode: "build" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.parsedFiles).toBe(2);
+
+    const store = new ContextStore({ filePath: result.value.dbPath });
+    try {
+      const symbols = store.loadContext().symbols ?? [];
+      // The JS `helper` function now has a symbol row.
+      expect(
+        symbols.some((symbol) => symbol.name === "helper" && symbol.filePath.endsWith("utils.js")),
+      ).toBe(true);
+    } finally {
+      store.close();
+    }
+  });
+
   it("does not generate summaries unless requested", async () => {
     const root = await makeProject();
     const summary = fakeSummaryPort();

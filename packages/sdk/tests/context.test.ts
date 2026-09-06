@@ -224,6 +224,48 @@ describe("Context SDK — symbol queries", () => {
       expect(login?.targetId).toBe("s1");
     });
   });
+
+  it("identifier fast lane: exact name beats import/export lookalikes", () => {
+    withSdk((sdk) => {
+      // Seed an import symbol that reuses the exact name (like a re-export).
+      sdk.write.update({
+        symbols: [
+          fixtureSymbol("s4", "AuthService", "/src/re-export.ts", "import"),
+          fixtureSymbol("s5", "AuthService", "/src/auth-service.ts", "class"),
+        ],
+      });
+      const hits = sdk.symbols.searchSymbols("AuthService");
+      const top = hits[0];
+      expect(top?.title).toBe("AuthService");
+      // The definition (class) outranks the import binding at the same name.
+      expect(top?.path).toBe("/src/auth-service.ts");
+      expect(hits.some((h) => h.path === "/src/re-export.ts")).toBe(true);
+    });
+  });
+
+  it("identifier fast lane: kind filter still applies", () => {
+    withSdk((sdk) => {
+      sdk.write.update({
+        symbols: [
+          fixtureSymbol("s4", "TokenStore", "/src/store.ts", "class"),
+          fixtureSymbol("s5", "TokenStore", "/src/index.ts", "import"),
+        ],
+      });
+      const classes = sdk.symbols.searchSymbols("TokenStore", { kind: "class" });
+      expect(classes).toHaveLength(1);
+      expect(classes[0]?.path).toBe("/src/store.ts");
+      const imports = sdk.symbols.searchSymbols("TokenStore", { kind: "import" });
+      expect(imports.some((h) => h.path === "/src/index.ts")).toBe(true);
+    });
+  });
+
+  it("identifier fast lane: lowercase prose still uses the fuzzy path", () => {
+    withSdk((sdk) => {
+      // "double" is lowercase → not identifier-like → no strict exact lane.
+      const hits = sdk.symbols.searchSymbols("doubl");
+      expect(hits.some((hit) => hit.title === "double")).toBe(true); // fuzzy typo
+    });
+  });
 });
 
 describe("Context SDK — dependency queries", () => {

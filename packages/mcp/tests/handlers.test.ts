@@ -13,6 +13,7 @@ function handlerContext(fx: Fixture): HandlerContext {
   return {
     ctx: new CodeAtlasContext({ root: fx.root }),
     logger: silentLogger(),
+    timings: { probeMs: 0 },
   };
 }
 
@@ -34,6 +35,7 @@ async function withEmptyRoot(fn: (ctx: HandlerContext) => Promise<void>): Promis
   const ctx: HandlerContext = {
     ctx: new CodeAtlasContext({ root }),
     logger: silentLogger(),
+    timings: { probeMs: 0 },
   };
   try {
     await fn(ctx);
@@ -69,6 +71,7 @@ async function withOnDiskFile(
     const ctx: HandlerContext = {
       ctx: new CodeAtlasContext({ root }),
       logger: silentLogger(),
+      timings: { probeMs: 0 },
     };
     try {
       await fn(ctx);
@@ -346,6 +349,40 @@ describe("get_dependencies", () => {
       expect(result.count).toBe(0);
     });
   });
+
+  it("defaults depth to 1 with hop/path attribution", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.get_dependencies(ctx, {
+        node: "/src/auth.ts",
+      })) as {
+        depth: number;
+        dependencies: ReadonlyArray<{ hop: number; path: string[] }>;
+      };
+      expect(result.depth).toBe(1);
+      expect(result.dependencies.length).toBeGreaterThan(0);
+      for (const edge of result.dependencies) {
+        expect(edge.hop).toBe(1);
+        expect(edge.path.length).toBe(2);
+      }
+    });
+  });
+
+  it("expands multi-hop with depth 2 and rejects out-of-range depth", async () => {
+    await withFixture(async (ctx) => {
+      const two = (await HANDLERS.get_dependencies(ctx, {
+        node: "/src/auth.ts",
+        depth: 2,
+        direction: "both",
+      })) as { depth: number; count: number };
+      expect(two.depth).toBe(2);
+      expect(two.count).toBeGreaterThanOrEqual(1);
+      // Protocol bound is 1..3 (tools.ts); out-of-range is a clean input
+      // error, while the SDK itself clamps (see dependency-depth.test.ts).
+      await expect(
+        HANDLERS.get_dependencies(ctx, { node: "/src/auth.ts", depth: 99 }),
+      ).rejects.toThrow(ToolInputError);
+    });
+  });
 });
 
 describe("explain_module", () => {
@@ -421,6 +458,16 @@ describe("project_overview", () => {
         includeSummary: false,
       })) as Record<string, unknown>;
       expect(result["summary"]).toBeUndefined();
+    });
+  });
+
+  it("emits a size warning on detail full", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.project_overview(ctx, {
+        detail: "full",
+      })) as { warning?: string };
+      expect(typeof result.warning).toBe("string");
+      expect(result.warning ?? "").toContain("full");
     });
   });
 });
@@ -841,6 +888,21 @@ describe("inspect_symbol", () => {
   it("requires a symbol argument", async () => {
     await withFixture(async (ctx) => {
       await expect(HANDLERS.inspect_symbol(ctx, {})).rejects.toThrow(ToolInputError);
+    });
+  });
+
+  it("caps callers/callees and reports confidence", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.inspect_symbol(ctx, {
+        symbol: "double",
+      })) as {
+        callers: unknown[];
+        callees: unknown[];
+        confidence?: string;
+      };
+      expect(result.callers.length).toBeLessThanOrEqual(25);
+      expect(result.callees.length).toBeLessThanOrEqual(25);
+      expect(["high", "medium", "low"]).toContain(result.confidence);
     });
   });
 });

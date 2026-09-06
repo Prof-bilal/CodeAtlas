@@ -8,7 +8,7 @@ import { CodeAtlasContext, type CodeAtlasContextOptions } from "./context";
 import type { FreshnessReport } from "./freshness";
 import { HANDLERS, type HandlerContext } from "./handlers";
 import { type LogLevel, type Logger, createLogger } from "./log";
-import { TOOLS, type ToolDefinition } from "./tools";
+import { TOOL_ALIASES, TOOLS, type ToolDefinition } from "./tools";
 import { type ToolArgs, ToolDomainError, ToolInputError } from "./validation";
 
 /** Options for creating or starting a CodeAtlas MCP server. */
@@ -115,6 +115,30 @@ function registerTools(
       (args, _extra) => runTool(tool, context, logger, budget, args),
     );
   }
+  // Phase 4 compat window: register the canonical names (`context_for`,
+  // `dependencies_of`, `read_range`, `overview`) as additional entries that
+  // delegate to the same deprecated tool. Both names stay live until the
+  // release cut removes the old ones.
+  const canonicalNames = new Map<string, ToolDefinition>();
+  for (const tool of TOOLS) {
+    canonicalNames.set(tool.name, tool);
+  }
+  for (const [canonical, deprecated] of Object.entries(TOOL_ALIASES)) {
+    const tool = canonicalNames.get(deprecated);
+    if (tool === undefined) {
+      continue;
+    }
+    server.registerTool(
+      canonical,
+      {
+        title: tool.title,
+        description: `${tool.description}\n\n(CANONICAL name for the deprecated \`${deprecated}\` tool.)`,
+        inputSchema: tool.inputSchema,
+        outputSchema: tool.outputSchema,
+      },
+      (args, _extra) => runTool(tool, context, logger, budget, args),
+    );
+  }
 }
 
 /** Execute a tool handler, converting success and failure into a tool result. */
@@ -141,11 +165,27 @@ async function runTool(
   // Detect stale index state before serving reads: refresh incrementally when
   // the working tree has drifted, and report the outcome to the client.
   const freshness = await context.ensureFresh();
-  const hctx: HandlerContext = { ctx: context, logger };
+  const timings: { probeMs: number; searchMs?: number; assemblyMs?: number } = {
+    probeMs: freshness.probeMs ?? 0,
+  };
+  // Phase 4 deprecation notice (compat window): deprecated tools keep working
+  // until the Phase 6 release cut, but every call is logged loudly so
+  // operators can migrate before removal. See docs/MCP_MIGRATION.md.
+  if (
+    tool.name === "analyze_task" ||
+    tool.name === "create_plan" ||
+    tool.name === "verify_answer" ||
+    tool.name === "explain_module"
+  ) {
+    logger.warn(
+      `deprecated tool called: ${tool.name} (see docs/MCP_MIGRATION.md for the replacement)`,
+    );
+  }
+  const hctx: HandlerContext = { ctx: context, logger, timings };
   const handler = HANDLERS[tool.name];
   try {
     const result = await handler(hctx, args as ToolArgs);
-    const enriched = enrichFreshness(result, freshness);
+    const enriched = enrichResult(result, freshness, timings);
     const bytes = JSON.stringify(enriched).length;
     budget.record(tool.name, bytes);
     context.recordMcpRequest(Math.round(performance.now() - startedAt));
@@ -161,10 +201,24 @@ async function runTool(
   }
 }
 
-/** Attach the freshness report to object results (leaves primitives alone). */
-function enrichFreshness(result: unknown, freshness: FreshnessReport): unknown {
+/** Attach freshness + timings to object results (leaves primitives alone). */
+function enrichResult(
+  result: unknown,
+  freshness: FreshnessReport,
+  timings: { probeMs: number; searchMs?: number; assemblyMs?: number },
+): unknown {
   if (typeof result === "object" && result !== null && !Array.isArray(result)) {
-    return { ...result, freshness };
+    const responseBytes = JSON.stringify({ ...result, freshness, timings }).length;
+    return {
+      ...result,
+      freshness,
+      timings: {
+        probeMs: timings.probeMs,
+        ...(timings.searchMs !== undefined ? { searchMs: timings.searchMs } : {}),
+        ...(timings.assemblyMs !== undefined ? { assemblyMs: timings.assemblyMs } : {}),
+        responseBytes,
+      },
+    };
   }
   return result;
 }

@@ -19,6 +19,8 @@ export interface FreshnessReport {
   readonly changedFiles?: number;
   /** Human-readable detail for the `stale`/`unknown` states. */
   readonly message?: string;
+  /** Wall-clock ms spent in the freshness probe (and refresh when it ran). */
+  readonly probeMs?: number;
 }
 
 export interface FreshnessControllerOptions {
@@ -40,6 +42,12 @@ export interface FreshnessControllerOptions {
  * hashing, no parsing), and only when a change is detected does it run the
  * SDK-owned incremental `refresh()` (which re-parses just the changed files).
  * A repository with no changes is never re-indexed.
+ *
+ * Phase 5 decision (measure-only): no warm index / incremental probe cache is
+ * built in P0. `probeMs` is published on every `FreshnessReport` so the scale
+ * grid (`benchmarks/scale-grid/`) can prove whether the full walk hurts; the
+ * warm-index work ships only if the grid shows probe >5% of p50 read latency
+ * or branch-storm pain. Invalidation would be hash-versioned + fail-closed.
  */
 export class FreshnessController {
   /** Cached `savedAt` baseline; reset to `now` after each successful refresh. */
@@ -58,8 +66,14 @@ export class FreshnessController {
   /** Ensure the index is fresh, refreshing it when the working tree changed. */
   public async ensureFresh(sdk: ContextSDK): Promise<FreshnessReport> {
     const checkedAt = new Date().toISOString();
+    const startedAt = performance.now();
+    const withProbeMs = (report: FreshnessReport): FreshnessReport => ({
+      ...report,
+      probeMs: Math.round(performance.now() - startedAt),
+    });
+
     if (!this.options.autoRefresh || !sdk.isAvailable) {
-      return { state: "unavailable", refreshed: false, checkedAt };
+      return withProbeMs({ state: "unavailable", refreshed: false, checkedAt });
     }
     if (this.baselineMs === 0) {
       const parsed = Date.parse(sdk.status().lastUpdated);
@@ -71,12 +85,12 @@ export class FreshnessController {
       this.lastFullCheckAt = Date.now();
       const changes = await probeChanges(sdk, this.options.root, this.baselineMs);
       if (changes === null) {
-        return {
+        return withProbeMs({
           state: "unknown",
           refreshed: false,
           checkedAt,
           message: "Could not determine working-tree changes; results served as-is.",
-        };
+        });
       }
       if (changes > 0) {
         const result = await sdk.refresh();
@@ -86,26 +100,26 @@ export class FreshnessController {
           // by the next probe.
           const parsed = Date.parse(sdk.status().lastUpdated);
           this.baselineMs = Number.isNaN(parsed) ? Date.now() : parsed;
-          return {
+          return withProbeMs({
             state: "fresh",
             refreshed: true,
             checkedAt,
             changedFiles: changes,
-          };
+          });
         }
-        return {
+        return withProbeMs({
           state: "stale",
           refreshed: false,
           checkedAt,
           changedFiles: changes,
           message: `Auto-refresh failed: ${result.error.message}`,
-        };
+        });
       }
-      return { state: "fresh", refreshed: false, checkedAt };
+      return withProbeMs({ state: "fresh", refreshed: false, checkedAt });
     }
 
     // Within the debounce window: serve the previous verdict without probing.
-    return { state: "fresh", refreshed: false, checkedAt };
+    return withProbeMs({ state: "fresh", refreshed: false, checkedAt });
   }
 }
 

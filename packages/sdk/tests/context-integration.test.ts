@@ -295,6 +295,30 @@ describe("assembleContextPackage (via buildPackage)", () => {
     });
   });
 
+  it("brief mode replaces full content with one-line pointers", async () => {
+    const repo = tempRepo();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({
+        context: sdk,
+        sessions: fakeSessions().port,
+      });
+      const full = await integration.buildPackage({ task: "double" });
+      const brief = await integration.buildPackage({ task: "double", brief: true });
+
+      expect(brief.items.length).toBe(full.items.length); // selection unchanged
+      const fullBytes = full.items.reduce((sum, item) => sum + item.content.length, 0);
+      const briefBytes = brief.items.reduce((sum, item) => sum + item.content.length, 0);
+      expect(briefBytes).toBeLessThan(fullBytes); // strictly smaller
+      for (const item of brief.items) {
+        // Content is a pointer line, not the raw file/body text.
+        expect(item.content.length).toBeLessThan(200);
+        expect(item.content).not.toContain("export function double(n: number)");
+      }
+      // Same ids and paths (only the content shrank).
+      expect(brief.items.map((i) => i.id)).toEqual(full.items.map((i) => i.id));
+    });
+  });
+
   it("includes the repository digest after instructions", async () => {
     const repo = tempRepo();
     writeFileSync(join(repo, "AGENTS.md"), "# Rules\nNever commit secrets.\n");

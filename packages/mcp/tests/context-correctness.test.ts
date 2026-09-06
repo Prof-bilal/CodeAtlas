@@ -88,15 +88,30 @@ describe("MCP context correctness", () => {
         name: "search_symbols",
         arguments: { query: "Explain how AuthService depends on UserRepository.", limit: 5 },
       })) as unknown as {
-        structuredContent: { hits: Array<{ name: string; path: string; score: number }> };
+        structuredContent: {
+          hits: Array<{
+            name: string;
+            path: string;
+            score: number;
+            rawScore?: number;
+            confidence?: string;
+          }>;
+        };
       };
       const hits = result.structuredContent.hits;
       const userRepository = hits.find((hit) => hit.name === "UserRepository");
       expect(userRepository).toBeDefined();
       // Pre-fix, the trailing period kept "userrepository." and scored fuzzy
-      // (~54); the sentence-final form must now resolve exactly.
-      expect(userRepository?.score).toBe(100);
+      // (~54); the sentence-final form must now resolve exactly. The sentence
+      // carries 5 meaningful terms, so conjunction coverage damps the single
+      // exact term to 50 raw (0.5 normalized) — but the definition must still
+      // resolve to its file and outrank its equal-score import references.
+      expect(userRepository?.rawScore).toBe(50);
+      expect(userRepository?.score).toBe(0.5);
       expect(rel(root, userRepository?.path ?? "")).toMatch(/user-repository\.ts$/);
+      const userRepositoryHits = hits.filter((hit) => hit.name === "UserRepository");
+      expect(userRepositoryHits[0]?.path).toBe(userRepository?.path);
+      expect(userRepositoryHits.length).toBeGreaterThanOrEqual(2); // definition + imports
     } finally {
       await mcp.close();
       await client.close();
@@ -200,7 +215,7 @@ describe("MCP context correctness", () => {
     }
   });
 
-  it("expands the dependency chain for dependency-intent tasks", async () => {
+  it("traverses the graph for every task (not just dependency-intent wording)", async () => {
     const root = await buildAuditRepo();
     const sdk = createContextSDK({ repositoryPath: root });
     try {
@@ -212,14 +227,49 @@ describe("MCP context correctness", () => {
         staleness,
         options: {},
       });
-      const chainItems = pkg.items.filter((item) => item.source === "dependency-chain");
+      const chainItems = pkg.items.filter((item) => item.source === "traversal");
       // At least one file was pulled in purely through the graph (beyond
-      // keyword search), proving the hop expansion runs for dependency intent.
+      // keyword search), proving the default traversal stage runs.
       expect(chainItems.length).toBeGreaterThan(0);
-      // And chain files are low-priority evidence, never the top of the package.
+      // Path attribution: every traversal item explains how it was reached.
       for (const item of chainItems) {
-        expect(item.score).toBeLessThanOrEqual(30);
+        expect(item.reason).toContain("→");
+        expect(item.traversalPath).toBeDefined();
+        expect((item.traversalPath ?? []).length).toBeGreaterThanOrEqual(3); // seed → edge → file
+        // Decayed lane: a traversed file never outranks its own seed (≤100).
+        expect(item.score).toBeLessThanOrEqual(100);
+        expect(item.score).toBeGreaterThanOrEqual(1);
       }
+    } finally {
+      sdk.close();
+    }
+  });
+
+  it("traversal is bounded and deterministic (caps hold across the graph)", async () => {
+    const root = await buildAuditRepo();
+    const sdk = createContextSDK({ repositoryPath: root });
+    try {
+      const staleness = await detectStaleness(sdk);
+      const pkg = assembleContextPackage({
+        context: sdk,
+        repositoryPath: root,
+        task: "Where should I add a new user endpoint?",
+        staleness,
+        options: {},
+      });
+      const traversal = pkg.items.filter((item) => item.source === "traversal");
+      // Total cap: never more than 12 traversal files in the package.
+      expect(traversal.length).toBeLessThanOrEqual(12);
+      // Deterministic: reassembly yields the same traversal set.
+      const again = assembleContextPackage({
+        context: sdk,
+        repositoryPath: root,
+        task: "Where should I add a new user endpoint?",
+        staleness,
+        options: {},
+      });
+      const againTraversal = again.items.filter((item) => item.source === "traversal");
+      expect(againTraversal.map((item) => item.id)).toEqual(traversal.map((item) => item.id));
     } finally {
       sdk.close();
     }

@@ -42,6 +42,7 @@ export type ContextItemSource =
   | "summary"
   | "dependency"
   | "dependency-chain"
+  | "traversal"
   | "instructions"
   | "overview"
   | "digest";
@@ -77,6 +78,13 @@ export interface ContextPackageItem {
    * for file items when only specific ranges are known relevant.
    */
   readonly ranges?: readonly LineRange[];
+  /**
+   * For items reached through graph traversal (source `"traversal"`): the
+   * chain of node labels from a selected seed to this item, e.g.
+   * `["auth-service.ts", "calls", "user-repository.ts"]` — path attribution so
+   * an agent can verify the multi-hop evidence instead of trusting it.
+   */
+  readonly traversalPath?: readonly string[];
 }
 
 /** Configurable caps for a context package. */

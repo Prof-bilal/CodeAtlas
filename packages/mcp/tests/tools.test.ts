@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { TOOLS, TOOL_NAMES, type ToolName } from "../src/tools";
+import { PROTOCOL_TOOL_NAMES, TOOLS, TOOL_NAMES, type ToolName } from "../src/tools";
 
 describe("tool registry", () => {
   it("exposes exactly the twelve expected tools", () => {
@@ -24,6 +24,27 @@ describe("tool registry", () => {
 
   it("has at most 12 tools (ADR-017 cap)", () => {
     expect(TOOLS.length).toBeLessThanOrEqual(12);
+  });
+
+  it("advertises exactly the 12 legacy tools plus 4 canonical aliases", () => {
+    expect(PROTOCOL_TOOL_NAMES).toEqual([
+      "analyze_task",
+      "context_for",
+      "create_plan",
+      "dependencies_of",
+      "explain_module",
+      "find_relevant_context",
+      "get_dependencies",
+      "get_summary",
+      "inspect_symbol",
+      "overview",
+      "project_overview",
+      "read_file_range",
+      "read_range",
+      "search_files",
+      "search_symbols",
+      "verify_answer",
+    ]);
   });
 
   it("lists high-level tools before low-level tools", () => {
@@ -79,6 +100,25 @@ describe("tool registry", () => {
     for (const tool of TOOLS) {
       const nextSteps = tool.outputSchema["nextSteps"];
       expect(nextSteps, `tool ${tool.name} missing nextSteps`).toBeDefined();
+    }
+  });
+
+  it("declares depth 1..3 on get_dependencies with hop/path in output", () => {
+    const tool = TOOLS.find((entry) => entry.name === "get_dependencies");
+    expect(tool).toBeDefined();
+    expect(tool?.inputSchema["depth"]).toBeDefined();
+    expect(tool?.outputSchema["depth"]).toBeDefined();
+  });
+
+  it("marks the Phase 6 removal candidates as DEPRECATED", () => {
+    for (const name of [
+      "analyze_task",
+      "create_plan",
+      "verify_answer",
+      "explain_module",
+    ] as const) {
+      const tool = TOOLS.find((entry) => entry.name === name);
+      expect(tool?.description).toMatch(/DEPRECATED/);
     }
   });
 });

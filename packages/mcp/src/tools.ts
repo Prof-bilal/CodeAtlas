@@ -35,6 +35,35 @@ export const TOOL_NAMES: readonly ToolName[] = [
   "read_file_range",
 ];
 
+/**
+ * Deprecated aliases still accepted by the server (Phase 4 compat window).
+ * Each maps the deprecated name to the canonical tool it delegates to. The
+ * canonical tool is advertised under `canonicalToolName`; the deprecated name
+ * keeps working until the release cut removes it.
+ */
+export const TOOL_ALIASES: Readonly<Record<string, ToolName>> = {
+  context_for: "find_relevant_context",
+  dependencies_of: "get_dependencies",
+  read_range: "read_file_range",
+  overview: "project_overview",
+};
+
+/** Resolve a tool-call name to its canonical tool (identity when not an alias). */
+export function resolveToolName(name: string): ToolName {
+  const canonical = TOOL_ALIASES[name];
+  return canonical ?? (name as ToolName);
+}
+
+/**
+ * Every name advertised on `tools/list`: the 12 legacy tools plus the 4
+ * canonical aliases (Phase 4 compat window). Consumers asserting the protocol
+ * surface should compare against this, not `TOOL_NAMES` alone.
+ */
+export const PROTOCOL_TOOL_NAMES: readonly string[] = [
+  ...TOOL_NAMES,
+  ...Object.keys(TOOL_ALIASES),
+].sort();
+
 /** Symbol kinds the parser can emit (mirrors `@atlas/core` `SymbolKind`). */
 export const SYMBOL_KINDS = [
   "class",
@@ -96,8 +125,22 @@ const freshnessField = z
       .optional()
       .describe("Changed/added/deleted files detected before a refresh (when known)."),
     message: z.string().optional().describe("Human-readable detail for stale/unknown states."),
+    probeMs: z.number().optional().describe("Wall-clock ms spent in the freshness probe."),
   })
   .describe("Staleness report attached to every tool result.");
+
+/** Per-call timing attribution (Phase 0). */
+const timingsField = z
+  .object({
+    probeMs: z.number().describe("Freshness probe (+ refresh when it ran) in ms."),
+    searchMs: z.number().optional().describe("Search time in ms, when the tool searched."),
+    assemblyMs: z
+      .number()
+      .optional()
+      .describe("Context assembly time in ms, when the tool assembled a package."),
+    responseBytes: z.number().describe("Serialized response size in bytes."),
+  })
+  .describe("Per-call timing and size attribution.");
 
 /** A ranked symbol hit from `search_symbols`. */
 const symbolHit = {
@@ -107,6 +150,14 @@ const symbolHit = {
   symbolKind: z.string().optional().describe("Parser symbol kind, when still resolvable."),
   documentation: z.string().nullable().describe("Doc comment, when present."),
   score: z.number().describe("Deterministic relevance score (0..1)."),
+  rawScore: z
+    .number()
+    .optional()
+    .describe("Legacy 0..100 scorer value (dual-emit during deprecation)."),
+  confidence: z
+    .enum(["high", "medium", "low"])
+    .optional()
+    .describe("Coarse confidence band from the normalized score."),
 };
 
 /** A ranked file hit from `search_files`. */
@@ -114,6 +165,14 @@ const fileHit = {
   path: z.string().nullable().describe("Absolute path of the file."),
   language: z.string().optional().describe("Detected language, when still resolvable."),
   score: z.number().describe("Deterministic relevance score (0..1)."),
+  rawScore: z
+    .number()
+    .optional()
+    .describe("Legacy 0..100 scorer value (dual-emit during deprecation)."),
+  confidence: z
+    .enum(["high", "medium", "low"])
+    .optional()
+    .describe("Coarse confidence band from the normalized score."),
 };
 
 /** A file entry inside an `explain_module` result (no relevance score). */
@@ -145,6 +204,11 @@ const dependencyShape = {
   relation: z.string().describe("Edge kind (imports, calls, extends, ...)."),
   fromLabel: z.string().describe("Human-readable source label."),
   toLabel: z.string().describe("Human-readable target label."),
+  hop: z.number().optional().describe("Traversal hop distance from the query seed (depth>1)."),
+  path: z
+    .array(z.string())
+    .optional()
+    .describe("Ordered node ids from the seed to this edge's far endpoint (depth>1)."),
 };
 
 /** A dependency edge as exposed by `explain_module` (uses the SDK field name). */
@@ -162,8 +226,9 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "analyze_task",
     title: "Analyze task",
     description:
-      "FIRST CHOICE for any task: classify it (debug/security/architecture/understand), extract file paths, symbol names, and keywords. " +
-      "Deterministic, no AI, no index required. Start here to understand what the task needs. " +
+      "DEPRECATED (Phase 6 release cut; use `context_for`/`find_relevant_context` instead — see docs/MCP_MIGRATION.md). " +
+      "Classify a task (debug/security/architecture/understand), extract file paths, symbol names, and keywords. " +
+      "Deterministic, no AI, no index required. " +
       "Returns category, subcategory, confidence, reasoning, and extracted entities.",
     inputSchema: {
       task: boundedString("The user task or question to classify."),
@@ -189,6 +254,7 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "create_plan",
     title: "Create plan",
     description:
+      "DEPRECATED (Phase 6 release cut; use `context_for` + `dependencies_of depth:2` instead — see docs/MCP_MIGRATION.md). " +
       "Generate a deterministic plan for a task: classify it, build an impact set from search + dependency closure, " +
       "and produce ordered steps with rationale and verification strategy. Requires an indexed project. " +
       "Returns steps, impact set, unknowns, and verification strategy.",
@@ -236,6 +302,13 @@ export const TOOLS: readonly ToolDefinition[] = [
             "'auto' picks by repository size (default); " +
             "'auto-escalate' starts in digest and falls back to full if sufficiency is low.",
         ),
+      brief: z
+        .boolean()
+        .optional()
+        .describe(
+          "When true, item content is a one-line pointer (path:range) instead of full text — " +
+            "the cheapest way to discover what to read next. Fetch bodies with read_file_range. Default false.",
+        ),
     },
     outputSchema: {
       task: z.string().describe("The original task."),
@@ -248,7 +321,15 @@ export const TOOLS: readonly ToolDefinition[] = [
               .describe("Item kind (file, symbol, summary, dependency, instructions, overview)."),
             title: z.string().describe("Human-readable title."),
             path: z.string().nullable().describe("File path, when applicable."),
-            score: z.number().describe("Relevance score."),
+            score: z.number().describe("Relevance score (0..1)."),
+            rawScore: z
+              .number()
+              .optional()
+              .describe("Legacy 0..100 scorer value (dual-emit during deprecation)."),
+            confidence: z
+              .enum(["high", "medium", "low"])
+              .optional()
+              .describe("Coarse confidence band from the normalized score."),
             source: z.string().describe("How this item was selected."),
             reason: z.string().describe("Why this item was included."),
             tier: z.string().optional().describe("Hierarchy tier."),
@@ -282,6 +363,13 @@ export const TOOLS: readonly ToolDefinition[] = [
           }),
         )
         .describe("Why the context may be insufficient."),
+      refine: z
+        .string()
+        .optional()
+        .describe(
+          "Single compact refinement hint when insufficient: what to look up or expand next.",
+        ),
+      hint: z.string().describe("One-line deterministic guidance: proceed or refine."),
       nextSteps: z.array(z.string()).describe("Deterministic next steps for the model."),
       budget: z
         .object({
@@ -354,6 +442,18 @@ export const TOOLS: readonly ToolDefinition[] = [
         )
         .describe("Symbols/nodes that this symbol calls or uses."),
       testFiles: z.array(z.string()).describe("Test files associated with this symbol's file."),
+      confidence: z
+        .enum(["high", "medium", "low"])
+        .optional()
+        .describe("Coarse confidence in the symbol resolution (capped caller/callee lists)."),
+      callerOverflow: z
+        .string()
+        .optional()
+        .describe("Present when more callers exist than were returned (cap 25)."),
+      calleeOverflow: z
+        .string()
+        .optional()
+        .describe("Present when more callees exist than were returned (cap 25)."),
       nextSteps: z.array(z.string()).describe("Suggested next steps."),
     },
   },
@@ -361,6 +461,7 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "verify_answer",
     title: "Verify answer",
     description:
+      "DEPRECATED (Phase 6 release cut; harness-layer helper — run your own checks instead — see docs/MCP_MIGRATION.md). " +
       "Run claim checks and optional verification commands against an answer. " +
       "Detects hallucinated file paths, missing symbols, plan coverage gaps, and output contract violations. " +
       "Optionally runs typecheck/tests/lint via allow-listed commands from .codeatlas/verify.json. " +
@@ -450,13 +551,16 @@ export const TOOLS: readonly ToolDefinition[] = [
         .number()
         .min(0)
         .optional()
-        .describe("Drop hits below this relevance score (default 0)."),
+        .describe(
+          "Drop hits below this relevance score (default 0). Prefer 0..1; values >1 are treated as legacy 0..100.",
+        ),
     },
     outputSchema: {
       hits: z.array(z.object(symbolHit)).describe("Ranked symbol hits."),
       total: z.number().describe("Total hits before the limit was applied."),
       nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
+      timings: timingsField,
     },
   },
   {
@@ -474,13 +578,16 @@ export const TOOLS: readonly ToolDefinition[] = [
         .number()
         .min(0)
         .optional()
-        .describe("Drop hits below this relevance score (default 0)."),
+        .describe(
+          "Drop hits below this relevance score (default 0). Prefer 0..1; values >1 are treated as legacy 0..100.",
+        ),
     },
     outputSchema: {
       hits: z.array(z.object(fileHit)).describe("Ranked file hits."),
       total: z.number().describe("Total hits before the limit was applied."),
       nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
+      timings: timingsField,
     },
   },
   {
@@ -514,6 +621,7 @@ export const TOOLS: readonly ToolDefinition[] = [
       generated: z.boolean().describe("Whether the summary was generated on this call."),
       summaries: z.array(z.object(summaryShape)).describe("Matching stored/generated summaries."),
       freshness: freshnessField,
+      timings: timingsField,
       nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       message: z
         .string()
@@ -543,23 +651,33 @@ export const TOOLS: readonly ToolDefinition[] = [
         .describe("Which edges to return for the given node (default both)."),
       limit: intRange(1, 1000)
         .optional()
-        .describe("Maximum number of edges to return (default 100)."),
+        .describe("Maximum number of edges to return (default 25)."),
+      depth: intRange(1, 3)
+        .optional()
+        .describe(
+          "Bounded BFS depth for multi-hop expansion (default 1 = direct edges only). " +
+            "2..3 follows the graph outward with cycle-safe visited tracking; " +
+            "each edge carries hop + path attribution. Ignored without `node`.",
+        ),
     },
     outputSchema: {
       node: z.string().nullable().describe("The requested filter node, or null."),
       count: z.number().describe("Edges returned (after filtering and limit)."),
       total: z.number().describe("Total edges in the graph (before filtering)."),
       nodeFound: z.boolean().describe("False when the node was not found in the index."),
+      depth: z.number().describe("Effective traversal depth (default 1)."),
       dependencies: z.array(z.object(dependencyShape)).describe("Dependency edges."),
       nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
+      timings: timingsField,
     },
   },
   {
     name: "explain_module",
     title: "Explain module",
     description:
-      "Get a full picture of a directory/package: module record, files, key symbols, and dependency edges. " +
+      "DEPRECATED (Phase 6 release cut; use `overview` + `search_files` + `dependencies_of` instead — see docs/MCP_MIGRATION.md). " +
+      "Get a picture of a directory/package: module record, files (max 50), key symbols (max 50), and dependency edges. " +
       "Use when you need to understand a whole module before editing. Typical: 1 call per task. " +
       "Use project_overview for a project-level summary instead.",
     inputSchema: {
@@ -595,6 +713,7 @@ export const TOOLS: readonly ToolDefinition[] = [
       summary: z.object(summaryShape).nullable().describe("Stored module summary, or null."),
       nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
+      timings: timingsField,
       fileOverflow: z
         .string()
         .optional()
@@ -637,6 +756,15 @@ export const TOOLS: readonly ToolDefinition[] = [
         })
         .describe("Indexed entity counts."),
       languages: z.record(z.string(), z.number()).describe("Files per detected language."),
+      parsedFiles: z.number().describe("Indexed files that have at least one parsed symbol."),
+      contentOnlyFiles: z
+        .number()
+        .describe("Indexed files with no symbol rows (content/path searchable only)."),
+      unresolvedImports: z
+        .number()
+        .describe(
+          "Import specifiers that could not be resolved to an indexed file (bare aliases, missing paths).",
+        ),
       summary: z.object(summaryShape).nullable().describe("Stored project summary, or null."),
       modules: z
         .array(
@@ -665,6 +793,13 @@ export const TOOLS: readonly ToolDefinition[] = [
         .describe("Top symbols by dependency count (detail: full)."),
       nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
+      timings: timingsField,
+      warning: z
+        .string()
+        .optional()
+        .describe(
+          'Present on detail:"full" — full listings can be large; prefer summary + search_files/dependencies_of.',
+        ),
     },
   },
   {
@@ -699,6 +834,7 @@ export const TOOLS: readonly ToolDefinition[] = [
       padded: z.boolean().describe("True when padding was applied around the requested range."),
       nextSteps: z.array(z.string()).describe("Suggested next steps (empty for atomic tools)."),
       freshness: freshnessField,
+      timings: timingsField,
       message: z
         .string()
         .optional()

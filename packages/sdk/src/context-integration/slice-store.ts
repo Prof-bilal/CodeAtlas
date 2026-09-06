@@ -46,6 +46,7 @@ const ITEM_SOURCES = new Set([
   "summary",
   "dependency",
   "dependency-chain",
+  "traversal",
   "instructions",
   "overview",
   "digest",

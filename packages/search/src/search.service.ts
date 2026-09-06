@@ -6,8 +6,8 @@ import type {
   SearchResult,
 } from "@atlas/core";
 import { type FilePath, type Result, fail, ok } from "@atlas/shared";
-import { LexicalScorer, type RelevanceScorer } from "./scoring";
-import type { IndexedEntity } from "./search-index";
+import { LexicalScorer, bestContentWindowScore, type RelevanceScorer } from "./scoring";
+import type { FileEntry, IndexedEntity } from "./search-index";
 import { buildIndex } from "./search-index";
 
 /** Options for constructing a {@link SearchService}. */
@@ -94,7 +94,7 @@ export class SearchService implements SearchPort {
       if (score <= 0 || score < minScore) {
         continue;
       }
-      ranked.push({ hit: toResult(entity, score), score, entity });
+      ranked.push({ hit: toResult(query, entity, score), score, entity });
     }
     ranked.sort(compareRanked);
     return ranked.slice(0, limit).map(({ hit }) => hit);
@@ -142,7 +142,7 @@ function definitionPreference(entity: IndexedEntity): number {
 // ── result mapping ──────────────────────────────────────────────────────────
 
 /** Convert an indexed entity into the public {@link SearchResult} shape. */
-function toResult(entity: IndexedEntity, score: number): SearchResult {
+function toResult(query: string, entity: IndexedEntity, score: number): SearchResult {
   switch (entity.kind) {
     case "file":
       return {
@@ -151,6 +151,7 @@ function toResult(entity: IndexedEntity, score: number): SearchResult {
         path: entity.path as FilePath,
         targetId: entity.path,
         score,
+        ...fileContentRange(query, entity),
       };
     case "symbol":
       return {
@@ -201,4 +202,47 @@ function makeSnippet(text: string, maxLength = 140): string | undefined {
     return trimmed;
   }
   return `${trimmed.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+/**
+ * Attach the winning content-window char range to a file hit when the content
+ * field (not basename/path) produced the best raw score. The range is
+ * `undefined` when the match came from basename/path or the file has no body,
+ * so attribution always points at the text that actually drove the hit.
+ */
+function fileContentRange(
+  query: string,
+  entity: FileEntry,
+): { readonly contentRange?: { readonly startChar: number; readonly endChar: number } } {
+  const windows =
+    entity.contentWindows !== undefined && entity.contentWindows.length > 0
+      ? entity.contentWindows
+      : entity.content.length > 0
+        ? [{ content: entity.content, startChar: 0 }]
+        : [];
+  if (windows.length === 0) {
+    return {};
+  }
+  const basename = pathBasename(entity.path);
+  const nameScore = new LexicalScorer().scoreWindowField(query, basename);
+  const pathScore = new LexicalScorer().scoreWindowField(query, entity.path);
+  const best = bestContentWindowScore(query, windows);
+  const contentDecisive =
+    best.score > 0 && best.score * 0.4 >= Math.max(nameScore, pathScore * 0.9);
+  if (!contentDecisive || best.window === undefined) {
+    return {};
+  }
+  return {
+    contentRange: {
+      startChar: best.window.startChar,
+      endChar: best.window.startChar + best.window.content.length,
+    },
+  };
+}
+
+/** The final path segment of a path, split on either separator. */
+function pathBasename(path: string): string {
+  const separator = path.includes("\\") ? "\\" : "/";
+  const segments = path.split(separator);
+  return segments[segments.length - 1] ?? path;
 }

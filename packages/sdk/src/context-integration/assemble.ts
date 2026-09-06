@@ -40,19 +40,22 @@ import { synthesize } from "./synthesis";
 const DEPENDENCY_SCORE_DAMP = 0.4;
 const MAX_DEPENDENCY_ITEMS = 8;
 
-/** How far dependency-intent tasks expand the graph to include the chain. */
-const DEPENDENCY_CHAIN_HOPS = 2;
-const MAX_DEPENDENCY_CHAIN_FILES = 5;
-
 /**
- * True when a task expresses dependency intent (explicitly asking how things
- * depend on / use / call each other), which justifies following the graph.
+ * Default graph traversal (Phase 2c): after lexical search, follow dependency
+ * edges out of the strongest seeds so an agent sees the code a task actually
+ * touches, not just the files that mention its words. Bounded by construction
+ * — depth, per-hop caps, and a total cap — because traversal evidence is
+ * budgeted, never unbounded (token growth is the #1 risk).
  */
-function isDependencyIntent(task: string): boolean {
-  return /depends?\s+on|dependenc|used\s+by|called\s+by|calls?\s+(into|graph|chain)|import\s+chain|how\s+.*\b(connect|relate)\b/i.test(
-    task,
-  );
-}
+const TRAVERSAL_SEED_LIMIT = 5;
+const TRAVERSAL_MAX_DEPTH = 2;
+/** Per-hop caps (hop-1, hop-2). Hop-1 can carry more because it is closest. */
+const TRAVERSAL_HOP_CAPS: readonly [number, number] = [10, 8];
+const TRAVERSAL_TOTAL_CAP = 12;
+/** Score decay per hop: `seedScore × 0.7^hop` (floor 1). */
+const TRAVERSAL_DECAY = 0.7;
+/** Only seeds at or above this score expand the graph (avoid unrelated spray). */
+const TRAVERSAL_MIN_SEED_SCORE = 40;
 
 /**
  * Extract raw, case-preserving word tokens from a task (paths stay intact).
@@ -136,6 +139,14 @@ export interface AssembleOptions {
    * never a filter.
    */
   readonly taskCategory?: ContextTaskCategory;
+  /**
+   * Brief mode (Phase 3): replace every item's full content with a one-line
+   * pointer (`path:start-end` / symbol signature) so a package costs a few
+   * hundred tokens instead of a few thousand. Selection, ranking, tiers, and
+   * the sufficiency gate are unchanged; callers fetch bodies via
+   * `read_file_range` on demand. Defaults to false (full content).
+   */
+  readonly brief?: boolean;
 }
 
 /** Everything the assembler needs. */
@@ -155,6 +166,8 @@ interface FileSelection {
   readonly source: ContextItemSource;
   readonly reason: string;
   readonly tier: ContextTier;
+  /** Path attribution for traversal-reached files: `[seed, …, file]`. */
+  readonly traversalPath?: readonly string[];
 }
 
 /** A symbol candidate selected for inclusion. */
@@ -338,24 +351,35 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
       contextItems.push(item);
     }
 
-    // Dependency-intent tasks also follow the graph to surface the files in the
-    // chain (not just the two endpoints). Deny-filtered like any other file.
-    if (isDependencyIntent(task)) {
-      for (const selection of dependencyChainSelections(context, selectedNodes)) {
-        const denied = fileIsDenied(context, selection.file.path, exclusions);
-        if (denied) {
-          continue;
-        }
-        contextItems.push(
-          fileItem(
-            selection.file,
-            selection.score,
-            selection.source,
-            selection.reason,
-            selection.tier,
-          ),
-        );
+    // Default bounded traversal (Phase 2c): always follow the graph out of the
+    // strongest selected seeds (no regex gate — the budget decides inclusion).
+    // Each reached file carries path attribution (`seed → … → file`) and a
+    // decayed score lane, so multi-hop evidence is verifiable, not opaque.
+    // Files already selected as whole-file items are skipped — re-adding them
+    // would duplicate the exact same context. Files that merely contain a
+    // selected *symbol* are still traversable: the symbol item carries the
+    // signature, and the whole-file traversal item carries the body.
+    const selectedWholeFiles = new Set<string>();
+    for (const item of contextItems) {
+      if (item.kind === "file" && item.path !== null) {
+        selectedWholeFiles.add(item.path);
       }
+    }
+    for (const selection of traversalSelections(context, selectedNodes, selectedWholeFiles)) {
+      const denied = fileIsDenied(context, selection.file.path, exclusions);
+      if (denied) {
+        continue;
+      }
+      contextItems.push(
+        fileItem(
+          selection.file,
+          selection.score,
+          selection.source,
+          selection.reason,
+          selection.tier,
+          selection.traversalPath,
+        ),
+      );
     }
 
     // Overview item (from the deterministic relevant-context assembly).
@@ -372,6 +396,11 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
   ];
 
   const { items: budgetedItems, record } = applyBudget(ordered, budget);
+
+  // Brief mode: replace full content with one-line pointers (ids + paths +
+  // ranges stay, so callers can fetch exact bodies on demand).
+  const finalItems =
+    effectiveOptions.brief === true ? budgetedItems.map(toBriefItem) : budgetedItems;
 
   // Package-level truncation signal: true when any items were dropped or truncated
   const truncated =
@@ -392,7 +421,7 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
 
   return {
     task,
-    items: budgetedItems,
+    items: finalItems,
     staleness,
     budget: record,
     exclusions: {
@@ -402,6 +431,30 @@ export function assembleContextPackage(input: AssembleInput): ContextPackage {
     truncated,
     ...(synthesis !== undefined ? { synthesis } : {}),
   };
+}
+
+/**
+ * Project an item to a one-line pointer (brief mode): a compact, deterministic
+ * content line that names the item and where to read it, instead of the full
+ * body. Symbols carry their signature line; files carry `path:start-end` when
+ * ranges are known; auxiliary items (digest/overview/instructions) keep a
+ * truncated first line so the model still knows they exist.
+ */
+function toBriefItem(item: ContextPackageItem): ContextPackageItem {
+  const line = item.ranges?.[0];
+  let pointer: string;
+  if (item.kind === "symbol") {
+    pointer =
+      line === undefined
+        ? `${item.title} @ ${item.path ?? "?"}`
+        : `${item.title} @ ${item.path ?? "?"}:L${line.startLine}`;
+  } else if (item.path !== null) {
+    pointer = line === undefined ? item.path : `${item.path}:${line.startLine}-${line.endLine}`;
+  } else {
+    pointer = `${item.kind}:${item.title}`;
+  }
+  const content = `${pointer} — ${item.reason}`;
+  return { ...item, content, truncated: true, tokens: estimateTokens(content) };
 }
 
 /** Gather file+symbol selections from ranked search and explicit resolution. */
@@ -418,6 +471,24 @@ function collectSelections(
   if (options.taskCategory !== undefined) {
     hits = rerankByContextTaskCategory(hits, options.taskCategory);
   }
+
+  // Import/export symbol hits that point into a file already selected as a
+  // whole-file hit at an equal-or-better score are dropped: the file item
+  // carries strictly more context (the body), and keeping both lets one file's
+  // repeated import symbols (AuthService in routes.ts, index.ts, middleware.ts,
+  // …) crowd the package before graph traversal evidence that would connect
+  // them. A symbol that scores *above* its file's hit is kept — an exact
+  // definition (score 100) still outranks a weak content-only file hit (34).
+  const bestWholeFileScore = new Map<string, number>();
+  for (const hit of hits) {
+    if (hit.kind === "file" && hit.path !== null) {
+      const existing = bestWholeFileScore.get(hit.path) ?? -1;
+      if (hit.score > existing) {
+        bestWholeFileScore.set(hit.path, hit.score);
+      }
+    }
+  }
+
   for (const hit of hits) {
     if (hit.kind === "file" && hit.path !== null) {
       try {
@@ -434,6 +505,10 @@ function collectSelections(
         // File disappeared from a concurrently-refreshed index — skip.
       }
     } else if (hit.kind === "symbol") {
+      const bestFile = hit.path !== null ? bestWholeFileScore.get(hit.path) : undefined;
+      if (bestFile !== undefined && hit.score <= bestFile) {
+        continue;
+      }
       const symbolId = symbolIdFromTarget(hit.targetId);
       if (symbolId === null) {
         continue;
@@ -527,17 +602,28 @@ function explicitSelections(context: ContextSDK, task: string): readonly Selecti
 }
 
 /**
- * For dependency-intent tasks, follow the graph up to {@link
- * DEPENDENCY_CHAIN_HOPS} hops from the selected nodes and add the files in the
- * chain as low-priority file selections. This surfaces the files a module
- * depends on (or that depend on it) so an agent answering "how does A depend
- * on B?" sees the whole path, not just the two endpoints.
+ * Default bounded traversal (Phase 2c): follow dependency edges out of the
+ * strongest selected seeds — regardless of task wording — and add the reached
+ * files as path-attributed selections. This replaces the old regex-gated
+ * "dependency-intent chain": multi-hop evidence is valuable for every task
+ * ("what does this touch?"), and the budget decides inclusion instead of a
+ * keyword heuristic.
+ *
+ * Bounds (all by construction): up to {@link TRAVERSAL_SEED_LIMIT} seeds, depth
+ * {@link TRAVERSAL_MAX_DEPTH}, per-hop caps {@link TRAVERSAL_HOP_CAPS}, and a
+ * hard total cap {@link TRAVERSAL_TOTAL_CAP}. Cycle-safe (visited set seeded
+ * with every selected node). Scores decay `0.7^hop` from the seed's score so
+ * a directly-selected file always outranks the files it merely touches.
  */
-function dependencyChainSelections(
+function traversalSelections(
   context: ContextSDK,
   selectedNodes: ReadonlyMap<string, number>,
+  selectedFilePaths?: ReadonlySet<string>,
 ): readonly FileSelection[] {
+  // Undirected adjacency: traversal follows both directions so "who calls
+  // this?" and "what does this call?" are both answerable from the same walk.
   const adjacency = new Map<string, string[]>();
+  const edgeLabels = new Map<string, string>();
   for (const edge of context.dependencies.getDependencyGraph()) {
     const fromList = adjacency.get(edge.from) ?? [];
     fromList.push(edge.to);
@@ -545,36 +631,87 @@ function dependencyChainSelections(
     const toList = adjacency.get(edge.to) ?? [];
     toList.push(edge.from);
     adjacency.set(edge.to, toList);
+    edgeLabels.set(`${edge.from}::${edge.to}`, edge.kind);
+    edgeLabels.set(`${edge.to}::${edge.from}`, edge.kind);
   }
 
-  const reachedFiles = new Map<string, number>();
-  const visited = new Set(selectedNodes.keys());
-  let frontier = [...selectedNodes.keys()];
-  for (let hop = 1; hop <= DEPENDENCY_CHAIN_HOPS && frontier.length > 0; hop += 1) {
-    const next: string[] = [];
-    for (const nodeId of frontier) {
-      for (const neighbor of adjacency.get(nodeId) ?? []) {
+  // Choose the strongest seeds that clear the minimum relevance bar.
+  const seeds = [...selectedNodes.entries()]
+    .filter(([, score]) => score >= TRAVERSAL_MIN_SEED_SCORE)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, TRAVERSAL_SEED_LIMIT);
+
+  const labelOf = (nodeId: string): string => {
+    const filePath = filePathOf(nodeId);
+    if (filePath !== null) {
+      return filePath;
+    }
+    const symbolPrefix = "n:";
+    if (nodeId.startsWith(symbolPrefix)) {
+      return nodeId.slice(symbolPrefix.length);
+    }
+    return nodeId;
+  };
+
+  // BFS with path tracking: each frontier entry knows how it was reached.
+  const reached = new Map<string, { score: number; path: string[] }>();
+  const visited = new Set<string>(selectedNodes.keys());
+  let frontier: Array<{ nodeId: string; seedScore: number; path: string[] }> = [];
+  for (const [seedId, seedScore] of seeds) {
+    visited.add(seedId);
+    frontier.push({ nodeId: seedId, seedScore, path: [labelOf(seedId)] });
+  }
+  for (let hop = 1; hop <= TRAVERSAL_MAX_DEPTH && frontier.length > 0; hop += 1) {
+    const next: Array<{ nodeId: string; seedScore: number; path: string[] }> = [];
+    const hopCap = TRAVERSAL_HOP_CAPS[hop - 1] ?? TRAVERSAL_TOTAL_CAP;
+    for (const entry of frontier) {
+      if (next.length >= hopCap) {
+        break;
+      }
+      const neighbors = adjacency.get(entry.nodeId) ?? [];
+      for (const neighbor of neighbors) {
+        if (next.length >= hopCap) {
+          break;
+        }
         if (visited.has(neighbor)) {
           continue;
         }
         visited.add(neighbor);
-        next.push(neighbor);
         const filePath = filePathOf(neighbor);
         if (filePath !== null) {
-          const damp = Math.max(1, Math.round(30 / hop));
-          const existing = reachedFiles.get(filePath);
-          if (existing === undefined || damp > existing) {
-            reachedFiles.set(filePath, damp);
+          if (selectedFilePaths?.has(filePath) === true) {
+            // Whole-file items already carry this file's full context — skip
+            // re-adding it as traversal evidence, but keep expanding through
+            // the node so the walk is not truncated here.
+            next.push({
+              nodeId: neighbor,
+              seedScore: entry.seedScore,
+              path: [...entry.path, labelOf(neighbor)],
+            });
+            continue;
+          }
+          const decayed = Math.max(1, Math.round(entry.seedScore * TRAVERSAL_DECAY ** hop));
+          const edgeKind = edgeLabels.get(`${entry.nodeId}::${neighbor}`) ?? "depends-on";
+          const path = [...entry.path, edgeKind, labelOf(neighbor)];
+          const existing = reached.get(filePath);
+          if (existing === undefined || decayed > existing.score) {
+            reached.set(filePath, { score: decayed, path });
           }
         }
+        next.push({
+          nodeId: neighbor,
+          seedScore: entry.seedScore,
+          path: [...entry.path, labelOf(neighbor)],
+        });
       }
     }
     frontier = next;
   }
 
   const selections: FileSelection[] = [];
-  for (const [path, score] of [...reachedFiles.entries()].sort((a, b) => b[1] - a[1])) {
-    if (selections.length >= MAX_DEPENDENCY_CHAIN_FILES) {
+  const ranked = [...reached.entries()].sort((a, b) => b[1].score - a[1].score);
+  for (const [path, { score, path: attribution }] of ranked) {
+    if (selections.length >= TRAVERSAL_TOTAL_CAP) {
       break;
     }
     try {
@@ -583,9 +720,10 @@ function dependencyChainSelections(
         kind: "file",
         file,
         score,
-        source: "dependency-chain",
-        reason: `File reached through the dependency graph (hop-${DEPENDENCY_CHAIN_HOPS} expansion) for a dependency-intent task.`,
+        source: "traversal",
+        reason: `File reached through the dependency graph: ${attribution.join(" → ")}.`,
         tier: "important",
+        traversalPath: attribution,
       });
     } catch {
       // File disappeared from a concurrently-refreshed index — skip.
@@ -823,6 +961,7 @@ function fileItem(
   source: ContextItemSource,
   reason: string,
   tier: ContextTier,
+  traversalPath?: readonly string[],
 ): ContextPackageItem {
   const content = `File: ${file.path}\nLanguage: ${file.language}\n\n${file.content}`;
   return {
@@ -837,6 +976,7 @@ function fileItem(
     truncated: false,
     tokens: estimateTokens(content),
     tier,
+    ...(traversalPath !== undefined && traversalPath.length > 0 ? { traversalPath } : {}),
   };
 }
 

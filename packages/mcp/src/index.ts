@@ -26,7 +26,14 @@ export {
   type FreshnessControllerOptions,
   type FreshnessReport,
 } from "./freshness";
-export type { DependencyShape, HandlerContext, SummaryShape } from "./handlers";
+export type { DependencyShape, HandlerContext, SummaryShape, ToolTimings } from "./handlers";
+export {
+  normalizeScore,
+  toInternalMinScore,
+  confidenceFromScore,
+  type NormalizedScore,
+  type ScoreConfidence,
+} from "./score";
 export { createContextToolSource, createContextToolSourceFromSDK } from "./tool-bridge";
 export { zodToJsonSchema } from "./zod-to-json-schema";
 export {

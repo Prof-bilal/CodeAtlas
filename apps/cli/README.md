@@ -71,8 +71,11 @@ for what is wired vs. stubbed.
 `atlas mcp` starts a **Model Context Protocol** server over stdio. Any
 MCP-capable AI coding tool — Claude Desktop, Claude Code, Cursor, VS Code, … —
 can connect to it and query your indexed context with its built-in tools
-(`search_symbols`, `search_files`, `get_dependencies`, `explain_module`,
-`project_overview`, `get_summary`).
+(`search_symbols`, `search_files`, `dependencies_of`/`get_dependencies`
+with `depth` 1..3, `overview`/`project_overview`, `get_summary`,
+`context_for`, `read_range`, `inspect_symbol`; `analyze_task`,
+`create_plan`, `verify_answer`, `explain_module` are deprecated — see
+`docs/MCP_MIGRATION.md`).
 
 ```bash
 # Serve the index for the current directory (or --root / ATLAS_ROOT)

@@ -126,9 +126,15 @@ export class CodeAtlasContext {
    * an `unavailable` report) when no index exists yet.
    */
   public async ensureFresh(): Promise<FreshnessReport> {
+    const startedAt = performance.now();
     const sdk = this.open();
     if (sdk === null) {
-      return { state: "unavailable", refreshed: false, checkedAt: new Date().toISOString() };
+      return {
+        state: "unavailable",
+        refreshed: false,
+        checkedAt: new Date().toISOString(),
+        probeMs: Math.round(performance.now() - startedAt),
+      };
     }
     return this.freshness.ensureFresh(sdk);
   }

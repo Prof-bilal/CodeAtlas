@@ -40,6 +40,18 @@ export interface DependencyContext {
   readonly kind: string;
   readonly fromLabel: string;
   readonly toLabel: string;
+  /**
+   * Traversal hop distance from the query seed (Phase 4 `depth` expansion).
+   * `1` = directly adjacent; absent when the edge came from a depth-1 query
+   * or from an unfiltered graph read.
+   */
+  readonly hop?: number;
+  /**
+   * Path attribution for multi-hop queries: ordered node ids from the seed
+   * to this edge's far endpoint (e.g. `["n:file:/a.ts", "n:file:/b.ts"]`).
+   * Present only when `hop` is present and `hop > 1`, or on depth>1 results.
+   */
+  readonly path?: readonly string[];
 }
 
 /** A normalized module (reuses the core {@link PersistedModule} type). */
@@ -67,6 +79,11 @@ export interface ProjectOverview {
   readonly schemaVersion: number;
   readonly languages: Readonly<Record<string, number>>;
   readonly counts: ProjectCounts;
+  /**
+   * Import specifiers that could not be resolved to an indexed file (Phase 5
+   * honesty). Absent when the index predates the counter (or the count is 0).
+   */
+  readonly unresolvedImports?: number;
   /** The stored project summary, when one exists. */
   readonly summary?: Summary;
   /** Included when the overview is requested with `detail: "full"`. */
@@ -192,6 +209,13 @@ export interface DependencyQuery {
   readonly direction?: DependencyDirection;
   /** Maximum number of edges to return (default: all). */
   readonly limit?: number;
+  /**
+   * Bounded BFS depth for multi-hop expansion (Phase 4, 1..3, default 1).
+   * `1` = directly adjacent edges only. `2..3` follows the graph outward
+   * from the seed node(s) with cycle-safe visited tracking; every returned
+   * edge carries `hop` + `path` attribution. Ignored when `node` is absent.
+   */
+  readonly depth?: number;
 }
 
 /** The result of a {@link DependencyQuery}. */
@@ -201,6 +225,8 @@ export interface DependencyQueryResult {
   readonly nodeFound: boolean;
   /** Total dependency edges in the graph (before filtering). */
   readonly total: number;
+  /** Echo of the effective traversal depth (default 1). */
+  readonly depth?: number;
 }
 
 /** A human-readable explanation of a module/folder. */

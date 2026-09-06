@@ -1,0 +1,28 @@
+name: Retrieval gates (Phase 0/6, informational)
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  retrieval-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate held-out retrieval set
+        run: node benchmarks/retrieval-tasks/evaluate.mjs benchmarks/retrieval-tasks/tasks.json
+
+      - name: Scale-grid probe (small, measure-only)
+        run: pnpm exec tsx benchmarks/scale-grid/generate.mjs

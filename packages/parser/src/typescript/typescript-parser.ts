@@ -47,7 +47,7 @@ export interface TypeScriptParserOptions {
  * to the symbol + resolved-edge count instead of the raw identifier count.
  */
 export class TypeScriptParser implements LanguageParser {
-  public readonly languages = ["typescript"] as const;
+  public readonly languages = ["typescript", "javascript"] as const;
 
   private readonly maxReferenceLines: number;
   private project: Project | undefined;
@@ -57,19 +57,24 @@ export class TypeScriptParser implements LanguageParser {
   }
 
   public async parse(file: SourceFile): Promise<Result<ParsedFile>> {
-    if (file.language !== "typescript") {
+    if (file.language !== "typescript" && file.language !== "javascript") {
       return fail(new Error(`TypeScriptParser received unsupported language: ${file.language}`));
     }
 
     try {
       // Parse in-memory: no tsconfig, lib files, or file-system access is
       // needed because only the AST structure is extracted, not type-checked.
+      // `allowJs` lets ts-morph treat JavaScript as TS-grammar (the JS bridge,
+      // Phase 5): JS files are parsed with the same symbol/reference extractors,
+      // labeled by the overview's parsed-vs-content-only split rather than
+      // silently skipped.
       const project = (this.project ??= new Project({
         useInMemoryFileSystem: true,
         skipFileDependencyResolution: true,
         skipLoadingLibFiles: true,
         compilerOptions: {
-          allowJs: false,
+          allowJs: true,
+          checkJs: false,
           noResolve: true,
           strict: false,
         },

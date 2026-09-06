@@ -11,12 +11,12 @@ import type { ZodType } from "zod";
 import { z } from "zod";
 import { HANDLERS, type HandlerContext } from "./handlers";
 import { type Logger, createLogger } from "./log";
-import { TOOLS, type ToolName } from "./tools";
+import { TOOL_ALIASES, TOOLS, type ToolName, resolveToolName } from "./tools";
 import { zodToJsonSchema } from "./zod-to-json-schema";
 
 /** Convert MCP tool definitions to ToolDefinition[] (JSON Schema parameters). */
 function buildToolDefinitions(): readonly ToolDefinition[] {
-  return TOOLS.map((tool) => ({
+  const definitions = TOOLS.map((tool) => ({
     type: "function" as const,
     function: {
       name: tool.name,
@@ -24,6 +24,23 @@ function buildToolDefinitions(): readonly ToolDefinition[] {
       parameters: convertInputSchema(tool.inputSchema),
     },
   }));
+  // Phase 4 compat window: advertise the canonical names too.
+  const byName = new Map(TOOLS.map((tool) => [tool.name, tool]));
+  for (const [canonical, deprecated] of Object.entries(TOOL_ALIASES)) {
+    const tool = byName.get(deprecated);
+    if (tool === undefined) {
+      continue;
+    }
+    definitions.push({
+      type: "function" as const,
+      function: {
+        name: canonical as ToolName,
+        description: `${tool.description}\n\n(CANONICAL name for the deprecated \`${deprecated}\` tool.)`,
+        parameters: convertInputSchema(tool.inputSchema),
+      },
+    });
+  }
+  return definitions;
 }
 
 /** Convert a zod input schema to a JSON Schema object. */
@@ -40,11 +57,12 @@ export function createContextToolSource(handlerContext: HandlerContext): Context
     listTools: () => definitions,
 
     async execute(name: string, args: Record<string, unknown>): Promise<Result<unknown>> {
-      if (!toolNames.has(name)) {
+      const canonical = resolveToolName(name);
+      if (!toolNames.has(name) && !TOOL_ALIASES[name]) {
         return fail(new Error(`Unknown tool: "${name}"`));
       }
 
-      const handler = HANDLERS[name as ToolName];
+      const handler = HANDLERS[canonical as ToolName];
       if (handler === undefined) {
         return fail(new Error(`No handler for tool: "${name}"`));
       }
@@ -79,6 +97,7 @@ export function createContextToolSourceFromSDK(
       requireSDK: () => sdk,
     } as never,
     logger,
+    timings: { probeMs: 0 },
   };
   return createContextToolSource(handlerContext);
 }

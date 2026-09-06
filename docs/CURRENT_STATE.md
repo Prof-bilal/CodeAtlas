@@ -44,7 +44,7 @@ packages/
   core/         # Domain entities + port interfaces (type-only)              [EXISTING]
   scanner/      # File walking, ignore rules, language/framework detection   [EXISTING]
   hashing/      # SHA-256 + change detection + snapshots                     [EXISTING]
-  parser/       # TypeScript → normalized Symbol IR (ts-morph)               [PARTIAL]
+  parser/       # TS (+ JS bridge) → normalized Symbol IR (ts-morph)         [PARTIAL]
   graph/        # Dependency graph, shortest path, cycle detection           [EXISTING]
   storage/      # SQLite context DB (node:sqlite), repos, migrations         [EXISTING]
   cache/        # Generic in-memory/TTL cache (+ JSON persistence)           [EXISTING]
@@ -52,7 +52,7 @@ packages/
   summary/      # AI file/folder/module/project summaries                     [EXISTING]
   search/       # Ranked, fuzzy-aware project search (vector-ready)          [EXISTING]
   usage/        # AI usage & credits: tri-state tokens/cost, budgets, limits [EXISTING]
-  context/      # Context ranking & assembly                                  [STUB]
+  context/      # Context ranking & assembly                                  [IMPLEMENTED]
   agents/       # AI CLI connection layer (AgentPort)                         [EXISTING]
   toolkit/      # Toolkit — Registry (19) + Manifest (20) + Compatibility (21) + Installer (22)  [PARTIAL]
   mcp/          # MCP server exposing context to AI tools                      [EXISTING]
@@ -114,24 +114,34 @@ examples/        # README placeholder only (no runnable examples)
   (`LanguageParser` + `ParserRegistry`).
 - `TypeScriptParser` (via **ts-morph**) — in-memory, no type-check — extracts
   imports/exports/classes/interfaces/functions/enums/type-aliases/variables,
-  member structure, doc comments, and references.
+  member structure, doc comments, and references. **JS bridge (Phase 5):**
+  `.js/.jsx/.mjs/.cjs` files are parsed as TS grammar (`allowJs`) so JS repos
+  are no longer silently content-only; the overview's parsed-vs-content-only
+  split reports the distinction.
 - `SymbolIndexer` — in-memory find/list/children/references with cross-file
   import resolution (`./x`, `../x` → `.ts`/`.tsx`/`/index.ts`/`/index.tsx`),
   same-file reference resolution. Renamed imports (`import { a as b }`) and
   `export default <expression>` **do** resolve cross-file (via the import
   symbol's `importedName`).
-- **Known gap:** namespaces and bare expressions are not extracted.
+- **Known gap:** namespaces and bare expressions are not extracted; bare/alias
+  import specifiers (`@/lib/x`, tsconfig-paths style) are not resolved — they
+  are counted as `unresolvedImports` (surfaced on `project_overview`) instead
+  of failing silently.
 
 ### Dependency Graph — **[EXISTING]**
 
 - `GraphService` implements `GraphPort`: nodes = symbols + one file node per
   source file; edges for calls/constructs/accesses/references/reads/writes/
-  extends/implements/imports/exports/contains.
+  extends/implements/imports/exports/contains/**tested-by**.
 - `shortestPath` (BFS), `detectCircularDependencies` (Tarjan SCC), `exportJson`.
 - `module-resolution.ts` intentionally duplicates the parser's module-path
   resolution so the graph stays decoupled from the parser.
 - Import resolution matches the parser: renamed and default imports resolve to
   their definitions cross-file.
+- `tested-by` edges (Phase 2d) link implementation files to same-dir
+  `.test`/`.spec` files and `__tests__/` mirrors; the MCP `inspect_symbol`
+  test-file scan consumes them (with the old same-dir scan as a fallback for
+  pre-existing indexes).
 
 ### Context Database (`packages/storage`) — **[EXISTING]**
 
@@ -317,9 +327,11 @@ examples/        # README placeholder only (no runnable examples)
   provider-independent: dialogue reads are deterministic; AI summary
   generation is opt-in per call (`get_summary ... generate: true`) and fails
   cleanly when no provider is configured.
-- Exposes seven tools: `search_symbols`, `search_files`, `get_summary`,
+- Exposes twelve tools: five task-level (`find_relevant_context`,
+  `inspect_symbol`, `analyze_task`, `create_plan`, `verify_answer`) and seven
+  primitives (`search_symbols`, `search_files`, `get_summary`,
   `get_dependencies`, `explain_module`, `project_overview`,
-  `read_file_range`. Each has a zod
+  `read_file_range`). Each has a zod
   input schema (validated by the SDK, surfaced as `-32602` on failure), an
   `outputSchema` the server validates `structuredContent` against, and returns
   `structuredContent` + a JSON text block; domain errors return
@@ -327,8 +339,22 @@ examples/        # README placeholder only (no runnable examples)
   outputSchema-validating clients see the real error). Tools auto-refresh the
   index incrementally before reads when the working tree has changed, and
   report the outcome via `freshness` on every result.
+  Relevance scores are normalized to **0..1** (raw 0..100 dual-emitted as
+  `rawScore`), each hit carries a `confidence` band, and every object result
+  carries `timings` (`probeMs`/`searchMs`/`assemblyMs`/`responseBytes`).
+  `project_overview` reports `parsedFiles` vs `contentOnlyFiles` so a
+  TS-only parse is never silent.
   `read_file_range` is a version-aware working-tree read with
   freshness metadata (mirrors the Context SDK `files.readRange`).
+  `get_dependencies` supports bounded multi-hop traversal (`depth` 1..3,
+  default 1) with per-edge `hop` + `path` attribution; `inspect_symbol`
+  caps callers/callees at 25 each with `confidence`; `project_overview`
+  `detail:"full"` returns a size `warning`; `explain_module` caps are 50/50.
+  `analyze_task`, `create_plan`, `verify_answer`, `explain_module` are
+  DEPRECATED (compat window — still registered, warn per call; removal at the
+  Phase 6 cut — see `docs/MCP_MIGRATION.md`). Canonical aliases
+  (`context_for`, `dependencies_of`, `overview`, `read_range`) are registered
+  alongside the 12 legacy tools.
 - Ships a `codeatlas-mcp` binary (`src/bin.ts`) **and** the `atlas mcp` CLI
   command, plus a library API (`createMcpServer` / `startStdioServer`). The
   Context SDK opens lazily, so the server can start before an index exists.

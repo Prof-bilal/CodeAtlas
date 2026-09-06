@@ -20,10 +20,10 @@ export const DEFAULT_CONTEXT_BUDGET: ContextBudget = {
  *   package fits; `budgetExceeded` is set when even the essential items alone
  *   would exceed the cap.
  * - **Max-items cap** drops the tail (ranked items first, then the overview)
- *   while never dropping `instructions`. `dependency-chain` files (the graph
- *   hop-expansion for dependency-intent tasks) also survive the item-count cap
- *   because they are the direct answer to the task, but they still yield to the
- *   token cap when the package is over budget.
+ *   while never dropping `instructions`. Both caps scan from the tail for the
+ *   lowest-ranked *droppable* item, so a protected item at the very tail
+ *   (e.g. a graph-reached `traversal` file that outranks plain lexical hits by
+ *   tier) does not stall the whole enforcement.
  *
  * @param items - Items ordered with essential context first, then rank-descending.
  * @param budget - The effective budget to enforce.
@@ -43,36 +43,39 @@ export function applyBudget(
   // the repository digest (always relevant architectural context).
   const dropableByTokens = (item: ContextPackageItem): boolean =>
     item.kind !== "instructions" && item.kind !== "digest" && item.tier !== "critical";
-  // The item-count cap additionally protects dependency-chain evidence files.
+  // The item-count cap protects essential context, critical-tier items, and
+  // graph-reached traversal evidence (Tier 2): the traversal files are the
+  // multi-hop structural answer, and plain lexical hits (Tier 3) yield first.
   const dropableByCount = (item: ContextPackageItem): boolean =>
     item.kind !== "instructions" &&
     item.kind !== "digest" &&
+    item.source !== "traversal" &&
     item.source !== "dependency-chain" &&
     item.tier !== "critical";
 
-  let current = truncated;
+  const current = truncated;
   let total = current.reduce((sum, item) => sum + item.tokens, 0);
 
   const droppedByTokens: string[] = [];
   while (total > budget.maxTokensTotal && current.some((item) => dropableByTokens(item))) {
-    const tail = current[current.length - 1];
-    if (tail === undefined || !dropableByTokens(tail)) {
+    const index = lastDroppableIndex(current, dropableByTokens);
+    if (index === -1) {
       break;
     }
-    droppedByTokens.push(tail.id);
-    current = current.slice(0, -1);
-    total -= tail.tokens;
+    const [removed] = current.splice(index, 1);
+    droppedByTokens.push(removed.id);
+    total -= removed.tokens;
   }
   const budgetExceeded = total > budget.maxTokensTotal;
 
   const itemsDroppedByCount: string[] = [];
   while (current.length > budget.maxItems && current.some((item) => dropableByCount(item))) {
-    const tail = current[current.length - 1];
-    if (tail === undefined || !dropableByCount(tail)) {
+    const index = lastDroppableIndex(current, dropableByCount);
+    if (index === -1) {
       break;
     }
-    itemsDroppedByCount.push(tail.id);
-    current = current.slice(0, -1);
+    const [removed] = current.splice(index, 1);
+    itemsDroppedByCount.push(removed.id);
   }
 
   const tokensEstimated = current.reduce((sum, item) => sum + item.tokens, 0);
@@ -102,4 +105,23 @@ function truncateToTokens(
   const charCap = cap * 4;
   const content = `${item.content.slice(0, charCap).trimEnd()}\n… [truncated]`;
   return { ...item, content, tokens: estimateTokens(content), truncated: true };
+}
+
+/**
+ * Index of the lowest-ranked droppable item, scanning from the tail. Returns
+ * `-1` when no item satisfies the predicate. Scanning (rather than checking
+ * only the last item) lets a protected tail (e.g. traversal evidence that
+ * outranks lexical hits) coexist with enforcement that drops the lexical hits
+ * above it.
+ */
+function lastDroppableIndex(
+  items: readonly ContextPackageItem[],
+  droppable: (item: ContextPackageItem) => boolean,
+): number {
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    if (droppable(items[index]!)) {
+      return index;
+    }
+  }
+  return -1;
 }

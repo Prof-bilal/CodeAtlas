@@ -5,7 +5,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { describe, expect, it } from "vitest";
 import { type CodeAtlasMcpServer, createMcpServer } from "../src/server";
-import { TOOL_NAMES } from "../src/tools";
+import { PROTOCOL_TOOL_NAMES } from "../src/tools";
 import { type Fixture, createFixture, silentLogger } from "./fixture";
 
 interface TestConnection {
@@ -58,11 +58,11 @@ function isTextBlock(block: unknown): block is { readonly type: "text"; readonly
 }
 
 describe("MCP server protocol", () => {
-  it("advertises exactly the seven tools over tools/list", async () => {
+  it("advertises exactly the twelve tools over tools/list", async () => {
     await withConnection(async ({ client }) => {
       const { tools } = await client.listTools();
       const names = tools.map((tool) => tool.name).sort();
-      expect(names).toEqual([...TOOL_NAMES].sort());
+      expect(names).toEqual([...PROTOCOL_TOOL_NAMES].sort());
       for (const tool of tools) {
         expect(tool.description ?? "").not.toHaveLength(0);
         expect(tool.inputSchema).toBeDefined();
@@ -157,7 +157,7 @@ describe("MCP server protocol", () => {
       expect(textOf(result).length).toBeGreaterThan(0);
 
       const listed = await client.listTools();
-      expect(listed.tools.map((tool) => tool.name).sort()).toEqual([...TOOL_NAMES].sort());
+      expect(listed.tools.map((tool) => tool.name).sort()).toEqual([...PROTOCOL_TOOL_NAMES].sort());
     } finally {
       await mcp.close();
       await client.close();

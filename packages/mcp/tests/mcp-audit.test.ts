@@ -7,7 +7,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it } from "vitest";
 import { type CodeAtlasMcpServer, createMcpServer } from "../src/server";
-import { TOOL_NAMES } from "../src/tools";
+import { PROTOCOL_TOOL_NAMES } from "../src/tools";
 import { silentLogger } from "./fixture";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
@@ -74,7 +74,10 @@ describe("MCP audit fixture", () => {
       expect(overview.counts.files).toBeGreaterThanOrEqual(15);
       expect(overview.counts.symbols).toBeGreaterThanOrEqual(50);
       expect(overview.counts.dependencies).toBeGreaterThan(0);
-      expect(overview.languages["typescript"]).toBe(overview.counts.files);
+      // Every indexed file is parsed now (TS + the JS bridge file).
+      const tsAndJs =
+        (overview.languages["typescript"] ?? 0) + (overview.languages["javascript"] ?? 0);
+      expect(tsAndJs).toBe(overview.counts.files);
       expect(sdk.symbols.searchSymbols("authenticateUser")[0]?.title).toBe("authenticateUser");
       expect(sdk.symbols.searchSymbols("validatePayment")[0]?.title).toBe("validatePayment");
       expect(
@@ -115,7 +118,7 @@ describe("MCP audit fixture", () => {
     const conn = await connectAuditRepo();
     try {
       const listed = await conn.client.listTools();
-      expect(listed.tools.map((tool) => tool.name).sort()).toEqual([...TOOL_NAMES].sort());
+      expect(listed.tools.map((tool) => tool.name).sort()).toEqual([...PROTOCOL_TOOL_NAMES].sort());
       for (const tool of listed.tools) {
         expect(tool.description).toEqual(expect.any(String));
         expect(tool.inputSchema.type).toBe("object");
@@ -335,8 +338,9 @@ export function verifyMfaCode(challenge: string, code: string): boolean {
       const overview = structured<{ counts: { files: number } }>(
         await conn.client.callTool({ name: "project_overview", arguments: { detail: "summary" } }),
       );
-      // 30 indexed TypeScript files in the fixture, minus the deleted one.
-      expect(overview.counts.files).toBe(29);
+      // 30 indexed TypeScript files + 1 JS-bridge file in the fixture, minus
+      // the deleted one.
+      expect(overview.counts.files).toBe(30);
     } finally {
       if (conn.mcp.context.isOpen) {
         await closeConnection(conn);

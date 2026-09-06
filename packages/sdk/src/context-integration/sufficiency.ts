@@ -30,6 +30,13 @@ export interface SufficiencyResult {
   readonly failures: readonly SufficiencyFailure[];
   /** Deterministic next-step hints for the retrieval loop. */
   readonly nextSteps: readonly string[];
+  /**
+   * A single compact, actionable refinement hint for `insufficient`
+   * verdicts (Phase 3): names the concrete paths/symbols/predicates to
+   * resolve next, so the retrieval loop can act on it instead of re-reading
+   * prose. Absent when sufficient.
+   */
+  readonly refine?: string;
 }
 
 /** Input to {@link evaluateSufficiency}. */
@@ -79,6 +86,7 @@ function normalizePath(path: string): string {
 export function evaluateSufficiency(input: SufficiencyInput): SufficiencyResult {
   const failures: SufficiencyFailure[] = [];
   const nextSteps: string[] = [];
+  const refineParts: string[] = [];
 
   // Predicate 1: plan references unknown targets.
   if (input.planTargets !== undefined && input.planTargets.length > 0) {
@@ -99,6 +107,7 @@ export function evaluateSufficiency(input: SufficiencyInput): SufficiencyResult 
         predicate: "unknown-plan-target",
         message: `Plan references ${unknown.length} target(s) not present in the index: ${unknown.join(", ")}`,
       });
+      refineParts.push(`look up or create: ${unknown.join(", ")}`);
       nextSteps.push(
         "Verify the referenced paths/symbols exist, or mark them as new files the plan will create.",
       );
@@ -114,6 +123,7 @@ export function evaluateSufficiency(input: SufficiencyInput): SufficiencyResult 
         predicate: "no-strong-hit",
         message: `No search hit scored >= ${minScore} for the primary entity`,
       });
+      refineParts.push("broaden the query (keywords, not exact symbols)");
       nextSteps.push(
         "Re-run retrieval with broader entities (keywords instead of exact symbols) before answering.",
       );
@@ -126,6 +136,7 @@ export function evaluateSufficiency(input: SufficiencyInput): SufficiencyResult 
       predicate: "empty-critical-tier",
       message: "No critical-tier context for a code-modification task",
     });
+    refineParts.push("expand the graph closure around the best hits");
     nextSteps.push(
       "Expand the closure around the best search hits to identify the files to change.",
     );
@@ -137,8 +148,15 @@ export function evaluateSufficiency(input: SufficiencyInput): SufficiencyResult 
       predicate: "zero-closure-dependencies",
       message: "The graph closure expanded over 0 dependencies for a multi-file task",
     });
+    refineParts.push("check the index is fresh, then search related modules");
     nextSteps.push("Check whether the index is stale, or search for related modules manually.");
   }
 
-  return { sufficient: failures.length === 0, failures, nextSteps };
+  const refine = refineParts.length > 0 ? `insufficient — ${refineParts.join("; ")}` : undefined;
+  return {
+    sufficient: failures.length === 0,
+    failures,
+    nextSteps,
+    ...(refine !== undefined ? { refine } : {}),
+  };
 }

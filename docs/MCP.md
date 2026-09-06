@@ -8,7 +8,7 @@ and any MCP-capable client.
 - Package: `@atlas/mcp` (`packages/mcp`)
 - Protocol: MCP over stdio (JSON-RPC 2.0), via the official
   `@modelcontextprotocol/sdk`
-- Status: **[IMPLEMENTED]** (2026-08-09)
+- Status: **[IMPLEMENTED]** (2026-08-09) — twelve tools
 
 ## Principles
 
@@ -82,7 +82,72 @@ Every tool call returns one of:
 ## Tool reference
 
 All tools are deterministic reads of the persisted index unless noted. Search
-tools use typo-tolerant fuzzy matching by default.
+tools use typo-tolerant fuzzy matching by default. The server exposes **twelve**
+legacy tools plus four **canonical aliases** (Phase 4 compat window):
+`find_relevant_context` ↔ `context_for`, `get_dependencies` ↔
+`dependencies_of`, `project_overview` ↔ `overview`, `read_file_range` ↔
+`read_range`. Both names work and return identical results; the canonical
+names are the recommended spelling for new integrations. Relevance scores are
+normalized to **0..1** on every result (the lexical scorer's raw 0..100 value
+is dual-emitted as `rawScore` during deprecation), and each hit carries a
+`confidence` band (`high`/`medium`/`low`).
+
+### `find_relevant_context`
+
+The flagship read: assemble the minimum sufficient context package for a task
+(see `docs/CONTEXT.md`). Ranks and assembles files, symbols, summaries, and
+dependency evidence from the index deterministically — no AI.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `task` | string | ✅ | The task or question to ground. |
+| `maxItems` | integer 1–50 | – | Max items in the package (default 20). |
+| `maxTokens` | integer | – | Token budget for the package (default 12000). |
+| `contextMode` | enum | – | `auto`, `digest`, `full`, `off`, or `auto-escalate` (default `auto`). |
+
+Returns:
+
+```jsonc
+{
+  "task": "Where is authentication implemented?",
+  "items": [
+    {
+      "id": "s1",
+      "kind": "symbol",
+      "title": "AuthService",
+      "path": "/src/auth-service.ts",
+      "score": 1.0,
+      "rawScore": 100,
+      "confidence": "high",
+      "source": "explicit",
+      "reason": "exact-symbol match",
+      "tokens": 320
+    }
+  ],
+  "synthesis": "Authentication lives in …", // only when a digest was assembled
+  "sufficient": true,
+  "nextSteps": []
+}
+```
+
+### `inspect_symbol`
+
+Inspect one symbol: its definition plus caller/callee edges and nearby test
+files (best caller/callee answer today). `callers`/`callees` are capped at 25
+each (`callerOverflow`/`calleeOverflow` when truncated) with a `confidence`
+band.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `symbol` | string | ✅ | Symbol name to look up. |
+
+Returns the symbol definition, `callers`, `callees`, and `testFiles` arrays.
+
+### Migration
+
+See `docs/MCP_MIGRATION.md` for canonical alias names, the `depth` parameter,
+deprecated tools (`analyze_task`, `create_plan`, `verify_answer`,
+`explain_module`), and the Phase 6 removal schedule.
 
 ### `search_symbols`
 
@@ -94,7 +159,7 @@ constants, …).
 | `query` | string | ✅ | Symbol name or fragment to search for. |
 | `limit` | integer 1–100 | – | Max hits (default 20). |
 | `kind` | enum | – | Restrict to a symbol kind: `class`, `interface`, `function`, `method`, `constructor`, `property`, `variable`, `constant`, `import`, `export`, `enum`, `enum-member`, `type-alias`. |
-| `minScore` | number ≥ 0 | – | Drop hits below this relevance score (default 0). |
+| `minScore` | number ≥ 0 | – | Drop hits below this relevance score (default 0). Use 0..1; values >1 are treated as the legacy 0..100 scale. |
 
 Returns:
 
@@ -107,7 +172,9 @@ Returns:
       "targetId": "symbol:s1",
       "symbolKind": "function",
       "documentation": "Doubles a number.",   // or null
-      "score": 100
+      "score": 1.0,
+      "rawScore": 100,
+      "confidence": "high"
     }
   ],
   "total": 1
@@ -122,16 +189,46 @@ Ranked search over indexed files by **path or content**.
 | --- | --- | --- | --- |
 | `query` | string | ✅ | File path fragment or content text. |
 | `limit` | integer 1–100 | – | Max hits (default 20). |
-| `minScore` | number ≥ 0 | – | Drop hits below this relevance score (default 0). |
+| `minScore` | number ≥ 0 | – | Drop hits below this relevance score (default 0). Use 0..1; values >1 are treated as the legacy 0..100 scale. |
 
 Returns:
 
 ```jsonc
 {
-  "hits": [{ "path": "/src/auth.ts", "language": "typescript", "score": 80 }],
+  "hits": [{ "path": "/src/auth.ts", "language": "typescript", "score": 0.8, "rawScore": 80, "confidence": "medium" }],
   "total": 1
 }
 ```
+
+### `analyze_task`
+
+Classify a task into a plan category (`locate` / `repair` / `refactor` /
+`dependency` / …) with supporting evidence. Deterministic keyword
+classification — exposed for debugging; most agents should use
+`find_relevant_context` instead.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `task` | string | ✅ | The task to classify. |
+
+### `create_plan`
+
+Draft a step plan for a task from the classifier's category and the planner's
+impact set. Template-based (max 8 steps); retained for tool-loop use.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `task` | string | ✅ | The task to plan for. |
+
+### `verify_answer`
+
+Check whether the assembled context actually answers the task. Harness-layer
+helper retained for backward compatibility.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `task` | string | ✅ | The task that was answered. |
+| `answer` | string | ✅ | The proposed answer to verify. |
 
 ### `get_summary`
 
@@ -186,23 +283,27 @@ implements, references, …).
 | `node` | string | – | File path, symbol id, symbol name, or full graph node id to filter edges by. |
 | `relation` | string | – | Only return edges of this kind (e.g. `imports`, `calls`, `extends`). |
 | `direction` | enum | – | `outgoing` (what the node depends on), `incoming` (what depends on it), or `both` (default). |
-| `limit` | integer 1–1000 | – | Max edges (default 100). |
+| `limit` | integer 1–1000 | – | Max edges (default 25). |
+| `depth` | integer 1–3 | – | Bounded BFS depth (default 1 = direct edges). 2..3 expands multi-hop with `hop` + `path` per edge; ignored without `node`. |
 
 Returns:
 
 ```jsonc
 {
   "node": "/src/auth.ts",           // null when not filtered
-  "nodeFound": true,                // present only when `node` was given
-  "count": 1,
-  "total": 2,                       // edges before filtering
+  "nodeFound": true,
+  "depth": 2,                       // effective traversal depth
+  "count": 2,
+  "total": 9,                       // edges before filtering
   "dependencies": [
     {
       "from": "n:file:/src/auth.ts",
       "to": "n:file:/src/math.ts",
       "relation": "imports",
       "fromLabel": "/src/auth.ts",
-      "toLabel": "/src/math.ts"
+      "toLabel": "/src/math.ts",
+      "hop": 1,
+      "path": ["n:file:/src/auth.ts", "n:file:/src/math.ts"]
     }
   ]
 }
@@ -212,11 +313,13 @@ Returns:
 raw `n:`-prefixed id. When `node` matches nothing, `nodeFound: false` and an
 empty edge list are returned.
 
-### `explain_module`
+### `explain_module` (DEPRECATED — see `docs/MCP_MIGRATION.md`)
 
-Explains a module (a folder or package): its persisted module record, the
-files it contains, the symbols defined there, and the dependency edges touching
-its files.
+DEPRECATED at the Phase 6 cut; use `overview` + `search_files` +
+`dependencies_of` instead. Caps tightened 200/200 → 50/50 with
+`fileOverflow`/`symbolOverflow`. Explains a module (a folder or package): its
+persisted module record, the files it contains, the symbols defined there, and
+the dependency edges touching its files.
 
 | Argument | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -296,6 +399,9 @@ Returns:
   "schemaVersion": 1,
   "counts": { "files": 3, "symbols": 3, "modules": 1, "dependencies": 2, "summaries": 3 },
   "languages": { "typescript": 2, "markdown": 1 },
+  "parsedFiles": 2,             // files with at least one parsed symbol
+  "contentOnlyFiles": 1,        // scanner-visible files with no symbol rows
+  "unresolvedImports": 0,       // import specifiers that failed to resolve
   "summary": { /* project summary, or null */ },
   // only with detail: "full":
   "modules": [{ "path": "/src", "name": "src", "moduleType": "folder" }],
@@ -303,6 +409,9 @@ Returns:
   "topSymbols": [{ "id": "s1", "name": "double", "kind": "function", "filePath": "/src/math.ts" }]
 }
 ```
+
+Every object result also carries `freshness` (state/refreshed/checkedAt) and
+`timings` (`probeMs`/`searchMs`/`assemblyMs`/`responseBytes`) metadata.
 
 ---
 

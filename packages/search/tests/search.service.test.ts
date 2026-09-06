@@ -272,12 +272,14 @@ describe("SearchService", () => {
     expect(hits.some((h) => h.title === "double")).toBe(true);
   });
 
-  it("bounds indexed file content so the index cannot balloon with corpus text", () => {
+  it("bounds indexed file content with windows so the index cannot balloon with corpus text", () => {
     const head = "export const HEAD = 1;\n";
     const tail = "export const TAIL = 2;\n";
-    const filler = "// padding\n".repeat(2000);
+    // ~7k chars of filler: TAIL lands past the old 2000-char cliff but inside
+    // the windowed span (windows cover ~9k chars with the default cap).
+    const filler = "// padding\n".repeat(650);
     const content = `${head}${filler}${tail}`;
-    expect(content.length).toBeGreaterThan(MAX_INDEXED_CONTENT_CHARS);
+    expect(content.indexOf("TAIL")).toBeGreaterThan(MAX_INDEXED_CONTENT_CHARS);
 
     const service = new SearchService();
     service.indexSnapshot(
@@ -286,13 +288,13 @@ describe("SearchService", () => {
       }),
     );
 
-    // Text inside the bounded excerpt still matches by content.
+    // Text inside the first window still matches by content.
     expect(
       service.search("HEAD", { types: ["file"] }).some((h) => h.title === "/src/huge.ts"),
     ).toBe(true);
-    // Text beyond the excerpt no longer scores by content (path/basename only).
+    // Text beyond the old single-excerpt cliff is now visible through a later
+    // window (F2 recall fix) — huge.ts must surface for TAIL too.
     const tailHits = service.search("TAIL", { types: ["file"] });
-    expect(tailHits.some((h) => h.title === "/src/huge.ts")).toBe(false);
-    expect(tailHits.some((h) => h.title === "/src/small.ts")).toBe(true);
+    expect(tailHits.some((h) => h.title === "/src/huge.ts")).toBe(true);
   });
 });

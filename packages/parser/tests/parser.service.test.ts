@@ -127,11 +127,11 @@ describe("ParserService", () => {
     const result = await service.parseFile(pythonSource("x = 1"));
     expect(result.ok).toBe(true);
     expect(python.parseCount).toBe(1);
-    expect(service.supportedLanguages()).toEqual(["typescript", "python"]);
+    expect(service.supportedLanguages()).toEqual(["typescript", "javascript", "python"]);
   });
 
-  it("lists TypeScript as a supported language out of the box", () => {
+  it("lists TypeScript and JavaScript (JS bridge) as supported out of the box", () => {
     const service = new ParserService();
-    expect(service.supportedLanguages()).toEqual(["typescript"]);
+    expect(service.supportedLanguages()).toEqual(["typescript", "javascript"]);
   });
 });

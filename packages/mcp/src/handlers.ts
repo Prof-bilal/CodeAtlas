@@ -17,6 +17,7 @@ import {
 import type { CodeAtlasContext } from "./context";
 import { isDeniedPath } from "./deny";
 import type { Logger } from "./log";
+import { normalizeScore, toInternalMinScore } from "./score";
 import { SUMMARY_KINDS, SYMBOL_KINDS, type ToolName } from "./tools";
 import {
   type ToolArgs,
@@ -32,10 +33,19 @@ import {
   requireString,
 } from "./validation";
 
+/** Per-call timing attribution (Phase 0 instrumentation). */
+export interface ToolTimings {
+  probeMs: number;
+  searchMs?: number;
+  assemblyMs?: number;
+}
+
 /** The services every tool handler needs at call time. */
 export interface HandlerContext {
   readonly ctx: CodeAtlasContext;
   readonly logger: Logger;
+  /** Mutable timings bag filled by handlers; server attaches it to the result. */
+  readonly timings: ToolTimings;
 }
 
 /** The normalized summary shape returned to clients. */
@@ -61,6 +71,8 @@ export interface DependencyShape {
   readonly relation: string;
   readonly fromLabel: string;
   readonly toLabel: string;
+  readonly hop?: number;
+  readonly path?: readonly string[];
 }
 
 export const HANDLERS: Readonly<
@@ -149,6 +161,7 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
   const task = requireString(args, "task");
   const maxItems = optionalInt(args, "maxItems", 1, 50) ?? 20;
   const maxTokens = optionalInt(args, "maxTokens", 100, 50000) ?? 12000;
+  const brief = optionalBoolean(args, "brief") ?? false;
   const contextMode: "auto" | "auto-escalate" | "digest" | "full" | "off" | undefined =
     (optionalEnum(args, "contextMode", ["auto", "auto-escalate", "digest", "full", "off"]) ??
       optionalEnumFromEnv("ATLAS_CONTEXT_MODE", [
@@ -174,6 +187,7 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
       staleness,
       options: {
         budget: { maxItems, maxTokensPerItem: 2000, maxTokensTotal: maxTokens },
+        ...(brief ? { brief: true } : {}),
         ...(contextMode !== undefined ? { contextMode: mode } : {}),
       },
     });
@@ -200,6 +214,7 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
   const startMode: "auto" | "digest" | "full" | "off" =
     contextMode === "auto-escalate" ? "digest" : contextMode === undefined ? "auto" : contextMode;
 
+  const assembleStarted = performance.now();
   const pkg = assemble(startMode);
   const sufficiency = evaluate(pkg);
 
@@ -219,32 +234,35 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
       escalated = true;
     }
   }
+  h.timings.assemblyMs = Math.round(performance.now() - assembleStarted);
 
+  // Compact guidance (Phase 3): a single short `hint` replaces the verbose
+  // prose steps; `nextSteps` stays for backward compatibility but carries only
+  // the sufficiency predicate hints (typically empty when sufficient).
   const nextSteps = [...finalSufficiency.nextSteps];
-  if (finalSufficiency.sufficient) {
-    nextSteps.push(
-      "Context is SUFFICIENT — stop exploring now and write your final answer. " +
-        "Cite the exact file paths you will reference. Do not read more files unless something is missing.",
-    );
-  } else {
-    nextSteps.push(
-      "Context may be insufficient — consider broader search or dependency expansion.",
-    );
-  }
+  const hint = finalSufficiency.sufficient
+    ? "Context SUFFICIENT — write the final answer now; cite exact file paths."
+    : (finalSufficiency.refine ??
+      "Context may be insufficient — broaden search or expand dependencies.");
 
   const result = {
     task: finalPkg.task,
-    items: finalPkg.items.map((item) => ({
-      id: item.id,
-      kind: item.kind,
-      title: item.title,
-      path: item.path,
-      score: item.score,
-      source: item.source,
-      reason: item.reason,
-      ...(item.tier !== undefined ? { tier: item.tier } : {}),
-      tokens: item.tokens,
-    })),
+    items: finalPkg.items.map((item) => {
+      const normalized = normalizeScore(item.score);
+      return {
+        id: item.id,
+        kind: item.kind,
+        title: item.title,
+        path: item.path,
+        score: normalized.score,
+        rawScore: normalized.rawScore,
+        confidence: normalized.confidence,
+        source: item.source,
+        reason: item.reason,
+        ...(item.tier !== undefined ? { tier: item.tier } : {}),
+        tokens: item.tokens,
+      };
+    }),
     ...(finalPkg.synthesis !== undefined
       ? {
           synthesis: {
@@ -260,6 +278,10 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
       predicate: f.predicate,
       message: f.message,
     })),
+    ...(!finalSufficiency.sufficient && finalSufficiency.refine !== undefined
+      ? { refine: finalSufficiency.refine }
+      : {}),
+    hint,
     nextSteps,
     budget: {
       itemsRequested: finalPkg.budget.itemsRequested,
@@ -292,7 +314,9 @@ async function inspectSymbol(h: HandlerContext, args: ToolArgs): Promise<unknown
   const sdk = h.ctx.requireSDK();
 
   // Try to find the symbol by name search.
+  const searchStarted = performance.now();
   const hits = sdk.symbols.searchSymbols(symbolQuery, { limit: 1, minScore: 50 });
+  h.timings.searchMs = Math.round(performance.now() - searchStarted);
   if (hits.length === 0) {
     throw new ToolDomainError(`Symbol "${symbolQuery}" not found in the index.`);
   }
@@ -343,32 +367,64 @@ async function inspectSymbol(h: HandlerContext, args: ToolArgs): Promise<unknown
     }
   }
 
-  // Find test files: files matching *.test.ts or *.spec.ts in the same directory.
-  const testFiles: string[] = [];
-  const allFiles = sdk.files.listFiles();
-  const symbolDir = symbol.filePath.replace(/\\/g, "/").split("/").slice(0, -1).join("/");
-  for (const file of allFiles) {
-    const filePath = file.path.replace(/\\/g, "/");
-    if (
-      filePath.startsWith(symbolDir) &&
-      (filePath.endsWith(".test.ts") ||
-        filePath.endsWith(".spec.ts") ||
-        filePath.endsWith(".test.js") ||
-        filePath.endsWith(".spec.js"))
-    ) {
-      testFiles.push(file.path);
+  // Find test files: prefer derived `tested-by` graph edges (impl file -> test
+  // file, F4); fall back to the same-directory *.test|*.spec scan for indexes
+  // built before test-edge derivation existed.
+  const testFiles = new Set<string>();
+  const fileNode = `n:file:${symbol.filePath}`;
+  for (const edge of allEdges) {
+    if (edge.kind === "tested-by" && edge.from === fileNode) {
+      testFiles.add(edge.to.replace(/^n:file:/, ""));
     }
   }
+  if (testFiles.size === 0) {
+    const symbolDir = symbol.filePath.replace(/\\/g, "/").split("/").slice(0, -1).join("/");
+    for (const file of sdk.files.listFiles()) {
+      const filePath = file.path.replace(/\\/g, "/");
+      if (
+        filePath.startsWith(symbolDir) &&
+        (filePath.endsWith(".test.ts") ||
+          filePath.endsWith(".spec.ts") ||
+          filePath.endsWith(".test.js") ||
+          filePath.endsWith(".spec.js"))
+      ) {
+        testFiles.add(file.path);
+      }
+    }
+  }
+  const testFilesList = [...testFiles];
+
+  // Phase 4 cap discipline: caller/callee lists are capped at 25 each so a
+  // dense-graph symbol cannot blow up the response; overflow is reported.
+  const MAX_CALLERS = 25;
+  const MAX_CALLEES = 25;
+  const callerOverflow =
+    callers.length > MAX_CALLERS
+      ? `${callers.length} total callers (showing first ${MAX_CALLERS})`
+      : undefined;
+  const calleeOverflow =
+    callees.length > MAX_CALLEES
+      ? `${callees.length} total callees (showing first ${MAX_CALLEES})`
+      : undefined;
+  const cappedCallers = callers.slice(0, MAX_CALLERS);
+  const cappedCallees = callees.slice(0, MAX_CALLEES);
+  // Confidence: exact-name resolution is high; test-edge fallback lowers it.
+  const confidence =
+    testFiles.size > 0 && symbol.name === symbolQuery
+      ? "high"
+      : symbol.name === symbolQuery
+        ? "high"
+        : "medium";
 
   const nextSteps: string[] = [];
-  if (callers.length > 0) {
-    nextSteps.push(`Review ${callers.length} caller(s) to understand usage.`);
+  if (cappedCallers.length > 0) {
+    nextSteps.push(`Review ${cappedCallers.length} caller(s) to understand usage.`);
   }
-  if (callees.length > 0) {
-    nextSteps.push(`Review ${callees.length} callee(s) to understand dependencies.`);
+  if (cappedCallees.length > 0) {
+    nextSteps.push(`Review ${cappedCallees.length} callee(s) to understand dependencies.`);
   }
-  if (testFiles.length > 0) {
-    nextSteps.push(`Check ${testFiles.length} test file(s) for expected behavior.`);
+  if (testFilesList.length > 0) {
+    nextSteps.push(`Check ${testFilesList.length} test file(s) for expected behavior.`);
   }
 
   return {
@@ -385,9 +441,12 @@ async function inspectSymbol(h: HandlerContext, args: ToolArgs): Promise<unknown
       documentation: symbol.documentation,
       typeText: symbol.typeText,
     },
-    callers,
-    callees,
-    testFiles,
+    callers: cappedCallers,
+    callees: cappedCallees,
+    testFiles: testFilesList,
+    confidence,
+    ...(callerOverflow !== undefined ? { callerOverflow } : {}),
+    ...(calleeOverflow !== undefined ? { calleeOverflow } : {}),
     nextSteps,
   };
 }
@@ -398,14 +457,17 @@ async function searchSymbols(h: HandlerContext, args: ToolArgs): Promise<unknown
   const query = requireString(args, "query");
   const limit = optionalInt(args, "limit", 1, 100) ?? 20;
   const kind = optionalEnum(args, "kind", SYMBOL_KINDS);
-  const minScore = optionalNumber(args, "minScore", 0) ?? 0;
+  const minScoreRaw = optionalNumber(args, "minScore", 0) ?? 0;
+  const minScore = toInternalMinScore(minScoreRaw);
 
   const sdk = h.ctx.requireSDK();
+  const searchStarted = performance.now();
   const hits = sdk.symbols.searchSymbols(query, {
     limit,
     minScore,
     ...(kind === undefined ? {} : { kind }),
   });
+  h.timings.searchMs = Math.round(performance.now() - searchStarted);
 
   const enriched = hits.map((hit) => {
     const symbolId = symbolIdFromTarget(hit.targetId);
@@ -420,13 +482,16 @@ async function searchSymbols(h: HandlerContext, args: ToolArgs): Promise<unknown
         // Symbol already dropped from a concurrent index refresh — skip.
       }
     }
+    const normalized = normalizeScore(hit.score);
     return {
       name: hit.title,
       path: hit.path,
       targetId: hit.targetId,
       ...(symbolKind !== undefined ? { symbolKind } : {}),
       documentation,
-      score: hit.score,
+      score: normalized.score,
+      rawScore: normalized.rawScore,
+      confidence: normalized.confidence,
     };
   });
 
@@ -438,10 +503,13 @@ async function searchSymbols(h: HandlerContext, args: ToolArgs): Promise<unknown
 async function searchFiles(h: HandlerContext, args: ToolArgs): Promise<unknown> {
   const query = requireString(args, "query");
   const limit = optionalInt(args, "limit", 1, 100) ?? 20;
-  const minScore = optionalNumber(args, "minScore", 0) ?? 0;
+  const minScoreRaw = optionalNumber(args, "minScore", 0) ?? 0;
+  const minScore = toInternalMinScore(minScoreRaw);
 
   const sdk = h.ctx.requireSDK();
+  const searchStarted = performance.now();
   const hits = sdk.files.searchFiles(query, { limit, minScore });
+  h.timings.searchMs = Math.round(performance.now() - searchStarted);
   const results = hits.map((hit) => {
     let language: string | undefined;
     if (hit.path !== null) {
@@ -451,10 +519,13 @@ async function searchFiles(h: HandlerContext, args: ToolArgs): Promise<unknown> 
         // File removed from a concurrent refresh — omit language.
       }
     }
+    const normalized = normalizeScore(hit.score);
     return {
       path: hit.path,
       ...(language !== undefined ? { language } : {}),
-      score: hit.score,
+      score: normalized.score,
+      rawScore: normalized.rawScore,
+      confidence: normalized.confidence,
     };
   });
 
@@ -556,14 +627,26 @@ async function getDependencies(h: HandlerContext, args: ToolArgs): Promise<unkno
   const node = optionalString(args, "node");
   const relation = optionalString(args, "relation");
   const direction = optionalEnum(args, "direction", ["outgoing", "incoming", "both"]) ?? "both";
-  const limit = optionalInt(args, "limit", 1, 1000) ?? 100;
+  // Tightened default (Phase 3): 25 edges is enough for the common call/import
+  // question; callers needing bulk set `limit` explicitly (max 1000).
+  const limit = optionalInt(args, "limit", 1, 1000) ?? 25;
+  // Phase 4: bounded BFS depth 1..3 (default 1). The protocol schema
+  // rejects out-of-range values before this runs; the SDK clamps defensively.
+  const rawDepth = optionalInt(args, "depth", 1, 3);
+  const depth = rawDepth ?? 1;
 
   const sdk = h.ctx.requireSDK();
-  const { edges, nodeFound, total } = sdk.dependencies.query({
+  const {
+    edges,
+    nodeFound,
+    total,
+    depth: effectiveDepth,
+  } = sdk.dependencies.query({
     ...(node === undefined ? {} : { node }),
     ...(relation === undefined ? {} : { relation }),
     direction: direction as "outgoing" | "incoming" | "both",
     limit,
+    depth,
   });
 
   return {
@@ -571,15 +654,16 @@ async function getDependencies(h: HandlerContext, args: ToolArgs): Promise<unkno
     count: edges.length,
     total,
     nodeFound,
-    dependencies: edges.map(
-      (edge): DependencyShape => ({
-        from: edge.from,
-        to: edge.to,
-        relation: edge.kind,
-        fromLabel: edge.fromLabel,
-        toLabel: edge.toLabel,
-      }),
-    ),
+    depth: effectiveDepth ?? depth,
+    dependencies: edges.map((edge) => ({
+      from: edge.from,
+      to: edge.to,
+      relation: edge.kind,
+      fromLabel: edge.fromLabel,
+      toLabel: edge.toLabel,
+      ...(edge.hop !== undefined ? { hop: edge.hop } : {}),
+      ...(edge.path !== undefined ? { path: [...edge.path] } : {}),
+    })),
     nextSteps: [],
   };
 }
@@ -597,8 +681,10 @@ async function explainModule(h: HandlerContext, args: ToolArgs): Promise<unknown
     includeDependencies,
   });
 
-  const MAX_SYMBOLS = 200;
-  const MAX_FILES = 200;
+  // Phase 4 cap discipline (was 200/200): module dumps are bounded so a
+  // large package cannot blow up the response; overflow is reported honestly.
+  const MAX_SYMBOLS = 50;
+  const MAX_FILES = 50;
   const symbols = explanation.symbols.slice(0, MAX_SYMBOLS);
   const files = explanation.files.slice(0, MAX_FILES);
 
@@ -643,11 +729,26 @@ async function projectOverview(h: HandlerContext, args: ToolArgs): Promise<unkno
 
   const sdk = h.ctx.requireSDK();
   const overview = sdk.project.overview(detail as "summary" | "full");
+
+  // Honesty: report how many indexed files actually have parsed symbols vs
+  // content-only (scanner-visible but no symbol rows), and how many imports
+  // could not be resolved (Phase 5 alias tracking).
+  const files = sdk.files.listFiles();
+  const symbolFiles = new Set(sdk.symbols.listSymbols().map((symbol) => symbol.filePath));
+  let parsedFiles = 0;
+  for (const file of files) {
+    if (symbolFiles.has(file.path)) parsedFiles += 1;
+  }
+  const contentOnlyFiles = files.length - parsedFiles;
+
   const result: Record<string, unknown> = {
     savedAt: overview.savedAt,
     schemaVersion: overview.schemaVersion,
     counts: overview.counts,
     languages: overview.languages,
+    parsedFiles,
+    contentOnlyFiles,
+    unresolvedImports: overview.unresolvedImports ?? 0,
   };
   if (includeSummary) {
     result["summary"] = overview.summary === undefined ? null : toSummaryShape(overview.summary);
@@ -668,6 +769,13 @@ async function projectOverview(h: HandlerContext, args: ToolArgs): Promise<unkno
       kind: symbol.kind,
       filePath: symbol.filePath,
     }));
+    // Phase 4 gating: full listings can be large — emit an explicit size
+    // warning so agents prefer summary + targeted search/dependencies.
+    const moduleCount = (overview.modules ?? []).length;
+    result["warning"] =
+      `detail:"full" returns module/file/symbol listings (${moduleCount} modules, ` +
+      `${files.length} files indexed) and can be large; prefer "summary" plus ` +
+      `search_files/search_symbols/dependencies_of for targeted reads.`;
   }
   result["nextSteps"] = [];
   return result;

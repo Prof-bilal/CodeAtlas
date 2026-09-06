@@ -363,5 +363,6 @@ function toAssembleOptions(input: BuildPackageInput): AssembleOptions {
     ...(input.scopePaths !== undefined ? { scopePaths: input.scopePaths } : {}),
     ...(input.taskCategory !== undefined ? { taskCategory: input.taskCategory } : {}),
     ...(input.contextMode !== undefined ? { contextMode: input.contextMode } : {}),
+    ...(input.brief !== undefined ? { brief: input.brief } : {}),
   };
 }

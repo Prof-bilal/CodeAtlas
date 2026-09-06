@@ -68,6 +68,8 @@ export interface IndexResult {
   readonly summariesFailed: number;
   /** True when the deterministic repository digest was generated and stored. */
   readonly digestGenerated: boolean;
+  /** Import specifiers that could not be resolved to an indexed file (honesty). */
+  readonly unresolvedImports: number;
 }
 
 /**
@@ -124,14 +126,20 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
     const diff = hasher.compareHashes({ hashes: previousHashes }, current.value);
     const incremental = mode === "update" && Object.keys(previousHashes).length > 0;
 
-    // Files that must be re-read and re-parsed: every TypeScript file for a
+    // Files that must be re-read and re-parsed: every parseable file for a
     // full build, or only changed + added files for an incremental update.
     const filesToReparse = new Set<string>(diff.changed);
     for (const path of diff.added) {
       filesToReparse.add(path);
     }
     const deletedSet = new Set<string>(diff.deleted);
-    const scannedTsFiles = scan.value.files.filter((scanned) => scanned.language === "typescript");
+    // Parseable languages: TypeScript plus the JS bridge (`allowJs`). JS files
+    // were previously scanned but silently content-only; the bridge parses them
+    // as TS grammar, and the overview's parsed-vs-content-only split keeps the
+    // distinction visible (Phase 5).
+    const scannedParseableFiles = scan.value.files.filter(
+      (scanned) => scanned.language === "typescript" || scanned.language === "javascript",
+    );
 
     // Incremental no-op fast path: nothing changed on disk, so there is
     // nothing to re-read, re-parse, or rewrite. Refreshing the saved-at
@@ -144,7 +152,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
         repositoryPath,
         dbPath,
         mode,
-        files: scannedTsFiles.length,
+        files: scannedParseableFiles.length,
         parsedFiles: 0,
         skippedFiles: 0,
         symbols: stats.symbols,
@@ -157,6 +165,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
         summaries: 0,
         summariesFailed: 0,
         digestGenerated: false,
+        unresolvedImports: 0,
       });
     }
 
@@ -180,7 +189,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
     const reparsePaths = new Set<string>();
     const sourceFiles: SourceFile[] = [];
     const filesToParse: SourceFile[] = [];
-    const toRead = scannedTsFiles.filter(
+    const toRead = scannedParseableFiles.filter(
       (scanned) => !incremental || filesToReparse.has(scanned.path),
     );
     const readFiles = await mapWithConcurrency(toRead, DEFAULT_CONCURRENCY, async (scanned) => {
@@ -196,7 +205,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       reparsePaths.add(file.path);
     }
     if (incremental) {
-      for (const scanned of scannedTsFiles) {
+      for (const scanned of scannedParseableFiles) {
         if (filesToReparse.has(scanned.path)) {
           continue;
         }
@@ -225,6 +234,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
 
     const references = parsed.parsed.flatMap((file) => file.references);
     graph.build(mergedSymbols, references);
+    const unresolvedImports = graph.unresolvedImportCount();
     const exported = await graph.exportEdges();
     if (!exported.ok) return fail(exported.error);
     const dependencies: PersistedDependency[] = exported.value.map((edge) => ({
@@ -334,7 +344,11 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       dependencies,
       modules,
       hashes: current.value.hashes,
-      metadata: { repositoryPath, manifestPath: manifest.value.path },
+      metadata: {
+        repositoryPath,
+        manifestPath: manifest.value.path,
+        ...(unresolvedImports > 0 ? { unresolvedImports: String(unresolvedImports) } : {}),
+      },
       ...(storedSummaries.length > 0 ? { summaries: storedSummaries } : {}),
     };
 
@@ -368,6 +382,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       summaries: summaries.length,
       summariesFailed,
       digestGenerated: true,
+      unresolvedImports,
     };
     if (request.metrics !== undefined) {
       request.metrics.recordScan({

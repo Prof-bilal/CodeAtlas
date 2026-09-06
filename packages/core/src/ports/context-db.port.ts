@@ -79,6 +79,12 @@ export interface SearchResult {
   readonly relation?: string;
   /** A short contextual excerpt; present only when the match text is available. */
   readonly snippet?: string;
+  /**
+   * For file hits: the char range within the file body of the content window
+   * that produced the best content score (chunk attribution). Absent when the
+   * match came from the basename/path or no window was scored.
+   */
+  readonly contentRange?: { readonly startChar: number; readonly endChar: number };
   /** Relevance heuristic: higher is better. */
   readonly score: number;
 }

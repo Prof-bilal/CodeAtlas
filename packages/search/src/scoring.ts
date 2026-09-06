@@ -1,5 +1,11 @@
 import { fuzzyThreshold, isFuzzyMatch, isTokenMatch, queryTerms, similarity } from "./fuzzy";
-import type { DependencyEntry, FileEntry, IndexedEntity, SummaryEntry } from "./search-index";
+import type {
+  ContentWindow,
+  DependencyEntry,
+  FileEntry,
+  IndexedEntity,
+  SummaryEntry,
+} from "./search-index";
 
 /** Field-priority ceilings for the lexical scorer (higher = more important). */
 const SCORE = {
@@ -158,8 +164,18 @@ export class LexicalScorer implements RelevanceScorer {
     const basename = pathBasename(entity.path);
     const name = this.scoreField(query, basename, fuzzy);
     const path = this.scoreField(query, entity.path, fuzzy) * 0.9;
-    const content =
-      entity.content.length > 0 ? this.scoreField(query, entity.content, false) * 0.4 : 0;
+    // Content scores as the best over the windowed excerpts, so a match past
+    // the first 2000 chars is visible to ranking (F2) rather than invisible.
+    // Entities without explicit windows (direct construction) use the single
+    // `content` field.
+    const windows =
+      entity.contentWindows !== undefined && entity.contentWindows.length > 0
+        ? entity.contentWindows
+        : entity.content.length > 0
+          ? [{ content: entity.content, startChar: 0 }]
+          : [];
+    const bestWindow = bestContentWindowScore(query, windows);
+    const content = bestWindow.score > 0 ? bestWindow.score * 0.4 : 0;
     return Math.max(name, path, content);
   }
 
@@ -202,16 +218,41 @@ export class LexicalScorer implements RelevanceScorer {
       // phrase-style content searches keep working.
       return this.scoreTerm(q, t, fuzzy);
     }
+
+    // Score every meaningful term against the field. Each sub-score is the
+    // ceiling contribution of that term; the best one drives the result so a
+    // single strong identifier match (exact symbol name) keeps its top rank.
     let best = 0;
+    let matched = 0;
     for (const term of terms) {
       const score = this.scoreTerm(term, t, fuzzy);
+      if (score > 0) {
+        matched += 1;
+      }
       if (score > best) {
         best = score;
       }
-      if (best === SCORE.EXACT) {
-        break;
-      }
     }
+
+    // Conjunction coverage (F1): a field matching more of the query's
+    // meaningful terms is a better answer to a multi-term query than one
+    // matching a single term best. Factor is matched/total in 0.5..1, so a
+    // full-coverage match keeps its raw score and a partial match is damped
+    // but never silenced.
+    if (matched > 0 && terms.length > 1) {
+      const coverage = Math.max(0.5, matched / terms.length);
+      best = Math.round(best * coverage);
+    }
+
+    // Phrase bonus (F1): when the whole normalized query appears contiguously
+    // (not just as scattered terms), it is a strong signal — e.g. the natural
+    // language "password reset" next to a file whose content contains the same
+    // contiguous phrase. Cap at the exact-match ceiling so a phrase can never
+    // outrank an exact identifier hit.
+    if (best > 0 && q.length >= 4 && t.includes(q)) {
+      best = Math.min(SCORE.EXACT, Math.round(best * 1.15));
+    }
+
     return best;
   }
 
@@ -234,6 +275,16 @@ export class LexicalScorer implements RelevanceScorer {
     }
     return 0;
   }
+
+  /**
+   * Public window-scoring entry: score a single content window against the
+   * query exactly as the private field scorer would (no fuzzy matching, no
+   * file-content damp). Exposed so the search service can attribute a file
+   * hit to the window that produced it.
+   */
+  public scoreWindowField(query: string, content: string): number {
+    return this.scoreField(query, content, false);
+  }
 }
 
 /** The final path segment of a path, split on either separator. */
@@ -241,4 +292,28 @@ function pathBasename(path: string): string {
   const separator = path.includes("\\") ? "\\" : "/";
   const segments = path.split(separator);
   return segments[segments.length - 1] ?? path;
+}
+
+/**
+ * Score every content window of a file against the query and return the
+ * winning window plus its raw score. Shared by the file scorer (score =
+ * max over windows, damped by the file-content factor) and by the search
+ * service (chunk attribution: which window produced the match). A windowless
+ * caller passes a single `{ content, startChar: 0 }` window.
+ */
+export function bestContentWindowScore(
+  query: string,
+  windows: readonly ContentWindow[],
+): { readonly score: number; readonly window: ContentWindow | undefined } {
+  let bestScore = 0;
+  let bestWindow: ContentWindow | undefined;
+  const scorer = new LexicalScorer();
+  for (const window of windows) {
+    const score = scorer.scoreWindowField(query, window.content);
+    if (score > bestScore) {
+      bestScore = score;
+      bestWindow = window;
+    }
+  }
+  return { score: bestScore, window: bestWindow };
 }

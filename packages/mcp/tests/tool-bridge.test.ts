@@ -1,5 +1,6 @@
 import type { ContextSDK } from "@atlas/sdk";
 import { describe, expect, it } from "vitest";
+import type { HandlerContext } from "../src/handlers";
 import { createLogger } from "../src/log";
 import { createContextToolSource } from "../src/tool-bridge";
 
@@ -163,52 +164,72 @@ function fakeSDK(): ContextSDK {
   } as unknown as ContextSDK;
 }
 
+/** Build a minimal handler context for the fake SDK (timings bag included). */
+function handlerContext(sdk: ContextSDK, logger: ReturnType<typeof createLogger>): HandlerContext {
+  return {
+    ctx: { requireSDK: () => sdk } as unknown as HandlerContext["ctx"],
+    logger,
+    timings: { probeMs: 0 },
+  };
+}
+
 describe("createContextToolSource", () => {
-  it("returns exactly 7 tools", () => {
+  it("returns the 12 legacy tools plus 4 canonical aliases", () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({
-      ctx: { requireSDK: () => sdk } as never,
-      logger,
-    });
+    const toolSource = createContextToolSource(handlerContext(sdk, logger));
     const tools = toolSource.listTools();
-    expect(tools.length).toBe(12);
+    expect(tools.length).toBe(16);
+    const names = tools.map((t) => t.function.name);
+    for (const canonical of ["context_for", "dependencies_of", "read_range", "overview"]) {
+      expect(names).toContain(canonical);
+    }
   });
 
   it("each tool has a function name matching the MCP registry", () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({
-      ctx: { requireSDK: () => sdk } as never,
-      logger,
-    });
+    const toolSource = createContextToolSource(handlerContext(sdk, logger));
     const names = toolSource
       .listTools()
       .map((t) => t.function.name)
       .sort();
     expect(names).toEqual([
       "analyze_task",
+      "context_for",
       "create_plan",
+      "dependencies_of",
       "explain_module",
       "find_relevant_context",
       "get_dependencies",
       "get_summary",
       "inspect_symbol",
+      "overview",
       "project_overview",
       "read_file_range",
+      "read_range",
       "search_files",
       "search_symbols",
       "verify_answer",
     ]);
   });
 
+  it("executes canonical alias names through the legacy handler", async () => {
+    const sdk = fakeSDK();
+    const logger = createLogger({ level: "error" });
+    const toolSource = createContextToolSource(handlerContext(sdk, logger));
+    // `overview` is the canonical alias for `project_overview`.
+    const result = await toolSource.execute("overview", {});
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toBeDefined();
+    }
+  });
+
   it("each tool has JSON Schema parameters", () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({
-      ctx: { requireSDK: () => sdk } as never,
-      logger,
-    });
+    const toolSource = createContextToolSource(handlerContext(sdk, logger));
     for (const tool of toolSource.listTools()) {
       expect(tool.function.parameters).toBeDefined();
       expect(typeof tool.function.parameters).toBe("object");
@@ -218,10 +239,7 @@ describe("createContextToolSource", () => {
   it("executes a tool call and returns a result", async () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({
-      ctx: { requireSDK: () => sdk } as never,
-      logger,
-    });
+    const toolSource = createContextToolSource(handlerContext(sdk, logger));
     const result = await toolSource.execute("project_overview", {});
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -232,10 +250,7 @@ describe("createContextToolSource", () => {
   it("returns error for unknown tool names", async () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({
-      ctx: { requireSDK: () => sdk } as never,
-      logger,
-    });
+    const toolSource = createContextToolSource(handlerContext(sdk, logger));
     const result = await toolSource.execute("nonexistent_tool", {});
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -250,10 +265,7 @@ describe("createContextToolSource", () => {
       throw new Error("symbol lookup failed");
     };
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({
-      ctx: { requireSDK: () => sdk } as never,
-      logger,
-    });
+    const toolSource = createContextToolSource(handlerContext(sdk, logger));
     // search_symbols calls symbols.searchSymbols, not getSymbol, so it should work
     const result = await toolSource.execute("search_symbols", {
       query: "test",
@@ -263,10 +275,7 @@ describe("createContextToolSource", () => {
 
   it("exposes a deny-filter that blocks secret files (beta audit Fix 6)", () => {
     const logger = createLogger({ level: "error" });
-    const toolSource = createContextToolSource({
-      ctx: { requireSDK: () => fakeSDK() } as never,
-      logger,
-    });
+    const toolSource = createContextToolSource(handlerContext(fakeSDK(), logger));
     const deny = toolSource.getDenyFilter?.();
     expect(deny).toBeDefined();
     if (deny === undefined) return;

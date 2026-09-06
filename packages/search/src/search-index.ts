@@ -28,7 +28,18 @@ export interface FileEntry extends IndexedEntityBase {
   readonly kind: "file";
   readonly path: string;
   readonly language: string;
+  /** First content window (≤ {@link MAX_INDEXED_CONTENT_CHARS}); backward-compatible field. */
   readonly content: string;
+  /**
+   * Windowed excerpts of the file body. Each window is ≤
+   * {@link MAX_INDEXED_CONTENT_CHARS} chars, strided by
+   * {@link CONTENT_WINDOW_STRIDE}; capped at {@link MAX_CONTENT_WINDOWS} per
+   * file so index memory grows boundedly. Scoring takes the max over windows,
+   * so a match past the old single-excerpt cliff is visible to ranking (F2).
+   * Optional so entities constructed directly (unit tests, custom callers)
+   * degrade to a single `content` window.
+   */
+  readonly contentWindows?: readonly ContentWindow[];
 }
 
 export interface SymbolEntry extends IndexedEntityBase {
@@ -67,6 +78,13 @@ export interface SummaryEntry extends IndexedEntityBase {
   readonly keyPoints: readonly string[];
 }
 
+/** One bounded excerpt of a file's content, with its char offset in the file. */
+export interface ContentWindow {
+  readonly content: string;
+  /** Character offset of this window's start within the original file body. */
+  readonly startChar: number;
+}
+
 /** Graph node id for a file (mirrors `@atlas/graph` without importing it). */
 function fileNodeId(path: FilePath): NodeId {
   return `n:file:${path.replace(/\\/g, "/")}` as NodeId;
@@ -78,14 +96,25 @@ function symbolNodeId(symbolId: SymbolId): NodeId {
 }
 
 /**
- * The maximum number of leading characters of a file's content that the
- * index retains for scoring/prefiltering. Retaining full bodies of huge files
- * duplicates the corpus text in memory (~2× with the lowercased `searchText`);
- * a bounded excerpt keeps identifier/prose matching working for the common
- * case while hard-capping the index's memory per file. Winning hits fetch the
- * full body on demand from the context database (see the Context SDK).
+ * The maximum number of leading characters of a file's content that a single
+ * index window retains for scoring/prefiltering. Retaining full bodies of huge
+ * files duplicates the corpus text in memory (~2× with the lowercased
+ * `searchText`); bounded windows keep identifier/prose matching working for
+ * the common case while hard-capping the index's memory per file. Winning hits
+ * fetch the full body on demand from the context database (see the Context
+ * SDK).
  */
 export const MAX_INDEXED_CONTENT_CHARS = 2000;
+
+/** Overlap between consecutive content windows (stride). */
+export const CONTENT_WINDOW_STRIDE = 1000;
+
+/**
+ * Maximum content windows retained per file. With a 2000-char window and
+ * 1000-char stride this covers up to ~16 KB of body text per file — well past
+ * the old single-excerpt cliff — while keeping index memory bounded (F2).
+ */
+export const MAX_CONTENT_WINDOWS = 8;
 
 /** Lowercase and normalize a text field for comparison. */
 function normalize(text: string): string {
@@ -111,16 +140,16 @@ export function buildIndex(snapshot: ContextSnapshot): readonly IndexedEntity[] 
 
   for (const file of snapshot.files ?? []) {
     const basename = pathBasename(file.path);
-    const content =
-      file.content.length > MAX_INDEXED_CONTENT_CHARS
-        ? file.content.slice(0, MAX_INDEXED_CONTENT_CHARS)
-        : file.content;
+    const windows = contentWindows(file.content);
+    const first = windows[0]?.content ?? "";
+    const windowedText = windows.map((window) => window.content).join("\n");
     entities.push({
       kind: "file",
       path: file.path,
       language: file.language,
-      content,
-      searchText: normalize(`${basename}\n${file.path}\n${content}`),
+      content: first,
+      contentWindows: windows,
+      searchText: normalize(`${basename}\n${file.path}\n${windowedText}`),
       identifierLengths: [basename.length, file.path.length],
     });
   }
@@ -189,4 +218,42 @@ function buildNodeLabels(snapshot: ContextSnapshot): ReadonlyMap<NodeId, string>
     labels.set(symbolNodeId(symbol.id), `${symbol.name} (${symbol.filePath})`);
   }
   return labels;
+}
+
+/**
+ * Window a file body into bounded, overlapping excerpts. Windows are ≤
+ * {@link MAX_INDEXED_CONTENT_CHARS} chars with {@link CONTENT_WINDOW_STRIDE}
+ * between starts, capped at {@link MAX_CONTENT_WINDOWS} per file. Each window
+ * records its starting char offset for attribution. A file shorter than one
+ * window yields a single full-body window.
+ */
+export function contentWindows(content: string): readonly ContentWindow[] {
+  if (content.length === 0) {
+    return [];
+  }
+  if (content.length <= MAX_INDEXED_CONTENT_CHARS) {
+    return [{ content, startChar: 0 }];
+  }
+  const windows: ContentWindow[] = [];
+  const lastStart = content.length - MAX_INDEXED_CONTENT_CHARS;
+  for (
+    let start = 0;
+    start <= lastStart && windows.length < MAX_CONTENT_WINDOWS;
+    start += CONTENT_WINDOW_STRIDE
+  ) {
+    windows.push({
+      content: content.slice(start, start + MAX_INDEXED_CONTENT_CHARS),
+      startChar: start,
+    });
+  }
+  // Ensure the tail of a long file is reachable even when the stride would
+  // otherwise stop short of it.
+  const last = windows[windows.length - 1];
+  if (
+    windows.length < MAX_CONTENT_WINDOWS &&
+    (last === undefined || last.startChar + MAX_INDEXED_CONTENT_CHARS < content.length)
+  ) {
+    windows.push({ content: content.slice(lastStart), startChar: lastStart });
+  }
+  return windows;
 }

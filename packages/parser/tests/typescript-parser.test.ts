@@ -422,4 +422,21 @@ const svc = new Service();
       expect(result.value.references.length).toBeGreaterThan(0);
     });
   });
+
+  describe("JS bridge (allowJs)", () => {
+    it("parses JavaScript as TS grammar", async () => {
+      const parser = new TypeScriptParser();
+      const result = await parser.parse({
+        path: "/fixture/utils.js" as FilePath,
+        language: "javascript",
+        content: "export function helper(value) { return value * 2; }\nexport const NAME = 'x';\n",
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value.symbols.some((s) => s.name === "helper" && s.kind === "function")).toBe(
+        true,
+      );
+      expect(result.value.symbols.some((s) => s.name === "NAME")).toBe(true);
+    });
+  });
 });
