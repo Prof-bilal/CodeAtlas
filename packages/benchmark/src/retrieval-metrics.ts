@@ -43,9 +43,13 @@ export interface RetrievalReport {
 }
 
 /** Normalize a repo-relative path for comparison (forward slashes, no leading ./). */
-function normPath(p: string): string {
+function normPath(p: string, repoRoot?: string): string {
   let out = p.replace(/\\/g, "/");
   while (out.startsWith("./")) out = out.slice(2);
+  if (repoRoot) {
+    const root = repoRoot.replace(/\\/g, "/").replace(/\/+$/, "");
+    if (out.startsWith(`${root}/`)) out = out.slice(root.length + 1);
+  }
   return out;
 }
 
@@ -59,12 +63,14 @@ export const DEFAULT_K_VALUES = [1, 5, 10] as const;
  * @param task      The benchmark task (uses `prompt` and `expected_files`).
  * @param kValues   Top-k cutoffs to report (default `[1,5,10]`).
  * @param limit     Search result limit passed to `search` (should be ≥ max k).
+ * @param repoRoot  Repository root used to normalize absolute paths to repo-relative.
  */
 export function scoreTaskRetrieval(
   sdk: ContextSDK,
   task: TaskDefinition,
   kValues: readonly number[] = DEFAULT_K_VALUES,
   limit = 25,
+  repoRoot?: string,
 ): RetrievalResult {
   const query = task.prompt;
   const results = sdk.search.search(query, { limit });
@@ -74,7 +80,7 @@ export function scoreTaskRetrieval(
   const retrievedPaths: string[] = [];
   for (const r of results) {
     if (r.path === null) continue;
-    const np = normPath(String(r.path));
+    const np = normPath(String(r.path), repoRoot);
     if (seen.has(np)) continue;
     seen.add(np);
     retrievedPaths.push(np);
@@ -117,11 +123,14 @@ export function evaluateRetrieval(
   tasks: readonly TaskDefinition[],
   kValues: readonly number[] = DEFAULT_K_VALUES,
   limit = 25,
+  repoRoot?: string,
 ): RetrievalReport {
   if (!sdk.isAvailable) {
     throw new Error("Context SDK is not available (no index) — cannot score retrieval.");
   }
-  const results: RetrievalResult[] = tasks.map((t) => scoreTaskRetrieval(sdk, t, kValues, limit));
+  const results: RetrievalResult[] = tasks.map((t) =>
+    scoreTaskRetrieval(sdk, t, kValues, limit, repoRoot),
+  );
 
   const precisionAtK: Record<number, number> = {};
   const recallAtK: Record<number, number> = {};

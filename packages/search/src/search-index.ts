@@ -1,10 +1,15 @@
 import type { ContextSnapshot } from "@atlas/core";
-import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
 
 /**
  * A denormalized, language-agnostic record in the search index. One entry per
- * persisted file, symbol, module, dependency edge, or summary. Kind names match
+ * persisted file, symbol, module, or summary. Kind names match
  * {@link SearchHitKind} so the service can filter before scoring.
+ *
+ * Dependency edges are intentionally NOT indexed: they are structural metadata
+ * served through the dependency graph API (`getDependencies`,
+ * `getDependencyGraph`), not keyword search. Indexing every edge as a
+ * searchable entity flooded top-k results (edge labels like "imports"/"calls"
+ * match common query terms) and starved file/symbol hits.
  *
  * `searchText` and `identifierLengths` are precomputed by {@link buildIndex}
  * for the lexical scorer's candidate prefilter. `searchText` is the
@@ -15,7 +20,7 @@ import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
  * prefilter (edit distance ≥ length difference) is exact. Both are optional
  * because callers may construct bare entities for direct scorer tests.
  */
-export type IndexedEntity = FileEntry | SymbolEntry | ModuleEntry | DependencyEntry | SummaryEntry;
+export type IndexedEntity = FileEntry | SymbolEntry | ModuleEntry | SummaryEntry;
 
 export interface IndexedEntityBase {
   /** Lowercased, slash-normalized concatenation of all scoreable fields. */
@@ -58,17 +63,6 @@ export interface ModuleEntry extends IndexedEntityBase {
   readonly moduleType: string;
 }
 
-export interface DependencyEntry extends IndexedEntityBase {
-  readonly kind: "dependency";
-  readonly from: string;
-  readonly to: string;
-  /** Edge kind, e.g. `"imports"`, `"calls"`, `"extends"`. */
-  readonly relation: string;
-  /** Human-readable labels resolved from the snapshot (name / path). */
-  readonly fromLabel: string;
-  readonly toLabel: string;
-}
-
 export interface SummaryEntry extends IndexedEntityBase {
   readonly kind: "summary";
   /** The path or project label being summarized. */
@@ -83,16 +77,6 @@ export interface ContentWindow {
   readonly content: string;
   /** Character offset of this window's start within the original file body. */
   readonly startChar: number;
-}
-
-/** Graph node id for a file (mirrors `@atlas/graph` without importing it). */
-function fileNodeId(path: FilePath): NodeId {
-  return `n:file:${path.replace(/\\/g, "/")}` as NodeId;
-}
-
-/** Graph node id for a symbol (mirrors `@atlas/graph` without importing it). */
-function symbolNodeId(symbolId: SymbolId): NodeId {
-  return `n:${symbolId}` as NodeId;
 }
 
 /**
@@ -189,35 +173,7 @@ export function buildIndex(snapshot: ContextSnapshot): readonly IndexedEntity[] 
     });
   }
 
-  const labels = buildNodeLabels(snapshot);
-  for (const dependency of snapshot.dependencies ?? []) {
-    const fromLabel = labels.get(dependency.from) ?? dependency.from;
-    const toLabel = labels.get(dependency.to) ?? dependency.to;
-    entities.push({
-      kind: "dependency",
-      from: dependency.from,
-      to: dependency.to,
-      relation: dependency.kind,
-      fromLabel,
-      toLabel,
-      searchText: normalize(`${fromLabel}\n${toLabel}\n${dependency.kind}`),
-      identifierLengths: [fromLabel.length, toLabel.length],
-    });
-  }
-
   return entities;
-}
-
-/** Map every known graph node id to a human-readable label for dependency hits. */
-function buildNodeLabels(snapshot: ContextSnapshot): ReadonlyMap<NodeId, string> {
-  const labels = new Map<NodeId, string>();
-  for (const file of snapshot.files ?? []) {
-    labels.set(fileNodeId(file.path), file.path);
-  }
-  for (const symbol of snapshot.symbols ?? []) {
-    labels.set(symbolNodeId(symbol.id), `${symbol.name} (${symbol.filePath})`);
-  }
-  return labels;
 }
 
 /**

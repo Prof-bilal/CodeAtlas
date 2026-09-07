@@ -102,12 +102,12 @@ describe("MCP context correctness", () => {
       const userRepository = hits.find((hit) => hit.name === "UserRepository");
       expect(userRepository).toBeDefined();
       // Pre-fix, the trailing period kept "userrepository." and scored fuzzy
-      // (~54); the sentence-final form must now resolve exactly. The sentence
-      // carries 5 meaningful terms, so conjunction coverage damps the single
-      // exact term to 50 raw (0.5 normalized) — but the definition must still
-      // resolve to its file and outrank its equal-score import references.
-      expect(userRepository?.rawScore).toBe(50);
-      expect(userRepository?.score).toBe(0.5);
+      // (~54); the sentence-final form must now resolve exactly. With the
+      // overlap bonus, an exact match keeps its full score (100) even in a
+      // multi-term query — the bonus adds for additional matches rather than
+      // dampening by coverage.
+      expect(userRepository?.rawScore).toBe(100);
+      expect(userRepository?.score).toBe(1);
       expect(rel(root, userRepository?.path ?? "")).toMatch(/user-repository\.ts$/);
       const userRepositoryHits = hits.filter((hit) => hit.name === "UserRepository");
       expect(userRepositoryHits[0]?.path).toBe(userRepository?.path);

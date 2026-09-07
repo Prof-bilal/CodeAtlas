@@ -73,7 +73,7 @@ async function main(): Promise<void> {
   // Run retrieval evaluation
   let report: RetrievalReport;
   try {
-    report = evaluateRetrieval(sdk, tasks, DEFAULT_K_VALUES, 25);
+    report = evaluateRetrieval(sdk, tasks, DEFAULT_K_VALUES, 25, repoRoot);
   } finally {
     sdk.close();
   }

@@ -1,0 +1,182 @@
+{
+  "taskId": "FRONTEND-HARD-01#run3",
+  "category": "code-modification",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 84339,
+    "output": 77874,
+    "reasoning": 0,
+    "total": 750693,
+    "cacheWrite": 0,
+    "cacheRead": 588480,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 1200040,
+  "timedOut": true,
+  "exitCode": null,
+  "finalText": "Now let me verify the fix is correct by checking the final state of the file:",
+  "toolCallCount": 22,
+  "toolCalls": [
+    {
+      "name": "skill",
+      "callId": "call_8a98a1bb04ec4b8e8e2bb922",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ba88e37b1a614b0db62ae415",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_4b2c67967e744cf1a58e6591",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_fdfc5fd3cfbd4fdba1d6cc65",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c0a5dda8c8304a5eb2b5f668",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_bec82252be72477db5b951f6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_d293885f75084373a7838dcb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_063a76682188450bad427f3e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_b80494505c1e4421b5c21e12",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_8ec5aecba90c4a8c85a80ecc",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_e93f3109b7a14c058a064e84",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_057b00d31ff849ddb0603724",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_b3fbc4ed6c104eb7989257ea",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_0234614f8421475184f9bd78",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_3bd43c74f57d47be94710bba",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_0e547d472a4349df8c3d555e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_1b1570fa549048fabb1b8374",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_0c541b4bf8914d73aa4a7dac",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2265a1ee116c477d9c5ecef5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_9d01be2ff87644feaa4c320f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_0ac853a5bd2f4209a60f94db",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8a7ee0ba4d9e4b4b9255b8d4",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 0,
+    "status": "failed",
+    "filesFound": [],
+    "filesExpected": [],
+    "fileRatio": 0,
+    "conceptsFound": [
+      "state"
+    ],
+    "conceptsExpected": [
+      "state",
+      "hooks",
+      "stale",
+      "root cause",
+      "render"
+    ],
+    "conceptRatio": 0.2,
+    "citedFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "Task timed out after 1200040ms",
+    "proposedFix": "Increase task timeout or reduce context budget to finish within time limit."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-07T14:14:09.778Z"
+}

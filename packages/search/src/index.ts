@@ -11,7 +11,6 @@ export { LexicalScorer, type RelevanceScorer } from "./scoring";
 export {
   buildIndex,
   MAX_INDEXED_CONTENT_CHARS,
-  type DependencyEntry,
   type FileEntry,
   type IndexedEntity,
   type ModuleEntry,

@@ -93,8 +93,9 @@ describe("SearchService", () => {
   it("indexes a snapshot and counts every entity", () => {
     const service = new SearchService();
     service.indexSnapshot(snapshot());
-    // 2 files + 3 symbols + 1 module + 1 dependency + 1 summary
-    expect(service.size).toBe(8);
+    // 2 files + 3 symbols + 1 module + 1 summary (dependency edges are
+    // intentionally excluded from the search index; see search-index.ts)
+    expect(service.size).toBe(7);
   });
 
   it("finds symbols by exact name and ranks them at 100", () => {
@@ -124,13 +125,13 @@ describe("SearchService", () => {
     expect(hits[0]?.snippet).toContain("math");
   });
 
-  it("finds dependencies through resolved node labels", () => {
+  it("excludes dependency edges from the search index", () => {
     const service = new SearchService();
     service.indexSnapshot(snapshot());
+    // The fixture snapshot contains a dependency edge, but dependency edges
+    // are served through the graph API, not keyword search.
     const hits = service.search("math", { types: ["dependency"] });
-    expect(hits.length).toBeGreaterThan(0);
-    expect(hits[0]).toMatchObject({ kind: "dependency", relation: "imports" });
-    expect(hits[0]?.title).toContain("/src/math.ts");
+    expect(hits).toHaveLength(0);
   });
 
   it("matches typos via fuzzy search", () => {

@@ -20,12 +20,7 @@ export function App() {
 	const [title, setTitle] = useState("");
 
 	useEffect(() => {
-		API.list().then((fresh) =>
-			setTasks((prev) => [
-				...fresh,
-				...prev.filter((p) => !fresh.some((f) => f.id === p.id)),
-			]),
-		);
+		API.list().then((fresh) => setTasks(fresh));
 	}, []);
 
 	const add = useCallback(() => {
@@ -36,12 +31,7 @@ export function App() {
 	}, [title]);
 
 	const reload = useCallback(() => {
-		API.list().then((fresh) =>
-			setTasks((prev) => [
-				...fresh,
-				...prev.filter((p) => !fresh.some((f) => f.id === p.id)),
-			]),
-		);
+		API.list().then((fresh) => setTasks(fresh));
 	}, []);
 
 	return (

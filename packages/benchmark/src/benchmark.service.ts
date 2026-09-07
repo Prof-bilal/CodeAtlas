@@ -343,8 +343,14 @@ export class BenchmarkService implements BenchmarkPort {
             });
 
             if (taskResult.ok) {
-              results.push(taskResult.value);
-              const ev = this.buildEvaluationEntry(taskResult.value, taskDef);
+              // Tag result with run-specific task ID so distinct runs persist
+              // under separate store keys (e.g. TASK#run1) instead of the last
+              // run overwriting the base TASK-mode.json.
+              const taggedResult =
+                runsPerTask > 1 ? { ...taskResult.value, taskId: runTaskId } : taskResult.value;
+              this.store.saveTaskResult(request.suiteId, taggedResult);
+              results.push(taggedResult);
+              const ev = this.buildEvaluationEntry(taggedResult, taskDef);
               if (ev !== null) evaluations.push(ev);
             }
           }

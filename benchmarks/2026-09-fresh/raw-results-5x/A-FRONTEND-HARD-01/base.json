@@ -1,0 +1,68 @@
+{
+  "taskId": "FRONTEND-HARD-01",
+  "category": "code-modification",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 6636,
+    "output": 32594,
+    "reasoning": 0,
+    "total": 94270,
+    "cacheWrite": 0,
+    "cacheRead": 55040,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 693319,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "",
+  "toolCallCount": 3,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_806b92e0f84246f6bc887c13",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5dabf33660c646308b06631a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "task",
+      "callId": "call_8769dcd8ee9245948dbeecd0",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 0,
+    "status": "failed",
+    "filesFound": [],
+    "filesExpected": [],
+    "fileRatio": 0,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "state",
+      "hooks",
+      "stale",
+      "root cause",
+      "render"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 94,270 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-07T14:28:24.414Z"
+}

@@ -6,7 +6,7 @@ import type {
   SearchResult,
 } from "@atlas/core";
 import { type FilePath, type Result, fail, ok } from "@atlas/shared";
-import { LexicalScorer, bestContentWindowScore, type RelevanceScorer } from "./scoring";
+import { LexicalScorer, type RelevanceScorer, bestContentWindowScore } from "./scoring";
 import type { FileEntry, IndexedEntity } from "./search-index";
 import { buildIndex } from "./search-index";
 
@@ -27,7 +27,9 @@ export interface SearchServiceOptions {
  * Ranked project search behind {@link SearchPort}.
  *
  * Builds an in-memory index from a `ContextSnapshot` (files, symbols, modules,
- * dependencies, summaries) and answers queries through its configured scorer.
+ * summaries) and answers queries through its configured scorer. Dependency
+ * edges are intentionally excluded from the index; they are served through
+ * the dependency graph API instead.
  * The default lexical scorer offers typo-tolerant fuzzy matching; because
  * ranking flows through {@link RelevanceScorer}, a vector scorer can replace it
  * later with no caller-visible change.
@@ -51,7 +53,9 @@ export class SearchService implements SearchPort {
         new Error("SearchService has no backing store; pass a `db` or call `indexSnapshot`."),
       );
     }
-    return this.indexSnapshot(this.db.loadContext());
+    const snapshot = this.db.loadContext();
+    const result = this.indexSnapshot(snapshot);
+    return result;
   }
 
   /** Rebuild the index directly from a context snapshot. */
@@ -84,9 +88,6 @@ export class SearchService implements SearchPort {
       if (types !== undefined && !types.includes(entity.kind)) {
         continue;
       }
-      // Skip entities that cannot match before invoking the (potentially
-      // expensive, fuzzy-aware) scorer. The prefilter is a superset of the
-      // scorer's matches, so ranking is unchanged.
       if (prefilter !== undefined && !prefilter(entity)) {
         continue;
       }
@@ -167,15 +168,6 @@ function toResult(query: string, entity: IndexedEntity, score: number): SearchRe
         title: entity.name,
         path: entity.path as FilePath,
         targetId: `module:${entity.path}`,
-        score,
-      };
-    case "dependency":
-      return {
-        kind: "dependency",
-        title: `${entity.fromLabel} → ${entity.toLabel}`,
-        path: null,
-        targetId: `dependency:${entity.from}::${entity.relation}::${entity.to}`,
-        relation: entity.relation,
         score,
       };
     case "summary": {

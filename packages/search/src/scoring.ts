@@ -1,11 +1,5 @@
 import { fuzzyThreshold, isFuzzyMatch, isTokenMatch, queryTerms, similarity } from "./fuzzy";
-import type {
-  ContentWindow,
-  DependencyEntry,
-  FileEntry,
-  IndexedEntity,
-  SummaryEntry,
-} from "./search-index";
+import type { ContentWindow, FileEntry, IndexedEntity, SummaryEntry } from "./search-index";
 
 /** Field-priority ceilings for the lexical scorer (higher = more important). */
 const SCORE = {
@@ -75,8 +69,6 @@ export class LexicalScorer implements RelevanceScorer {
           this.scoreField(query, entity.name, fuzzy),
           this.scoreField(query, entity.path, fuzzy),
         );
-      case "dependency":
-        return this.scoreDependency(query, entity, fuzzy);
       case "summary":
         return this.scoreSummary(query, entity, fuzzy);
     }
@@ -132,12 +124,6 @@ export class LexicalScorer implements RelevanceScorer {
         return (
           entity.name.toLowerCase().includes(needle) || entity.path.toLowerCase().includes(needle)
         );
-      case "dependency":
-        return (
-          entity.fromLabel.toLowerCase().includes(needle) ||
-          entity.toLabel.toLowerCase().includes(needle) ||
-          entity.relation.toLowerCase().includes(needle)
-        );
       case "summary":
         return (
           entity.target.toLowerCase().includes(needle) ||
@@ -177,13 +163,6 @@ export class LexicalScorer implements RelevanceScorer {
     const bestWindow = bestContentWindowScore(query, windows);
     const content = bestWindow.score > 0 ? bestWindow.score * 0.4 : 0;
     return Math.max(name, path, content);
-  }
-
-  private scoreDependency(query: string, entity: DependencyEntry, fuzzy: boolean): number {
-    const from = this.scoreField(query, entity.fromLabel, fuzzy);
-    const to = this.scoreField(query, entity.toLabel, fuzzy);
-    const relation = this.scoreField(query, entity.relation, false) * 0.5;
-    return Math.max(from, to, relation);
   }
 
   private scoreSummary(query: string, entity: SummaryEntry, fuzzy: boolean): number {
@@ -234,14 +213,16 @@ export class LexicalScorer implements RelevanceScorer {
       }
     }
 
-    // Conjunction coverage (F1): a field matching more of the query's
-    // meaningful terms is a better answer to a multi-term query than one
-    // matching a single term best. Factor is matched/total in 0.5..1, so a
-    // full-coverage match keeps its raw score and a partial match is damped
-    // but never silenced.
-    if (matched > 0 && terms.length > 1) {
-      const coverage = Math.max(0.5, matched / terms.length);
-      best = Math.round(best * coverage);
+    // Conjunction bonus (F1): a field matching more of the query's meaningful
+    // terms is a better answer to a multi-term query than one matching a
+    // single term best. Instead of dampening by coverage (which penalizes
+    // queries with many terms), we add a bonus for each additional match
+    // beyond the first. This keeps the best single-term score intact while
+    // rewarding breadth — a file matching 5/8 query terms ranks above one
+    // matching 1/8, even if both have the same best-term score.
+    if (matched > 1 && terms.length > 1) {
+      const overlapBonus = Math.min(matched - 1, 4) * 5;
+      best = best + overlapBonus;
     }
 
     // Phrase bonus (F1): when the whole normalized query appears contiguously

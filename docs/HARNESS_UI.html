@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeAtlas Harness — Interactive Deck</title>
+<style>
+:root{--bg:#0d1117;--bg-alt:#161b22;--bg-card:#1c2128;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;--accent:#58a6ff;--accent-2:#7ee787;--accent-3:#d2a8ff;--accent-4:#ff7b72;--accent-5:#ffa657;--code-bg:#0d1117;--radius:12px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;--mono:'SF Mono','Fira Code','Fira Mono',Menlo,Consolas,monospace;--shadow:0 4px 6px -1px rgba(0,0,0,.4),0 2px 4px-2px rgba(0,0,0,.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:hidden}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* ===== Deck shell: slide-by-slide ===== */
+.deck{position:relative;width:100vw;height:100vh;overflow:hidden;background:linear-gradient(135deg,#0d1117 0%,#161b22 55%,#0d1117 100%)}
+.slide{position:absolute;inset:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 64px;text-align:center;opacity:0;transform:translateY(24px);transition:all .6s cubic-bezier(.25,.1,.25,1);z-index:0}
+.slide.active{opacity:1;transform:translateY(0);z-index:1}
+.slide-title .title{font-size:3rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent-3),var(--accent-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1;margin-bottom:12px}
+.slide-title .subtitle{font-size:1.25rem;color:var(--text-muted);max-width:720px;margin:0 auto}
+
+/* ===== Cards grid ===== */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;width:100%;max-width:1100px;margin-top:24px}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;box-shadow:var(--shadow);transition:all .25s;cursor:pointer;backface-visibility:hidden}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 24px -4px rgba(0,0,0,.5),0 4px 8px-2px rgba(0,0,0,.3);border-color:var(--accent)}
+.card .icon{width:56px;height:56px;border-radius:12px;background:var(--bg-alt);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 2px 8px rgba(0,0,0,.3);flex-shrink:0}
+.card .icon svg{width:32px;height:32px}
+.card h3{font-size:1.05rem;font-weight:600;color:var(--text);margin-bottom:8px}
+.card p{font-size:.85rem;color:var(--text-muted);line-height:1.5}
+.card .tag{display:inline-block;margin-top:8px;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:8px;font-family:var(--mono)}
+
+/* ===== Tag colors ===== */
+.tag-free{color:var(--accent-5);background:rgba(255,123,109,.15);border:1px solid var(--accent-5)}
+.tag-local{color:var(--accent-2);background:rgba(126,231,135,.15);border:1px solid var(--accent-2)}
+.tag-paid{color:var(--accent);background:rgba(88,166,255,.15);border:1px solid var(--accent)}
+.tag-planned{color:var(--accent);background:rgba(26,42,58,.6);border:1px solid var(--accent)}
+.tag-impl{color:var(--accent-2);background:rgba(26,58,26,.6);border:1px solid var(--accent-2)}
+.tag-partial{color:var(--accent-5);background:rgba(58,42,14,.4);border:1px solid var(--accent-5)}
+
+/* ===== Progress dots ===== */
+.dots{display:flex;gap:10px;margin-top:36px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--border);transition:all .3s;cursor:pointer}
+.dot.active{background:var(--accent);width:18px}
+.dot:hover{background:var(--text-muted)}
+
+/* ===== Footer ===== */
+.footer{position:absolute;bottom:24px;left:0;right:0;text-align:center;color:var(--text-muted);font-size:.8rem;font-family:var(--mono);z-index:0}
+</style>
+</head>
+<body class="deck">
+
+  <div class="slide slide-title active">
+    <h1 class="title">CodesAtlas Harness</h1>
+    <p class="subtitle">The open-source AI context engine with a native coding agent — multi-model, free by default, learns your taste</p>
+  </div>
+
+  <!-- slide 1 – Free AI Providers -->
+  <div class="slide" id="slide1">
+    <h2 style="font-size:2rem;font-weight:700;color:var(--accent);margin-bottom:6px">5. Free AI — Default Stack</h2>
+    <p style="color:var(--text-muted);font-size:.95rem">Local-first, then free tiers. Nothing paid touches your session without explicit opt-in.</p>
+    <div class="grid">
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="var(--accent-2)"><circle cx="12" cy="12" r="9"/><path d="M15.5 8a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z" fill="var(--bg)"/></svg></div>
+        <h3>Ollama</h3>
+        <p>Local models — free, unlimited, your hardware</p>
+        <span class="tag tag-local">default</span>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="var(--accent-4)"><path d="M6 2h12v2H6zM6 4.5h12V6H6zM7 7h10l2 14H5L7 7zm10.5 14-1-7H7.5l-1 7h12z"/></svg></div>
+        <h3>Groq</h3>
+        <p>~30 RPM free · fastest inference</p>
+        <span class="tag tag-free">free</span>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 2L4 6v12l8 8 8-8V6l-8-4zm0 2l6.4 3.6v7.2L12 19l-6.4-3.6V7.6z"/><circle cx="12" cy="12" r="2.8" fill="var(--bg)"/></svg></div>
+        <h3>OpenRouter</h3>
+        <p>Hundreds of models · 429 + Retry-After aware</p>
+        <span class="tag tag-free">free</span>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="var(--accent-3)"><path d="M9 12c0 1.66.67 3.17 1.76 4.24l-2.24 5.66 1.94.75 2.6-6.6c1.51-.37 2.7-1.47 3.13-2.86l-2.49-.95c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5v1h-1.5v1c0 .28-.22.5-.5.5s-.5-.22-.5-.5v-1c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5c0 2.33-1.57 4.25-3.75 4.77l-.15-.37.34-5.14c.29.07.58.11.9.11 2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5v2.5h2.5v-2.5c0-1.38 1.12-2.5 2.5-2.5z"/><circle cx="9" cy="11.5" r=".9"/><circle cx="15" cy="11.5" r=".9"/></svg></div>
+        <h3>Gemini</h3>
+        <p>Free AI Studio key · existing native adapter</p>
+        <span class="tag tag-free">free</span>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="var(--accent-5)"><path d="M14 2a8 8 0 0 0-7 11.6V22h7a8 8 0 0 0 0-20zm-5 8a5 5 0 0 1 10 0v3.1a8.03 8.03 0 0 0-3 .37V10h-4V12c-1.1.17-2 .9-2.7 1.88A7.97 7.97 0 0 1 9 10.6V10z"/></svg></div>
+        <h3>Kimi</h3>
+        <p>Moonshot — strong agentic coding, generous free tier</p>
+        <span class="tag tag-planned">planned</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- slide 2 – F01-F13 status cards -->
+  <div class="slide" id="slide2">
+    <h2 style="font-size:2rem;font-weight:700;color:var(--accent);margin-bottom:6px">F01–F13 — Feature Program</h2>
+    <p style="color:var(--text-muted);font-size:.9rem">Verified status from HARNESS_PLAN §4 — built on <em>existing</em> SDK seams, nothing duplicated.</p>
+    <div class="grid">
+      <div class="card" style="border-color:var(--accent-4)"><div class="icon" style="background:rgba(255,123,109,.1)"><svg viewBox="0 0 24 24" fill="var(--accent-4)"><path d="M12 2l3 7h7l-6 5 2 7-6-4-6 4 2-7-6-5h7z"/></svg></div>
+        <h3>F01 Context</h3><p>Top-K beyond defaults — gap detection (couples to F04)</p><span class="tag tag-partial">partial</span></div>
+      <div class="card" style="border-color:var(--accent-4)"><div class="icon" style="background:rgba(255,123,109,.1)"><svg viewBox="0 0 24 24" fill="var(--accent-4)"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 2.7-6 6-6s6 2.7 6 6H4z"/></svg></div>
+        <h3>F02 Orchestration</h3><p>Multi-model routing — the router (heart of the harness)</p><span class="tag tag-partial">partial</span></div>
+      <div class="card" style="border-color:var(--accent-5)"><div class="icon" style="background:rgba(255,165,97,.15)"><svg viewBox="0 0 24 24" fill="var(--accent-5)"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v1.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg></div>
+        <h3>F03 Memory</h3><p>Persistent agent memory across sessions</p><span class="tag tag-partial">partial</span></div>
+      <div class="card" style="border-color:var(--accent-2)"><div class="icon" style="background:rgba(126,231,135,.15)"><svg viewBox="0 0 24 24" fill="var(--accent-2)"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.61 5.64 5.36 8.04 2.35 8.36 0 10.9 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.74-4.65-4.96z"/></svg></div>
+        <h3>F06 Tool Safety</h3><p>Risk-aware execution, denials + budgets</p><span class="tag tag-impl">implemented</span></div>
+      <div class="card" style="border-color:var(--accent)"><div class="icon" style="background:rgba(88,166,255,.15)"><svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M3 6v18h18V6H3zm2 16V8h14v14H5z"/><circle cx="15.5" cy="10.5" r="1.5"/><path d="M9 15v-4h6v4H9z"/></svg></div>
+        <h3>F07 Sandbox</h3><p>Per-OS capability confinement (separate ADR)</p><span class="tag tag-planned">planned</span></div>
+      <div class="card" style="border-color:var(--accent-5)"><div class="icon" style="background:rgba(255,165,97,.15)"><svg viewBox="0 0 24 24" fill="var(--accent-5)"><path d="M12 1L3 5v6c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V5l-9-4z"/></svg></div>
+        <h3>F12 Control Plane</h3><p>Central authz + audit + rollback</p><span class="tag tag-planned">planned</span></div>
+      <div class="card" style="border-color:var(--accent-3)"><div class="icon" style="background:rgba(210,168,255,.15)"><svg viewBox="0 0 24 24" fill="var(--accent-3)"><path d="M9 11h6v2H9zm12-5h-1V5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v1H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zm-9-1h4v1h-4z"/></svg></div>
+        <h3>F13 Specialist Agents</h3><p>Router + research + verify/escalate loop</p><span class="tag tag-partial">partial</span></div>
+    </div>
+  </div>
+
+  <!-- slide 3 – Taste learning system -->
+  <div class="slide" id="slide3">
+    <h2 style="font-size:2rem;font-weight:700;color:var(--accent);margin-bottom:6px">17. Feedback & Taste Learning</h2>
+    <p style="color:var(--text-muted);font-size:.9rem">The agent that knows you is the agent you don't switch away from — no competitor learns taste.</p>
+    <div class="grid">
+      <div class="card" style="border-color:var(--accent-2)">
+        <div class="icon" style="background:rgba(126,231,135,.15)"><svg viewBox="0 0 24 24" fill="var(--accent-2)"><circle cx="12" cy="12" r="9.5"/><path fill="var(--bg)" d="M9 8c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm6 6.5c-.3.3-.7.5-1.2.5-.5 0-.9-.2-1.2-.5.7-.2 1.2-.9 1.2-1.6s-.5-1.4-1.3-1.6-.9 0-1.2.5c-.3.3-.4.8-.4 1.2 0 1.1.9 2 2 2 1.1 0 2-.9 2-2 0-.5-.2-1-.4-1.4 1 .4 1.7 1.3 1.7 2.5 0 .7-.2 1.4-.5 1.9z"/></svg></div>
+        <h3>Learn</h3><p>Every task captures explicit ★ ratings + implicit signals (edits, re-runs, undo) into <code>.codeatlas/feedback.db</code></p>
+      </div>
+      <div class="card" style="border-color:var(--accent-3)">
+        <div class="icon" style="background:rgba(210,168,255,.15)"><svg viewBox="0 0 24 24" fill="var(--accent-3)"><path d="M12 2a9 9 0 0 0-9 9v7l3 2v-9a6 6 0 0 1 12 0v9l3-2V11a9 9 0 0 0-9-9zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg></div>
+        <h3>Adapt</h3><p>Derive <code>.codeatlas/taste.json</code> — code style, languages, verbosity, model prefs, tool safety preferences</p>
+      </div>
+      <div class="card" style="border-color:var(--accent-5)">
+        <div class="icon" style="background:rgba(255,165,97,.15)"><svg viewBox="0 0 24 24" fill="var(--accent-5)"><path d="M12 7V3l4 4-4 4V7h-4v4L4 7l4-4v4h4zm5.5 8.5V13l2 2-2 2v-2.5zm-3 2V15l2 2-2 2v-2.5zm7-7V10h-4V7l4 4-4 4v-3h4v-3zM2 15.5V13l4 4-4 4V15.5zM6.5 12L4 9.5v9L8 15 6.5 12zM10 16.5l-4-4V9l4 4-4 4v7l4-4.5z"/></svg></div>
+        <h3>Override</h3><p>Inject taste into system prompt per task — strong guidance, explainable. <code>/taste</code>, <code>/taste explain</code>, <code>/taste sync</code></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- slide 4 – Phase roadmap -->
+  <div class="slide" id="slide4">
+    <h2 style="font-size:2rem;font-weight:700;color:var(--accent);margin-bottom:6px">Phase Roadmap A–I</h2>
+    <p style="color:var(--text-muted);font-size:.9rem">Each phase = code → tests → docs → <code>pnpm check</code>. A–I ship sequentially with ADRs 019+.</p>
+    <div class="grid">
+      <div class="card" style="border-color:var(--accent-4)"><div class="icon" style="background:rgba(255,123,109,.1)"><svg viewBox="0 0 24 24" fill="var(--accent-4)"><path d="M9.41 16.5l5.14-5.14a.94.94 0 0 0-.23-1.37l-4.5-2.68c-.5-.3-1.1.4-1.1 1v3.5c0 .55.45 1 1 .64l2.68-1.54.8.8v3.5c0 .55.45 1 1 .64l1-1.73a1 1 0 0 0-.34-1.38z"/><circle cx="12" cy="7" r="2"/><path d="M12 2a9 9 0 0 0-9 9h2a7 7 0 1 1 14 0 7 7 0 0 1-7 7v2a9 9 0 0 0 0-18z"/></svg></div>
+        <h3>A — Harness shell</h3><p><code>atlas tui</code>, themes, <code>/models</code>, agent sessions, <code>/stop</code> → Harness v1</p><span class="tag tag-planned">launch</span></div>
+      <div class="card" style="border-color:var(--accent-2)"><div class="icon" style="background:rgba(126,231,135,.15)"><svg viewBox="0 0 24 24" fill="var(--accent-2)"><path d="M13 10V4l6 8h-4v4l-6-8z"/></svg></div>
+        <h3>B — Free default stack</h3><p>Kimi/GLM/Groq/OpenRouter — default = Ollama · 429 fallback · <code>/connect</code> onboarding</p><span class="tag tag-planned">next</span></div>
+      <div class="card" style="border-color:var(--accent)"><div class="icon" style="background:rgba(88,166,255,.15)"><svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 2l3 7h7l-6 5 2 7-6-4-6 4 2-7-6-5h7z"/></svg></div>
+        <h3>C — Router + loop</h3><p><code>RouterPort</code> · task→model chains · escalate on verify-fail · <code>/route</code></p><span class="tag tag-planned">unlocks F13</span></div>
+      <div class="card" style="border-color:var(--accent-5)"><div class="icon" style="background:rgba(255,165,97,.15)"><svg viewBox="0 0 24 24" fill="var(--accent-5)"><path d="M12 2l3 7h7l-6 5 2 7-6-4-6 4 2-7-6-5h7z"/><circle cx="18" cy="6" r="2.5"/></svg></div>
+        <h3>D–E — Research + Guards</h3><p>Gap detector · web tools · injection + secret redaction · unified risk surface</p><span class="tag tag-planned">guardrails</span></div>
+      <div class="card" style="border-color:var(--accent-3)"><div class="icon" style="background:rgba(210,168,255,.15)"><svg viewBox="0 0 24 24" fill="var(--accent-3)"><path d="M12 21.3l.7-.6C18.1 15.6 22 12 22 6.5 22 3.4 19.6 1 16.5 1 14.5 1 12.7 2.2 12.7 3.4c-.3.3-.7.7-1 .3C5.4 5 .7 7.4.7 11c0 5.5 5.9 8.6 11.3 10.3z"/></svg></div>
+        <h3>F — Freebuff</h3><p>Credits ledger · sponsor credits · opt-in reels (<code>Ctrl+R</code>) · off by default</p><span class="tag tag-planned">monetization</span></div>
+      <div class="card" style="border-color:var(--accent-2)"><div class="icon" style="background:rgba(126,231,135,.15)"><svg viewBox="0 0 24 24" fill="var(--accent-2)"><circle cx="12" cy="12" r="10" fill="none" stroke-width="2"/><path d="M12 2v6m0 10v2M4.9 4.9l4.2 4.2m7.7 7.7l4.2 4.2M2 12h6m10 0h6"/></svg></div>
+        <h3>H–I — Launch + Grow</h3><p>Pro/Team pricing · credits marketplace · sponsor onboarding · content engine, Discord, HN</p><span class="tag tag-planned">revenue</span></div>
+    </div>
+  </div>
+
+  <div class="dots"></div>
+  <div class="footer"></div>
+
+<script>
+(function(){
+  const slides = document.querySelectorAll('.slide');
+  if(slides.length===0) return;
+  let current = 0;
+
+  // Remove any per-slide .dots containers (we use one deck-level set)
+  document.querySelectorAll('.dots').forEach(d=>d.remove());
+
+  // Single deck-level dots + footer
+  const foot = document.createElement('div');
+  foot.className='dots';
+  foot.style.display='flex';foot.style.justifyContent='center';foot.style.gap='10px';foot.style.marginTop='36px';
+  document.querySelector('.deck').appendChild(foot);
+  const f = document.createElement('div');
+  f.className='footer';
+  f.textContent = '← → arrow keys to navigate · click a progress dot · ' + slides.length + ' slides · CodeAtlas Harness [PLANNED]';
+  document.querySelector('.deck').appendChild(f);
+
+  const refresh = ()=>{
+    foot.innerHTML='';
+    slides.forEach((_,i)=>{
+      const d=document.createElement('div');
+      d.className='dot'+(i===current?' active':'');
+      d.addEventListener('click',(e)=>{ e.stopPropagation(); show(i); });
+      foot.appendChild(d);
+    });
+  };
+
+  const show = (i)=>{
+    slides.forEach((s,idx)=>{
+      s.classList.toggle('active', idx===i);
+      s.style.zIndex = idx===i ? 1 : 0;
+    });
+    current = i;
+    refresh();
+  };
+
+  // Arrow-key navigation
+  document.addEventListener('keydown',(e)=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+    if(e.key==='ArrowRight') show(Math.min(current+1,slides.length-1));
+    if(e.key==='ArrowLeft')  show(Math.max(current-1,0));
+  });
+  // Click anywhere advances (but not on dots)
+  document.addEventListener('click',()=>show(Math.min(current+1,slides.length-1)));
+
+  show(0);
+})();
+</script>
+</body>
+</html>

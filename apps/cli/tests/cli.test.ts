@@ -1361,7 +1361,7 @@ describe("atlas CLI", () => {
   it("uses LIMIT env var as default for --limit when not provided", async () => {
     const prev = process.env.LIMIT;
     try {
-      process.env.LIMIT = "42";
+      process.env.LIMIT = "1";
       const program = createCli();
       const log = vi.spyOn(console, "log").mockImplementation(() => {});
       let output = "";

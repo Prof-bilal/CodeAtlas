@@ -109,9 +109,7 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .option("--explain", "show content-free item sources, scores, and reasons")
     .option("--json", "print the package or explanation as JSON")
     .option("--context-mode <mode>", parseContextModeHelp(), parseContextMode)
-    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
-      Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
-    )
+    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
     .option("--include-instructions", "include project instruction files")
     .option("--no-instructions", "exclude project instruction files")
     .option("--include-overview", "include the project overview")
@@ -129,9 +127,7 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
     .option("--json", "print the launched session as JSON")
     .option("--context-mode <mode>", parseContextModeHelp(), parseContextMode)
-    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
-      Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
-    )
+    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
     .option("--include-instructions", "include project instruction files")
     .option("--no-instructions", "exclude project instruction files")
     .option("--include-overview", "include the project overview")
@@ -149,9 +145,7 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .description("Attach safe repository context to a CREATED session")
     .option("--json", "print the attached session as JSON")
     .option("--context-mode <mode>", parseContextModeHelp(), parseContextMode)
-    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
-      Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
-    )
+    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
     .option("--include-instructions", "include project instruction files")
     .option("--no-instructions", "exclude project instruction files")
     .option("--include-overview", "include the project overview")
@@ -171,9 +165,7 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
     .option("--out <file>", "output file (default .codeatlas/exports/<task>-<id>.md)")
     .option("--context-mode <mode>", parseContextModeHelp(), parseContextMode)
-    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
-      Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
-    )
+    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
     .option(
       "--no-inject",
       "do not append the instruction block to the target agent's instruction file",
@@ -200,9 +192,7 @@ export function registerAgentRouter(program: Command, options: ContextCommandOpt
       .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
       .option("--json", "print the launched session as JSON")
       .option("--context-mode <mode>", parseContextModeHelp(), parseContextMode)
-      .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger, () =>
-        Number.parseInt(process.env.MAX_TOKENS_TOTAL ?? "", 10),
-      )
+      .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
       .option("--include-instructions", "include project instruction files")
       .option("--no-instructions", "exclude project instruction files")
       .option("--include-overview", "include the project overview")
@@ -384,9 +374,9 @@ async function runExport(
         const root = options.repo ?? resolveProjectRoot();
         const slice = await integration.buildSlice({
           task,
-          ...(options.maxTokensTotal === undefined
+          ...(resolveMaxTokensTotal(options.maxTokensTotal) === undefined
             ? {}
-            : { budget: { maxTokensTotal: options.maxTokensTotal } }),
+            : { budget: { maxTokensTotal: resolveMaxTokensTotal(options.maxTokensTotal) } }),
           ...(options.contextMode === undefined ? {} : { contextMode: options.contextMode }),
         });
 
@@ -613,10 +603,9 @@ function recordSessionUsage(root: string, session: Session): Promise<void> {
 }
 
 function assembleOptions(options: CommonOptions): AssembleOptions {
+  const maxTokens = resolveMaxTokensTotal(options.maxTokensTotal);
   return {
-    ...(options.maxTokensTotal === undefined
-      ? {}
-      : { budget: { maxTokensTotal: options.maxTokensTotal } }),
+    ...(maxTokens === undefined ? {} : { budget: { maxTokensTotal: maxTokens } }),
     ...(options.includeInstructions === undefined
       ? {}
       : { includeInstructions: options.includeInstructions }),
@@ -643,6 +632,14 @@ function parsePositiveInteger(value: string): number {
   if (!Number.isInteger(parsed) || parsed <= 0)
     throw new Error(`--max-tokens-total must be a positive integer, got "${value}"`);
   return parsed;
+}
+
+function resolveMaxTokensTotal(optionValue: number | undefined): number | undefined {
+  if (optionValue !== undefined) return optionValue;
+  const envValue = process.env.MAX_TOKENS_TOTAL;
+  if (envValue === undefined || envValue === "") return undefined;
+  const parsed = Number.parseInt(envValue, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 const CONTEXT_MODES: readonly ContextMode[] = ["auto", "auto-escalate", "digest", "full", "off"];

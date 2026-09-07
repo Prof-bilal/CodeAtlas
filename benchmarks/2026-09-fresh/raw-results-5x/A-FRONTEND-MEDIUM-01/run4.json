@@ -1,0 +1,104 @@
+{
+  "taskId": "FRONTEND-MEDIUM-01#run4",
+  "category": "code-modification",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 24811,
+    "output": 40798,
+    "reasoning": 0,
+    "total": 128713,
+    "cacheWrite": 0,
+    "cacheRead": 63104,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 531330,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Now let me check the tests to understand what's covered and what gaps exist.",
+  "toolCallCount": 8,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_731f9d123d014d46a1a53f57",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3b2c631470104b53bb21df1a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_82a5bb8354904682b7f8a663",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f4868901d0bb45f0aecddcbf",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_cf865c52d92947e9af6bd746",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_7c74a8cb5b554da294db5b32",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3ebd9d11a0074b92b5268455",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_bb51239646794027847e59d8",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 0,
+    "status": "incorrect",
+    "filesFound": [],
+    "filesExpected": [
+      "apps/extension/src/status-bar.ts",
+      "apps/extension/src/extension-core.ts"
+    ],
+    "fileRatio": 0,
+    "conceptsFound": [],
+    "conceptsExpected": [
+      "status bar",
+      "update",
+      "indexing",
+      "complete",
+      "refresh"
+    ],
+    "conceptRatio": 0,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": [
+      "apps/extension/src/status-bar.ts",
+      "apps/extension/src/extension-core.ts"
+    ]
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 128,713 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-07T13:06:31.830Z"
+}

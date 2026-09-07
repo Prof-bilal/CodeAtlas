@@ -16,6 +16,8 @@ describe("ignore rules", () => {
     expect(ignore("Node_Modules")).toBe(true);
     expect(ignore("DIST")).toBe(true);
     expect(ignore("Vendor")).toBe(true);
+    expect(ignore("Benchmarks")).toBe(true);
+    expect(ignore("OLD-SCHOOL")).toBe(true);
   });
 
   it("honors a custom ignore list", () => {

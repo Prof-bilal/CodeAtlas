@@ -1,0 +1,93 @@
+{
+  "taskId": "FRONTEND-HARD-01#run4",
+  "category": "code-modification",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 13197,
+    "output": 2560,
+    "reasoning": 0,
+    "total": 99213,
+    "cacheWrite": 0,
+    "cacheRead": 83456,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 161179,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "The `tsc` error is from a monorepo-level `tsup.config.base.ts`, unrelated to this fixture.\n\n---\n\n**Root cause:** The `useEffect` initial-load at `src/App.tsx:22-29` used a merge strategy:\n\n```ts\nsetTasks((prev) => [...fresh, ...prev.filter((p) => !fresh.some((f) => f.id === p.id))])\n```\n\nThis preserved any locally-added tasks (`prev`) alongside the fresh API data. After an interaction (e.g., adding a task locally), if a background load resolved, the merge kept stale local items in the rendered list — the UI showed stale values despite the API returning fresh data.\n\n**Fix (line 23):** Changed to a direct replacement `setTasks(fresh)`, matching how `reload` already works. The API response is the source of truth; local additions that aren't confirmed by the server shouldn't persist past a fresh load. The API/client contract is unchanged.",
+  "toolCallCount": 6,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_3e33b6c74ec24a3e80eadaad",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b97fc782701a41f59907fc70",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_3a90ef5e6e1b436280215ae7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ac80f175ffde4df88bd84671",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_9aad703fc2e547c8a2fba0c4",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_daf2bbdfb5a14591b3aed847",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 1,
+    "status": "partially_correct",
+    "filesFound": [],
+    "filesExpected": [],
+    "fileRatio": 0,
+    "conceptsFound": [
+      "stale",
+      "root cause",
+      "render"
+    ],
+    "conceptsExpected": [
+      "state",
+      "hooks",
+      "stale",
+      "root cause",
+      "render"
+    ],
+    "conceptRatio": 0.6,
+    "citedFiles": [],
+    "hallucinatedFiles": [
+      "src/App.ts"
+    ],
+    "wrongFiles": [],
+    "goldImpactFiles": []
+  },
+  "failureClassification": {
+    "category": "budget_truncation",
+    "reason": "fileRatio 0 with 99,213 total tokens.",
+    "proposedFix": "Protect Critical-tier content from truncation; degrade Supporting/Optional tiers first."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-07T14:16:51.035Z"
+}

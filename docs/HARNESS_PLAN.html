@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeAtlas Harness — Program Plan</title>
+<style>
+:root{--bg:#0d1117;--bg-alt:#161b22;--bg-card:#1c2128;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;--accent:#58a6ff;--accent-2:#7ee787;--accent-3:#d2a8ff;--accent-4:#ff7b72;--accent-5:#ffa657;--code-bg:#0d1117;--radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;--mono:'SF Mono','Fira Code','Fira Mono',Menlo,Consolas,monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.7;font-size:16px}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.container{display:flex;min-height:100vh}
+.sidebar{width:280px;min-width:280px;background:var(--bg-alt);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;padding:24px 16px;z-index:100}
+.sidebar h3{color:var(--accent);font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.sidebar nav a{display:block;color:var(--text-muted);text-decoration:none;padding:6px 12px;border-radius:6px;font-size:14px;margin-bottom:2px;transition:all .15s}
+.sidebar nav a:hover,.sidebar nav a.active{color:var(--text);background:var(--bg-card)}
+.main{margin-left:280px;flex:1;max-width:960px;padding:48px 56px}
+.hero{text-align:center;padding:80px 0 60px;border-bottom:1px solid var(--border);margin-bottom:48px}
+.hero h1{font-size:48px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent-3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.hero .subtitle{font-size:20px;color:var(--text-muted);margin-bottom:24px}
+.hero .badge{display:inline-block;background:var(--bg-card);border:1px solid var(--border);padding:6px 16px;border-radius:20px;font-size:13px;color:var(--accent-5);font-family:var(--mono)}
+section{margin-bottom:56px;scroll-margin-top:24px}
+h2{font-size:32px;font-weight:700;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border);color:var(--text)}
+h3{font-size:22px;font-weight:600;margin:32px 0 14px;color:var(--accent)}
+h4{font-size:17px;font-weight:600;margin:24px 0 10px;color:var(--accent-3)}
+p{margin-bottom:14px;color:var(--text)}strong{color:var(--text)}
+ul,ol{margin:12px 0 16px 24px}li{margin-bottom:6px}
+blockquote{background:var(--bg-alt);border-left:4px solid var(--accent);padding:16px 20px;margin:16px 0;border-radius:0 var(--radius) var(--radius) 0;color:var(--text-muted)}
+blockquote p{margin-bottom:0;color:var(--text-muted)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.5;color:var(--text)}
+code{font-family:var(--mono);font-size:13px;background:var(--bg-card);padding:2px 6px;border-radius:4px;color:var(--accent-5)}
+pre code{background:none;padding:0;color:var(--text)}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th,td{padding:10px 14px;text-align:left;border:1px solid var(--border)}
+th{background:var(--bg-alt);font-weight:600;color:var(--accent);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+td{color:var(--text)}tr:nth-child(even) td{background:var(--bg-card)}
+.highlight{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin:20px 0}
+.highlight.green{border-left:4px solid var(--accent-2)}.highlight.blue{border-left:4px solid var(--accent)}.highlight.purple{border-left:4px solid var(--accent-3)}.highlight.red{border-left:4px solid var(--accent-4)}.highlight.orange{border-left:4px solid var(--accent-5)}
+.tag{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;font-family:var(--mono)}
+.tag.impl{background:#1a3a1a;color:var(--accent-2)}.tag.partial{background:#3a2a1a;color:var(--accent-5)}.tag.planned{background:#1a2a3a;color:var(--accent)}
+.ascii-art{background:var(--code-bg);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.4;white-space:pre;color:var(--accent-2)}
+.phase-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0}
+.phase-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.phase-card .phase-label{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.phase-card h4{font-size:16px;margin:0 0 8px;color:var(--text)}
+.phase-card p{font-size:13px;color:var(--text-muted);margin-bottom:0}
+.moat-table .check{color:var(--accent-2);font-weight:700}.moat-table .cross{color:var(--accent-4)}
+@media(max-width:900px){.sidebar{display:none}.main{margin-left:0;padding:24px 20px}.hero h1{font-size:36px}.hero .subtitle{font-size:17px}}
+@media print{.sidebar{display:none}.main{margin-left:0;max-width:100%}}
+html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+<div class="container">
+<aside class="sidebar">
+<h3>CodeAtlas Harness</h3>
+<nav>
+<a href="#hero" class="active">Overview</a>
+<a href="#what">1. What is the Harness</a>
+<a href="#mockups">2. UI Mockups</a>
+<a href="#architecture">3. Architecture</a>
+<a href="#f01-f13">4. F01–F13 Status</a>
+<a href="#free-ai">5. Free AI Default</a>
+<a href="#freebuff">6. Freebuff</a>
+<a href="#adrs">7. ADRs &amp; Phases</a>
+<a href="#providers">10. Provider Ecosystem</a>
+<a href="#business">11. Business Model</a>
+<a href="#earn-free">12. Earn from Free AI</a>
+<a href="#marketing">13. Marketing</a>
+<a href="#funding">14. Funding</a>
+<a href="#roadmap">15. Phase Roadmap</a>
+<a href="#feedback">17. Feedback &amp; Taste</a>
+<a href="#docs-map">Documentation Map</a>
+</nav>
+</aside>
+<div class="main">
+<div id="hero" class="hero">
+<h1>CodeAtlas Harness</h1>
+<p class="subtitle">The open-source AI context engine with a native coding agent — multi-model, free by default, learns your taste</p>
+<span class="badge">[PLANNED] — Program Plan — 2026-09-07</span>
+</div>
+<section id="what">
+<h2>1. What the Harness is</h2>
+<p>The Atlas Harness is CodeAtlas's <strong>interactive terminal UI</strong> (<code>atlas tui</code>, OpenCode-inspired): a chat cockpit where the user drives <strong>multiple AI models and agent CLIs together</strong>, backed by CodeAtlas's context engine. It is the missing front door for features that already exist behind SDK seams — and the delivery vehicle for the F01–F13 program (§4).</p>
+<h3>Precedents researched (2026-09-07)</h3>
+<ul>
+<li><strong>OpenCode</strong> — <code>/models</code> picker, <code>provider_id/model_id</code> addressing, model resolution order (flag → config → last-used → first available), JSON themes with semantic tokens, custom slash commands (frontmatter + <code>$ARGUMENTS</code>), client/server architecture.</li>
+<li><strong>Aider</strong> — <code>/model</code>, <code>/weak-model</code>, <code>/editor-model</code>, and <code>/architect</code> (two-model loop: planner model → editor model), the basis for our multi-model routing.</li>
+<li><strong>Decision:</strong> OpenCode's TUI is a separate Go/SolidJS codebase and cannot be embedded; instead OpenCode (and Claude/Gemini/Codex) are <strong>agents the harness drives</strong> through the existing <code>SessionPort</code>/<code>AgentPort</code> seams.</li>
+</ul>
+</section>
+
+<section id="mockups">
+<h2>2. Harness UI — mockups</h2>
+<h3>2.1 Main screen — chat + sessions + status</h3>
+<div class="ascii-art">╭──────────────────────────── ATLAS HARNESS ────────────────────────────╮
+│  ▲ CodeAtlas          ~/Projects/CodeAtlas   main     index: fresh·2m │
+│  model anthropic/claude-sonnet-4-5   planner gemini-3-pro  mode: BUILD│
+╰────────────────────────────────────────────────────────────────────────╯
+
+  you ▸ How does the session manager stop runaway processes?
+
+  ● claude-sonnet-4.5 ▸ ─────────────────────────────────────────────
+    The SessionManager never escalates blindly. Look at
+    packages/agents/src/session-manager.ts:
+
+    › stopSession()  → SIGTERM, wait for exit
+    › after timeout  → terminateSession() SIGKILL escalation
+    › shutdown()     → stops every active session (orphan protection)
+
+    Attached context: 8 files · 6.2k tokens · slice saved (.codeatlas/slices/)
+
+  ◆ gemini-3-pro (planner) ▸ ────────────────────────────────────────
+    Plan: 1. read session-manager.ts:210-260
+          2. verify SIGTERM→SIGKILL test
+          3. check ProcessRunner escalation path
+
+  ── tool ─ atlas sessions list ─────────────────────────────────────
+    claude RUNNING 4m12s   gemini RUNNING 0m38s   codex STOPPED exit 0
+
+╭─ SESSIONS ─────────────────────╮  ╭─ INPUT ──────────────────────────╮
+│ ● claude-sonnet-4.5   RUNNING  │  │ /mode▌                           │
+│ ● gemini-3-pro        RUNNING  │  ╰──────────────────────────────────╯
+│ ○ codex-gpt-5.2       STOPPED  │   tab plan/build · ctrl+M models
+╰────────────────────────────────╯
+╭────────────────────────────────────────────────────────────────────────╮
+│ BUILD · claude-sonnet-4.5  ↑8.4k ↓1.2k tok  budget 200k/500k  /help   │
+╰────────────────────────────────────────────────────────────────────────╯</div>
+
+<h3>2.2 <code>/models</code> overlay (OpenCode-style)</h3>
+<div class="ascii-art">╭─ Select model ─────────────────────────────╮
+│                                            │
+│  ANTHROPIC                                 │
+│  > claude-sonnet-4-5        ✓ key    1.2s  │
+│    claude-opus-4-1          ✓ key          │
+│                                            │
+│  OPENAI                                    │
+│    gpt-5.2                  ✓ key          │
+│                                            │
+│  GEMINI                                    │
+│    gemini-3-pro             ✓ free         │
+│                                            │
+│  OLLAMA (local)                            │
+│    qwen3-coder:30b          ✓ running      │
+│    deepseek-r1:14b          ✓ running      │
+│                                            │
+│  ↑↓ move · ↵ select · esc close            │
+╰────────────────────────────────────────────╯</div>
+</section>
+
+<section id="architecture">
+<h2>3. Architecture</h2>
+<div class="highlight blue">
+<p><strong>Dependency direction is untouched:</strong> <code>cli → sdk → feature packages → core → shared</code>. The harness lives in <code>apps/cli</code> (<code>src/tui/</code>), consumes <strong>only</strong> <code>@atlas/sdk</code> (plus <code>@atlas/mcp</code> for MCP surface), and every AI-provider concern stays quarantined in <code>@atlas/providers</code> adapters. No new infrastructure — orchestration of existing seams.</p>
+</div>
+<div class="ascii-art">┌────────────────────── apps/cli: atlas tui (ink) ──────────────────────┐
+│  views/ (chat, sessions, models overlay, freebuff panel)              │
+│  state/ (React-ink state, command router, theme loader)               │
+└──────────────┬─────────────────────────────────────────────────────────┘
+               │ only @atlas/sdk (+ @atlas/mcp)
+┌──────────────▼──────────────── @atlas/sdk ────────────────────────────┐
+│  createContextSDK   createSessionManager   createUsageService         │
+│  createOrchestrator createContextIntegration (context→agent delivery) │
+└──────┬──────────────────┬──────────────────────┬──────────────────────┘
+       │                  │                      │
+┌──────▼─────┐   ┌────────▼────────┐   ┌─────────▼─────────┐
+│ @atlas/     │   │ @atlas/agents   │   │ @atlas/providers  │
+│ context     │   │ SessionPort     │   │ ProviderPort      │
+│ (ranked     │   │ AgentPort       │   │ (quarantined      │
+│  context)   │   │ (claude/gemini/ │   │  adapters:        │
+│             │   │  codex CLIs)    │   │  ollama/gemini/…) │
+└─────────────┘   └─────────────────┘   └───────────────────┘</div>
+<ul>
+<li><strong>Existing seams reused:</strong> <code>ProviderChatAgent</code> (defaults to Ollama), <code>tool-loop.ts</code> (policy + budgets), <code>createOrchestrator</code> (roles/conflicts), <code>createContextIntegration().buildSlice()</code> (budgeted context packages), <code>createSessionManager()</code> (supervised agent processes).</li>
+<li><strong>New, quarantined:</strong> <code>RouterPort</code> in core (ADR-020) — model routing policy in SDK, provider logic stays inside <code>@atlas/providers</code> adapters.</li>
+</ul>
+</section>
+
+<section id="f01-f13">
+<h2>4. F01–F13 feature program — verified status</h2>
+<p>Every status below was double-checked against code (the <span class="tag impl">IMPLEMENTED</span> <span class="tag partial">PARTIAL</span> <span class="tag planned">PLANNED</span> discipline from <code>docs/CURRENT_STATE.md</code>):</p>
+<table>
+<tr><th>ID</th><th>Feature</th><th>Status</th><th>Reality check</th></tr>
+<tr><td>F01</td><td>Context beyond top-K</td><td><span class="tag partial">PARTIAL</span></td><td><code>ContextBuilderService</code> ranks &amp; assembles; closure expansion exists. Missing: automatic gap detection (couples to F04)</td></tr>
+<tr><td>F02</td><td>Multi-Model Orchestration</td><td><span class="tag partial">PARTIAL</span></td><td>Many adapters + <code>createOrchestrator</code> (roles, combine, conflicts) + context→agent delivery exist. Missing: the <strong>router</strong> — task→model selection, fallback chains, escalation</td></tr>
+<tr><td>F03</td><td>Persistent Memory</td><td><span class="tag partial">PARTIAL</span></td><td>Slices persist (<code>.codeatlas/slices/</code>), sessions in-memory (ADR-007). Missing: long-lived agent memory store</td></tr>
+<tr><td>F04</td><td>Research Engine</td><td><span class="tag partial">PARTIAL</span></td><td>Provider web tools + sandboxed exec exist; slices can carry web content. Missing: proactive research loop feeding the gap detector (F01)</td></tr>
+<tr><td>F05</td><td>Self-Verification &amp; Repair</td><td><span class="tag partial">PARTIAL</span></td><td>Verifier kernels (<code>VerifierPort</code>, ADR-018 allow-listed commands), <code>atlas verify</code> exist. Missing: auto-repair retry and <strong>escalation to a stronger model</strong> (couples to F02)</td></tr>
+<tr><td>F06</td><td>Risk-Aware Tool Execution</td><td><span class="tag impl">IMPLEMENTED</span> core</td><td>Tool-loop policy + denials + budgets; Toolkit <code>SecurityPort</code> trust states. Missing: unified risk policy across external agent-CLI sessions</td></tr>
+<tr><td>F07</td><td>Sandbox + Capability Security</td><td><span class="tag planned">PLANNED</span></td><td>No real sandboxing today. <code>ProcessRunner</code> is argv-only; verifier commands are allow-listed. Needs its own ADR (per-OS confinement is a large lift)</td></tr>
+<tr><td>F08</td><td>Prompt Injection + Secret Guard</td><td><span class="tag partial">PARTIAL</span></td><td>Slices treated as untrusted input; deny lists for secrets/sensitive paths; MCP hardening. Missing: dedicated injection detector on inbound repo content + outbound secret redaction at the context boundary</td></tr>
+<tr><td>F09</td><td>Change Impact &amp; Blast Radius</td><td><span class="tag partial">PARTIAL</span> seams</td><td>Graph (deps, paths, cycles) + orchestrator conflict detection exist. Missing: impact scorer + surface (CLI/TUI)</td></tr>
+<tr><td>F10</td><td>Agent Trace + Replay</td><td><span class="tag partial">PARTIAL</span></td><td><code>executionTrace</code> on chat results, verification state, benchmark traces. Missing: persistent event log + replay (sessions are in-memory per ADR-007)</td></tr>
+<tr><td>F11</td><td>CI/CD Quality &amp; Security Gate</td><td><span class="tag planned">PLANNED</span></td><td>Kernels exist (<code>atlas verify</code>, <code>atlas doctor</code>, benchmark). Missing: gate mode + CI wiring</td></tr>
+<tr><td>F12</td><td>Atlas Control Plane</td><td><span class="tag planned">PLANNED</span></td><td>Central authz/approvals/audit/rollback. Natural home: extend <code>apps/server</code> (ADR-013 pattern). Needs its own ADR</td></tr>
+<tr><td>F13</td><td>Specialized Autonomous Agent Orchestration</td><td><span class="tag partial">PARTIAL</span></td><td><code>createOrchestrator</code> implemented (bounded roles, combine, conflicts). Missing: the specialist layer — router (F02) + research (F04) + verify/escalate (F05) composed into autonomous loops</td></tr>
+</table>
+<div class="highlight green">
+<p><strong>Build-order implication:</strong> F02 + F05-escalation are the multiplier — they unlock F13 and turn the harness into the cockpit for it. The harness and this feature program are <strong>one program</strong>, not two.</p>
+</div>
+</section>
+
+<section id="free-ai">
+<h2>5. Free AI as the default</h2>
+<p>Researched 2026-09-07 from provider docs. CodeAtlas already has the adapter pattern for all of these (<code>ProviderPort</code>, quarantined adapters in <code>packages/providers/src/adapters/</code>; <code>ProviderChatAgent</code> already defaults to <code>ollama</code>):</p>
+<table>
+<tr><th>Provider</th><th>Cost</th><th>API compatibility</th><th>Verified limits</th><th>Effort</th></tr>
+<tr><td><strong>Ollama (local)</strong></td><td>Free, unlimited, own hardware</td><td>Native adapter exists (<code>OllamaAdapter</code>, <code>createOllamaService</code>)</td><td>Machine's limits</td><td><strong>Zero — already the default</strong></td></tr>
+<tr><td><strong>Groq free tier</strong></td><td>Free key, no card</td><td>OpenAI-compatible at <code>api.groq.com/openai/v1</code></td><td>~30 RPM / 1K req/day / 8K TPM per model</td><td>Small — one adapter entry</td></tr>
+<tr><td><strong>OpenRouter <code>:free</code></strong></td><td>Free key; caps scale with lifetime credits</td><td>OpenAI-compatible at <code>openrouter.ai/api/v1</code></td><td><code>:free</code> variants get RPM/RPD caps; <strong>429 + <code>Retry-After</code> are first-class signals</strong></td><td>Small — same base as Groq</td></tr>
+<tr><td><strong>Gemini free tier</strong></td><td>Free AI Studio key</td><td>Native adapter exists + OpenAI-compatible endpoint</td><td>Per-model RPM/RPD caps, reset midnight Pacific</td><td>Zero — <code>gemini.ts</code> exists; add free-tier key config</td></tr>
+</table>
+<h3>Integration design</h3>
+<ol>
+<li><strong>New adapters only</strong> in <code>packages/providers/src/adapters/</code> (quarantine rule): <code>openrouter.ts</code> and <code>groq.ts</code> extend the existing <code>openai-compatible.ts</code> base — base URL + header quirks stay inside the adapter.</li>
+<li><strong>Provider profiles</strong> in <code>.codeatlas/config</code>: <code>tier: local | free | paid</code>, key env var (<code>OPENROUTER_API_KEY</code>, <code>GROQ_API_KEY</code>, <code>GEMINI_API_KEY</code>), and rate-limit metadata. <strong>Default = <code>local</code> (Ollama)</strong>; nothing paid is touched without explicit user config; keys come from env, never logged (<code>docs/SECURITY.md</code>).</li>
+<li><strong>Router-aware fallback chain</strong> (heart of F02): try <code>local → free-tier → stronger free model → escalate to paid/explicit</code>. On 429: honor <code>Retry-After</code>, then fall to the next chain entry. Per-provider RPM/RPD counters live in the usage store (<code>.codeatlas/usage.db</code>).</li>
+</ol>
+</section>
+
+<section id="freebuff">
+<h2>6. Freebuff — ads, credits, and "reels while the AI works"</h2>
+<h3>6.1 The precedent (researched 2026-09-07)</h3>
+<blockquote>
+<p><strong>SponsorLink (2023):</strong> an npm-ecosystem tool scanned developers' local repos to target sponsor messages inside CLI output. The reaction was severe — "privacy issues with SponsorLink" issues on packages like Moq, mass uninstalls, and the sponsor ecosystem collapsed within weeks. Fatal mistakes: <strong>(a)</strong> repo-derived data used for ad targeting; <strong>(b)</strong> ads injected into the core workflow uninvited.</p>
+</blockquote>
+<h3>6.2 Verdict: viable only as an opt-in earn surface</h3>
+<p><strong>Viable — "Freebuff" as an opt-in panel:</strong></p>
+<ul>
+<li>A <strong>user-opened panel</strong> in the TUI (<code>Ctrl+R</code> / <code>/freebuff</code>) — a reels-style feed that plays <strong>while agents work in the background</strong>. The seam exists: sessions run supervised while the UI is idle; ink renders overlay/side panels trivially.</li>
+<li><strong>Earning = credits</strong> applied against harness costs (credits pay for free-tier overflow or sponsored model credits — "this session was free via X").</li>
+<li><strong>Hard rules (non-negotiable, from the SponsorLink autopsy):</strong>
+<ol>
+<li><strong>Never</strong> target ads with repository data — targeting is context-free, and the ad path never reads repo content (privacy rules).</li>
+<li><strong>Never</strong> let ad/sponsor content enter the agent transcript or model context — it is untrusted input under F08; a hostile or sloppy ad must never become a prompt.</li>
+<li><strong>Opt-in + clearly labeled</strong> — no interstitials, no mid-workflow popups, no auto-play with sound on start.</li>
+<li>Ad network calls live <strong>only in the UI layer</strong>, never in SDK/agent layers — the boundary is structural, not policy.</li>
+</ol></li>
+</ul>
+<div class="highlight red">
+<p><strong>Not viable:</strong> forced/pre-roll ads before agent runs, repo-targeted ads, or anything touching <code>@atlas/sdk</code> — that would repeat SponsorLink's exact failure mode in a repo-indexing tool, the most trust-sensitive category there is.</p>
+</div>
+<div class="highlight orange">
+<p><strong>Recommendation:</strong> build the <strong>credit-sponsored variant first</strong> (sponsors underwrite model credits — zero ad-network dependency), keep the reels panel as the opt-in earning surface behind a config flag, off by default. Same UX, lower risk, launchable later without re-architecture.</p>
+</div>
+</section>
+
+<section id="adrs">
+<h2>7. Program plan — ADRs and phases</h2>
+<h3>ADRs (<code>docs/decisions/</code>, next numbers 019+; written when each phase starts)</h3>
+<ul>
+<li><strong>ADR-019:</strong> Harness UI — ink-based TUI in <code>apps/cli</code> over SDK seams; slash registry; theme system; <code>provider/model</code> addressing.</li>
+<li><strong>ADR-020:</strong> Adaptive Model Router — <code>local → free → paid</code> fallback chains, rate-limit-aware, behind a new <code>RouterPort</code> in <code>core</code> (provider logic stays quarantined in <code>@atlas/providers</code>).</li>
+<li><strong>ADR-021:</strong> Free provider profiles &amp; Freebuff credits ledger (usage-store extension; additive schema change per the database rules).</li>
+<li>Later: <strong>ADR-022</strong> Sandbox (F07), <strong>ADR-023</strong> Control Plane (F12) — each requires its own design cycle.</li>
+</ul>
+<h3>Phases (each = code → tests → docs → <code>pnpm check</code>)</h3>
+<table>
+<tr><th>Phase</th><th>Scope</th><th>Features served</th></tr>
+<tr><td><strong>A — Harness shell</strong></td><td><code>atlas tui</code>, themes, <code>/help</code>, <code>/models</code>, <code>/model</code>, agent sessions, <code>/sessions</code>, <code>/stop</code></td><td>Harness v1</td></tr>
+<tr><td><strong>B — Free default stack</strong></td><td><code>openrouter.ts</code> + <code>groq.ts</code> adapters (quarantined), provider profiles + <code>tier</code>, default = Ollama, <code>/connect</code> onboarding, 429/<code>Retry-After</code> fallback, per-provider limit counters via <code>createUsageService</code></td><td>F02 start, cost control</td></tr>
+<tr><td><strong>C — Router + loop wiring</strong></td><td><code>RouterPort</code> in core; SDK policy (task class → model chain → escalate on verify-fail); harness <code>/route</code>; orchestrator roles = specialist agents; <code>/usage</code> per turn</td><td>F02, F05, F13 v1</td></tr>
+<tr><td><strong>D — Context + research</strong></td><td>Graph closure expansion behind the existing scorer seam; gap detector (plan unknowns + sufficiency fails); opt-in allow-listed research tools with timeouts; <code>/research</code></td><td>F01 remainder, F04</td></tr>
+<tr><td><strong>E — Guard rails</strong></td><td>Injection heuristics on inbound content; outbound secret redaction at the context-integration boundary; unified risk policy surface for agent sessions</td><td>F06 remainder, F08</td></tr>
+<tr><td><strong>F — Freebuff</strong></td><td>Credit ledger in usage store (additive migration); sponsored-credits redemption; opt-in reels panel (<code>Ctrl+R</code>) under the §6.2 hard rules; config-flagged <strong>off</strong> by default</td><td>Monetization</td></tr>
+<tr><td><strong>G — P1 track</strong></td><td>F09 blast radius, F10 trace/replay persistence, F11 CI gate, F12 control plane — each scoped separately (F12 is effectively a sub-product)</td><td>P1 features</td></tr>
+</table>
+</section>
+
+<section id="providers">
+<h2>10. Provider ecosystem (updated scope)</h2>
+<p>Nine OpenAI-compatible providers evaluated; recommended additions to <code>packages/providers/src/adapters/</code> via the existing <code>OpenAICompatibleAdapter</code> base class (DeepSeek adapter = the template):</p>
+<table>
+<tr><th>Adapter</th><th>Base URL</th><th>Notes</th></tr>
+<tr><td><code>kimi.ts</code> (Moonshot)</td><td><code>api.moonshot.ai/v1</code></td><td>Recommended — strong agentic coding, generous free tier</td></tr>
+<tr><td><code>glm.ts</code> (Zhipu)</td><td><code>open.bigmodel.cn/api/paas/v4</code></td><td>Recommended — GLM-4.x family, cheap + capable</td></tr>
+<tr><td><code>dashscope.ts</code> (Qwen)</td><td><code>dashscope.aliyuncs.com/compatible-mode/v1</code></td><td>Qwen3 family, huge context windows</td></tr>
+<tr><td><code>openrouter.ts</code></td><td><code>openrouter.ai/api/v1</code></td><td>Gateway to hundreds of models; <code>:free</code> variants</td></tr>
+<tr><td><code>groq.ts</code></td><td><code>api.groq.com/openai/v1</code></td><td>Fastest inference; free tier ~30 RPM</td></tr>
+<tr><td><code>deepseek.ts</code></td><td><code>api.deepseek.com/v1</code></td><td><span class="tag impl">EXISTS</span> — the pattern to copy</td></tr>
+<tr><td><code>ollama.ts</code></td><td>local</td><td><span class="tag impl">EXISTS</span> — default provider</td></tr>
+<tr><td><code>gemini.ts</code></td><td>native + OpenAI-compat</td><td><span class="tag impl">EXISTS</span></td></tr>
+<tr><td><code>anthropic/openai</code></td><td>native</td><td><span class="tag impl">EXISTS</span></td></tr>
+</table>
+<div class="highlight blue">
+<p><strong>Key architectural point:</strong> "MiMo" resolution = ship Kimi + Zhipu GLM adapters on the <code>OpenAICompatibleAdapter</code> base. Each new adapter is base URL + header quirks only; model catalog, token counting, and streaming stay in the shared base. Provider logic never leaks outside <code>@atlas/providers</code>.</p>
+</div>
+</section>
+
+<section id="business">
+<h2>11. Open-core business model</h2>
+<h3>11.1 Reference: how comparable tools monetize</h3>
+<table>
+<tr><th>Tool</th><th>Model</th><th>Notes</th></tr>
+<tr><td><strong>Cursor</strong></td><td>Subscription</td><td>$20/mo pro, acquired by SpaceX Aug 2026, $2B RR</td></tr>
+<tr><td><strong>GitHub Copilot</strong></td><td>Subscription</td><td>$10-19/mo; 1.8M+ paid subscribers, 73K+ enterprises</td></tr>
+<tr><td><strong>Replit</strong></td><td>Credits + seat</td><td>Usage-based compute + team features</td></tr>
+<tr><td><strong>Tabnine</strong></td><td>Freemium → Enterprise</td><td>Free individual, $99/user/mo enterprise</td></tr>
+<tr><td><strong>Continue.dev</strong></td><td>Open-core</td><td>Free OSS + paid cloud/enterprise</td></tr>
+<tr><td><strong>PostHog</strong></td><td>Open-core</td><td>Free self-hosted + paid cloud</td></tr>
+</table>
+</section>
+
+<h3>11.2 CodeAtlas recommended model: open-core + credits marketplace</h3>
+<div class="phase-grid">
+<div class="phase-card"><div class="phase-label" style="color:var(--accent-2)">Free tier — individuals, OSS, students</div><h4>Full context engine</h4><p>Scanner → graph → search → SDK; local models (Ollama) unlimited &amp; free; basic TUI harness; community support; all free-tier API models (Kimi, GLM, DeepSeek, Groq free, etc.)</p></div>
+<div class="phase-card"><div class="phase-label">Pro — $15-25/mo per user</div><h4>Power users</h4><p>Cloud sync (context DB, sessions, settings); advanced model routing (Cursor Router-style); priority access to paid models; research engine (opt-in web tools); team shared context; email support</p></div>
+<div class="phase-card"><div class="phase-label" style="color:var(--accent-3)">Team/Enterprise — $50-100/seat/mo</div><h4>Organizations</h4><p>Admin console, SSO, audit logs; self-hosted deployment option; custom model fine-tuning; SLA + dedicated support; compliance (SOC 2, HIPAA path)</p></div>
+<div class="phase-card"><div class="phase-label" style="color:var(--accent-5)">Credits marketplace — usage-based</div><h4>Optional</h4><p>Buy model credits for premium providers; sponsor credits (companies underwrite free-tier usage); tool/agent marketplace (10-15% fee on sales)</p></div>
+</div>
+<h3>11.3 Why open-core wins for CodeAtlas</h3>
+<ul>
+<li>The context engine is the moat — it's local-first, privacy-respecting, works offline</li>
+<li>Developers trust open-source dev tools (Continue.dev, PostHog, Supabase prove this)</li>
+<li>Free tier grows the user base; Pro/Team monetizes power users</li>
+<li>Enterprise deals require trust — open-source builds it</li>
+</ul>
+
+<section id="earn-free">
+<h2>12. How to earn while giving free AI</h2>
+<h3>12.1 The free-tier monetization stack</h3>
+<table>
+<tr><th>Revenue source</th><th>How it works</th><th>Example</th></tr>
+<tr><td><strong>Sponsor credits</strong></td><td>AI labs/cloud providers sponsor free-tier model credits in exchange for visibility ("This session powered by Kimi")</td><td>Cursor's model sponsors, browser search deals</td></tr>
+<tr><td><strong>Marketplace fees</strong></td><td>Take 10-15% of tool/agent sales in the marketplace</td><td>Cursor Marketplace, VS Code Marketplace</td></tr>
+<tr><td><strong>Enterprise upsell</strong></td><td>Free for individuals → paid for teams (the "Slack model")</td><td>Continue.dev, PostHog, GitLab</td></tr>
+<tr><td><strong>Cloud hosting</strong></td><td>Free local → paid cloud sync/agents</td><td>Figma, Notion, Replit</td></tr>
+<tr><td><strong>GitHub Sponsors / Open Collective</strong></td><td>Community donations from users who value the tool</td><td>cURL, OpenWebUI, many OSS projects</td></tr>
+<tr><td><strong>Grants</strong></td><td>Non-dilutive funding for open-source infrastructure</td><td>NLNet, Sovereign Tech Fund, GitHub Accelerator</td></tr>
+</table>
+<h3>12.2 The math that makes it work</h3>
+<ul>
+<li><strong>Free user acquisition cost:</strong> $0 (organic, content, community)</li>
+<li><strong>Conversion to paid:</strong> 3-8% is typical for dev tools (Cursor, Copilot prove this)</li>
+<li><strong>If 100K free users → 5K paid at $20/mo = <strong>$1.2M ARR</strong></strong></li>
+<li><strong>Sponsor credits:</strong> even non-paying users generate value (model usage data, marketplace activity, word-of-mouth)</li>
+</ul>
+<h3>12.3 Sponsor credits in detail (the "give free AI, earn" engine)</h3>
+<ol>
+<li><strong>AI labs sponsor credits:</strong> Kimi/GLM/DeepSeek give free API credits to CodeAtlas → CodeAtlas shows "Powered by Kimi" in the free tier → Kimi gets user acquisition, CodeAtlas gets free AI for users</li>
+<li><strong>Cloud providers sponsor:</strong> AWS/GCP/Azure give credits for showcasing their model endpoints</li>
+<li><strong>Tool sponsors:</strong> security tools, CI/CD tools sponsor the marketplace for visibility</li>
+<li><strong>The key:</strong> sponsors pay for <strong>distribution</strong>, not for repo data (privacy rule from §6 still holds)</li>
+</ol>
+</section>
+
+<section id="marketing">
+<h2>13. Marketing &amp; growth strategy</h2>
+<h3>13.1 What works for dev tools (PostHog, Continue.dev, Cline, Sentry)</h3>
+<table>
+<tr><th>Channel</th><th>Strategy</th><th>Priority</th></tr>
+<tr><td><strong>Content (blog)</strong></td><td>1 great technical article &gt;&gt;&gt; 25 mediocre ones. Deep dives, not SEO fluff.</td><td><strong>#1 pre-PMF</strong></td></tr>
+<tr><td><strong>GitHub</strong></td><td>Strong README, good docs, star campaigns, "Show HN" ready</td><td><strong>#1 always</strong></td></tr>
+<tr><td><strong>Hacker News</strong></td><td>"Show HN: CodeAtlas — open-source AI context engine" — time it right</td><td>High-impact spikes</td></tr>
+<tr><td><strong>Reddit</strong></td><td>r/programming, r/vscode, r/devops, r/selfhosted, r/machineLearning</td><td>Steady organic</td></tr>
+<tr><td><strong>Twitter/X</strong></td><td>Personal accounts of founders 10x more effective than company account</td><td>Consistent presence</td></tr>
+<tr><td><strong>Discord</strong></td><td>Community server for users, contributors, model providers</td><td>Retention + feedback</td></tr>
+<tr><td><strong>Conferences</strong></td><td>GitHub Universe, KubeCon, AI Engineer Summit, VS Code Live</td><td>Post-PMF scaling</td></tr>
+<tr><td><strong>Partnerships</strong></td><td>IDE extensions (VS Code, JetBrains), CI/CD integrations</td><td>Distribution</td></tr>
+</table>
+<h3>13.2 Pre-PMF (now → first 10K users)</h3>
+<ol>
+<li><strong>Content depth over breadth</strong> — write 3-5 genuinely useful deep-dive posts: "How CodeAtlas gives any AI model perfect context about your repo"; "I replaced Cursor's context with an open-source alternative"; "Running Claude + Kimi + Ollama in one terminal with automatic model routing"</li>
+<li><strong>GitHub polish</strong> — README with GIF demo, one-line install, clear value prop</li>
+<li><strong>Hacker News launch</strong> — "Show HN" with a founder comment explaining the problem</li>
+<li><strong>Reddit cross-post</strong> — r/programming + r/vscode + r/selfhosted</li>
+<li><strong>Discord community</strong> — small, focused, founder-engaged</li>
+</ol>
+<h3>13.3 Post-PMF (10K → 100K users)</h3>
+<ol>
+<li><strong>Hire a developer who loves writing</strong> onto the marketing team (PostHog's #1 advice)</li>
+<li><strong>Paid ads</strong> — only after PMF, target developers on GitHub, Stack Overflow, Twitter</li>
+<li><strong>Sponsorships</strong> — sponsor dev newsletters (TypeScript Weekly, DevOps Weekly), bursts (3 months on, 3 off)</li>
+<li><strong>Conference talks</strong> — send engineers (not marketing) to speak; engineers trust engineers</li>
+<li><strong>YouTube</strong> — demos, tutorials, "how it works" (expensive; prioritize after content/blog)</li>
+</ol>
+<div class="highlight purple">
+<p><strong>Key principles (PostHog):</strong> personal accounts 10x more effective than company accounts · don't try multiple channels at once — master one, then expand · treat your website like a product, engineering-owned · Hacker News is double-edged — great for spikes, don't depend on it · "1 great article &gt;&gt;&gt; 25 mediocre ones" — quality compounds.</p>
+</div>
+</section>
+
+<section id="funding">
+<h2>14. Funding strategy</h2>
+<h3>14.1 Reference: AI dev tool funding landscape (2026)</h3>
+<table>
+<tr><th>Company</th><th>Stage</th><th>Amount</th><th>Valuation</th><th>Notes</th></tr>
+<tr><td><strong>Cursor</strong></td><td>Acquired</td><td>—</td><td>—</td><td><strong>Acquired by SpaceX</strong> Aug 2026; $2B RR</td></tr>
+<tr><td><strong>Nscale</strong> (AI compute)</td><td>Pre-IPO</td><td>$3.5B</td><td>—</td><td>AI infrastructure</td></tr>
+<tr><td><strong>Crusoe</strong></td><td>Series</td><td>$3B</td><td>$30B</td><td>AI compute</td></tr>
+<tr><td><strong>AfterQuery</strong></td><td>YC</td><td>—</td><td>$3.2B</td><td>YC's fastest-ever unicorn</td></tr>
+<tr><td><strong>Nvidia/Hugging Face</strong></td><td>Acquisition</td><td>$12.9B</td><td>—</td><td>Strategic acquisition</td></tr>
+<tr><td><strong>Typical AI dev tool Seed</strong></td><td>Seed</td><td>$3-8M</td><td>—</td><td>Standard range</td></tr>
+<tr><td><strong>Typical AI dev tool Series A</strong></td><td>Series A</td><td>$10-30M</td><td>$40-150M</td><td>With traction</td></tr>
+</table>
+<h3>14.2 Funding path for CodeAtlas</h3>
+<div class="phase-grid">
+<div class="phase-card"><div class="phase-label" style="color:var(--accent-2)">Phase 1 — Bootstrap + community</div><h4>Now → first revenue</h4><p>Founder-funded / savings; GitHub Sponsors + Open Collective; NLNet &amp; Sovereign Tech Fund grants (non-dilutive, open-source mission fit); consulting/custom deployments. Goal: reach free-tier traction without dilution.</p></div>
+<div class="phase-card"><div class="phase-label">Phase 2 — Seed</div><h4>$2-5M when metrics justify</h4><p>After: 10K+ active users, 3-5% free→paid conversion, $100K+ ARR, strong GitHub growth. Target: funds that understand open-source dev tools (e.g. the pattern behind PostHog/Supabase investors).</p></div>
+<div class="phase-card"><div class="phase-label" style="color:var(--accent-3)">Phase 3 — Series A</div><h4>$10-30M at scale</h4><p>Only after $1M+ ARR and proven enterprise pull (Team tier deals, SOC 2 path). Open-core companies raise on the Free→Pro conversion curve, not vanity metrics.</p></div>
+</div>
+<h3>14.3 What makes CodeAtlas fundable</h3>
+<ol>
+<li><strong>Traction</strong> — GitHub stars, active users, community growth</li>
+<li><strong>Revenue</strong> — Pro/Team conversions, marketplace fees</li>
+<li><strong>Retention</strong> — taste learning makes the product stickier over time (§17)</li>
+<li><strong>Market</strong> — AI dev tools are the fastest-growing developer category</li>
+<li><strong>Moat</strong> — context engine + taste data + open-source community</li>
+<li><strong>Engagement</strong> — Discord activity, contributors, PRs</li>
+<li><strong>Team</strong> — technical founders who ship</li>
+</ol>
+</section>
+
+<section id="roadmap">
+<h2>15. Updated phase roadmap</h2>
+<div class="phase-grid">
+<div class="phase-card"><div class="phase-label">A — Harness shell</div><h4>Harness v1</h4><p><code>atlas tui</code>, themes, <code>/help</code>, <code>/models</code>, <code>/model</code>, agent sessions, <code>/sessions</code>, <code>/stop</code></p></div>
+<div class="phase-card"><div class="phase-label" style="color:var(--accent-2)">B — Free default stack</div><h4>F02 start, cost control</h4><p><code>kimi.ts</code> + <code>glm.ts</code> + <code>dashscope.ts</code> + <code>openrouter.ts</code> + <code>groq.ts</code> adapters (quarantined), provider profiles + <code>tier</code>, default = Ollama, <code>/connect</code> onboarding, 429/<code>Retry-After</code> fallback, per-provider limit counters via <code>createUsageService</code></p></div>
+<div class="phase-card"><div class="phase-label">C — Router + loop wiring</div><h4>F02, F05, F13 v1</h4><p><code>RouterPort</code> in core; SDK policy (task class → model chain → escalate on verify-fail); harness <code>/route</code>; orchestrator roles = specialist agents; <code>/usage</code> per turn</p></div>
+<div class="phase-card"><div class="phase-label" style="color:var(--accent-3)">D — Context + research</div><h4>F01 remainder, F04</h4><p>Graph closure expansion behind the existing scorer seam; gap detector (plan unknowns + sufficiency fails); opt-in allow-listed research tools with timeouts; <code>/research</code></p></div>
+<div class="phase-card"><div class="phase-label" style="color:var(--accent-4)">E — Guard rails</div><h4>F06 remainder, F08</h4><p>Injection heuristics on inbound content; outbound secret redaction at the context-integration boundary; unified risk policy surface for agent sessions</p></div>
+<div class="phase-card"><div class="phase-label" style="color:var(--accent-5)">F — Freebuff</div><h4>Monetization</h4><p>Credit ledger in usage store (additive migration); sponsored-credits redemption; opt-in reels panel (<code>Ctrl+R</code>) under the §6.2 hard rules; config-flagged <strong>off</strong> by default</p></div>
+<div class="phase-card"><div class="phase-label">G — P1 track</div><h4>P1 features</h4><p>F09 blast radius, F10 trace/replay persistence, F11 CI gate, F12 control plane — each scoped separately (F12 is effectively a sub-product)</p></div>
+<div class="phase-card"><div class="phase-label" style="color:var(--accent-2)">H — Business launch</div><h4>Revenue</h4><p>Pro/Team pricing, credits marketplace, sponsor onboarding, GitHub Sponsors integration, <code>/usage</code> billing surface</p></div>
+<div class="phase-card"><div class="phase-label">I — Growth</div><h4>Users</h4><p>Content engine (blog), community (Discord), conference presence, IDE/CI partnerships, Hacker News launch</p></div>
+</div>
+</section>
+
+<section id="feedback">
+<h2>17. Feedback &amp; taste learning system</h2>
+<h3>17.1 What it does</h3>
+<p>After every task completion, CodeAtlas collects feedback, builds a <strong>taste profile</strong> for each user, and uses that profile to adapt future behavior. The longer you use CodeAtlas, the better it knows you.</p>
+<h3>17.2 Feedback collection</h3>
+<h4>Quick feedback (always shown)</h4>
+<div class="ascii-art">┌─────────────────────────────────────────┐
+│  Task complete: "Build a login form"    │
+│                                         │
+│  How was the result?                    │
+│  [👍]  [👎]  or click a star:          │
+│  ★ ★ ★ ★ ☆  (4/5)                      │
+│                                         │
+│  [Add optional comment...]              │
+│  [Save feedback]                        │
+└─────────────────────────────────────────┘</div>
+<h4>Implicit feedback (automatic, no user action)</h4>
+<table>
+<tr><th>Signal</th><th>Interpretation</th></tr>
+<tr><td>User accepts changes without editing</td><td>Strong positive</td></tr>
+<tr><td>User edits output significantly</td><td>Partial negative</td></tr>
+<tr><td>User re-runs the task</td><td>Negative (previous was bad)</td></tr>
+<tr><td>User undoes changes</td><td>Strong negative</td></tr>
+<tr><td>User switches models mid-task</td><td>Current model not working</td></tr>
+<tr><td>User copies output to clipboard</td><td>Positive</td></tr>
+</table>
+<h3>17.3 Taste profile (editable by user)</h3>
+<p>Stored locally at <code>.codeatlas/taste.json</code>:</p>
+<pre><code>{
+  "version": 1,
+  "categories": {
+    "code_style": { "functional": 0.85, "oop": 0.15, "preference": "functional" },
+    "verbosity": { "concise": 0.70, "verbose": 0.30, "preference": "concise" },
+    "languages": { "typescript": 0.80, "rust": 0.60, "python": 0.40,
+                   "preferred": ["typescript", "rust"] },
+    "ui": { "style": "minimalist", "color_scheme": "dark",
+            "framework": "tailwind", "library": "shadcn" },
+    "models": {
+      "planning": { "kimi-k3": 4.5, "glm-4": 4.2 },
+      "execution": { "ollama-qwen3": 4.3, "deepseek-v4": 3.8 }
+    },
+    "tools": { "confirm_before_write": true, "show_diff_first": true }
+  },
+  "rules": [
+    "Prefer functional programming patterns",
+    "Keep functions under 30 lines",
+    "Use TypeScript strict mode",
+    "Minimal comments, self-documenting code",
+    "Dark mode UI with Tailwind CSS"
+  ]
+}</code></pre>
+<p><strong>User can edit</strong> via: <code>/taste</code> command in the TUI (interactive editor) · direct edit of <code>.codeatlas/taste.json</code> · <code>/taste reset</code> — start over · <code>/taste explain</code> — show what Atlas learned and why.</p>
+</section>
+
+<h3>17.4 How taste is applied (strong override)</h3>
+<p>Taste is injected into the system prompt before every task:</p>
+<pre><code>SYSTEM PROMPT:
+You are CodeAtlas, an AI coding agent. Complete the task below.
+
+=== USER TASTE PROFILE (strong guidance) ===
+Code style: Functional programming preferred (85% confidence)
+Verbosity: Be concise, minimal comments (70% confidence)
+Languages: TypeScript preferred, then Rust
+UI: Minimalist design, dark mode, Tailwind CSS + shadcn
+Architecture: Small files (&lt;200 lines), composition over inheritance
+Models: Use kimi-k3 for planning, ollama-qwen3 for execution
+Safety: Show diff before writing, confirm before running commands
+
+Violate these preferences only with good reason and explain why.
+
+=== TASK ===
+[user's task here]</code></pre>
+<p><strong>Strong means:</strong> taste profile overrides default behavior · model selection follows user's historical preferences · code style matches user's patterns · if Atlas violates taste, it must explain why.</p>
+<h3>17.5 Storage layers</h3>
+<table>
+<tr><th>Layer</th><th>Location</th><th>Content</th><th>Privacy</th></tr>
+<tr><td><strong>Local feedback</strong></td><td><code>.codeatlas/feedback.db</code></td><td>Full task history + ratings</td><td>Never leaves machine</td></tr>
+<tr><td><strong>Local taste</strong></td><td><code>.codeatlas/taste.json</code></td><td>Derived preference profile</td><td>User-owned, editable</td></tr>
+<tr><td><strong>Server analytics</strong></td><td>Atlas server (opt-in)</td><td>Anonymized aggregates only</td><td>User chooses what to send</td></tr>
+<tr><td><strong>Taste sync</strong></td><td>Atlas server (opt-in)</td><td>Encrypted taste profile</td><td>Cross-machine sync</td></tr>
+</table>
+<h3>17.6 Server analytics (opt-in, user controls)</h3>
+<div class="ascii-art">┌─────────────────────────────────────────┐
+│  Help improve CodeAtlas (opt-in)        │
+│                                         │
+│  [x] Share anonymized ratings           │
+│      (★★★★★ on tasks, no content)       │
+│  [x] Share model performance            │
+│      (which models work best)           │
+│  [x] Share taste patterns               │
+│      (code style preferences, no code)  │
+│  [ ] Share task descriptions            │
+│      (what people build)                │
+│  [ ] Share context snippets             │
+│      (code I work with)                 │
+│                                         │
+│  [Save preferences]  [View data]        │
+└─────────────────────────────────────────┘</div>
+<p><strong>What the server learns:</strong> which models work best for which tasks · common user preferences · frequent complaints and improvement areas · feature usage patterns.</p>
+<div class="highlight red">
+<p><strong>What the server NEVER gets:</strong> user's actual code · task descriptions (unless explicitly allowed) · identifying information · anything without explicit opt-in.</p>
+</div>
+
+<section id="taste-sync">
+<h3>17.7 Taste sync (cross-machine, opt-in)</h3>
+<p>Taste profile encrypted and stored on server · sync across multiple machines · <code>/taste sync</code> — pull latest taste from server · <code>/taste export</code> — download taste profile · <code>/taste import</code> — load taste profile on new machine.</p>
+<h3>17.8 Feedback commands in TUI</h3>
+<table>
+<tr><th>Command</th><th>Action</th></tr>
+<tr><td><code>/feedback</code></td><td>Show feedback dialog for last task</td></tr>
+<tr><td><code>/feedback &lt;id&gt;</code></td><td>Give feedback on specific past task</td></tr>
+<tr><td><code>/taste</code></td><td>View and edit taste profile</td></tr>
+<tr><td><code>/taste explain</code></td><td>Show why Atlas made specific choices</td></tr>
+<tr><td><code>/taste reset</code></td><td>Clear taste profile and start over</td></tr>
+<tr><td><code>/taste sync</code></td><td>Sync taste across machines</td></tr>
+<tr><td><code>/taste export</code> / <code>/taste import</code></td><td>Export/import taste to/from file</td></tr>
+<tr><td><code>/stats</code></td><td>Show personal usage + feedback stats</td></tr>
+</table>
+<h3>17.9 The virtuous cycle</h3>
+<div class="ascii-art">Task completed
+    ↓
+User rates: ★★★★☆ "Good but too verbose"
+    ↓
+Taste profile updated: verbosity → concise (70% → 75%)
+    ↓
+Next task: system prompt says "be concise"
+    ↓
+Result is more concise
+    ↓
+User rates: ★★★★★ "Perfect"
+    ↓
+Taste profile reinforced: verbosity → concise (75% → 80%)
+    ↓
+(Keeps getting better)</div>
+<h3>17.10 Why this is a moat</h3>
+<table class="moat-table">
+<tr><th>Competitor</th><th>Learns your taste?</th><th>Remembers across sessions?</th></tr>
+<tr><td>Cursor</td><td class="cross">❌ No</td><td class="cross">❌ No</td></tr>
+<tr><td>Claude Code</td><td class="cross">❌ No</td><td class="cross">❌ No</td></tr>
+<tr><td>OpenCode</td><td class="cross">❌ No</td><td class="cross">❌ No</td></tr>
+<tr><td>Aider</td><td class="cross">❌ No</td><td class="cross">❌ No</td></tr>
+<tr><td><strong>CodeAtlas</strong></td><td class="check">✅ Yes</td><td class="check">✅ Yes</td></tr>
+</table>
+<div class="highlight green">
+<p><strong>The agent that knows you is the agent you don't switch away from.</strong> This is the stickiest feature possible — and no competitor learns taste because they don't have a local context engine to learn from.</p>
+</div>
+</section>
+
+<section id="docs-map">
+<h2>Documentation map</h2>
+<p>Canonical source: <code>docs/HARNESS_PLAN.md</code> (this page mirrors it for presentation). Related docs: <code>docs/CURRENT_STATE.md</code> (arbiter of what exists) · <code>docs/DOCUMENTATION_MAP.md</code> (index) · <code>docs/ARCHITECTURE.md</code> (dependency matrix) · <code>docs/SECURITY.md</code> / <code>docs/PRIVACY.md</code> (the rules §6 and §17 rely on).</p>
+<div class="highlight">
+<p><strong>Status:</strong> everything on this page is <span class="tag planned">PLANNED</span> unless explicitly marked otherwise. Nothing here is a status claim — implementation phases A–I ship sequentially with ADRs (019+), tests, and docs per phase.</p>
+</div>
+</section>
+
+</div><!-- /main -->
+</div><!-- /container -->
+</body>
+</html>

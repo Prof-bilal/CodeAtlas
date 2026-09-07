@@ -11,6 +11,8 @@ export const DEFAULT_IGNORED_DIRECTORIES: readonly string[] = [
   "coverage",
   "vendor",
   ".codeatlas",
+  "benchmarks",
+  "old-school",
 ];
 
 /**

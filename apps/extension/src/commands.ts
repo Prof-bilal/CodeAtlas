@@ -190,27 +190,27 @@ export async function showDependencies(ctx: CommandContext): Promise<void> {
 export async function runCli(ctx: CommandContext, action: AtlasCliAction): Promise<void> {
   const { client, host, runner, statusBar, refreshAll } = ctx;
   statusBar?.indexing();
-  await host.window.showInformationMessage(`Running: atlas ${action} …`);
+  void host.window.showInformationMessage(`Running: atlas ${action} …`);
   try {
     const result = await runner.run(action);
     if (!result.ok) {
       client.lastBuildError = result.summary;
       refreshAll();
-      await host.window.showErrorMessage(`atlas ${action} failed — ${result.summary}`);
+      void host.window.showErrorMessage(`atlas ${action} failed — ${result.summary}`);
       return;
     }
     client.lastBuildError = null;
     refreshAll();
-    await host.window.showInformationMessage(
+    void host.window.showInformationMessage(
       result.summary === "" ? `atlas ${action} succeeded` : result.summary,
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     client.lastBuildError = message;
     refreshAll();
-    await host.window.showErrorMessage(`atlas ${action} failed — ${message}`);
+    void host.window.showErrorMessage(`atlas ${action} failed — ${message}`);
   } finally {
-    refreshAll();
+    statusBar?.render(client);
   }
 }
 

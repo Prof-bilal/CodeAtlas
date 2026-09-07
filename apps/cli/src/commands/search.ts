@@ -146,9 +146,7 @@ export function registerSearch(program: Command, options: SearchCommandOptions =
     .description("Search the CodeAtlas index (symbols, files, modules, dependencies, summaries)")
     .argument("<query...>", "search query (multiple words are joined)")
     .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
-    .option("-l, --limit <number>", "maximum number of results to show", parseLimit, () =>
-      Number.parseInt(process.env.LIMIT ?? "20", 10),
-    )
+    .option("-l, --limit <number>", "maximum number of results to show", parseLimit)
     .option(
       "-t, --type <kind>",
       "restrict results to a kind (repeatable)",
@@ -192,7 +190,9 @@ async function runSearch(
         : undefined;
     const request: SearchRequest = {
       fuzzy: options.fuzzy,
-      ...(options.limit !== undefined ? { limit: options.limit } : {}),
+      ...(options.limit !== undefined
+        ? { limit: options.limit }
+        : { limit: Number.parseInt(process.env.LIMIT ?? "20", 10) }),
       ...(types !== undefined ? { types } : {}),
     };
     const hits = context.search.search(query, request);
