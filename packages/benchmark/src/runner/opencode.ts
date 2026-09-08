@@ -81,6 +81,20 @@ export class OpenCodeRunner implements BenchmarkRunner {
     try {
       const env = { ...process.env };
 
+      if (
+        request.mode === "baseline" ||
+        request.mode === "codeatlas" ||
+        request.mode === "codeatlas-intel"
+      ) {
+        // Pin the CodeAtlas MCP entry via opencode's INLINE config
+        // (OPENCODE_CONFIG_CONTENT). File-based configs are merged in
+        // precedence order — remote < global < OPENCODE_CONFIG < project — so a
+        // stray project-level opencode.json (e.g. a stale codeatlas entry
+        // committed in the repo under test) would override the global toggle
+        // below. Inline config is applied LAST and wins over every file.
+        env["OPENCODE_CONFIG_CONTENT"] = this.inlineMcpConfig(request.repositoryPath, request.mode);
+      }
+
       const model = request.model ?? this.model;
       const args = [
         "run",
@@ -143,6 +157,60 @@ export class OpenCodeRunner implements BenchmarkRunner {
   }
 
   /**
+   * Locate the built CodeAtlas MCP server binary (`@atlas/mcp` → bin.js).
+   *
+   * The bundled benchmark code can live at `packages/benchmark/dist` or be
+   * inlined into `apps/cli/dist`, so we walk up the directory tree from the
+   * module location looking for a `packages/mcp/dist/bin.js`. Falling back to
+   * the nearest ancestor that carries a `packages/` directory (the mono-repo
+   * root), and finally to the legacy `mcp/dist/bin.js` location.
+   */
+  private resolveMcpServerCommand(): string[] {
+    const here = dirname(
+      typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url),
+    );
+    let dir = here;
+    for (;;) {
+      const candidate = join(dir, "packages", "mcp", "dist", "bin.js");
+      if (existsSync(candidate)) return ["node", candidate];
+      const parent = dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+    const legacy = resolve(here, "..", "..", "..", "mcp", "dist", "bin.js");
+    return ["node", legacy];
+  }
+
+  /**
+   * Build the inline opencode config (OPENCODE_CONFIG_CONTENT) that pins the
+   * CodeAtlas MCP entry for the run. Inline config is loaded last in opencode's
+   * precedence order, so it wins over every file-based config — including a
+   * project-level `opencode.json` in the repository under test that declares
+   * its own (possibly stale/broken) codeatlas server.
+   *
+   * - `baseline`: disable the CodeAtlas MCP (a true baseline — the model must
+   *   not receive repository context tools).
+   * - `codeatlas` / `codeatlas-intel`: enable it and point `ATLAS_ROOT` at the
+   *   repository under test. Other MCP servers (e.g. typeui) are untouched.
+   */
+  private inlineMcpConfig(
+    repoPath: string,
+    mode: "baseline" | "codeatlas" | "codeatlas-intel",
+  ): string {
+    const entry = { enabled: mode !== "baseline" };
+    if (mode !== "baseline") {
+      const env: Record<string, unknown> = { ATLAS_ROOT: repoPath };
+      this.forwardBudgetEnv(env);
+      Object.assign(entry, {
+        type: "local",
+        command: this.resolveMcpServerCommand(),
+        environment: env,
+      });
+    }
+    return JSON.stringify({ mcp: { codeatlas: entry } });
+  }
+
+  /**
    * Rewrite the CodeAtlas MCP entry in the global opencode config for the
    * requested mode, returning the original file content for restoration after
    * the run.
@@ -164,10 +232,19 @@ export class OpenCodeRunner implements BenchmarkRunner {
     const mcp = config["mcp"] as Record<string, unknown>;
     const enable = mode !== "baseline";
 
+    const command = this.resolveMcpServerCommand();
     if (mcp["codeatlas"] !== undefined) {
       const entry = mcp["codeatlas"] as Record<string, unknown>;
       entry["enabled"] = enable;
       if (enable) {
+        // Self-heal a stale/incorrect entry (e.g. persisted from an older
+        // layout, or a broken `node <nonexistent> dist/bin.js` command): never
+        // reuse a command whose binary does not exist.
+        const existing = normalizeCommand(entry["command"]);
+        if (existing === undefined || !existsSync(existing)) {
+          entry["type"] = "local";
+          entry["command"] = command;
+        }
         entry["environment"] ??= {};
         const env = entry["environment"] as Record<string, unknown>;
         env["ATLAS_ROOT"] = repoPath;
@@ -175,16 +252,13 @@ export class OpenCodeRunner implements BenchmarkRunner {
       }
     } else if (enable) {
       // Best-effort: create the entry if missing, reusing the built MCP server.
-      const here = dirname(
-        typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url),
-      );
       const env: Record<string, unknown> = {
         ATLAS_ROOT: repoPath,
       };
       this.forwardBudgetEnv(env);
       mcp["codeatlas"] = {
         type: "local",
-        command: ["node", resolve(here, "..", "..", "..", "mcp", "dist", "bin.js")],
+        command,
         environment: env,
         enabled: true,
       };
@@ -355,6 +429,27 @@ interface ParsedToolCall {
   isError: boolean;
   durationMs: number | undefined;
   output: unknown;
+}
+
+/**
+ * Extract the executable path from an opencode config `command` value, which
+ * may be an array (`["node", "/abs/path/bin.js"]`) or a single shell-ish
+ * string (`"node /abs/path/bin.js"`). Returns `undefined` for anything that is
+ * not a usable command descriptor.
+ */
+function normalizeCommand(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    const stripped = value.trim();
+    if (stripped === "") return undefined;
+    const parts = stripped.split(/\s+/);
+    return parts[parts.length - 1];
+  }
+  if (Array.isArray(value)) {
+    const last = value[value.length - 1];
+    if (typeof last === "string" && last.trim() !== "") return last.trim();
+    return undefined;
+  }
+  return undefined;
 }
 
 function parseRunEvents(lines: string[]): {

@@ -1,4 +1,12 @@
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { type IncomingMessage, type ServerResponse, createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -632,5 +640,172 @@ setInterval(() => {}, 100);
       await new Promise((r) => setTimeout(r, 50));
     }
     expect(grandchildAlive).toBe(false);
+  }, 30_000);
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Config toggling: the runner repairs the CodeAtlas MCP entry it enables.
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fake `opencode` that echoes back the configured `mcp.codeatlas` entry from
+ * the config file the runner points it at. Lets tests assert exact command
+ * paths without launching a real server.
+ */
+function writeFakeOpenCodeEchoConfig(
+  dir: string,
+  configPath: string,
+  mode: "codeatlas" | "codeatlas-intel" | "baseline",
+): string {
+  const bin = join(dir, `fake-opencode-echo-${mode}.mjs`);
+  writeFileSync(
+    bin,
+    `#!/usr/bin/env node
+import { readFileSync } from "node:fs";
+const cfg = JSON.parse(readFileSync(${JSON.stringify(configPath)}, "utf-8"));
+const entry = cfg.mcp?.codeatlas ?? {};
+const inlineRaw = process.env.OPENCODE_CONFIG_CONTENT ?? "{}";
+const inlineCfg = JSON.parse(inlineRaw);
+const inlineEntry = inlineCfg.mcp?.codeatlas ?? {};
+process.stdout.write(JSON.stringify({
+  type: "text",
+  part: { text: JSON.stringify({ enabled: entry.enabled, command: entry.command, atlasRoot: entry.environment?.ATLAS_ROOT, inlineEnabled: inlineEntry.enabled, inlineCommand: inlineEntry.command, inlineAtlasRoot: inlineEntry.environment?.ATLAS_ROOT }) },
+}) + "\\n");
+process.stdout.write(JSON.stringify({ type: "step_start", timestamp: Date.now() }) + "\\n");
+process.stdout.write(JSON.stringify({ type: "step_finish", part: { tokens: { input: 1, output: 1, reasoning: 0, total: 2, cache: { write: 0, read: 0 } } }, cost: 0 }) + "\\n");
+`,
+  );
+  chmodSync(bin, 0o755);
+  return bin;
+}
+
+// Result wrapper for the echo JSON carried in `finalText`.
+interface ConfigEcho {
+  enabled: boolean;
+  command: string[] | undefined;
+  atlasRoot: string | undefined;
+  inlineEnabled: boolean | undefined;
+  inlineCommand: string[] | undefined;
+  inlineAtlasRoot: string | undefined;
+}
+
+describe("OpenCodeRunner config toggling", () => {
+  it("replaces a broken codeatlas command with the real MCP bin path", async () => {
+    const repo = tempRoot("atlas-e2e-oc-cfg-");
+    seedRepo(repo);
+    const configPath = join(repo, "opencode.json");
+
+    // A stale config entry whose command points at a nonexistent binary (the
+    // exact `mcp/dist/bin.js` bug from an older layout — the actual server
+    // lives at `packages/mcp/dist/bin.js`).
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        mcp: {
+          codeatlas: {
+            type: "local",
+            enabled: true,
+            command: ["node", join(repo, "mcp", "dist", "bin.js")],
+            environment: { ATLAS_ROOT: "stale-root" },
+          },
+        },
+      }),
+    );
+
+    const bin = writeFakeOpenCodeEchoConfig(repo, configPath, "codeatlas");
+    const runner = new OpenCodeRunner({ openCodeBin: bin, configPath });
+    const result = await runner.execute({
+      prompt: "check config",
+      repositoryPath: repo,
+      mode: "codeatlas",
+      timeoutMs: 15_000,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const echo = JSON.parse(result.value.finalText) as ConfigEcho;
+    expect(echo.enabled).toBe(true);
+    // The broken binary path must NOT survive; the real monorepo server is used.
+    expect(echo.atlasRoot).toBe(repo);
+    const resolved = echo.command?.[1] ?? "";
+    expect(resolved).not.toContain(`${repo}/mcp/dist/bin.js`);
+    expect(resolved).toMatch(/packages[\\/]mcp[\\/]dist[\\/]bin\.js$/);
+    expect(existsSync(resolved)).toBe(true);
+    // The INLINE config (highest opencode precedence) pins the same entry so a
+    // project-level opencode.json can never override it mid-run.
+    expect(echo.inlineEnabled).toBe(true);
+    expect(echo.inlineAtlasRoot).toBe(repo);
+    const inlineResolved = echo.inlineCommand?.[1] ?? "";
+    expect(inlineResolved).toMatch(/packages[\\/]mcp[\\/]dist[\\/]bin\.js$/);
+    expect(existsSync(inlineResolved)).toBe(true);
+  }, 30_000);
+
+  it("creates the codeatlas entry with the resolved MCP bin when missing", async () => {
+    const repo = tempRoot("atlas-e2e-oc-cfg-new-");
+    seedRepo(repo);
+    const configPath = join(repo, "opencode.json");
+    writeFileSync(configPath, JSON.stringify({ mcp: {} }));
+
+    const bin = writeFakeOpenCodeEchoConfig(repo, configPath, "codeatlas");
+    const runner = new OpenCodeRunner({ openCodeBin: bin, configPath });
+    const result = await runner.execute({
+      prompt: "check config",
+      repositoryPath: repo,
+      mode: "codeatlas",
+      timeoutMs: 15_000,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const echo = JSON.parse(result.value.finalText) as ConfigEcho;
+    expect(echo.enabled).toBe(true);
+    expect(echo.atlasRoot).toBe(repo);
+    const resolved = echo.command?.[1] ?? "";
+    expect(resolved).toMatch(/packages[\\/]mcp[\\/]dist[\\/]bin\.js$/);
+    expect(existsSync(resolved)).toBe(true);
+    // The INLINE config is set even when the global file had no entry.
+    expect(echo.inlineEnabled).toBe(true);
+    expect(echo.inlineAtlasRoot).toBe(repo);
+    expect(echo.inlineCommand?.[1] ?? "").toMatch(/packages[\\/]mcp[\\/]dist[\\/]bin\.js$/);
+  }, 30_000);
+
+  it("disables the codeatlas entry (without touching command) for baseline mode", async () => {
+    const repo = tempRoot("atlas-e2e-oc-cfg-base-");
+    seedRepo(repo);
+    const configPath = join(repo, "opencode.json");
+    const origCommand = ["node", join(repo, "user-plugin", "server.js")];
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        mcp: {
+          codeatlas: {
+            type: "local",
+            enabled: true,
+            command: origCommand,
+            environment: { ATLAS_ROOT: "x" },
+          },
+        },
+      }),
+    );
+
+    const bin = writeFakeOpenCodeEchoConfig(repo, configPath, "baseline");
+    const runner = new OpenCodeRunner({ openCodeBin: bin, configPath });
+    const result = await runner.execute({
+      prompt: "check config",
+      repositoryPath: repo,
+      mode: "baseline",
+      timeoutMs: 15_000,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const echo = JSON.parse(result.value.finalText) as ConfigEcho;
+    expect(echo.enabled).toBe(false);
+    // Baseline disables without rewriting the (possibly user-owned) command.
+    expect(echo.command).toEqual(origCommand);
+    // The inline config also disables it (wins over any project-level entry).
+    expect(echo.inlineEnabled).toBe(false);
+    expect(echo.inlineCommand).toBeUndefined();
+    expect(echo.inlineAtlasRoot).toBeUndefined();
   }, 30_000);
 });

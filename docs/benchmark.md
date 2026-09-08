@@ -49,7 +49,7 @@ atlas benchmark report <suite> [--format markdown|json|html] [--json]
 
 | Runner | How it runs | Metrics source |
 |---|---|---|
-| `opencode` | spawns `opencode run --format json --model <model> --dir <repo>`, parses the JSONL event stream; toggles the CodeAtlas MCP server in the global opencode config per mode (**disabled for `baseline`** — a true baseline; enabled with `ATLAS_ROOT` set to the repo under test for context modes) | provider-reported `step_finish` tokens/cost (**actual**) |
+| `opencode` | spawns `opencode run --format json --model <model> --dir <repo>`, parses the JSONL event stream; pins the CodeAtlas MCP entry via opencode's **inline config** (`OPENCODE_CONFIG_CONTENT`) plus a self-healing rewrite of the global `opencode.json` per mode (**disabled for `baseline`** — a true baseline; enabled with `ATLAS_ROOT` set to the repo under test for context modes). Inline config loads last, so it beats a project-level `opencode.json` inside the repo under test. The command path is resolved by walking up to the built `packages/mcp/dist/bin.js` | provider-reported `step_finish` tokens/cost (**actual**) |
 | `kilo` | same runner, generalized: spawns `kilo run --format json -m <model>` (no `--dir`; cwd is the repo), toggles the CodeAtlas MCP entry in `~/.config/kilo/kilo.jsonc` the same way. Free-tier Kilo models (`:free`) require no credentials | provider-reported `step_finish` tokens/cost (**actual**) |
 | `ollama` | in-process against the configured Ollama provider (`atlas ollama connect`/`use`); `codeatlas` mode uses the `ToolUsingChatAgent` tool loop over the same 7 MCP context tools; `baseline` mode is a plain chat call. Suite model is honored via `ChatAgentRequest.model` | provider-reported usage (**actual**) |
 
