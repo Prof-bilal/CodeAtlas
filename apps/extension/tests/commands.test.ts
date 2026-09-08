@@ -202,6 +202,9 @@ describe("runCli status bar lifecycle", () => {
     registerCommands(ctx);
 
     const handler = records.registeredCommands.get("codeatlas.runBuild");
+    if (handler === undefined) {
+      throw new Error("command not registered: codeatlas.runBuild");
+    }
     const runPromise = handler();
 
     expect(item.text).toBe("CodeAtlas: indexing…");
@@ -248,6 +251,9 @@ describe("runCli status bar lifecycle", () => {
     registerCommands(ctx);
 
     const handler = records.registeredCommands.get("codeatlas.runBuild");
+    if (handler === undefined) {
+      throw new Error("command not registered: codeatlas.runBuild");
+    }
     await handler();
 
     expect(item.text).toContain("build failed");
@@ -279,6 +285,9 @@ describe("runCli status bar lifecycle", () => {
     registerCommands(ctx);
 
     const handler = records.registeredCommands.get("codeatlas.runBuild");
+    if (handler === undefined) {
+      throw new Error("command not registered: codeatlas.runBuild");
+    }
     await handler();
 
     expect(client.lastBuildError).toBe("cli not found");
@@ -308,6 +317,9 @@ describe("refresh clears stale build error", () => {
     registerCommands(ctx);
 
     const handler = records.registeredCommands.get("codeatlas.refresh");
+    if (handler === undefined) {
+      throw new Error("command not registered: codeatlas.refresh");
+    }
     await handler();
 
     expect(client.lastBuildError).toBeNull();
