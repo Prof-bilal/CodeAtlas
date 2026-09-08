@@ -6,8 +6,11 @@ This is the **seed task catalog** for the fresh benchmark: a real, runnable set
 covering all 8 domains and all 4 difficulty levels, authored to the schema in
 `schema.md`. It is intentionally a *starter set* — the defensible way to build a
 benchmark is to grow it and to **triage every task** (see "Task triage" below)
-before a full 4-config run. No task may be added/kept if its premise cannot be
+before a published run. No task may be added/kept if its premise cannot be
 verified; the mission's anti-gaming rules (Phase 15) apply to every entry.
+
+The **10-cell matrix** uses the curated subset in `cells10.json` (5 tasks) via
+Configs A/B. Remaining tasks stay listed here for future expansion.
 
 ## Repository mapping (`repository` → run-time path)
 

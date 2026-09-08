@@ -83,8 +83,11 @@ A minimal Skills capability was implemented:
 
 ## 5. Runs & evaluation (Phases 9, 10)
 
-- **Multi-run:** ≥ 3 runs per config × task; 5 in the seed configs
-  (`runsPerTask`). Single runs are never trusted.
+- **Runs:** the protocol calls for ≥3 runs per config × task before treating
+  numbers as statistically meaningful (`runsPerTask`). The shipped 10-cell
+  matrix is a scoped single-run accuracy snapshot (5 tasks × 2 configs,
+  `runsPerTask=1`) — scores are directional, not significance-tested; expand
+  `runsPerTask` before publication.
 - Same prompt, same evaluator across configs. Reports success rate, failures,
   avg/median time, tokens (input/output/total), estimated cost, tool calls,
   context usage, retries, test pass rate, regression rate.

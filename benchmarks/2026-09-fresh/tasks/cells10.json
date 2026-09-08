@@ -1,0 +1,67 @@
+[
+  {
+    "id": "BACKEND-EASY-01",
+    "domain": "backend",
+    "difficulty": "easy",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD (in-tree fixture)",
+    "description": "Add request-body validation to the task creation endpoint: reject an empty title with HTTP 400 before handler logic runs; valid input unchanged.",
+    "prompt": "When the task-creation endpoint receives a request with an empty or missing task title, it should be rejected with a 400 (and not create anything). Today that validation is missing or too late. Add the earliest reasonable validation so an empty title cannot reach business logic, and keep the happy path working. Then add a test that proves an empty title is rejected with 400 and a valid title still creates the task.",
+    "expected_files": ["src/routes/taskRoutes.ts", "src/services/taskService.ts"],
+    "expected_concepts": ["validation", "400", "task title", "reject"],
+    "gold_impact_files": ["src/routes/taskRoutes.ts"],
+    "max_seconds": 600
+  },
+  {
+    "id": "ARCH-EASY-01",
+    "domain": "architecture",
+    "difficulty": "easy",
+    "repository": "codeatlas",
+    "commit": "HEAD (in-tree monorepo)",
+    "description": "Explain how a consumer reads indexed context in this monorepo and which package owns persistence. Cite the files inspected.",
+    "prompt": "Describe how a consumer (for example a CLI command or an MCP server) reads indexed context from this repository. Which package is the single read interface that consumers are supposed to use, where is the persistent context actually stored and owned, and what is the dependency direction between them? Cite the specific files you inspected and quote the concrete seam (function/class) a consumer calls.",
+    "expected_files": ["packages/sdk/src/context/index.ts", "packages/storage/src/index.ts"],
+    "expected_concepts": ["SDK", "context", "storage", "read interface", "dependency"],
+    "gold_impact_files": [],
+    "max_seconds": 600
+  },
+  {
+    "id": "FRONTEND-MEDIUM-01",
+    "domain": "frontend",
+    "difficulty": "medium",
+    "repository": "codeatlas",
+    "commit": "HEAD (in-tree VS Code extension)",
+    "description": "In-tree UI-state task (VS Code status bar): the status indicator does not refresh after a re-index.",
+    "prompt": "In this VS Code extension, the status-bar indicator can show stale 'indexing' or 'not ready' state after an indexing run has actually completed. Find where the extension updates its status UI, makes sure it is updated after a run finishes, and that a failure still reflects a failure. Keep the change small and do not alter unrelated UI.",
+    "expected_files": ["apps/extension/src/status-bar.ts", "apps/extension/src/extension-core.ts"],
+    "expected_concepts": ["status bar", "update", "indexing", "complete", "refresh"],
+    "gold_impact_files": ["apps/extension/src/status-bar.ts", "apps/extension/src/extension-core.ts"],
+    "max_seconds": 720
+  },
+  {
+    "id": "TESTING-MEDIUM-01",
+    "domain": "testing",
+    "difficulty": "medium",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD (in-tree fixture)",
+    "description": "Identify untested behavior in the task-creation validation path and add tests that would catch a regression where an empty title is accepted.",
+    "prompt": "The task-creation endpoint is documented to reject an empty title, but there is little test coverage proving it. Add tests that lock in this contract: an empty or missing title must be rejected, and a valid title must create the task. The tests must actually fail if someone removed the validation, so assert on behavior an end-user can observe rather than on implementation details.",
+    "expected_files": ["src/routes/taskRoutes.ts", "src/services/taskService.ts"],
+    "expected_concepts": ["validation", "title", "reject", "400", "test"],
+    "gold_impact_files": [],
+    "max_seconds": 720
+  },
+  {
+    "id": "REFACTORING-MEDIUM-01",
+    "domain": "refactoring",
+    "difficulty": "medium",
+    "repository": "repos/01-small-app",
+    "commit": "HEAD (in-tree fixture)",
+    "description": "Reduce duplication in the error-handling path across route handlers by extracting a shared helper, preserving behavior exactly.",
+    "prompt": "The two resource route files repeat similar error-handling/response-wrap code instead of sharing it. Refactor so the common handling lives in one place and both routes use it. Do not change observable behavior on success or error paths, and confirm with the existing tests that behavior is preserved. Keep the change free of unrelated edits.",
+    "expected_files": ["src/routes/taskRoutes.ts", "src/routes/tagRoutes.ts", "src/middleware/errorHandler.ts"],
+    "expected_concepts": ["refactor", "duplication", "shared", "error handling", "behavior"],
+    "gold_impact_files": ["src/routes/taskRoutes.ts", "src/routes/tagRoutes.ts", "src/middleware/errorHandler.ts"],
+    "max_seconds": 720
+  }
+]

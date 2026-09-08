@@ -2,10 +2,10 @@
   "id": "fresh-2026-09-config-b-codeatlas",
   "name": "2026-09 Fresh — Config B: CodeAtlas Simple",
   "agent": "opencode",
-  "model": "<set-me: e.g. opencode/your-model-free>",
+  "model": "opencode/mimo-v2.5-free",
   "modes": ["codeatlas"],
   "taskTimeoutMs": 840000,
-  "runsPerTask": 5,
+  "runsPerTask": 1,
   "harness": {
     "label": "B — CodeAtlas Simple",
     "codeatlas": true,
