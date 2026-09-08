@@ -13,16 +13,6 @@ export function wrapAsync(handler: AsyncRouteHandler) {
   };
 }
 
-export function asyncHandler(handler: AsyncRouteHandler) {
-  return wrapAsync(async (req: Request, res: Response) => {
-    if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
-      return;
-    }
-    await handler(req, res);
-  });
-}
-
 export function checkValidation(req: Request, res: Response): boolean {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -30,4 +20,15 @@ export function checkValidation(req: Request, res: Response): boolean {
     return false;
   }
   return true;
+}
+
+export function handle(handler: AsyncRouteHandler) {
+  return wrapAsync(async (req: Request, res: Response) => {
+    if (!req.user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+    if (!checkValidation(req, res)) return;
+    await handler(req, res);
+  });
 }

@@ -1,0 +1,339 @@
+{
+  "taskId": "FRONTEND-MEDIUM-01",
+  "category": "bug-investigation",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 53550,
+    "output": 21567,
+    "reasoning": 0,
+    "total": 1887213,
+    "cacheWrite": 0,
+    "cacheRead": 1812096,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 341355,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "All 52 tests pass. Here's what was changed:\n\n### `apps/extension/src/commands.ts` — `runCli`\n\nAdded `statusBar?.render(client)` after `refreshAll()` in all three exit paths (success, failure result, thrown exception). The `finally` block remains as a safety net. This ensures the status bar is always re-rendered from the updated client state immediately after the run completes, rather than relying solely on `refreshAll()` (which may or may not render the status bar depending on the consumer).\n\n| Path | Before | After |\n|------|--------|-------|\n| Success | `lastBuildError = null` → `refreshAll()` | `lastBuildError = null` → `refreshAll()` → **`statusBar?.render(client)`** |\n| Failure | `lastBuildError = msg` → `refreshAll()` | `lastBuildError = msg` → `refreshAll()` → **`statusBar?.render(client)`** |\n| Exception | `lastBuildError = msg` → `refreshAll()` | `lastBuildError = msg` → `refreshAll()` → **`statusBar?.render(client)`** |\n\n### `apps/extension/tests/commands.test.ts`\n\n- Added `statusBar: FakeStatusBarItem` to `Harness` interface\n- `makeHarness` now creates a `StatusBarController` with a `FakeStatusBarItem` and passes it to the `CommandContext`, so the `indexing()` and `render()` calls are exercised\n- `records a build error when the run fails` test now also asserts the status bar shows `\"build failed\"` with the correct tooltip\n- New test: **`shows 'no index' after a successful build on an empty fixture`** — verifies the status bar transitions from `\"indexing…\"` to `\"no index\"` (not stuck) after a successful run on an empty workspace",
+  "toolCallCount": 46,
+  "toolCalls": [
+    {
+      "name": "todowrite",
+      "callId": "call_1e6a2d58c32a40c2846500d0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8d7a0efd14be481abf42585a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "codeatlas_search_files",
+      "callId": "call_754c1ea6ab754d0da44c475c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5a02b9c8470d403197886a3f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_6e964c248c814a488112cd1b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c7da42bbb8a547dea3614cfd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_22186a1a32764dddb660a995",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_52314cdae92b4c4d8bb052fe",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_873a71439f784a03b8914535",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_0109918291d8430d9a81ce7f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_fc046e73e1fd4b3c94fc1d4b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_1d2c6d1ae4064bc3a099ef25",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_9d65aaa5cfe54cff8f65e624",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_ee632f30ba51418a9a0a098e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_6b2e0b9d7abb409fbf62e6f2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ad89b02d1c2e42c3bc1f794d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_d52ddc1277bd4e76ad8fe79d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_afe60800d5e24f35a5d75261",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_369174aaebbf44efa9d67bcb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ce739f0bd9f7467fb27b6b96",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_688825fc3bf04ef184579e6f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_a19b573ad8d24f42ae1aa202",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_0079ea1cf510423ea0dc65b5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_d782c02297684be681d58ce6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_562e083a64c145d6b05929f6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_4033f3f839484239b253d19a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_18f2231120d247038a665ef5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_4fbca9b6ce784e7ead257315",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_427df54ecb7c4bf09cc40d4c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_4f43387e78ea46ba8343a181",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_bf99111f009242b59b00298d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_36eda0d65dfe4302a39804db",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_0dec2715fe144e7285d8291b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_6d59345a0b4b421fadd721c3",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_f520b5088be646fa93d46938",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8ffe11164e3a42a0b5fba1d8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_5928b0cab6e14b4c8ce5eba6",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_4433712550cb449d8b3ee801",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e1c1850a030641ab8fdaf4fd",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ba5f2317d9a34ddba82b4035",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_613a173c93294d4f8f556789",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_2f4fe630b3b148c8a8df8cb9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_11b9dfa37b9f477f9712a825",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_408441dca4254ff2b43a6957",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_1f5e11cf37b0458fa4009e58",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_e80957cb3ff84be2a0c26409",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "apps/extension/src/status-bar.ts"
+    ],
+    "filesExpected": [
+      "apps/extension/src/status-bar.ts",
+      "apps/extension/src/extension-core.ts"
+    ],
+    "fileRatio": 0.5,
+    "conceptsFound": [
+      "status bar",
+      "update",
+      "indexing",
+      "complete",
+      "refresh"
+    ],
+    "conceptsExpected": [
+      "status bar",
+      "update",
+      "indexing",
+      "complete",
+      "refresh"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [],
+    "hallucinatedFiles": [
+      "src/commands.ts",
+      "tests/commands.test.ts"
+    ],
+    "wrongFiles": [],
+    "goldImpactFiles": [
+      "apps/extension/src/status-bar.ts",
+      "apps/extension/src/extension-core.ts"
+    ]
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-08T05:00:50.423Z"
+}

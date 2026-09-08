@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { body, param } from 'express-validator';
 import { taskService } from '../services/taskService.js';
 import { authenticate, authorize, authorizeTaskOwnerOrAdmin } from '../middleware/auth.js';
-import { asyncHandler, checkValidation } from './routeHelpers.js';
+import { handle } from './routeHelpers.js';
 import { parsePagination } from '../utils/pagination.js';
 
 const router = Router();
@@ -27,7 +27,7 @@ const updateTaskValidation = [
   body('assignedTo').optional({ nullable: true }).isUUID().withMessage('Invalid user ID'),
 ];
 
-router.get('/', asyncHandler(async (req: Request, res: Response) => {
+router.get('/', handle(async (req: Request, res: Response) => {
   const params = parsePagination(req.query as { page?: string; limit?: string });
 
   const filters = {
@@ -42,56 +42,52 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   res.json(result);
 }));
 
-router.get('/stats', asyncHandler(async (req: Request, res: Response) => {
+router.get('/stats', handle(async (req: Request, res: Response) => {
   const stats = await taskService.getStats(req.user!.id);
   res.json(stats);
 }));
 
-router.get('/overdue', asyncHandler(async (req: Request, res: Response) => {
+router.get('/overdue', handle(async (req: Request, res: Response) => {
   const tasks = await taskService.findOverdueTasks(req.user!.id);
   res.json({ data: tasks });
 }));
 
-router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:id', handle(async (req: Request, res: Response) => {
   const task = await taskService.findById(req.params.id, req.user!.id);
   res.json(task);
 }));
 
-router.post('/', createTaskValidation, asyncHandler(async (req: Request, res: Response) => {
-  if (!checkValidation(req, res)) return;
-
+router.post('/', createTaskValidation, handle(async (req: Request, res: Response) => {
   const task = await taskService.create(req.body, req.user!.id);
   res.status(201).json(task);
 }));
 
-router.put('/:id', updateTaskValidation, authorizeTaskOwnerOrAdmin, asyncHandler(async (req: Request, res: Response) => {
-  if (!checkValidation(req, res)) return;
-
+router.put('/:id', updateTaskValidation, authorizeTaskOwnerOrAdmin, handle(async (req: Request, res: Response) => {
   const task = await taskService.update(req.params.id, req.body, req.user!.id);
   res.json(task);
 }));
 
-router.delete('/:id', authorize('admin'), asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:id', authorize('admin'), handle(async (req: Request, res: Response) => {
   await taskService.delete(req.params.id, req.user!.id);
   res.status(204).send();
 }));
 
-router.patch('/:id/complete', authorizeTaskOwnerOrAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.patch('/:id/complete', authorizeTaskOwnerOrAdmin, handle(async (req: Request, res: Response) => {
   const task = await taskService.markAsCompleted(req.params.id, req.user!.id);
   res.json(task);
 }));
 
-router.patch('/:id/start', authorizeTaskOwnerOrAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.patch('/:id/start', authorizeTaskOwnerOrAdmin, handle(async (req: Request, res: Response) => {
   const task = await taskService.markAsInProgress(req.params.id, req.user!.id);
   res.json(task);
 }));
 
-router.patch('/:id/cancel', authorizeTaskOwnerOrAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.patch('/:id/cancel', authorizeTaskOwnerOrAdmin, handle(async (req: Request, res: Response) => {
   const task = await taskService.cancel(req.params.id, req.user!.id);
   res.json(task);
 }));
 
-router.patch('/:id/assign', authorizeTaskOwnerOrAdmin, asyncHandler(async (req: Request, res: Response) => {
+router.patch('/:id/assign', authorizeTaskOwnerOrAdmin, handle(async (req: Request, res: Response) => {
   const { assignedTo } = req.body;
   const task = await taskService.assignTo(req.params.id, assignedTo, req.user!.id);
   res.json(task);

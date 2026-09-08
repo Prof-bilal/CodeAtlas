@@ -3,7 +3,12 @@ import { ContextClient } from "../src/client";
 import { type AtlasRunner, type CommandContext, registerCommands } from "../src/commands";
 import { StatusBarController } from "../src/status-bar";
 import type { VscodeApi } from "../src/vscode-host";
-import { type FakeHostRecords, createFakeHost, fakeStatusBarItem } from "./fake-host";
+import {
+  type FakeHostRecords,
+  type FakeStatusBarItem,
+  createFakeHost,
+  fakeStatusBarItem,
+} from "./fake-host";
 import { type Fixture, createEmptyFixture, createFixture } from "./fixture";
 
 const ALL_COMMANDS = [
@@ -24,6 +29,7 @@ interface Harness {
   host: VscodeApi;
   records: FakeHostRecords;
   actions: string[];
+  statusBar: FakeStatusBarItem;
   refreshCount(): number;
 }
 
@@ -51,16 +57,19 @@ function makeHarness(root: string): Harness {
       return { ok: true, summary: `done ${action}` };
     },
   };
+  const statusBar = fakeStatusBarItem();
+  const controller = new StatusBarController(statusBar);
   const ctx: CommandContext = {
     client,
     host,
     runner,
+    statusBar: controller,
     refreshAll: () => {
       refreshes += 1;
     },
   };
   registerCommands(ctx);
-  return { client, host, records, actions, refreshCount: () => refreshes };
+  return { client, host, records, actions, statusBar, refreshCount: () => refreshes };
 }
 
 async function invoke(h: Harness, name: string, ...args: unknown[]): Promise<unknown> {
@@ -116,10 +125,13 @@ describe("registerCommands", () => {
     const failingRunner: AtlasRunner = {
       run: async () => ({ ok: false, summary: "compilation failed" }),
     };
+    const item = fakeStatusBarItem();
+    const statusBar = new StatusBarController(item);
     const ctx: CommandContext = {
       client,
       host,
       runner: failingRunner,
+      statusBar,
       refreshAll: () => {},
     };
     registerCommands(ctx);
@@ -129,6 +141,8 @@ describe("registerCommands", () => {
     await handler?.();
 
     expect(client.lastBuildError).toBe("compilation failed");
+    expect(item.text).toContain("build failed");
+    expect(item.tooltip).toBe("compilation failed");
     const errorMessage = records.messages.some((m) => m.startsWith("error:"));
     expect(errorMessage).toBe(true);
     client.close();
@@ -198,6 +212,18 @@ describe("runCli status bar lifecycle", () => {
 
     expect(item.text).not.toContain("indexing");
     client.close();
+  });
+
+  it("shows 'no index' after a successful build on an empty fixture", async () => {
+    const fixture = createEmptyFixture();
+    fixtures.push(fixture);
+    const h = makeHarness(fixture.root);
+    harnesses.push(h);
+
+    await invoke(h, "codeatlas.runBuild");
+
+    expect(h.statusBar.text).not.toContain("indexing");
+    expect(h.statusBar.text).toContain("no index");
   });
 
   it("shows 'build failed' after a failing run completes", async () => {

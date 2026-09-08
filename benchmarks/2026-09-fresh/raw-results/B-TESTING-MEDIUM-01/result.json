@@ -1,0 +1,188 @@
+{
+  "taskId": "TESTING-MEDIUM-01",
+  "category": "testing",
+  "mode": "codeatlas",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 41087,
+    "output": 7256,
+    "reasoning": 0,
+    "total": 518231,
+    "cacheWrite": 0,
+    "cacheRead": 469888,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 127449,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Same 2 pre-existing failures (unrelated). My 14 new tests all pass.\n\n**Summary:** Added `tests/taskCreationTitleContract.test.ts` with 14 behavioral tests split into two groups:\n\n**Rejection (8 tests)** — empty string, missing field, whitespace-only, empty body all get HTTP 400, a title-specific error message, no task id, and no task visible in the list afterward.\n\n**Acceptance (6 tests)** — valid title returns HTTP 201 with the task id, the exact title text, single-char titles, whitespace trimming, and the task appearing in the list.\n\nEvery assertion is on observable HTTP behavior (status code, response body fields, list contents) — none check mock calls or internal service methods. I verified the tests fail (7/14 fail) when validation is stripped from both the route and service layers.",
+  "toolCallCount": 21,
+  "toolCalls": [
+    {
+      "name": "glob",
+      "callId": "call_522369ff52a44648802054e1",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "grep",
+      "callId": "call_a472827a8e5c4997a81045f5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "codeatlas_find_relevant_context",
+      "callId": "call_0b0448c09797444e83e1f1ca",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_d2a9b449932044deaa2a2e1b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_8eac1aafdd4d47bfb4ce0c56",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_dca9f664bbbd40ed9d170cf4",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_5fbd9cea62d94056b4c3258f",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f93f534dc8364cb8ba6ee262",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f42331054cfb48baac34679e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_620e81b8bae8428d8eed8989",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_ca226ccf937e4b8187f3b3a1",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c994f0d811f84b4986920131",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ed72f4d4e716414da4b78abb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "write",
+      "callId": "call_97e1a6576adf4a658fda6092",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_ac236a57b3414a2390a7bf72",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_54975da7a956415c866b6e30",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_3e83cee140ea41019e05c828",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_b1ab0c0a47a4485ebfa1e929",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_8721fd64d0f24e75b077ca74",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_89fec5ae1e984a26aa67c690",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_d9239afe25094b8a971cf8a2",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "filesExpected": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "validation",
+      "title",
+      "reject",
+      "400",
+      "test"
+    ],
+    "conceptsExpected": [
+      "validation",
+      "title",
+      "reject",
+      "400",
+      "test"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [
+      "tests/taskCreationTitleContract.test.ts"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "tests/taskCreationTitleContract.test.ts"
+    ],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-08T05:03:18.462Z"
+}

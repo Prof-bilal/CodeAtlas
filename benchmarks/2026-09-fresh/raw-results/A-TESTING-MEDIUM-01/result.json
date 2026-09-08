@@ -1,0 +1,212 @@
+{
+  "taskId": "TESTING-MEDIUM-01",
+  "category": "testing",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 33349,
+    "output": 7446,
+    "reasoning": 0,
+    "total": 727771,
+    "cacheWrite": 0,
+    "cacheRead": 686976,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 586422,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Done. Created `tests/taskCreation.contract.test.ts` with 7 tests across two groups:\n\n**Rejection contract** (4 tests) — empty string, missing key, whitespace-only, empty body → HTTP 400 + no task `id` in response.\n\n**Acceptance contract** (3 tests) — valid title → HTTP 201 + task with matching `id` and `title`; preserves exact text; accepts minimal single-char title.\n\nThe tests assert only on **end-user observable behavior** (HTTP status, response body shape) — no `errors` array format inspection, no repository mock assertions. When I temporarily removed both the route middleware and service-level guard, all 4 rejection tests failed with `expected 201 to be 400`, confirming they'd catch removed validation.",
+  "toolCallCount": 25,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_0362362de7be4bf8a92678a2",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_f5183f87a8cb4b269d6ee4e7",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_e849ea7afc1b459c937ff224",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_64f73e26c6084e0fa9bad3ad",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_1f435ce1fe5347db8fa55658",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ddbff7f4bbef4442b22ea207",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_c3cb4d806ae54efda5fd38b0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_50c0a6d198ae447d8806020c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "grep",
+      "callId": "call_7e82eaed36c743bba3b3b248",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_06f4bba124164d16ab8f0e98",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_f64fc41c0c45432980a91e1a",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_7fbaa4d028804bf7ab437f13",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "write",
+      "callId": "call_4d4d57db3fed458481c809de",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_6851e3ccc52144ca85987428",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_022ce674e7b94b5794549177",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_022c67431393457088b0e0cc",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_d754d4c2e82143608364a779",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_1d66c8fbe3034912b5ea2849",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_96555afab9734b299daea5b9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_0a7ff4d704924d968a3edaaf",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_8b662e6389ed45108a2ec086",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_29b35c6d433d4cf081e160d5",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_de77982688a34aaeb748ca8c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_bf60650ddcca4764b0667cc8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_fbd4c9bdeb304aeda65bf608",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 2,
+    "status": "correct",
+    "filesFound": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "filesExpected": [
+      "src/routes/taskRoutes.ts",
+      "src/services/taskService.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "validation",
+      "title",
+      "reject",
+      "400",
+      "test"
+    ],
+    "conceptsExpected": [
+      "validation",
+      "title",
+      "reject",
+      "400",
+      "test"
+    ],
+    "conceptRatio": 1,
+    "citedFiles": [
+      "tests/taskCreation.contract.test.ts"
+    ],
+    "hallucinatedFiles": [],
+    "wrongFiles": [
+      "tests/taskCreation.contract.test.ts"
+    ],
+    "goldImpactFiles": []
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-08T03:01:56.516Z"
+}

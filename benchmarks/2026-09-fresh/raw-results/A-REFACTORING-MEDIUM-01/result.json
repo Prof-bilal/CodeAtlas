@@ -1,0 +1,233 @@
+{
+  "taskId": "REFACTORING-MEDIUM-01",
+  "category": "code-modification",
+  "mode": "baseline",
+  "agent": "opencode",
+  "model": "opencode/mimo-v2.5-free",
+  "tokens": {
+    "input": 26580,
+    "output": 6893,
+    "reasoning": 0,
+    "total": 632769,
+    "cacheWrite": 0,
+    "cacheRead": 599296,
+    "source": "actual"
+  },
+  "cost": 0,
+  "durationMs": 258407,
+  "timedOut": false,
+  "exitCode": 0,
+  "finalText": "Done. Here's a summary of the changes:\n\n**`routeHelpers.ts`** — added a `wrap` function that combines `wrapAsync` + `checkValidation` into one call:\n```ts\nexport function wrap(handler: AsyncRouteHandler) {\n  return wrapAsync(async (req, res) => {\n    if (!checkValidation(req, res)) return;\n    await handler(req, res);\n  });\n}\n```\n\n**`taskRoutes.ts`** — POST and PUT handlers now use `wrap(...)` instead of `asyncHandler(...)` + the manual `if (!checkValidation(req, res)) return;` line. GET/DELETE/PATCH routes untouched.\n\n**`tagRoutes.ts`** — same treatment: POST, PUT, and `POST /tasks/:taskId` use `wrap(...)`. GET/DELETE routes untouched.\n\nObservable behavior is identical — same validation check, same response shape, same error paths. All 256 passing tests continue to pass (the 2 failures in `date.test.ts` and `modules.test.ts` are pre-existing).",
+  "toolCallCount": 28,
+  "toolCalls": [
+    {
+      "name": "task",
+      "callId": "call_7f81be8528a0406dae72605b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_990c5f49a6a94d828b13683b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_ad7edf26730342d991006306",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_1e44a18c73074171a95b27f1",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "glob",
+      "callId": "call_d6070f9daf29486e90934f2d",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_834bf80007d74ff892054c56",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_7dd1039389674a4590d19e86",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_86a77a6f957d4e48867dc4e8",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_0cde6658ddea41669aee4596",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "grep",
+      "callId": "call_93e52b9a77a644aa99e43852",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_fad3eabd986641818698a73c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_1f0d1b2f74534ac694e9000c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_d51f2aa0a63e4ec095f65a68",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_387a16d477014c6ca775fcf9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_b02fac50c6894a5097e036bb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_dd027d3fc51b45f7be13e3b9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_92c55618521d4ece9b86ea4c",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_4988d996ae6341478e72a86e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_e9837e1719314d00a626b637",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_404da2d635894e53b4c36c6b",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "edit",
+      "callId": "call_8e0bf8b9d03547c7a3809dbb",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_e642da25b70b43328ef87b39",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_158486a9030b44debd020d20",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_b11213c31d9240b8a9f6cd59",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_cdc5480e88684901bccbbda9",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "read",
+      "callId": "call_3a9b7c293b46444592ff58f0",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "bash",
+      "callId": "call_9710d497065e4d099356332e",
+      "status": "success",
+      "isError": false
+    },
+    {
+      "name": "todowrite",
+      "callId": "call_373f7c8eb9294e1396991ff1",
+      "status": "success",
+      "isError": false
+    }
+  ],
+  "evaluation": {
+    "score": 1,
+    "status": "partially_correct",
+    "filesFound": [
+      "src/routes/taskRoutes.ts",
+      "src/routes/tagRoutes.ts",
+      "src/middleware/errorHandler.ts"
+    ],
+    "filesExpected": [
+      "src/routes/taskRoutes.ts",
+      "src/routes/tagRoutes.ts",
+      "src/middleware/errorHandler.ts"
+    ],
+    "fileRatio": 1,
+    "conceptsFound": [
+      "error handling",
+      "behavior"
+    ],
+    "conceptsExpected": [
+      "refactor",
+      "duplication",
+      "shared",
+      "error handling",
+      "behavior"
+    ],
+    "conceptRatio": 0.4,
+    "citedFiles": [],
+    "wrongFiles": [],
+    "goldImpactFiles": [
+      "src/routes/taskRoutes.ts",
+      "src/routes/tagRoutes.ts",
+      "src/middleware/errorHandler.ts"
+    ]
+  },
+  "failureClassification": {
+    "category": "insufficient_signal",
+    "reason": "score 1, fileRatio 1, conceptRatio 0.4; no dominant failure pattern.",
+    "proposedFix": "Collect more data or adjust classification thresholds."
+  },
+  "stderr": "",
+  "recordedAt": "2026-09-08T03:06:30.576Z"
+}

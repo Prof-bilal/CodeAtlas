@@ -196,11 +196,13 @@ export async function runCli(ctx: CommandContext, action: AtlasCliAction): Promi
     if (!result.ok) {
       client.lastBuildError = result.summary;
       refreshAll();
+      statusBar?.render(client);
       void host.window.showErrorMessage(`atlas ${action} failed — ${result.summary}`);
       return;
     }
     client.lastBuildError = null;
     refreshAll();
+    statusBar?.render(client);
     void host.window.showInformationMessage(
       result.summary === "" ? `atlas ${action} succeeded` : result.summary,
     );
@@ -208,6 +210,7 @@ export async function runCli(ctx: CommandContext, action: AtlasCliAction): Promi
     const message = error instanceof Error ? error.message : String(error);
     client.lastBuildError = message;
     refreshAll();
+    statusBar?.render(client);
     void host.window.showErrorMessage(`atlas ${action} failed — ${message}`);
   } finally {
     statusBar?.render(client);
