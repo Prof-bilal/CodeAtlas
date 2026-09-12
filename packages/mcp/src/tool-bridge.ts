@@ -5,13 +5,13 @@ import {
   type ToolDefinition,
   denyFilter,
   fail,
-  ok,
 } from "@atlas/sdk";
 import type { ZodType } from "zod";
 import { z } from "zod";
+import { executeHandler } from "./handler-utils";
 import { HANDLERS, type HandlerContext } from "./handlers";
 import { type Logger, createLogger } from "./log";
-import { TOOL_ALIASES, TOOLS, type ToolName, resolveToolName } from "./tools";
+import { TOOLS, TOOL_ALIASES, type ToolName, resolveToolName } from "./tools";
 import { zodToJsonSchema } from "./zod-to-json-schema";
 
 /** Convert MCP tool definitions to ToolDefinition[] (JSON Schema parameters). */
@@ -67,13 +67,7 @@ export function createContextToolSource(handlerContext: HandlerContext): Context
         return fail(new Error(`No handler for tool: "${name}"`));
       }
 
-      try {
-        const result = await handler(handlerContext, args);
-        return ok(result);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return fail(new Error(message));
-      }
+      return executeHandler(handlerContext, handler, args);
     },
 
     // Security (beta audit Fix 6): expose the secret deny-filter so consumers

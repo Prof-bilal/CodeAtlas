@@ -57,6 +57,7 @@ README.md
 | `docs/CODE_QUALITY.md` | Coding standards. |
 | `docs/CHANGE_POLICY.md` | How changes happen. |
 | `docs/FEATURE_STATUS.md` | Status tags across features. |
+| `docs/test-results/` | Real-world test results: 10 scenarios across 2 repos (warden-landing + trpc), manual vs CodeAtlas comparison. |
 | `docs/AGENT_COMPATIBILITY.md` | How external agents consume these instructions. |
 | `docs/DEVELOPMENT.md` | Developer setup & commands (prerequisites, install, build/test, debugging, env variables). |
 | `docs/DEVELOPMENT_WORKFLOW.md` | The standard agent workflow + reporting format. |

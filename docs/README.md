@@ -31,6 +31,7 @@ Quick links:
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — practical contributor guide
 - [SECURITY.md](./SECURITY.md), [PRIVACY.md](./PRIVACY.md) — non-negotiable rules
 - [TESTING.md](./TESTING.md), [CODE_QUALITY.md](./CODE_QUALITY.md) — quality gates
+- [test-results/](./test-results/) — real-world test results & comparisons
 - [FEATURE_STATUS.md](./FEATURE_STATUS.md) — status tags across features
 - [AGENT_CATALOG.md](./AGENT_CATALOG.md) — the implemented analysis agents
 - [decisions/](./decisions/README.md) — Architecture Decision Records

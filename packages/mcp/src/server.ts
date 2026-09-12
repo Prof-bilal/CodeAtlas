@@ -6,6 +6,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { type ToolCallBudget, createToolCallBudget } from "./budget";
 import { CodeAtlasContext, type CodeAtlasContextOptions } from "./context";
 import type { FreshnessReport } from "./freshness";
+import { executeHandler } from "./handler-utils";
 import { HANDLERS, type HandlerContext } from "./handlers";
 import { type LogLevel, type Logger, createLogger } from "./log";
 import { TOOLS, TOOL_ALIASES, type ToolDefinition } from "./tools";
@@ -169,9 +170,9 @@ async function runTool(
   };
   const hctx: HandlerContext = { ctx: context, logger, timings };
   const handler = HANDLERS[tool.name];
-  try {
-    const result = await handler(hctx, args as ToolArgs);
-    const enriched = enrichResult(result, freshness, timings);
+  const result = await executeHandler(hctx, handler, args as ToolArgs);
+  if (result.ok) {
+    const enriched = enrichResult(result.value, freshness, timings);
     const bytes = JSON.stringify(enriched).length;
     budget.record(tool.name, bytes);
     context.recordMcpRequest(Math.round(performance.now() - startedAt));
@@ -179,12 +180,11 @@ async function runTool(
       content: [{ type: "text", text: JSON.stringify(enriched, null, 2) }],
       structuredContent: enriched as Record<string, unknown>,
     };
-  } catch (error) {
-    // The call still happened; account it for attribution.
-    budget.record(tool.name, 0);
-    context.recordMcpRequest(Math.round(performance.now() - startedAt));
-    return toErrorResult(tool.name, error, logger);
   }
+  // The call still happened; account it for attribution.
+  budget.record(tool.name, 0);
+  context.recordMcpRequest(Math.round(performance.now() - startedAt));
+  return toErrorResult(tool.name, result.error, logger);
 }
 
 /** Attach freshness + timings to object results (leaves primitives alone). */

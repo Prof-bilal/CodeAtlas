@@ -3,10 +3,10 @@
   "mcp": {
     "codeatlas": {
       "type": "local",
-      "command": ["/home/abdullah/CodeAtlas/node_modules/.bin/codeatlas-mcp"],
+      "command": ["node", "/home/abdullah/Projects/CodeAtlas/packages/mcp/dist/bin.js"],
       "enabled": true,
       "environment": {
-        "ATLAS_ROOT": "/home/abdullah/CodeAtlas"
+        "ATLAS_ROOT": "/home/abdullah/Projects/CodeAtlas"
       }
     },
     "typeui": {
