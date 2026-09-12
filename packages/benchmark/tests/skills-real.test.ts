@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { discoverSkills, loadSkill, validateSkill } from "../src/skills";
@@ -9,7 +10,9 @@ const SKILLS_DIR = fileURLToPath(
   new URL("../../../benchmarks/2026-09-fresh/skills", import.meta.url),
 );
 
-describe("benchmark skills — real fresh-benchmark skill set", () => {
+const hasFixtures = existsSync(SKILLS_DIR);
+
+describe.skipIf(!hasFixtures)("benchmark skills — real fresh-benchmark skill set", () => {
   it("discovers the seed skills", () => {
     const found = discoverSkills(SKILLS_DIR);
     expect(found.map((s) => s.id)).toEqual(
