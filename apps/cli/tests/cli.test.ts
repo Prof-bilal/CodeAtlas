@@ -1628,22 +1628,27 @@ describe("atlas CLI", () => {
 
   describe("atlas doctor", () => {
     it("reports healthy when the index and services are in good shape", async () => {
-      await withProject(async () => {
-        const program = createCli({ doctor: fakeDoctorServices() });
-        const log = vi.spyOn(console, "log").mockImplementation(() => {});
-        let output = "";
-        try {
-          await program.parseAsync(["node", "atlas", "doctor"]);
-          output = log.mock.calls.map((call) => call.join(" ")).join("\n");
-        } finally {
-          log.mockRestore();
-        }
-        expect(output).toContain("[PASS] Node runtime");
-        expect(output).toContain("[PASS] Context index");
-        expect(output).toContain("[PASS] AI agents");
-        expect(output).toContain("[PASS] Ollama");
-        expect(process.exitCode).toBeUndefined();
-      });
+      const previousExitCode = process.exitCode;
+      try {
+        await withProject(async () => {
+          const program = createCli({ doctor: fakeDoctorServices() });
+          const log = vi.spyOn(console, "log").mockImplementation(() => {});
+          let output = "";
+          try {
+            await program.parseAsync(["node", "atlas", "doctor"]);
+            output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+          } finally {
+            log.mockRestore();
+          }
+          expect(output).toContain("[PASS] Node runtime");
+          expect(output).toContain("[PASS] Context index");
+          expect(output).toContain("[PASS] AI agents");
+          expect(output).toContain("[PASS] Ollama");
+          expect(process.exitCode).toBe(previousExitCode);
+        });
+      } finally {
+        process.exitCode = previousExitCode;
+      }
     });
 
     it("exits 1 when a check fails and prints JSON on request", async () => {

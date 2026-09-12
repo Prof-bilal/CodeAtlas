@@ -46,12 +46,17 @@ export function atlasConfig(overrides: Partial<Options> = {}): Options {
     splitting: false,
     outDir: "dist",
     external: ["commander"],
-    alias: workspaceAliases,
     // Workspace packages are source-linked by the aliases above. Explicitly
     // opt them out of tsup's dependency externalization so standalone apps
     // (especially the CLI) do not require unpublished workspace packages at
     // runtime.
     noExternal: Object.keys(workspaceAliases),
+    esbuildOptions: (options) => {
+      options.alias = {
+        ...(options.alias || {}),
+        ...workspaceAliases,
+      };
+    },
     ...overrides,
   };
 }

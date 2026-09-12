@@ -107,6 +107,9 @@ export default tseslint.config(
       "tests/fixtures/**",
       "benchmark-repos/**",
       "benchmarks/**",
+      "old-school/**",
+      "scripts/**",
+      "docs/test-results/**",
       // Separate npm project with its own oxlint config — not part of the
       // monorepo's ESLint scope.
       "CodeAtlas-ui/**",
