@@ -1363,19 +1363,22 @@ describe("atlas CLI", () => {
     const prev = process.env["LIMIT"];
     try {
       process.env["LIMIT"] = "1";
-      const program = createCli();
-      const log = vi.spyOn(console, "log").mockImplementation(() => {});
-      let output = "";
-      try {
-        await program.parseAsync(["node", "atlas", "search", "double"]);
-        output = log.mock.calls.map((call) => call.join(" ")).join("\n");
-      } finally {
-        log.mockRestore();
-      }
-      expect(output).toContain('1 result for "double"');
+      await withProject(async () => {
+        const program = createCli();
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        let output = "";
+        try {
+          await program.parseAsync(["node", "atlas", "search", "double"]);
+          output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        } finally {
+          log.mockRestore();
+        }
+        expect(output).toContain('1 result for "double"');
+      });
     } finally {
       if (prev === undefined) {
-        process.env["LIMIT"] = undefined;
+        // biome-ignore lint/performance/noDelete: process.env.X = undefined converts to string "undefined" instead of removing the key
+        delete process.env["LIMIT"];
       } else {
         process.env["LIMIT"] = prev;
       }
@@ -1386,23 +1389,22 @@ describe("atlas CLI", () => {
     const prev = process.env["LIMIT"];
     try {
       process.env["LIMIT"] = "2";
-      const program = createCli();
-      const log = vi.spyOn(console, "log").mockImplementation(() => {});
-      let output = "";
-      try {
-        await program.parseAsync(["node", "atlas", "search", "double", "--limit", "8"]);
-        output = log.mock.calls.map((call) => call.join(" ")).join("\n");
-      } finally {
-        log.mockRestore();
-      }
-      // Should show 8 results because --limit overrides env var
-      const match = output.match(/(\d+) result/);
-      if (match) {
-        expect(match[1]).toBe("8");
-      }
+      await withProject(async () => {
+        const program = createCli();
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        let output = "";
+        try {
+          await program.parseAsync(["node", "atlas", "search", "double", "--limit", "1"]);
+          output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+        } finally {
+          log.mockRestore();
+        }
+        expect(output).toContain('1 result for "double"');
+      });
     } finally {
       if (prev === undefined) {
-        process.env["LIMIT"] = undefined;
+        // biome-ignore lint/performance/noDelete: process.env.X = undefined converts to string "undefined" instead of removing the key
+        delete process.env["LIMIT"];
       } else {
         process.env["LIMIT"] = prev;
       }
@@ -1522,29 +1524,34 @@ describe("atlas CLI", () => {
     });
 
     it("renders the AI section through the CLI with an injected summary port", async () => {
-      await withProject(async () => {
-        const program = createCli({
-          summary: {
-            summarizeFile: async (file) => ok(aiSummary(file.path)),
-            summarizeFolder: async () => fail(new Error("unused")),
-            summarizeModule: async () => fail(new Error("unused")),
-            summarizeProject: async () => fail(new Error("unused")),
-          },
+      const previousExitCode = process.exitCode;
+      try {
+        await withProject(async () => {
+          const program = createCli({
+            summary: {
+              summarizeFile: async (file) => ok(aiSummary(file.path)),
+              summarizeFolder: async () => fail(new Error("unused")),
+              summarizeModule: async () => fail(new Error("unused")),
+              summarizeProject: async () => fail(new Error("unused")),
+            },
+          });
+          const log = vi.spyOn(console, "log").mockImplementation(() => {});
+          const error = vi.spyOn(console, "error").mockImplementation(() => {});
+          let output = "";
+          try {
+            await program.parseAsync(["node", "atlas", "search", "double", "--ai"]);
+            output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+          } finally {
+            log.mockRestore();
+            error.mockRestore();
+          }
+          expect(output).toContain("AI summaries (top file hits):");
+          expect(output).toContain("/src/math.ts (ollama/llama3.2):");
+          expect(error).not.toHaveBeenCalled();
         });
-        const log = vi.spyOn(console, "log").mockImplementation(() => {});
-        const error = vi.spyOn(console, "error").mockImplementation(() => {});
-        let output = "";
-        try {
-          await program.parseAsync(["node", "atlas", "search", "double", "--ai"]);
-          output = log.mock.calls.map((call) => call.join(" ")).join("\n");
-        } finally {
-          log.mockRestore();
-          error.mockRestore();
-        }
-        expect(output).toContain("AI summaries (top file hits):");
-        expect(output).toContain("/src/math.ts (ollama/llama3.2):");
-        expect(error).not.toHaveBeenCalled();
-      });
+      } finally {
+        process.exitCode = previousExitCode;
+      }
     });
   });
 
