@@ -168,6 +168,26 @@ describe("ScannerService.scanProject", () => {
     }
   });
 
+  it("filters files by supportedLanguages", async () => {
+    const project = createTestProject({
+      "src/app.ts": "x",
+      "src/main.go": "x",
+      "src/style.py": "x",
+      "README.md": "# hi",
+    });
+    try {
+      const service = new ScannerService({ supportedLanguages: ["typescript"] });
+      const result = await service.scanProject(project.root as FilePath);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      // Only the TypeScript file remains — Go, Python, and Markdown have no parser.
+      expect(result.value.totalFiles).toBe(1);
+      expect(result.value.files[0]?.name).toBe("app.ts");
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it("returns a failure for a nonexistent path", async () => {
     const result = await scanProject("/definitely/not/here" as FilePath);
     expect(result.ok).toBe(false);

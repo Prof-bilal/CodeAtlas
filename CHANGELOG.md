@@ -33,6 +33,28 @@ npm versions.
 - `docs/MCP_MIGRATION.md` updated to reflect Phase 6 release cut.
 - `benchmarks/retrieval-tasks/BASELINE.md` updated with capture instructions.
 
+## [0.4.0] - 2026-09-12
+
+### Added
+
+- **Dynamic language filtering** — the indexer now uses the `ParserRegistry`
+  to determine which languages to index, instead of hardcoding TypeScript and
+  JavaScript. When a new `LanguageParser` is registered, its language is
+  automatically indexed without changing the indexer.
+- **Scanner `supportedLanguages` option** — `ScannerService` accepts an
+  optional `supportedLanguages` filter. When provided, files with unsupported
+  languages are skipped during the directory walk, saving I/O and memory.
+- **CLI update notification** — `atlas` now checks for a newer version on
+  npm after each command. When an update is available, a non-blocking notice
+  is printed. Checks are cached for 24 hours in `~/.codeatlas/.update-check.json`.
+
+### Changed
+
+- Indexer filter is now dynamic (`parser.supportedLanguages()`) instead of
+  hardcoded `typescript || javascript`.
+- `.gitignore` updated to exclude benchmarks, `old-school/`, `CodeAtlas-ui/`,
+  and `docs/test-results/` from version control.
+
 ## [0.4.0-beta.0] - 2026-08-23
 
 First beta of the 0.4.0 line. Includes everything below plus the never-published

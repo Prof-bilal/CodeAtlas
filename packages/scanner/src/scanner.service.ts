@@ -38,6 +38,13 @@ export interface ScannerOptions {
    * `true` by default. When disabled, only `ignoredDirectories` applies.
    */
   readonly respectGitignore?: boolean;
+  /**
+   * When provided, only files whose detected language is in this set are
+   * included in the scan results. Files with unrecognized or excluded
+   * languages are dropped early, saving I/O and memory.
+   * `undefined` means all detected languages are included.
+   */
+  readonly supportedLanguages?: readonly string[];
 }
 
 /** Result of walking one directory. */
@@ -85,11 +92,14 @@ export class ScannerService implements ScannerPort {
   private readonly ignored: readonly string[] = DEFAULT_IGNORED_DIRECTORIES;
   private readonly maxDepth: number | undefined;
   private readonly respectGitignore: boolean;
+  private readonly supportedLanguages: Set<string> | undefined;
 
   public constructor(options: ScannerOptions = {}) {
     this.ignored = options.ignoredDirectories ?? DEFAULT_IGNORED_DIRECTORIES;
     this.maxDepth = options.maxDepth;
     this.respectGitignore = options.respectGitignore ?? true;
+    this.supportedLanguages =
+      options.supportedLanguages === undefined ? undefined : new Set(options.supportedLanguages);
   }
 
   /**
@@ -215,12 +225,21 @@ export class ScannerService implements ScannerPort {
         continue;
       }
 
+      const fileLanguage = detectLanguageByName(entry.name);
+      if (
+        this.supportedLanguages !== undefined &&
+        fileLanguage !== null &&
+        !this.supportedLanguages.has(fileLanguage)
+      ) {
+        continue;
+      }
+
       files.push({
         path: fullPath as FilePath,
         name: entry.name,
         extension: extensionOf(entry.name),
         sizeBytes: await this.fileSize(fullPath),
-        language: detectLanguageByName(entry.name),
+        language: fileLanguage,
       });
       children.push({
         name: entry.name,

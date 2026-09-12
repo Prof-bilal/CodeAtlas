@@ -101,7 +101,6 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
   const startedAt = performance.now();
   const repositoryPath = resolve(request.repositoryPath);
   const dbPath = resolve(request.dbPath ?? join(repositoryPath, ".codeatlas", "context.db"));
-  const scanner = new ScannerService();
   const hasher = new HashService();
   const parser = new ParserService();
   const graph = new GraphService();
@@ -110,6 +109,10 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
   try {
     await mkdir(dirname(dbPath), { recursive: true });
     store = new ContextStore({ filePath: dbPath });
+    const supportedLanguages = parser.supportedLanguages();
+    const scanner = new ScannerService({
+      ...(supportedLanguages.length > 0 ? { supportedLanguages } : {}),
+    });
     const scan = await scanner.scanProject(repositoryPath as FilePath);
     if (!scan.ok) return fail(scan.error);
     const manifest = await generateManifest(scan.value, { rootPath: repositoryPath });
@@ -133,12 +136,12 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       filesToReparse.add(path);
     }
     const deletedSet = new Set<string>(diff.deleted);
-    // Parseable languages: TypeScript plus the JS bridge (`allowJs`). JS files
-    // were previously scanned but silently content-only; the bridge parses them
-    // as TS grammar, and the overview's parsed-vs-content-only split keeps the
-    // distinction visible (Phase 5).
+    // Only index files whose language has a registered parser. The parser
+    // registry is the source of truth — when a new LanguageParser is added,
+    // its language is automatically indexed without changing this filter.
+    const parseableLanguages = new Set(parser.supportedLanguages());
     const scannedParseableFiles = scan.value.files.filter(
-      (scanned) => scanned.language === "typescript" || scanned.language === "javascript",
+      (scanned) => scanned.language !== null && parseableLanguages.has(scanned.language),
     );
 
     // Incremental no-op fast path: nothing changed on disk, so there is
