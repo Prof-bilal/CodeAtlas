@@ -372,11 +372,10 @@ async function runExport(
     async (integration) => {
       try {
         const root = options.repo ?? resolveProjectRoot();
+        const maxTokensTotal = resolveMaxTokensTotal(options.maxTokensTotal);
         const slice = await integration.buildSlice({
           task,
-          ...(resolveMaxTokensTotal(options.maxTokensTotal) === undefined
-            ? {}
-            : { budget: { maxTokensTotal: resolveMaxTokensTotal(options.maxTokensTotal) } }),
+          ...(maxTokensTotal === undefined ? {} : { budget: { maxTokensTotal } }),
           ...(options.contextMode === undefined ? {} : { contextMode: options.contextMode }),
         });
 
@@ -636,7 +635,7 @@ function parsePositiveInteger(value: string): number {
 
 function resolveMaxTokensTotal(optionValue: number | undefined): number | undefined {
   if (optionValue !== undefined) return optionValue;
-  const envValue = process.env.MAX_TOKENS_TOTAL;
+  const envValue = process.env["MAX_TOKENS_TOTAL"];
   if (envValue === undefined || envValue === "") return undefined;
   const parsed = Number.parseInt(envValue, 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;

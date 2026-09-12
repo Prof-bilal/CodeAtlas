@@ -208,7 +208,7 @@ function openService(): BenchmarkService {
   return new BenchmarkService({
     root: benchmarkRoot(),
     runners,
-    retrievalEvaluator: (suite, tasks, repositoryPath) => {
+    retrievalEvaluator: (_suite, tasks, repositoryPath) => {
       const sdk = createContextSDK({ repositoryPath });
       try {
         return evaluateRetrieval(sdk, tasks);

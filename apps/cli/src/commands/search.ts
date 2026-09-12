@@ -192,7 +192,7 @@ async function runSearch(
       fuzzy: options.fuzzy,
       ...(options.limit !== undefined
         ? { limit: options.limit }
-        : { limit: Number.parseInt(process.env.LIMIT ?? "20", 10) }),
+        : { limit: Number.parseInt(process.env["LIMIT"] ?? "20", 10) }),
       ...(types !== undefined ? { types } : {}),
     };
     const hits = context.search.search(query, request);

@@ -41,7 +41,7 @@ export function registerAsk(program: Command, options: AskCommandOptions = {}): 
       "--max-tokens <number>",
       "maximum estimated tokens for the slice",
       parsePositiveInteger,
-      () => Number.parseInt(process.env.MAX_TOKENS ?? "", 10),
+      Number.parseInt(process.env["MAX_TOKENS"] ?? "", 10),
     )
     .option(
       "--save [path]",

@@ -1,4 +1,3 @@
-import type {} from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("node:child_process", () => ({
@@ -32,6 +31,8 @@ function fakeNpmView(version: string | null): void {
     } else {
       cb(null, `${version}\n`);
     }
+    // execFile returns a ChildProcess — return a minimal stub for type compatibility
+    return { pid: 1, kill: () => true } as never;
   });
 }
 

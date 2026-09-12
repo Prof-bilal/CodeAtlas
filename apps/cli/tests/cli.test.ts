@@ -273,6 +273,7 @@ function fakeContextIntegrationPackage(): ContextPackage {
   return {
     task: "fix auth",
     items: [],
+    truncated: false,
     staleness: {
       state: "fresh",
       available: true,
@@ -1359,9 +1360,9 @@ describe("atlas CLI", () => {
   });
 
   it("uses LIMIT env var as default for --limit when not provided", async () => {
-    const prev = process.env.LIMIT;
+    const prev = process.env["LIMIT"];
     try {
-      process.env.LIMIT = "1";
+      process.env["LIMIT"] = "1";
       const program = createCli();
       const log = vi.spyOn(console, "log").mockImplementation(() => {});
       let output = "";
@@ -1374,17 +1375,17 @@ describe("atlas CLI", () => {
       expect(output).toContain('1 result for "double"');
     } finally {
       if (prev === undefined) {
-        process.env.LIMIT = undefined;
+        process.env["LIMIT"] = undefined;
       } else {
-        process.env.LIMIT = prev;
+        process.env["LIMIT"] = prev;
       }
     }
   });
 
   it("uses provided --limit flag over LIMIT env var", async () => {
-    const prev = process.env.LIMIT;
+    const prev = process.env["LIMIT"];
     try {
-      process.env.LIMIT = "2";
+      process.env["LIMIT"] = "2";
       const program = createCli();
       const log = vi.spyOn(console, "log").mockImplementation(() => {});
       let output = "";
@@ -1401,9 +1402,9 @@ describe("atlas CLI", () => {
       }
     } finally {
       if (prev === undefined) {
-        process.env.LIMIT = undefined;
+        process.env["LIMIT"] = undefined;
       } else {
-        process.env.LIMIT = prev;
+        process.env["LIMIT"] = prev;
       }
     }
   });
