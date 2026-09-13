@@ -53,8 +53,10 @@ apps/cli/tests/tui.test.ts
 # Historical archive — see old-school/README.md for context.
 old-school/
 
-# Benchmarks — personal test results and raw data
-benchmarks/
+# Benchmarks — the retrieval-gate harness is tracked; personal result dirs are not.
+benchmarks/*
+!benchmarks/retrieval-tasks/
+!benchmarks/scale-grid/
 docs/test-results/
 
 # UI prototype (local development only)
