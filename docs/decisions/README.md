@@ -45,6 +45,7 @@ ADR-002.md       ...
 | [ADR-008](./ADR-008.md) | Context → Agent integration lives inside `@atlas/sdk` as a `context-integration` module (`createContextIntegration`, context packages delivered through `SessionPort`) | Accepted | 2026-08-11 |
 | [ADR-009](./ADR-009.md) | Usage & Credits as a dedicated `@atlas/usage` feature package behind `UsagePort` (tri-state actual/estimated/unknown provenance, `PricingSource` abstraction, budgets/limits, `atlas usage`) | Accepted | 2026-08-11 |
 | [ADR-010](./ADR-010-security-trust-assessment.md) | Offline security assessment and trust-gated installation | Accepted | 2026-08-12 |
+| [ADR-022](./ADR-022-skills-architecture.md) | Unified Skills: one Agent Skills format; `SkillPort` in `core`, loader extracted into `@atlas/toolkit`, composed by the SDK (`createSkillService`); launch-time injection primary, additive MCP tools secondary; validated + approval-gated install/update | Proposed | 2026-09-12 |
 
 ---
 

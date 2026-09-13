@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import type {
   ContextPackage,
   ContextSDK,
@@ -6,7 +7,7 @@ import type {
   Summary,
   SummaryKind,
 } from "@atlas/sdk";
-import { evaluateSufficiency } from "@atlas/sdk";
+import { createSkillService, evaluateSufficiency } from "@atlas/sdk";
 import type { CodeAtlasContext } from "./context";
 import { isDeniedPath } from "./deny";
 import type { Logger } from "./log";
@@ -79,6 +80,9 @@ export const HANDLERS: Readonly<
   get_dependencies: getDependencies,
   project_overview: projectOverview,
   read_file_range: readFileRange,
+  list_skills: listSkills,
+  get_skill: getSkill,
+  analyze_impact: analyzeImpact,
 };
 
 // ── find_relevant_context ───────────────────────────────────────────────────
@@ -753,4 +757,176 @@ function resolveNode(
     }
   }
   return null;
+}
+
+// ── list_skills ─────────────────────────────────────────────────────────────
+
+async function listSkills(h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const root = h.ctx.root;
+  const service = createSkillService({ root });
+  const skillsDir = join(root, ".codeatlas", "skills");
+  const filter = optionalString(args, "filter");
+  const allDiscovered = service.listSkills(skillsDir);
+  const discovered =
+    filter !== undefined && filter !== ""
+      ? allDiscovered.filter(
+          (s) =>
+            s.name.toLowerCase().includes(filter.toLowerCase()) ||
+            s.description.toLowerCase().includes(filter.toLowerCase()),
+        )
+      : allDiscovered;
+
+  return {
+    skills: discovered.map((s) => ({
+      id: s.id,
+      name: s.name,
+      description: s.description,
+      path: s.path,
+      ...(s.version !== undefined ? { version: s.version } : {}),
+    })),
+    total: discovered.length,
+    nextSteps:
+      discovered.length === 0
+        ? ["Install a skill with: atlas tools install <skill-name>"]
+        : ["Call get_skill with an id to load the full instruction block."],
+  };
+}
+
+// ── get_skill ────────────────────────────────────────────────────────────────
+
+async function getSkill(h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const id = requireString(args, "id");
+  const includeReferences = optionalBoolean(args, "includeReferences") ?? true;
+
+  const root = h.ctx.root;
+  const service = createSkillService({ root });
+  const skillsDir = join(root, ".codeatlas", "skills");
+
+  // Validate first (cheap) to surface problems even for loadable skills
+  const problems = service.validateSkill(skillsDir, id);
+
+  const loadResult = service.loadSkill(skillsDir, id);
+  if (!loadResult.ok) {
+    return {
+      found: false,
+      id: null,
+      rendered: null,
+      problems,
+      nextSteps: ["Call list_skills to see available skill ids."],
+    };
+  }
+
+  const rendered = service.renderSkill(loadResult.value, { includeReferences });
+
+  return {
+    found: true,
+    id: loadResult.value.id,
+    rendered,
+    problems,
+    nextSteps: ["Prepend the rendered block to the agent prompt for this task."],
+  };
+}
+
+// ── analyze_impact ───────────────────────────────────────────────────────────
+
+const TEST_RE = /[/\\](tests?|specs?)[/\\]|\.test\.[^.]+$|\.spec\.[^.]+$/i;
+const DOC_RE = /\.(md|mdx|rst|txt)$/i;
+
+async function analyzeImpact(h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const paths = args["paths"];
+  if (!Array.isArray(paths) || paths.length === 0) {
+    throw new ToolInputError("paths must be a non-empty array of file paths");
+  }
+  const subjects: string[] = paths.map((p) => String(p));
+  const maxDepth = optionalInt(args, "maxDepth", 0, 10) ?? 0;
+  const includeTests = optionalBoolean(args, "includeTests") ?? true;
+  const includeDocs = optionalBoolean(args, "includeDocs") ?? true;
+
+  const sdk = h.ctx.requireSDK();
+  const start = performance.now();
+
+  const visited = new Map<string, number>();
+  const queue: Array<{ path: string; distance: number }> = [];
+
+  for (const p of subjects) {
+    if (!visited.has(p)) {
+      visited.set(p, 0);
+      queue.push({ path: p, distance: 0 });
+    }
+  }
+
+  const affected: Array<{
+    path: string;
+    distance: number;
+    isTestFile: boolean;
+    isDocFile: boolean;
+  }> = [];
+
+  while (queue.length > 0) {
+    const item = queue.shift();
+    if (item === undefined) break;
+    const { path: current, distance } = item;
+    if (maxDepth > 0 && distance >= maxDepth) continue;
+
+    let dependents: readonly { from: string; to: string }[] = [];
+    try {
+      dependents = sdk.dependencies.getDependents(current);
+    } catch {
+      continue;
+    }
+
+    for (const edge of dependents) {
+      const depPath = edge.from;
+      if (visited.has(depPath)) continue;
+      const nextDistance = distance + 1;
+      visited.set(depPath, nextDistance);
+
+      const isTestFile = TEST_RE.test(depPath);
+      const isDocFile = DOC_RE.test(depPath);
+      if (!includeTests && isTestFile) continue;
+      if (!includeDocs && isDocFile) continue;
+
+      affected.push({ path: depPath, distance: nextDistance, isTestFile, isDocFile });
+      queue.push({ path: depPath, distance: nextDistance });
+    }
+  }
+
+  const directDependents = affected.filter((n) => n.distance === 1).length;
+  const affectedTests = affected.filter((n) => n.isTestFile).length;
+  const affectedDocs = affected.filter((n) => n.isDocFile).length;
+  const totalNodes = Math.max(visited.size, 1);
+  const fanOutRatio = affected.length / totalNodes;
+  const level: "low" | "medium" | "high" =
+    fanOutRatio >= 0.2 ? "high" : fanOutRatio >= 0.05 ? "medium" : "low";
+
+  const durationMs = Math.round(performance.now() - start);
+
+  return {
+    subjects,
+    affected,
+    risk: {
+      level,
+      directDependents,
+      totalAffected: affected.length,
+      affectedTests,
+      affectedDocs,
+      fanOutRatio,
+    },
+    durationMs,
+    nextSteps:
+      level === "high"
+        ? [
+            "High blast radius — review affected tests before merging.",
+            "Call get_dependencies for specific affected paths.",
+          ]
+        : level === "medium"
+          ? [
+              `Run affected tests: ${affected
+                .filter((n) => n.isTestFile)
+                .map((n) => n.path)
+                .slice(0, 3)
+                .join(", ")}`,
+            ]
+          : ["Low impact — proceed with change."],
+  };
 }

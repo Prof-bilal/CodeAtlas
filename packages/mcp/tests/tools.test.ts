@@ -3,14 +3,17 @@ import { z } from "zod";
 import { PROTOCOL_TOOL_NAMES, TOOLS, TOOL_NAMES } from "../src/tools";
 
 describe("tool registry", () => {
-  it("exposes exactly the eight expected tools", () => {
+  it("exposes exactly the expected tools", () => {
     const names = TOOLS.map((tool) => tool.name).sort();
     expect(names).toEqual([...TOOL_NAMES].sort());
     expect(names).toEqual([
+      "analyze_impact",
       "find_relevant_context",
       "get_dependencies",
+      "get_skill",
       "get_summary",
       "inspect_symbol",
+      "list_skills",
       "project_overview",
       "read_file_range",
       "search_files",
@@ -18,18 +21,22 @@ describe("tool registry", () => {
     ]);
   });
 
-  it("has at most 8 tools (Phase 6 release cut)", () => {
-    expect(TOOLS.length).toBeLessThanOrEqual(8);
+  it("has the expected tool count (Phase 6 + capability wave)", () => {
+    // Original 8 core tools + 3 capability tools (list_skills, get_skill, analyze_impact)
+    expect(TOOLS.length).toBe(11);
   });
 
-  it("advertises exactly the 8 legacy tools plus 4 canonical aliases", () => {
+  it("advertises the 11 canonical tools plus 4 legacy aliases", () => {
     expect(PROTOCOL_TOOL_NAMES).toEqual([
+      "analyze_impact",
       "context_for",
       "dependencies_of",
       "find_relevant_context",
       "get_dependencies",
+      "get_skill",
       "get_summary",
       "inspect_symbol",
+      "list_skills",
       "overview",
       "project_overview",
       "read_file_range",

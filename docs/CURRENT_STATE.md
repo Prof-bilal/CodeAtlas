@@ -55,6 +55,7 @@ packages/
   context/      # Context ranking & assembly                                  [IMPLEMENTED]
   agents/       # AI CLI connection layer (AgentPort)                         [EXISTING]
   toolkit/      # Toolkit — Registry (19) + Manifest (20) + Compatibility (21) + Installer (22)  [PARTIAL]
+  verifier/     # Deterministic claim verification                           [IMPLEMENTED]
   mcp/          # MCP server exposing context to AI tools                      [EXISTING]
   sdk/         # Composition root (Container)                                  [EXISTING]
 docs/            # (this documentation system)
@@ -788,12 +789,13 @@ examples/        # README placeholder only (no runnable examples)
   logged.
 - **Verification + provenance + rollback**: after install the binary is resolved
   on PATH and, when a `versionRange` is declared, the detected version is
-  checked — the outcome records `verified` / `unverified` / `failed` honestly. A
-  Tool Manifest (Task 20) is recorded (`.codeatlas/tools/<name>.json`) with the
-  exact argv, verification status, and timestamp. On a failed install the
-  pre-install state is restored best-effort (`npm`/`pip`/`cargo` uninstall) when
-  the tool was not already present; `go` (no module-uninstall) reports rollback
-  as unsupported honestly.
+  checked — the outcome records `verified` / `unverified` / `failed` honestly.
+  Skill installs additionally validate `SKILL.md` frontmatter and size bounds;
+  invalid content is `unverified`. A Tool Manifest (Task 20) is recorded
+  (`.codeatlas/tools/<name>.json`) with the exact argv, verification status, and
+  timestamp. On a failed install the pre-install state is restored best-effort
+  (`npm`/`pip`/`cargo` uninstall) when the tool was not already present; `go`
+  (no module-uninstall) reports rollback as unsupported honestly.
 - **Tests** (`packages/toolkit/tests/installer-*.test.ts`): adapters build exact
   argument arrays; compatibility/security gates block; approval required;
   install→verify→manifest flow and rollback against a fake package-manager

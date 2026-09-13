@@ -28,6 +28,7 @@ The rules below are enforced by ESLint `no-restricted-imports` (see
 | `context`  | core, shared                                                   | everything else |
 | `agents`   | core, shared                                                   | everything else |
 | `toolkit`  | core, shared                                                   | everything else |
+| `verifier` | core, shared, storage                                          | everything else |
 | `sdk`      | shared, core, hashing, scanner, parser, storage, graph, context, cache, providers, summary, search, usage, agents *(`agents` was added when the SDK composed the connection layer for the session manager — ADR-007; `usage` when it composed the usage service — ADR-009)* | — |
 | `cli`      | `sdk`, `mcp`, `benchmark` *(benchmark runners for `atlas benchmark`)* | every other `@atlas/*` feature package |
 | `server`   | `sdk`, `mcp`, `benchmark` *(Benchmark API composition root, ADR-013)* | every other `@atlas/*` feature package |

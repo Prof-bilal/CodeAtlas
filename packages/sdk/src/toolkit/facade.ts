@@ -292,6 +292,15 @@ export function createToolkitSDK(options: CreateToolkitSDKOptions = {}): Toolkit
             });
             continue;
           }
+          // ADR-022: skill updates require explicit approval (closes HIGH audit finding).
+          if (!approval?.granted) {
+            results.push({
+              name: manifest.name,
+              status: "unchanged",
+              note: "Approval required for skill update; re-run with --yes to update.",
+            });
+            continue;
+          }
           try {
             await execFileAsync("git", ["-C", skillDir, "pull", "--ff-only"]);
             results.push({
@@ -300,7 +309,11 @@ export function createToolkitSDK(options: CreateToolkitSDKOptions = {}): Toolkit
               note: "Skill updated via git pull.",
             });
           } catch {
-            results.push({ name: manifest.name, status: "error", note: "git pull failed." });
+            results.push({
+              name: manifest.name,
+              status: "error",
+              note: "git pull failed.",
+            });
           }
           continue;
         }

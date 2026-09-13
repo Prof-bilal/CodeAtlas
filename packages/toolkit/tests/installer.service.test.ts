@@ -560,7 +560,7 @@ describe("InstallerService.install — skill (git clone) installs", () => {
     }
   });
 
-  it("verifies a cloned skill by file existence under the project root", async () => {
+  it("validates a cloned skill's frontmatter after finding SKILL.md", async () => {
     const calls: SpawnCall[] = [];
     const svc = service({ calls });
     const c = ctx({
@@ -575,7 +575,11 @@ describe("InstallerService.install — skill (git clone) installs", () => {
       const { mkdirSync, writeFileSync } = await import("node:fs");
       const skillDir = join(c.temp.root, ".codeatlas", "skills", "fixture-tool");
       mkdirSync(skillDir, { recursive: true });
-      writeFileSync(join(skillDir, "SKILL.md"), "# Fixture skill\n", "utf8");
+      writeFileSync(
+        join(skillDir, "SKILL.md"),
+        "---\nname: fixture-tool\ndescription: A fixture skill\n---\n# Fixture skill\n",
+        "utf8",
+      );
       const result = await svc.install(c.req(), { granted: true });
       expect(result.ok).toBe(true);
       if (!result.ok) {
@@ -589,7 +593,7 @@ describe("InstallerService.install — skill (git clone) installs", () => {
     }
   });
 
-  it("reports a failed skill verification when SKILL.md is missing", async () => {
+  it("marks a skill unverified when SKILL.md fails content validation", async () => {
     const calls: SpawnCall[] = [];
     const svc = service({ calls });
     const c = ctx({
@@ -601,13 +605,17 @@ describe("InstallerService.install — skill (git clone) installs", () => {
       },
     });
     try {
+      const { mkdirSync, writeFileSync } = await import("node:fs");
+      const skillDir = join(c.temp.root, ".codeatlas", "skills", "fixture-tool");
+      mkdirSync(skillDir, { recursive: true });
+      writeFileSync(join(skillDir, "SKILL.md"), "# missing frontmatter\n", "utf8");
       const result = await svc.install(c.req(), { granted: true });
       expect(result.ok).toBe(true); // clone exited 0
       if (!result.ok) {
         return;
       }
-      expect(result.value.verification).toBe("failed");
-      expect(result.value.verificationNote).toContain("not found");
+      expect(result.value.verification).toBe("unverified");
+      expect(result.value.verificationNote).toContain("validation failed");
     } finally {
       c.temp.cleanup();
     }

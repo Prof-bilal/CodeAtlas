@@ -25,6 +25,15 @@ it must **never** do, and its public surface. It is the source of truth for
 - Must **NOT**: contain infrastructure (fs, http, db, processes), or any
   implementation — it is contract-only.
 
+### `packages/verifier` — « claim verification »
+**Status: [IMPLEMENTED]**
+
+- Owns: deterministic verification of repository claims against indexed context,
+  verification baselines/configuration, runner errors, and the `VerifierPort`
+  implementation consumed through the SDK and `atlas verify`.
+- Must **NOT**: mutate repository files, call AI providers, or bypass storage
+  repositories and SDK composition.
+
 ---
 
 ## Context Engine pipeline

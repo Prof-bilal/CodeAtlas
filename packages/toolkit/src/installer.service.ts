@@ -1,5 +1,5 @@
 import { existsSync, rmSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import type {
   CompatibilityPort,
   InstallApproval,
@@ -37,6 +37,7 @@ import { InstallerProcess } from "./installer-process";
 import { createToolManifest, isValidToolName, saveToolManifest } from "./manifest";
 import type { ToolManifest } from "./manifest-schema";
 import { SecurityAssessor } from "./security.service";
+import { validateSkill } from "./skills";
 import { extractVersion, satisfiesVersionRange } from "./version-range";
 
 /** Options for constructing an {@link InstallerService}. */
@@ -369,6 +370,17 @@ export class InstallerService implements InstallerPort {
     if (plan.verifyPath !== null) {
       const full = join(request.cwd, plan.verifyPath);
       if (existsSync(full)) {
+        if (request.installation.type === "skill") {
+          const skillDir = dirname(full);
+          const problems = validateSkill(dirname(skillDir), basename(skillDir));
+          if (problems.length > 0) {
+            return {
+              status: "unverified",
+              note: `found ${full}, but skill validation failed: ${problems.join("; ")}`,
+              path: full,
+            };
+          }
+        }
         return { status: "verified", note: `found ${full}`, path: full };
       }
       return {

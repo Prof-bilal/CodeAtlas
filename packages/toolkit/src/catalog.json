@@ -43,11 +43,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "GitHub repository activity — a weak maintenance signal"
+          "note": "GitHub repository activity \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "GitHub stars — a weak popularity signal, never a trust basis"
+          "note": "GitHub stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -102,11 +102,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "GitHub repository activity — a weak maintenance signal"
+          "note": "GitHub repository activity \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "GitHub stars — a weak popularity signal, never a trust basis"
+          "note": "GitHub stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -121,7 +121,7 @@
     },
     {
       "name": "uv",
-      "description": "An extremely fast Python package and project manager written in Rust — a drop-in replacement for pip, pip-tools, and virtualenv.",
+      "description": "An extremely fast Python package and project manager written in Rust \u2014 a drop-in replacement for pip, pip-tools, and virtualenv.",
       "repository": "https://github.com/astral-sh/uv",
       "website": "https://docs.astral.sh/uv/",
       "documentation": "https://docs.astral.sh/uv/",
@@ -165,11 +165,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "GitHub repository activity — a weak maintenance signal"
+          "note": "GitHub repository activity \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "GitHub stars — a weak popularity signal, never a trust basis"
+          "note": "GitHub stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -228,11 +228,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "GitHub repository activity — a weak maintenance signal"
+          "note": "GitHub repository activity \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "GitHub stars — a weak popularity signal, never a trust basis"
+          "note": "GitHub stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -287,11 +287,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "GitHub repository activity — a weak maintenance signal"
+          "note": "GitHub repository activity \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "GitHub stars — a weak popularity signal, never a trust basis"
+          "note": "GitHub stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -306,7 +306,7 @@
     },
     {
       "name": "claude",
-      "description": "Anthropic's Claude Code — an agentic coding assistant that lives in your terminal: explain, edit, test, and ship inside a repository through natural language.",
+      "description": "Anthropic's Claude Code \u2014 an agentic coding assistant that lives in your terminal: explain, edit, test, and ship inside a repository through natural language.",
       "repository": "https://github.com/anthropics/claude-code",
       "website": "https://claude.com/product/claude-code",
       "documentation": "https://code.claude.com/docs/en/overview",
@@ -337,7 +337,7 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "npm registry activity — a weak maintenance signal"
+          "note": "npm registry activity \u2014 a weak maintenance signal"
         },
         "security": {
           "source": "curated",
@@ -352,7 +352,7 @@
     },
     {
       "name": "gemini",
-      "description": "Google's Gemini CLI — an open-source, terminal-first coding agent with 1M-token context, MCP support, and built-in tools for search, files, and shell commands.",
+      "description": "Google's Gemini CLI \u2014 an open-source, terminal-first coding agent with 1M-token context, MCP support, and built-in tools for search, files, and shell commands.",
       "repository": "https://github.com/google-gemini/gemini-cli",
       "website": "https://geminicli.com",
       "documentation": "https://geminicli.com/docs/get-started/installation",
@@ -383,7 +383,7 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "npm registry activity — a weak maintenance signal"
+          "note": "npm registry activity \u2014 a weak maintenance signal"
         },
         "security": {
           "source": "curated",
@@ -398,7 +398,7 @@
     },
     {
       "name": "codex",
-      "description": "OpenAI's Codex CLI — a lightweight coding agent that runs locally in your terminal, inspects files, runs shell commands, and completes tasks end-to-end.",
+      "description": "OpenAI's Codex CLI \u2014 a lightweight coding agent that runs locally in your terminal, inspects files, runs shell commands, and completes tasks end-to-end.",
       "repository": "https://github.com/openai/codex",
       "website": "https://developers.openai.com/codex",
       "documentation": "https://developers.openai.com/codex/cli",
@@ -429,7 +429,7 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "npm registry activity — a weak maintenance signal"
+          "note": "npm registry activity \u2014 a weak maintenance signal"
         },
         "security": {
           "source": "curated",
@@ -444,7 +444,7 @@
     },
     {
       "name": "opencode",
-      "description": "OpenCode — an open-source, provider-independent AI coding agent that runs in the terminal with agents, skills, plugins, and Model Context Protocol support.",
+      "description": "OpenCode \u2014 an open-source, provider-independent AI coding agent that runs in the terminal with agents, skills, plugins, and Model Context Protocol support.",
       "repository": "https://github.com/anomalyco/opencode",
       "website": "https://opencode.ai",
       "documentation": "https://opencode.ai/docs",
@@ -475,7 +475,7 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "npm registry activity — a weak maintenance signal"
+          "note": "npm registry activity \u2014 a weak maintenance signal"
         },
         "security": {
           "source": "curated",
@@ -519,7 +519,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -527,11 +527,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -574,7 +574,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -582,11 +582,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -629,7 +629,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -637,11 +637,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -684,7 +684,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -692,11 +692,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -739,7 +739,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -747,11 +747,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -794,7 +794,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -802,11 +802,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -850,7 +850,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -858,11 +858,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -905,7 +905,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -913,11 +913,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -960,7 +960,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -968,11 +968,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1015,7 +1015,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1023,11 +1023,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1070,7 +1070,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1078,11 +1078,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1126,7 +1126,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1134,11 +1134,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1181,7 +1181,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1189,11 +1189,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1236,7 +1236,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1244,11 +1244,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1291,7 +1291,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1299,11 +1299,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1347,7 +1347,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1355,11 +1355,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1402,7 +1402,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1410,11 +1410,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1458,7 +1458,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1466,11 +1466,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1514,7 +1514,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1522,11 +1522,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1570,7 +1570,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1578,11 +1578,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1626,7 +1626,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1634,11 +1634,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1681,7 +1681,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1689,11 +1689,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1736,7 +1736,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1744,11 +1744,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1792,7 +1792,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1800,11 +1800,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1848,7 +1848,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1856,11 +1856,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1904,7 +1904,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1912,11 +1912,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -1960,7 +1960,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -1968,11 +1968,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2016,7 +2016,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2024,11 +2024,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2072,7 +2072,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2080,11 +2080,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2128,7 +2128,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2136,11 +2136,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2154,7 +2154,7 @@
     },
     {
       "name": "verification-before-completion",
-      "description": "Prevent unsupported “done” claims. Source: https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
+      "description": "Prevent unsupported \u201cdone\u201d claims. Source: https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
       "repository": "https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
       "website": null,
       "documentation": "https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
@@ -2184,7 +2184,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2192,11 +2192,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2240,7 +2240,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2248,11 +2248,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2296,7 +2296,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2304,11 +2304,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2352,7 +2352,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2360,11 +2360,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2408,7 +2408,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2416,11 +2416,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2464,7 +2464,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2472,11 +2472,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2520,7 +2520,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2528,11 +2528,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2576,7 +2576,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2584,11 +2584,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2632,7 +2632,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2640,11 +2640,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2688,7 +2688,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2696,11 +2696,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2744,7 +2744,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2752,11 +2752,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2799,7 +2799,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2807,11 +2807,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2855,7 +2855,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2863,11 +2863,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2911,7 +2911,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2919,11 +2919,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -2967,7 +2967,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -2975,11 +2975,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -3022,7 +3022,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -3030,11 +3030,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -3078,7 +3078,7 @@
       "provenance": {
         "version": {
           "source": "external",
-          "note": "Curated snapshot version 1.0.0 — skills do not publish semantic releases"
+          "note": "Curated snapshot version 1.0.0 \u2014 skills do not publish semantic releases"
         },
         "license": {
           "source": "external",
@@ -3086,11 +3086,11 @@
         },
         "lastUpdate": {
           "source": "external",
-          "note": "Research artifact snapshot 2026-08-01 — a weak maintenance signal"
+          "note": "Research artifact snapshot 2026-08-01 \u2014 a weak maintenance signal"
         },
         "stars": {
           "source": "external",
-          "note": "Aggregator-list stars — a weak popularity signal, never a trust basis"
+          "note": "Aggregator-list stars \u2014 a weak popularity signal, never a trust basis"
         },
         "security": {
           "source": "curated",
@@ -3099,6 +3099,265 @@
         "trust": {
           "source": "curated",
           "note": "Community trust; not individually audited by CodeAtlas"
+        }
+      }
+    },
+    {
+      "name": "playwright-cli",
+      "description": "Token-efficient browser automation CLI for coding agents. Provides browse, screenshot, click, and form-fill capabilities via CLI commands that are more token-efficient than MCP. Install skills via `playwright-cli install --skills`.",
+      "repository": "https://github.com/microsoft/playwright-mcp",
+      "website": "https://playwright.dev/docs/getting-started-cli",
+      "documentation": "https://playwright.dev/docs/getting-started-cli",
+      "license": "Apache-2.0",
+      "version": "latest",
+      "categories": ["Browser Automation", "Web Testing", "AI Quality"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": ["claude", "opencode", "gemini", "codex"],
+      "installMethods": [
+        {
+          "type": "npm",
+          "packageId": "@playwright/mcp"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "verified",
+      "maintainer": "microsoft",
+      "lastUpdate": null,
+      "stars": null,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "npm registry as of 2026-09-13, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "GitHub repository activity \u2014 a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "GitHub stars \u2014 a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Verified tier; Microsoft-maintained official Playwright tooling"
+        }
+      }
+    },
+    {
+      "name": "playwright-mcp",
+      "description": "Official Playwright MCP server for browser automation via accessibility tree. Provides structured browser control without pixel-based input. Use playwright-cli for coding agents; use this for IDE-style loops.",
+      "repository": "https://github.com/microsoft/playwright-mcp",
+      "website": "https://playwright.dev",
+      "documentation": "https://github.com/microsoft/playwright-mcp#readme",
+      "license": "Apache-2.0",
+      "version": "latest",
+      "categories": ["Browser Automation", "Web Testing", "MCP"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": ["claude", "opencode", "gemini"],
+      "installMethods": [
+        {
+          "type": "npm",
+          "packageId": "@playwright/mcp"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "verified",
+      "maintainer": "microsoft",
+      "lastUpdate": null,
+      "stars": null,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "npm registry as of 2026-09-13, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "GitHub repository activity \u2014 a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "GitHub stars \u2014 a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Verified tier; Microsoft-maintained official Playwright tooling"
+        }
+      }
+    },
+    {
+      "name": "gitleaks",
+      "description": "Fast, lightweight secrets and credential scanner. Detects hardcoded secrets, API keys, tokens, and credentials in Git repos and files. CLI-first, SARIF output supported.",
+      "repository": "https://github.com/gitleaks/gitleaks",
+      "website": "https://gitleaks.io",
+      "documentation": "https://github.com/gitleaks/gitleaks#readme",
+      "license": "MIT",
+      "version": "8.21.2",
+      "categories": ["Security", "Secrets Detection", "Code Analysis"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "go",
+          "packageId": "github.com/gitleaks/gitleaks/v8"
+        },
+        {
+          "type": "github-release",
+          "packageId": "gitleaks/gitleaks"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "verified",
+      "maintainer": "gitleaks",
+      "lastUpdate": null,
+      "stars": null,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "GitHub releases as of 2026-09-13, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "GitHub repository activity \u2014 a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "GitHub stars \u2014 a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Verified tier; widely adopted, MIT-licensed secrets scanner"
+        }
+      }
+    },
+    {
+      "name": "squawk",
+      "description": "Postgres migration linter. Detects dangerous migration patterns (table locks, full-table scans, missing indexes) before they reach production. Pair with CodeAtlas impact analysis to see which app code writes to altered tables.",
+      "repository": "https://github.com/sbdchd/squawk",
+      "website": "https://squawkhq.com",
+      "documentation": "https://squawkhq.com/docs/",
+      "license": "GPL-3.0",
+      "version": "1.4.0",
+      "categories": ["Database", "Migration Safety", "Code Analysis"],
+      "supportedOs": ["linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "npm",
+          "packageId": "squawk-cli"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "verified",
+      "maintainer": "sbdchd",
+      "lastUpdate": null,
+      "stars": null,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "npm registry / GitHub releases as of 2026-09-13, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "GitHub repository activity \u2014 a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "GitHub stars \u2014 a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Verified tier; focused, GPL-licensed Postgres migration linter"
+        }
+      }
+    },
+    {
+      "name": "stryker-mutator",
+      "description": "Mutation testing framework for JavaScript and TypeScript. Validates test suite quality by mutating source code and checking if tests catch the changes. Works with Jest, Vitest, Mocha, and others.",
+      "repository": "https://github.com/stryker-mutator/stryker-js",
+      "website": "https://stryker-mutator.io",
+      "documentation": "https://stryker-mutator.io/docs/",
+      "license": "Apache-2.0",
+      "version": "8.7.1",
+      "categories": ["Testing", "Mutation Testing", "Code Quality"],
+      "supportedOs": ["win32", "linux", "darwin"],
+      "supportedAgents": [],
+      "installMethods": [
+        {
+          "type": "npm",
+          "packageId": "@stryker-mutator/core"
+        }
+      ],
+      "dependencies": [],
+      "security": {
+        "status": "unverified",
+        "lastReview": null,
+        "note": "Not yet reviewed by CodeAtlas."
+      },
+      "trust": "verified",
+      "maintainer": "stryker-mutator",
+      "lastUpdate": null,
+      "stars": null,
+      "tier": "optional",
+      "provenance": {
+        "version": {
+          "source": "external",
+          "note": "npm registry as of 2026-09-13, not verified by CodeAtlas"
+        },
+        "lastUpdate": {
+          "source": "external",
+          "note": "GitHub repository activity \u2014 a weak maintenance signal"
+        },
+        "stars": {
+          "source": "external",
+          "note": "GitHub stars \u2014 a weak popularity signal, never a trust basis"
+        },
+        "security": {
+          "source": "curated",
+          "note": "Default unverified; promotion to reviewed/verified is a documented human-in-the-loop act"
+        },
+        "trust": {
+          "source": "curated",
+          "note": "Verified tier; well-established Apache-2.0 mutation testing framework"
         }
       }
     }

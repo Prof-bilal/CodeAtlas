@@ -119,6 +119,9 @@ importers:
       '@atlas/shared':
         specifier: workspace:*
         version: link:../shared
+      '@atlas/toolkit':
+        specifier: workspace:*
+        version: link:../toolkit
       '@atlas/usage':
         specifier: workspace:*
         version: link:../usage
