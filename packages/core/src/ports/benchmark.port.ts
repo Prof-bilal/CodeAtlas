@@ -206,6 +206,13 @@ export interface TaskDefinition {
    * (ADR-015 policy) — never implicitly. Optional.
    */
   readonly hidden_tests?: readonly string[];
+  /**
+   * Identifier of an Agent Skill to inject into the task prompt (ADR-022).
+   * When set, the skill's compiled instructions are prepended to `prompt`
+   * before the runner executes the task. Optional — absent tasks run without
+   * a skill (baseline / ablation scenario).
+   */
+  readonly skill?: string | undefined;
 }
 
 /** Task categories for classification and reporting. */

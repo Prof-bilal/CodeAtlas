@@ -1,10 +1,15 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import type { CompatibilityPort, CompatibilityReport } from "@atlas/core";
 import { type Result, ok } from "@atlas/shared";
-import { InstallerProcess, type InstallerSpawnFn } from "@atlas/toolkit";
+import {
+  InstallerProcess,
+  type InstallerSpawnFn,
+  createToolManifest,
+  saveToolManifest,
+} from "@atlas/toolkit";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   EnvironmentDetector,
@@ -259,6 +264,50 @@ describe("createToolkitSDK (facade)", () => {
         "react-best-practices",
       ]),
     );
+  });
+
+  it("requires granted approval for skill updates, not merely an approval object", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "atlas-sdk-toolkit-update-"));
+    tempDirs.push(dir);
+    const registry = createToolRegistry({
+      overlayData: {
+        schemaVersion: 2,
+        tools: [
+          {
+            name: "sample-skill",
+            description: "A sample skill.",
+            license: "See repository",
+            version: "1.0.0",
+            categories: ["Agent Tools"],
+            repository: "https://github.com/example/skills",
+            installMethods: [{ type: "skill", packageId: "https://github.com/example/skills" }],
+          },
+        ],
+      },
+    });
+    await saveToolManifest(
+      dir,
+      createToolManifest({
+        name: "sample-skill",
+        description: "A sample skill.",
+        toolVersion: "1.0.0",
+        license: "See repository",
+        installation: { type: "skill", package: "https://github.com/example/skills" },
+      }),
+    );
+    mkdirSync(join(dir, ".codeatlas", "skills", "sample-skill"), { recursive: true });
+    const sdk = createToolkitSDK({ root: dir, registry });
+    const result = await sdk.update({ granted: false });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.updated).toEqual([
+        {
+          name: "sample-skill",
+          status: "unchanged",
+          note: "Approval required for skill update; re-run with --yes to update.",
+        },
+      ]);
+    }
   });
 
   it("plans a skill install through the facade (note sub-path flows into the request)", async () => {

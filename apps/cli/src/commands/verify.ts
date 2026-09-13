@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import {
   type ClaimCheckInput,
   type VerifyConfig,
@@ -16,6 +17,7 @@ interface VerifyOptions {
   readonly config?: string;
   readonly refreshBaseline?: boolean;
   readonly json?: boolean;
+  readonly docs?: boolean;
 }
 
 export function registerVerify(program: Command): void {
@@ -29,6 +31,10 @@ export function registerVerify(program: Command): void {
     .option("--config <path>", "Path to verify.json (default: .codeatlas/verify.json)")
     .option("--refresh-baseline", "Refresh the baseline before verifying")
     .option("--json", "Output results as JSON")
+    .option(
+      "--docs",
+      "Run documentation drift check: detect undocumented exports and stale doc references",
+    )
     .action(async (task: string | undefined, opts: VerifyOptions) => {
       try {
         const cwd = resolveProjectRoot();
@@ -40,6 +46,60 @@ export function registerVerify(program: Command): void {
         }
 
         const sdk = createContextSDK({ dbPath, repositoryPath: cwd });
+
+        // Docs drift check (atlas verify --docs)
+        if (opts.docs === true) {
+          const docsDir = join(cwd, "docs");
+          if (!existsSync(docsDir)) {
+            console.log("No docs/ directory found — skipping documentation drift check.");
+          } else {
+            // Get exported symbols from index
+            const overview = sdk.project.overview("full");
+            const exportedSymbols: string[] = (overview.topSymbols ?? [])
+              .filter((s) => s.kind === "export" || s.kind === "function" || s.kind === "class")
+              .map((s) => s.name);
+
+            // Scan docs for symbol mentions
+            const mentionedInDocs = new Set<string>();
+            function scanDocsDir(dir: string): void {
+              try {
+                for (const entry of readdirSync(dir)) {
+                  const p = join(dir, entry);
+                  if (statSync(p).isDirectory()) {
+                    scanDocsDir(p);
+                    continue;
+                  }
+                  if (!/\.(md|mdx|rst|txt)$/i.test(entry)) continue;
+                  const content = readFileSync(p, "utf-8");
+                  for (const sym of exportedSymbols) {
+                    if (content.includes(sym)) mentionedInDocs.add(sym);
+                  }
+                }
+              } catch {
+                // ignore unreadable entries
+              }
+            }
+            scanDocsDir(docsDir);
+
+            const undocumented = exportedSymbols.filter((s) => !mentionedInDocs.has(s));
+            console.log("\nDocs drift check:");
+            console.log(`  Exported symbols: ${exportedSymbols.length}`);
+            console.log(`  Mentioned in docs: ${mentionedInDocs.size}`);
+            if (undocumented.length > 0) {
+              console.log(`  Undocumented symbols (${undocumented.length}):`);
+              for (const sym of undocumented.slice(0, 20)) {
+                console.log(`    - ${sym}`);
+              }
+              if (undocumented.length > 20) {
+                console.log(`    ... and ${undocumented.length - 20} more`);
+              }
+            } else {
+              console.log("  All exported symbols are mentioned in docs ✓");
+            }
+          }
+          sdk.close();
+          return;
+        }
 
         // Resolve symbols from the context index
         const resolveSymbols = async (): Promise<readonly string[]> => {

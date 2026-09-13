@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { HandlerContext } from "../src/handlers";
 import { createLogger } from "../src/log";
 import { createContextToolSource } from "../src/tool-bridge";
+import { PROTOCOL_TOOL_NAMES } from "../src/tools";
 
 function fakeSDK(): ContextSDK {
   return {
@@ -174,12 +175,12 @@ function handlerContext(sdk: ContextSDK, logger: ReturnType<typeof createLogger>
 }
 
 describe("createContextToolSource", () => {
-  it("returns the 8 legacy tools plus 4 canonical aliases", () => {
+  it("returns all canonical tools plus 4 legacy aliases", () => {
     const sdk = fakeSDK();
     const logger = createLogger({ level: "error" });
     const toolSource = createContextToolSource(handlerContext(sdk, logger));
     const tools = toolSource.listTools();
-    expect(tools.length).toBe(12);
+    expect(tools.length).toBe(PROTOCOL_TOOL_NAMES.length);
     const names = tools.map((t) => t.function.name);
     for (const canonical of ["context_for", "dependencies_of", "read_range", "overview"]) {
       expect(names).toContain(canonical);
@@ -194,20 +195,7 @@ describe("createContextToolSource", () => {
       .listTools()
       .map((t) => t.function.name)
       .sort();
-    expect(names).toEqual([
-      "context_for",
-      "dependencies_of",
-      "find_relevant_context",
-      "get_dependencies",
-      "get_summary",
-      "inspect_symbol",
-      "overview",
-      "project_overview",
-      "read_file_range",
-      "read_range",
-      "search_files",
-      "search_symbols",
-    ]);
+    expect(names).toEqual([...PROTOCOL_TOOL_NAMES].sort());
   });
 
   it("executes canonical alias names through the legacy handler", async () => {

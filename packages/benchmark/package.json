@@ -29,6 +29,7 @@
     "@atlas/core": "workspace:*",
     "@atlas/shared": "workspace:*",
     "@atlas/agents": "workspace:*",
+    "@atlas/toolkit": "workspace:*",
     "@atlas/usage": "workspace:*"
   },
   "license": "MIT",

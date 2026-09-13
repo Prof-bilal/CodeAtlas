@@ -253,3 +253,25 @@ export type {
   CriticVerdict,
   OutputContractCheck,
 } from "./ports/critic.port";
+export type {
+  AffectedNode,
+  ImpactOptions,
+  ImpactPort,
+  ImpactResult,
+  ImpactRiskScore,
+  ImpactSubject,
+} from "./ports/impact.port";
+export type {
+  DiscoveredSkill,
+  RenderOptions,
+  Skill,
+  SkillError,
+  SkillManifest,
+  SkillPort,
+  SkillReference,
+} from "./ports/skill.port";
+export type {
+  HttpProbeResult,
+  HttpProbeTarget,
+  InspectPort,
+} from "./ports/inspect.port";

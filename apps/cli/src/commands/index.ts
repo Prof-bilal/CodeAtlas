@@ -4,16 +4,21 @@ import { registerAsk } from "./ask";
 import { registerBenchmark } from "./benchmark";
 import { type ContextCommandOptions, registerAgentRouter, registerContext } from "./context";
 import { type DoctorCommandOptions, registerDoctor } from "./doctor";
+import { registerEvaluate } from "./evaluate";
 import { registerExplain } from "./explain";
+import { registerImpact } from "./impact";
 import { type IndexingCommandOptions, registerIndexingCommands } from "./indexing";
+import { registerInspect } from "./inspect";
 import { registerMcp } from "./mcp";
 import { registerMetrics } from "./metrics";
 import { registerOllama, registerProviders } from "./providers";
 import { registerScan } from "./scan";
 import { type SearchCommandOptions, registerSearch } from "./search";
 import { type SessionsCommandOptions, registerSessions } from "./sessions";
+import { registerSkills } from "./skills";
 import { registerTools } from "./tools";
 import type { ToolsCommandOptions } from "./tools";
+import { registerTrace } from "./trace";
 import { registerUsage } from "./usage";
 import { registerVerify } from "./verify";
 
@@ -59,4 +64,9 @@ export function registerCommands(
   registerMcp(program);
   registerBenchmark(program);
   registerVerify(program);
+  registerSkills(program);
+  registerImpact(program);
+  registerInspect(program);
+  registerEvaluate(program);
+  registerTrace(program);
 }

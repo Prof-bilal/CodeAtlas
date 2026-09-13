@@ -160,3 +160,25 @@ export {
   satisfiesVersionRange,
   type VersionTuple,
 } from "./version-range";
+// Skills (ADR-022)
+export type {
+  DiscoveredSkill,
+  Skill,
+  SkillManifest,
+  SkillReference,
+  SkillResolution,
+} from "./skills/types";
+export {
+  MAX_SKILL_MARKDOWN_BYTES,
+  MAX_SKILL_REFERENCE_BYTES,
+  MAX_REFERENCE_FILES,
+  SKILL_FILENAME,
+  discoverSkills,
+  isValidSkillId,
+  loadSkill,
+  renderSkillInstructions,
+  resolveSkillForTask,
+  splitFrontmatter,
+  tryReadSkill,
+  validateSkill,
+} from "./skills/loader";

@@ -15,6 +15,7 @@ import type {
   TaskDefinition,
 } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
+import { loadSkill, renderSkillInstructions } from "@atlas/toolkit";
 import { evaluateTask } from "./evaluator";
 import { classifyFailure } from "./failure-classifier";
 import { BenchmarkMetrics } from "./metrics";
@@ -142,8 +143,17 @@ export class BenchmarkService implements BenchmarkPort {
     const timeoutMs = request.timeoutMs ?? suite.config.taskTimeoutMs ?? 540_000;
     const effectiveModel = request.model ?? suite.config.model;
 
+    // ADR-022: prepend skill instructions when the task declares a skill.
+    let effectivePrompt = task.prompt;
+    if (task.skill !== undefined && task.skill !== "") {
+      const skill = loadSkill(".codeatlas/skills", task.skill);
+      if (skill !== null) {
+        effectivePrompt = `${renderSkillInstructions(skill)}\n\n${task.prompt}`;
+      }
+    }
+
     const runnerResult = await runner.execute({
-      prompt: task.prompt,
+      prompt: effectivePrompt,
       repositoryPath: request.repositoryPath,
       mode: request.mode,
       timeoutMs,

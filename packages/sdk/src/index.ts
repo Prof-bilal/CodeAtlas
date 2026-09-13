@@ -501,3 +501,36 @@ export type {
 } from "@atlas/core";
 export { createVerifier, type VerifierServiceDeps } from "./verifier";
 export { loadVerifyConfig, VerifyConfigError } from "@atlas/verifier";
+export {
+  createSkillService,
+  SKILLS_SUBDIR,
+  type CreateSkillServiceOptions,
+} from "./skills/index";
+export type {
+  DiscoveredSkill,
+  RenderOptions,
+  Skill,
+  SkillError,
+  SkillManifest,
+  SkillPort,
+  SkillReference,
+} from "@atlas/core";
+export {
+  createInspectService,
+  type CreateInspectServiceOptions,
+} from "./inspect/index";
+export type {
+  HttpProbeResult,
+  HttpProbeTarget,
+  InspectPort,
+} from "@atlas/core";
+export {
+  createImpactService,
+  type CreateImpactServiceOptions,
+  type AffectedNode,
+  type ImpactOptions,
+  type ImpactPort,
+  type ImpactResult,
+  type ImpactRiskScore,
+  type ImpactSubject,
+} from "./impact/index";

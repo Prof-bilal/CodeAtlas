@@ -141,6 +141,10 @@ examples/       # Placeholder (no runnable examples yet)
 - **`packages/context`** → `ContextBuilderPort`: deterministic ranking/assembly
   (ADR-001 "Deterministic Before AI") — ranks search hits and resolves them to
   source-file `ContextItem[]`; no AI.
+- **`packages/verifier`** → `VerifierPort`: deterministic claim verification
+  against indexed context, with baseline/configuration support. It depends on
+  `core`, `shared`, and storage contracts and is composed by the SDK; it does
+  not mutate repositories or call providers.
 - **`packages/agents`** → `AgentPort` (+ `SessionPort`): the **AI CLI
   connection layer** for Direction B — per-CLI adapters
   (Claude/Gemini/Codex/OpenCode), executable detection, supervised

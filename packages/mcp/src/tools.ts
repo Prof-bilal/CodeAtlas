@@ -14,7 +14,10 @@ export type ToolName =
   | "get_summary"
   | "get_dependencies"
   | "project_overview"
-  | "read_file_range";
+  | "read_file_range"
+  | "list_skills"
+  | "get_skill"
+  | "analyze_impact";
 
 export const TOOL_NAMES: readonly ToolName[] = [
   "find_relevant_context",
@@ -25,6 +28,9 @@ export const TOOL_NAMES: readonly ToolName[] = [
   "get_dependencies",
   "project_overview",
   "read_file_range",
+  "list_skills",
+  "get_skill",
+  "analyze_impact",
 ];
 
 /**
@@ -589,6 +595,114 @@ export const TOOLS: readonly ToolDefinition[] = [
         .describe(
           'Present on detail:"full" — full listings can be large; prefer summary + search_files/dependencies_of.',
         ),
+    },
+  },
+  {
+    name: "list_skills",
+    title: "List installed skills",
+    description:
+      "List all Agent Skills installed in the project's .codeatlas/skills/ directory. " +
+      "Returns lightweight metadata (id, name, description, version). " +
+      "Use this before get_skill to discover available skills.",
+    inputSchema: {
+      filter: boundedString("Optional keyword to filter skills by name or description.").optional(),
+    },
+    outputSchema: {
+      skills: z
+        .array(
+          z.object({
+            id: z.string().describe("Unique skill identifier (path-safe)."),
+            name: z.string().describe("Display name from SKILL.md frontmatter."),
+            description: z.string().describe("Short description from SKILL.md frontmatter."),
+            path: z.string().describe("Absolute path to the skill directory."),
+            version: z.string().optional().describe("Semantic version, if declared."),
+          }),
+        )
+        .describe("Discovered skills, sorted by id."),
+      total: z.number().describe("Total number of installed skills."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps."),
+    },
+  },
+  {
+    name: "get_skill",
+    title: "Get skill (full body + references)",
+    description:
+      "Load the full body and reference files for an installed Agent Skill by id. " +
+      "Returns the rendered instruction block suitable for prepending to a task prompt. " +
+      "Call list_skills first to discover available skill ids.",
+    inputSchema: {
+      id: boundedString("Skill id (must match a directory name under .codeatlas/skills/)."),
+      includeReferences: z
+        .boolean()
+        .optional()
+        .describe("Include reference file contents in the rendered output (default true)."),
+    },
+    outputSchema: {
+      found: z.boolean().describe("Whether the skill was found and loaded."),
+      id: z.string().nullable().describe("Skill id, or null when not found."),
+      rendered: z
+        .string()
+        .nullable()
+        .describe("Compiled instruction block, or null when not found."),
+      problems: z
+        .array(z.string())
+        .describe("Validation problems (non-empty when skill exists but is invalid)."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps."),
+    },
+  },
+  {
+    name: "analyze_impact",
+    title: "Analyze change impact (blast radius)",
+    description:
+      "Compute the reverse-dependency closure for one or more changed file paths: " +
+      "which files/symbols depend on them transitively, how many are tests or docs, " +
+      "and a risk score (low/medium/high). " +
+      "This is the flagship differentiating capability — grounded in the indexed graph, not guesses. " +
+      "Use after find_relevant_context when you need to assess the blast radius of a proposed change.",
+    inputSchema: {
+      paths: z
+        .array(boundedString("A changed file path."))
+        .min(1)
+        .max(50)
+        .describe("Array of changed file paths (repo-relative or absolute)."),
+      maxDepth: intRange(0, 10)
+        .optional()
+        .describe("Maximum traversal depth (0 = unlimited, 1 = direct dependents only)."),
+      includeTests: z
+        .boolean()
+        .optional()
+        .describe("Include test files in the closure (default true)."),
+      includeDocs: z
+        .boolean()
+        .optional()
+        .describe("Include documentation files in the closure (default true)."),
+    },
+    outputSchema: {
+      subjects: z.array(z.string()).describe("The input paths that were analyzed."),
+      affected: z
+        .array(
+          z.object({
+            path: z.string().describe("Affected file path."),
+            distance: z.number().describe("Hop distance from the nearest changed subject."),
+            isTestFile: z.boolean().describe("Heuristic: is this a test file?"),
+            isDocFile: z.boolean().describe("Heuristic: is this a documentation file?"),
+          }),
+        )
+        .describe("All nodes in the transitive reverse-dependency closure."),
+      risk: z
+        .object({
+          level: z.enum(["low", "medium", "high"]).describe("Composite risk level."),
+          directDependents: z.number().describe("Nodes at distance 1."),
+          totalAffected: z.number().describe("Total nodes in the closure."),
+          affectedTests: z.number().describe("Test files in the closure."),
+          affectedDocs: z.number().describe("Documentation files in the closure."),
+          fanOutRatio: z.number().describe("Fraction of the graph affected (0–1)."),
+        })
+        .describe("Risk summary for the change set."),
+      durationMs: z.number().describe("Milliseconds taken to compute the result."),
+      nextSteps: z.array(z.string()).describe("Suggested next steps."),
+      freshness: freshnessField,
+      timings: timingsField,
     },
   },
   {
