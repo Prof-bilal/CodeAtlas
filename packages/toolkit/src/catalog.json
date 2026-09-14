@@ -3105,7 +3105,7 @@
     {
       "name": "playwright-cli",
       "description": "Token-efficient browser automation CLI for coding agents. Provides browse, screenshot, click, and form-fill capabilities via CLI commands that are more token-efficient than MCP. Install skills via `playwright-cli install --skills`.",
-      "repository": "https://github.com/microsoft/playwright-mcp",
+      "repository": "https://github.com/microsoft/playwright-cli",
       "website": "https://playwright.dev/docs/getting-started-cli",
       "documentation": "https://playwright.dev/docs/getting-started-cli",
       "license": "Apache-2.0",
@@ -3116,7 +3116,7 @@
       "installMethods": [
         {
           "type": "npm",
-          "packageId": "@playwright/mcp"
+          "packageId": "@playwright/cli"
         }
       ],
       "dependencies": [],

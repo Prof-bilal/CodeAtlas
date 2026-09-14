@@ -233,6 +233,15 @@ export const TOOLS: readonly ToolDefinition[] = [
           "When true, item content is a one-line pointer (path:range) instead of full text — " +
             "the cheapest way to discover what to read next. Fetch bodies with read_file_range. Default false.",
         ),
+      skills: z
+        .array(boundedString("Skill id."))
+        .max(5)
+        .optional()
+        .describe(
+          "Reusable Agent Skill ids to inject as instruction blocks alongside the context. " +
+            "Project skills (.codeatlas/skills/) resolve first, then first-party built-ins " +
+            "(call list_skills to discover). Unknown ids fail the call.",
+        ),
     },
     outputSchema: {
       task: z.string().describe("The original task."),
@@ -314,6 +323,31 @@ export const TOOLS: readonly ToolDefinition[] = [
         .optional()
         .describe(
           "The mode escalation started from (`digest`); present only when `escalated` is true.",
+        ),
+      skills: z
+        .object({
+          ids: z.array(z.string()).describe("The resolved skill ids, in request order."),
+          instructions: z
+            .string()
+            .describe(
+              "Rendered skill instruction blocks. Read these FIRST and follow them while working with the context items.",
+            ),
+        })
+        .optional()
+        .describe(
+          "Present when the caller passed `skills`: injected reusable Skill instructions that accompany the ranked context.",
+        ),
+      recommendedSkills: z
+        .array(
+          z.object({
+            id: z.string().describe("Skill id (load with get_skill, or inject via `skills`)."),
+            description: z.string().describe("Why it matched: the skill's description."),
+            source: z.enum(["custom", "builtin"]).describe("Where the skill comes from."),
+          }),
+        )
+        .optional()
+        .describe(
+          "Present when a task term-overlaps an available skill's description: at most one deterministic suggestion (no AI scoring). Load it with get_skill before acting if it looks relevant.",
         ),
     },
   },
@@ -601,11 +635,16 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "list_skills",
     title: "List installed skills",
     description:
-      "List all Agent Skills installed in the project's .codeatlas/skills/ directory. " +
-      "Returns lightweight metadata (id, name, description, version). " +
+      "List all Agent Skills available to the agent: the project's .codeatlas/skills/ " +
+      "directory plus the first-party built-ins shipped with CodeAtlas. " +
+      "Returns lightweight metadata (id, name, description, version, source). " +
       "Use this before get_skill to discover available skills.",
     inputSchema: {
       filter: boundedString("Optional keyword to filter skills by name or description.").optional(),
+      source: z
+        .enum(["all", "custom", "builtin"])
+        .optional()
+        .describe("Filter by provenance (default all)."),
     },
     outputSchema: {
       skills: z
@@ -614,12 +653,13 @@ export const TOOLS: readonly ToolDefinition[] = [
             id: z.string().describe("Unique skill identifier (path-safe)."),
             name: z.string().describe("Display name from SKILL.md frontmatter."),
             description: z.string().describe("Short description from SKILL.md frontmatter."),
-            path: z.string().describe("Absolute path to the skill directory."),
+            path: z.string().describe("Skill location (builtin://<id> for built-ins)."),
             version: z.string().optional().describe("Semantic version, if declared."),
+            source: z.enum(["custom", "builtin"]).describe("Where the skill comes from."),
           }),
         )
         .describe("Discovered skills, sorted by id."),
-      total: z.number().describe("Total number of installed skills."),
+      total: z.number().describe("Total number of available skills."),
       nextSteps: z.array(z.string()).describe("Suggested next steps."),
     },
   },
@@ -627,11 +667,12 @@ export const TOOLS: readonly ToolDefinition[] = [
     name: "get_skill",
     title: "Get skill (full body + references)",
     description:
-      "Load the full body and reference files for an installed Agent Skill by id. " +
+      "Load the full body and reference files for an available Agent Skill by id " +
+      "(project custom skills and first-party built-ins both resolve). " +
       "Returns the rendered instruction block suitable for prepending to a task prompt. " +
       "Call list_skills first to discover available skill ids.",
     inputSchema: {
-      id: boundedString("Skill id (must match a directory name under .codeatlas/skills/)."),
+      id: boundedString("Skill id (a custom skill under .codeatlas/skills/ or a built-in id)."),
       includeReferences: z
         .boolean()
         .optional()
@@ -640,6 +681,10 @@ export const TOOLS: readonly ToolDefinition[] = [
     outputSchema: {
       found: z.boolean().describe("Whether the skill was found and loaded."),
       id: z.string().nullable().describe("Skill id, or null when not found."),
+      source: z
+        .enum(["custom", "builtin"])
+        .nullable()
+        .describe("Provenance, or null when not found."),
       rendered: z
         .string()
         .nullable()

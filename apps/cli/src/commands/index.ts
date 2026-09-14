@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { type AgentsCommandOptions, registerAgents } from "./agents";
 import { registerAsk } from "./ask";
 import { registerBenchmark } from "./benchmark";
+import { registerBrowse } from "./browse";
 import { type ContextCommandOptions, registerAgentRouter, registerContext } from "./context";
 import { type DoctorCommandOptions, registerDoctor } from "./doctor";
 import { registerEvaluate } from "./evaluate";
@@ -15,12 +16,14 @@ import { registerOllama, registerProviders } from "./providers";
 import { registerScan } from "./scan";
 import { type SearchCommandOptions, registerSearch } from "./search";
 import { type SessionsCommandOptions, registerSessions } from "./sessions";
+import { registerSetup } from "./setup";
 import { registerSkills } from "./skills";
 import { registerTools } from "./tools";
 import type { ToolsCommandOptions } from "./tools";
 import { registerTrace } from "./trace";
 import { registerUsage } from "./usage";
 import { registerVerify } from "./verify";
+import { registerWarden } from "./warden";
 
 /** Register every CLI command on the given program. */
 export function registerCommands(
@@ -63,8 +66,11 @@ export function registerCommands(
   registerDoctor(program, options.doctor === undefined ? {} : { doctor: options.doctor });
   registerMcp(program);
   registerBenchmark(program);
+  registerBrowse(program);
   registerVerify(program);
+  registerWarden(program);
   registerSkills(program);
+  registerSetup(program);
   registerImpact(program);
   registerInspect(program);
   registerEvaluate(program);

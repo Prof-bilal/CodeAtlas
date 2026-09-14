@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
-import { existsSync } from "node:fs";
-import { rm } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import type {
@@ -19,10 +19,13 @@ import type {
 } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 import {
+  REGISTRY_SCHEMA_VERSION,
   type ToolManifest,
   listInstalledTools,
   loadToolManifest,
   toolManifestPath,
+  validateOverlay,
+  validateToolRecord,
 } from "@atlas/toolkit";
 import { createCompatibilityEngine } from "./compatibility";
 import { createConfigurator } from "./configurator";
@@ -40,6 +43,19 @@ export interface ToolkitDoctorEntry {
 
 export interface ToolkitRemoveOutcome extends InstallRemovalOutcome {
   readonly configuration: "not-managed" | "cleaned";
+}
+
+export interface CustomToolTemplateOptions {
+  readonly name: string;
+  readonly description: string;
+  readonly license: string;
+  readonly version?: string;
+  readonly categories: readonly string[];
+  readonly installType?: string;
+  readonly packageId?: string;
+  readonly repository?: string;
+  readonly documentation?: string;
+  readonly supportedOs?: readonly string[];
 }
 
 export interface ToolkitUpdateOutcome {
@@ -80,6 +96,12 @@ export interface ToolkitSDK {
     name: string,
     options?: { readonly dryRun?: boolean; readonly configHome?: string },
   ): Promise<Result<ConfigureOutcome>>;
+  createCustomToolTemplate(options: CustomToolTemplateOptions): Result<ToolRegistryRecord>;
+  validateCustomTool(input: unknown): Result<ToolRegistryRecord>;
+  addCustomTool(
+    input: unknown,
+    options?: { readonly replace?: boolean },
+  ): Promise<Result<{ readonly tool: ToolRegistryRecord; readonly overlayPath: string }>>;
 }
 
 export interface CreateToolkitSDKOptions {
@@ -89,11 +111,15 @@ export interface CreateToolkitSDKOptions {
   readonly installer?: InstallerPort;
   readonly configurator?: ConfiguratorPort;
   readonly compatibility?: CompatibilityPort;
+  /** Project-local overlay path. Defaults to `.codeatlas/tools-overlay.json`. */
+  readonly overlayPath?: string;
 }
 
 export function createToolkitSDK(options: CreateToolkitSDKOptions = {}): ToolkitSDK {
   const root = options.root ?? process.cwd();
-  const registry = options.registry ?? createToolRegistry();
+  const overlayPath = options.overlayPath ?? join(root, ".codeatlas", "tools-overlay.json");
+  const registry =
+    options.registry ?? createToolRegistry({ ...(existsSync(overlayPath) ? { overlayPath } : {}) });
   const compatibility = options.compatibility ?? createCompatibilityEngine();
   const installer = options.installer ?? createInstaller({ compatibility });
   const configurator = options.configurator ?? createConfigurator();
@@ -417,6 +443,90 @@ export function createToolkitSDK(options: CreateToolkitSDKOptions = {}): Toolkit
       }
       return ok(entries);
     },
+    createCustomToolTemplate(templateOptions) {
+      const input = {
+        name: templateOptions.name,
+        description: templateOptions.description,
+        license: templateOptions.license,
+        version: templateOptions.version ?? "0.1.0",
+        categories: templateOptions.categories,
+        ...(templateOptions.installType === undefined
+          ? {}
+          : {
+              installMethods: [
+                {
+                  type: templateOptions.installType,
+                  ...(templateOptions.packageId === undefined
+                    ? {}
+                    : { packageId: templateOptions.packageId }),
+                },
+              ],
+            }),
+        ...(templateOptions.repository === undefined
+          ? {}
+          : { repository: templateOptions.repository }),
+        ...(templateOptions.documentation === undefined
+          ? {}
+          : { documentation: templateOptions.documentation }),
+        ...(templateOptions.supportedOs === undefined
+          ? {}
+          : { supportedOs: templateOptions.supportedOs }),
+      };
+      return validateToolInput(input);
+    },
+    validateCustomTool(input) {
+      return validateToolInput(input);
+    },
+    async addCustomTool(input, addOptions = {}) {
+      const validated = validateToolInput(input);
+      if (!validated.ok) return fail(validated.error);
+      const existing = registry.getTool(validated.value.name);
+      let current: unknown = { schemaVersion: REGISTRY_SCHEMA_VERSION, tools: [] };
+      if (existsSync(overlayPath)) {
+        try {
+          current = JSON.parse(readFileSync(overlayPath, "utf8")) as unknown;
+        } catch (error) {
+          return fail(new Error(`Unable to read tool overlay: ${String(error)}`));
+        }
+      }
+      if (!isOverlayPayload(current)) {
+        return fail(new Error("Tool overlay must contain schemaVersion and a tools array."));
+      }
+      const overlayHasName = current.tools.some(
+        (tool) =>
+          typeof tool === "object" &&
+          tool !== null &&
+          !Array.isArray(tool) &&
+          (tool as Record<string, unknown>)["name"] === validated.value.name,
+      );
+      if ((existing !== undefined || overlayHasName) && addOptions.replace !== true) {
+        const source = overlayHasName
+          ? "overlay"
+          : (registry.recordSource(validated.value.name) ?? "registry");
+        return fail(
+          new Error(
+            `Tool "${validated.value.name}" already exists in the ${source}; use replace explicitly to override it.`,
+          ),
+        );
+      }
+      const tools = current.tools.filter((tool) => {
+        if (typeof tool !== "object" || tool === null || Array.isArray(tool)) return true;
+        return (tool as Record<string, unknown>)["name"] !== validated.value.name;
+      });
+      tools.push(validated.value);
+      const payload = { schemaVersion: REGISTRY_SCHEMA_VERSION, tools };
+      const checked = validateOverlay(payload, REGISTRY_SCHEMA_VERSION);
+      if (!checked.ok) return fail(checked.error);
+      try {
+        await mkdir(join(overlayPath, ".."), { recursive: true });
+        const temporary = `${overlayPath}.tmp-${process.pid}`;
+        await writeFile(temporary, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+        await rename(temporary, overlayPath);
+      } catch (error) {
+        return fail(new Error(`Unable to write tool overlay: ${String(error)}`));
+      }
+      return ok({ tool: validated.value, overlayPath });
+    },
     configure(name, configureOptions = {}) {
       const tool = registry.getTool(name);
       if (tool === undefined) return Promise.resolve(fail(new Error(`Tool not found: ${name}`)));
@@ -443,4 +553,31 @@ export function createToolkitSDK(options: CreateToolkitSDKOptions = {}): Toolkit
       });
     },
   };
+}
+
+function validateToolInput(input: unknown): Result<ToolRegistryRecord> {
+  if (
+    typeof input === "object" &&
+    input !== null &&
+    !Array.isArray(input) &&
+    Array.isArray((input as Record<string, unknown>)["tools"])
+  ) {
+    const catalog = validateOverlay(input, REGISTRY_SCHEMA_VERSION);
+    if (!catalog.ok) return fail(catalog.error);
+    if (catalog.value.records.length !== 1) {
+      return fail(new Error("A custom tool file must contain exactly one tool."));
+    }
+    return ok(catalog.value.records[0] as ToolRegistryRecord);
+  }
+  return validateToolRecord(input, "user");
+}
+
+function isOverlayPayload(input: unknown): input is { schemaVersion: number; tools: unknown[] } {
+  return (
+    typeof input === "object" &&
+    input !== null &&
+    !Array.isArray(input) &&
+    typeof (input as Record<string, unknown>)["schemaVersion"] === "number" &&
+    Array.isArray((input as Record<string, unknown>)["tools"])
+  );
 }

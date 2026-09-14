@@ -10,7 +10,7 @@
 // frontmatter is parsed with a minimal YAML-subset parser (no dependency);
 // reference files are size-bounded and read-only (never executed).
 
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type {
   DiscoveredSkill,
@@ -101,13 +101,13 @@ export function discoverSkills(dir: string): DiscoveredSkill[] {
   for (const entry of entries) {
     if (!isValidSkillId(entry)) continue;
     const skillDir = join(dir, entry);
-    let st: ReturnType<typeof statSync>;
+    let st: ReturnType<typeof lstatSync>;
     try {
-      st = statSync(skillDir);
+      st = lstatSync(skillDir);
     } catch {
       continue;
     }
-    if (!st.isDirectory()) continue;
+    if (!st.isDirectory() || st.isSymbolicLink()) continue;
     const skill = tryReadSkill(skillDir, entry);
     if (skill === null) continue;
     discovered.push({
@@ -141,6 +141,15 @@ export function loadSkill(dir: string, id: string): Skill | null {
  * the directory basename. Returns null on any load/validation failure.
  */
 export function tryReadSkill(skillDir: string, id: string): Skill | null {
+  let skillStat: ReturnType<typeof lstatSync>;
+  try {
+    skillStat = lstatSync(skillDir);
+  } catch {
+    return null;
+  }
+  // Skills are untrusted input. Do not allow a symlinked skill directory to
+  // redirect loading outside the configured skills root.
+  if (!skillStat.isDirectory() || skillStat.isSymbolicLink()) return null;
   const mdPath = join(skillDir, SKILL_MD);
   if (!existsSync(mdPath)) return null;
   let raw: string;
@@ -369,12 +378,13 @@ function walkReferences(root: string, dir: string, out: SkillReference[], depth:
   for (const entry of entries) {
     if (out.length >= MAX_REFERENCE_FILES) return;
     const p = join(dir, entry);
-    let st: ReturnType<typeof statSync>;
+    let st: ReturnType<typeof lstatSync>;
     try {
-      st = statSync(p);
+      st = lstatSync(p);
     } catch {
       continue;
     }
+    if (st.isSymbolicLink()) continue;
     if (st.isDirectory()) {
       walkReferences(root, p, out, depth + 1);
       continue;

@@ -156,6 +156,15 @@ export {
 } from "./environment";
 export { compatibilityStateGlyph, renderCompatibilityReport } from "./render";
 export {
+  createWardenService,
+  WardenService,
+  type WardenRunPlan,
+  type WardenRunRequest,
+  type WardenRunResult,
+  type WardenServiceOptions,
+  type WardenStatus,
+} from "./warden";
+export {
   extractVersion,
   satisfiesVersionRange,
   type VersionTuple,
@@ -168,6 +177,14 @@ export type {
   SkillReference,
   SkillResolution,
 } from "./skills/types";
+export {
+  BUILTIN_SKILL_IDS,
+  listBuiltinSkills,
+  loadBuiltinSkill,
+  prebuiltSkillDir,
+  prebuiltSkillRoot,
+  validateBuiltinSkill,
+} from "./skills/builtin";
 export {
   MAX_SKILL_MARKDOWN_BYTES,
   MAX_SKILL_REFERENCE_BYTES,

@@ -8,6 +8,7 @@ export { createConfigurator, type CreateConfiguratorOptions } from "./configurat
 export {
   createToolkitSDK,
   type CreateToolkitSDKOptions,
+  type CustomToolTemplateOptions,
   type ToolkitDoctorEntry,
   type ToolkitRemoveOutcome,
   type ToolkitSDK,

@@ -7,7 +7,14 @@ import type {
   Summary,
   SummaryKind,
 } from "@atlas/sdk";
-import { createSkillService, evaluateSufficiency } from "@atlas/sdk";
+import {
+  availableSkills,
+  createSkillService,
+  evaluateSufficiency,
+  loadBuiltinSkill,
+  recommendSkillsForTask,
+  resolveSkillsInstructions,
+} from "@atlas/sdk";
 import type { CodeAtlasContext } from "./context";
 import { isDeniedPath } from "./deny";
 import type { Logger } from "./log";
@@ -23,6 +30,7 @@ import {
   optionalInt,
   optionalNumber,
   optionalString,
+  optionalStringArray,
   requireInt,
   requireString,
 } from "./validation";
@@ -92,6 +100,7 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
   const maxItems = optionalInt(args, "maxItems", 1, 50) ?? 20;
   const maxTokens = optionalInt(args, "maxTokens", 100, 50000) ?? 12000;
   const brief = optionalBoolean(args, "brief") ?? false;
+  const skills = optionalStringArray(args, "skills", 1, 5);
   const contextMode: "auto" | "auto-escalate" | "digest" | "full" | "off" | undefined =
     (optionalEnum(args, "contextMode", ["auto", "auto-escalate", "digest", "full", "off"]) ??
       optionalEnumFromEnv("ATLAS_CONTEXT_MODE", [
@@ -101,8 +110,24 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
         "full",
         "off",
       ])) as "auto" | "auto-escalate" | "digest" | "full" | "off" | undefined;
-
   const sdk = h.ctx.requireSDK();
+
+  // Resolve requested skills BEFORE assembling context so an unknown id fails
+  // the call without doing work (same fail-fast contract as CLI launch).
+  const skillsBlock =
+    skills === undefined ? undefined : resolveSkillsInstructions(skills, { root: h.ctx.root });
+  if (skillsBlock !== undefined && !skillsBlock.ok) {
+    throw new ToolDomainError(skillsBlock.error.message);
+  }
+
+  // Deterministic recommendation (shared SDK helper): score the task against
+  // every available skill's description and surface the best match (when it
+  // clears the significance threshold) so agents can discover relevant
+  // workflows. Excludes skills already injected via `skills`.
+  const recommendedSkills = recommendSkillsForTask(task, {
+    root: h.ctx.root,
+    ...(skills === undefined ? {} : { exclude: skills }),
+  });
 
   // Build the context package via the SDK's assembly pipeline.
   const { assembleContextPackage } = await import("@atlas/sdk");
@@ -213,6 +238,26 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
       : {}),
     hint,
     nextSteps,
+    // Launch-time skill injection for MCP agents (ADR-022 ch.5): the rendered
+    // instruction blocks ride along with the ranked context. Prepend to the
+    // working context before acting on the items below.
+    ...(skillsBlock?.ok
+      ? {
+          skills: {
+            ids: skillsBlock.value.ids,
+            instructions: skillsBlock.value.instructions,
+          },
+        }
+      : {}),
+    ...(recommendedSkills.length > 0
+      ? {
+          recommendedSkills: recommendedSkills.map((s) => ({
+            id: s.id,
+            description: s.description,
+            source: s.source,
+          })),
+        }
+      : {}),
     budget: {
       itemsRequested: finalPkg.budget.itemsRequested,
       itemsIncluded: finalPkg.budget.itemsIncluded,
@@ -763,31 +808,28 @@ function resolveNode(
 
 async function listSkills(h: HandlerContext, args: ToolArgs): Promise<unknown> {
   const root = h.ctx.root;
-  const service = createSkillService({ root });
-  const skillsDir = join(root, ".codeatlas", "skills");
   const filter = optionalString(args, "filter");
-  const allDiscovered = service.listSkills(skillsDir);
-  const discovered =
+  const sourceFilter = optionalEnum(args, "source", ["all", "custom", "builtin"]) ?? "all";
+  const all = availableSkills(root);
+  const sourceFiltered =
+    sourceFilter === "all" ? all : all.filter((s) => s.source === sourceFilter);
+  const filtered =
     filter !== undefined && filter !== ""
-      ? allDiscovered.filter(
+      ? sourceFiltered.filter(
           (s) =>
             s.name.toLowerCase().includes(filter.toLowerCase()) ||
             s.description.toLowerCase().includes(filter.toLowerCase()),
         )
-      : allDiscovered;
+      : sourceFiltered;
 
   return {
-    skills: discovered.map((s) => ({
-      id: s.id,
-      name: s.name,
-      description: s.description,
-      path: s.path,
-      ...(s.version !== undefined ? { version: s.version } : {}),
-    })),
-    total: discovered.length,
+    skills: filtered,
+    total: filtered.length,
     nextSteps:
-      discovered.length === 0
-        ? ["Install a skill with: atlas tools install <skill-name>"]
+      filtered.length === 0
+        ? [
+            "Install a skill with: atlas skills add --from <path> or atlas tools install <skill-name>",
+          ]
         : ["Call get_skill with an id to load the full instruction block."],
   };
 }
@@ -802,28 +844,39 @@ async function getSkill(h: HandlerContext, args: ToolArgs): Promise<unknown> {
   const service = createSkillService({ root });
   const skillsDir = join(root, ".codeatlas", "skills");
 
-  // Validate first (cheap) to surface problems even for loadable skills
-  const problems = service.validateSkill(skillsDir, id);
-
   const loadResult = service.loadSkill(skillsDir, id);
-  if (!loadResult.ok) {
+  if (loadResult.ok) {
     return {
-      found: false,
-      id: null,
-      rendered: null,
-      problems,
-      nextSteps: ["Call list_skills to see available skill ids."],
+      found: true,
+      id: loadResult.value.id,
+      source: "custom" as const,
+      rendered: service.renderSkill(loadResult.value, { includeReferences }),
+      problems: service.validateSkill(skillsDir, id),
+      nextSteps: ["Prepend the rendered block to the agent prompt for this task."],
     };
   }
 
-  const rendered = service.renderSkill(loadResult.value, { includeReferences });
+  // Fall back to first-party built-ins (canonical SKILL.md files shipped
+  // with CodeAtlas, loaded through the same loader).
+  const builtin = loadBuiltinSkill(id);
+  if (builtin !== null) {
+    return {
+      found: true,
+      id: builtin.id,
+      source: "builtin" as const,
+      rendered: service.renderSkill(builtin, { includeReferences }),
+      problems: [],
+      nextSteps: ["Prepend the rendered block to the agent prompt for this task."],
+    };
+  }
 
   return {
-    found: true,
-    id: loadResult.value.id,
-    rendered,
-    problems,
-    nextSteps: ["Prepend the rendered block to the agent prompt for this task."],
+    found: false,
+    id: null,
+    source: null,
+    rendered: null,
+    problems: [],
+    nextSteps: ["Call list_skills to see available skill ids (custom and built-in)."],
   };
 }
 

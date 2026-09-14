@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import {
   type ConfigureOutcome,
   type InstallApproval,
@@ -80,6 +81,121 @@ export function registerTools(program: Command, options: ToolsCommandOptions = {
         value.length === 0 ? "No categories." : value.join("\n"),
       );
     });
+
+  tools
+    .command("create <name>")
+    .description("Create and persist a schema-validated custom tool definition")
+    .requiredOption("--description <text>", "Tool description")
+    .requiredOption("--license <license>", "Tool license identifier")
+    .requiredOption("--category <categories>", "Comma-separated categories")
+    .option("--version <version>", "Tool version (default: 0.1.0)")
+    .option(
+      "--install-type <type>",
+      "Install method: npm, pip, cargo, go, skill, or another declared type",
+    )
+    .option("--package <id>", "Package or repository identifier for the install method")
+    .option("--repository <url>", "Official repository URL")
+    .option("--documentation <url>", "Documentation URL")
+    .option("--os <platforms>", "Comma-separated supported platforms")
+    .option("--replace", "explicitly replace an existing record")
+    .option("--json", "print the result as JSON")
+    .action(
+      async (
+        name: string,
+        commandOptions: CommonOptions & {
+          readonly description: string;
+          readonly license: string;
+          readonly category: string;
+          readonly version?: string;
+          readonly installType?: string;
+          readonly package?: string;
+          readonly repository?: string;
+          readonly documentation?: string;
+          readonly os?: string;
+          readonly replace?: boolean;
+        },
+      ) => {
+        const template = toolkit.createCustomToolTemplate({
+          name,
+          description: commandOptions.description,
+          license: commandOptions.license,
+          categories: splitOption(commandOptions.category),
+          ...(commandOptions.version === undefined ? {} : { version: commandOptions.version }),
+          ...(commandOptions.installType === undefined
+            ? {}
+            : { installType: commandOptions.installType }),
+          ...(commandOptions.package === undefined ? {} : { packageId: commandOptions.package }),
+          ...(commandOptions.repository === undefined
+            ? {}
+            : { repository: commandOptions.repository }),
+          ...(commandOptions.documentation === undefined
+            ? {}
+            : { documentation: commandOptions.documentation }),
+          ...(commandOptions.os === undefined
+            ? {}
+            : { supportedOs: splitOption(commandOptions.os) }),
+        });
+        if (!template.ok) return fail(template.error);
+        const added = await toolkit.addCustomTool(template.value, {
+          replace: commandOptions.replace === true,
+        });
+        if (!added.ok) return fail(added.error);
+        emit(
+          added.value,
+          commandOptions,
+          (value) => `✓ Created custom tool ${value.tool.name} in ${value.overlayPath}`,
+        );
+      },
+    );
+
+  tools
+    .command("validate")
+    .description("Validate a custom tool definition without writing or installing it")
+    .requiredOption("--file <path>", "JSON file containing one tool record")
+    .option("--json", "print validation as JSON")
+    .action((commandOptions: CommonOptions & { readonly file: string }) => {
+      const input = readJsonFile(commandOptions.file);
+      if (!input.ok) return fail(input.error);
+      const result = toolkit.validateCustomTool(input.value);
+      if (!result.ok) {
+        emit(
+          { valid: false, problems: result.error.message },
+          commandOptions,
+          (value) => `✗ Invalid tool definition: ${value.problems}`,
+        );
+        process.exitCode = 1;
+        return;
+      }
+      emit(
+        { valid: true, tool: result.value },
+        commandOptions,
+        (value) => `✓ Valid custom tool: ${value.tool.name}`,
+      );
+    });
+
+  tools
+    .command("add")
+    .description("Validate and add a custom tool to the project-local registry overlay")
+    .requiredOption("--file <path>", "JSON file containing one tool record")
+    .option("--replace", "explicitly replace an existing catalog or overlay record")
+    .option("--json", "print the result as JSON")
+    .action(
+      async (
+        commandOptions: CommonOptions & { readonly file: string; readonly replace?: boolean },
+      ) => {
+        const input = readJsonFile(commandOptions.file);
+        if (!input.ok) return fail(input.error);
+        const result = await toolkit.addCustomTool(input.value, {
+          replace: commandOptions.replace === true,
+        });
+        if (!result.ok) return fail(result.error);
+        emit(
+          result.value,
+          commandOptions,
+          (value) => `✓ Added custom tool ${value.tool.name} to ${value.overlayPath}`,
+        );
+      },
+    );
 
   tools
     .command("info <tool>")
@@ -182,6 +298,23 @@ function emit<T>(value: T, options: CommonOptions, render: (value: T) => string)
 function fail(error: Error): void {
   console.error(error.message);
   process.exitCode = 1;
+}
+
+function splitOption(value: string): string[] {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
+function readJsonFile(
+  path: string,
+): { readonly ok: true; readonly value: unknown } | { readonly ok: false; readonly error: Error } {
+  try {
+    return { ok: true, value: JSON.parse(readFileSync(path, "utf8")) as unknown };
+  } catch (error) {
+    return { ok: false, error: new Error(`Unable to read JSON file ${path}: ${String(error)}`) };
+  }
 }
 
 function renderOverview(value: {

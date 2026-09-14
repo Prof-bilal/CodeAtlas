@@ -9,16 +9,19 @@ import {
   type ContextPackage,
   type ContextSlice,
   type Session,
+  type SkillRecommendation,
   type TaskClassification,
   createClassifier,
   createContextIntegration,
   createContextSDK,
   createPlanner,
   createSessionManager,
+  recommendSkillsForTask,
   renderContextBriefing,
   renderContextExplanation,
   renderContextPackage,
   renderContextSlice,
+  resolveSkillsInstructions,
   saveContextSlice,
 } from "@atlas/sdk";
 import type { Command } from "commander";
@@ -37,6 +40,7 @@ interface CommonOptions {
   readonly ai?: boolean;
   readonly plan?: boolean;
   readonly contextMode?: ContextMode;
+  readonly skill?: string[];
 }
 interface ContextOptions extends CommonOptions {
   readonly explain?: boolean;
@@ -136,6 +140,12 @@ export function registerContext(program: Command, options: ContextCommandOptions
       "--ai",
       "prepend an AI briefing of the package to the session prompt (requires a configured provider)",
     )
+    .option(
+      "--skill <id>",
+      "inject a reusable Skill as prompt instructions (custom first, then built-ins); repeatable",
+      collectOption,
+      [],
+    )
     .action(async (task: string, commandOptions: LaunchOptions) =>
       runLaunch(task, commandOptions, options.integration),
     );
@@ -153,6 +163,12 @@ export function registerContext(program: Command, options: ContextCommandOptions
     .option(
       "--ai",
       "prepend an AI briefing of the package to the session prompt (requires a configured provider)",
+    )
+    .option(
+      "--skill <id>",
+      "inject a reusable Skill as prompt instructions (custom first, then built-ins); repeatable",
+      collectOption,
+      [],
     )
     .action(async (sessionId: string, task: string, commandOptions: CommonOptions) =>
       runAttach(sessionId, task, commandOptions, options.integration),
@@ -201,6 +217,12 @@ export function registerAgentRouter(program: Command, options: ContextCommandOpt
         "--ai",
         "prepend an AI briefing of the package to the session prompt (requires a configured provider)",
       )
+      .option(
+        "--skill <id>",
+        "inject a reusable Skill as prompt instructions (custom first, then built-ins); repeatable",
+        collectOption,
+        [],
+      )
       .action(async (promptArgs: string[], commandOptions: AgentLaunchOptions) =>
         runLaunch(
           promptArgs.join(" "),
@@ -228,35 +250,53 @@ async function runBuild(
           planOutput = renderPlanSection(task, classification, options.repo);
         }
 
+        // Deterministic skill recommendation (shared with the MCP server):
+        // suggest a reusable workflow when the task meaningfully matches one
+        // of the available skills' descriptions. Never blocks the build.
+        const recommendedSkills = recommendSkillsForTask(task, { root: resolveProjectRoot() });
+
         if (options.explain === true) {
           const value = await integration.explain({ task, ...assembleOptions(options) });
           const base =
             options.json === true
-              ? JSON.stringify(value, null, 2)
+              ? JSON.stringify(withRecommendations(value, recommendedSkills), null, 2)
               : renderContextExplanation(value);
-          emit(planOutput !== undefined ? `${planOutput}\n\n${base}` : base, false, (x) => x);
+          console.log(
+            composeBuildOutput(base, planOutput, recommendedSkills, options.json === true),
+          );
         } else if (options.ai === true) {
           const briefing = await integration.brief({ task, ...assembleOptions(options) });
           if (briefing.ok) {
             const base =
               options.json === true
-                ? JSON.stringify(briefing.value, null, 2)
+                ? JSON.stringify(withRecommendations(briefing.value, recommendedSkills), null, 2)
                 : renderContextBriefing(briefing.value);
-            emit(planOutput !== undefined ? `${planOutput}\n\n${base}` : base, false, (x) => x);
+            console.log(
+              composeBuildOutput(base, planOutput, recommendedSkills, options.json === true),
+            );
           } else {
             const pkg = await integration.buildPackage({ task, ...assembleOptions(options) });
-            const outcome = { package: pkg, aiMessage: briefing.error.message };
+            const outcome = withRecommendations(
+              { package: pkg, aiMessage: briefing.error.message },
+              recommendedSkills,
+            );
             const base =
               options.json === true
                 ? JSON.stringify(outcome, null, 2)
                 : renderContextAIOutcome(outcome);
-            emit(planOutput !== undefined ? `${planOutput}\n\n${base}` : base, false, (x) => x);
+            console.log(
+              composeBuildOutput(base, planOutput, recommendedSkills, options.json === true),
+            );
           }
         } else {
           const value = await integration.buildPackage({ task, ...assembleOptions(options) });
           const base =
-            options.json === true ? JSON.stringify(value, null, 2) : renderContextPackage(value);
-          emit(planOutput !== undefined ? `${planOutput}\n\n${base}` : base, false, (x) => x);
+            options.json === true
+              ? JSON.stringify(withRecommendations(value, recommendedSkills), null, 2)
+              : renderContextPackage(value);
+          console.log(
+            composeBuildOutput(base, planOutput, recommendedSkills, options.json === true),
+          );
         }
       } catch (error) {
         reportContextError(error);
@@ -276,6 +316,13 @@ async function runLaunch(
     async (integration) => {
       try {
         const root = options.repo ?? resolveProjectRoot();
+        // Resolve requested skills BEFORE creating a session so an unknown id
+        // fails fast without spawning an agent process.
+        const skillInstructions = resolveRequestedSkills(options.skill, root);
+        if (skillInstructions === null) {
+          process.exitCode = 1;
+          return;
+        }
         let prompt: string | undefined;
         if (options.ai === true) {
           const briefing = await integration.brief({ task, ...assembleOptions(options) });
@@ -291,6 +338,7 @@ async function runLaunch(
           repositoryPath: root,
           ...assembleOptions(options),
           ...(prompt === undefined ? {} : { prompt }),
+          ...(skillInstructions === "" ? {} : { skillInstructions }),
         });
         if (!result.ok) {
           reportContextError(result.error);
@@ -318,6 +366,13 @@ async function runAttach(
 ): Promise<void> {
   await withIntegration(injected, async (integration) => {
     try {
+      const root = resolveProjectRoot();
+      // Same fail-fast contract as launch: unknown skill ids abort attach.
+      const skillInstructions = resolveRequestedSkills(options.skill, root);
+      if (skillInstructions === null) {
+        process.exitCode = 1;
+        return;
+      }
       let prompt: string | undefined;
       if (options.ai === true) {
         const briefing = await integration.brief({ task, ...assembleOptions(options) });
@@ -332,6 +387,7 @@ async function runAttach(
         task,
         ...assembleOptions(options),
         ...(prompt === undefined ? {} : { prompt }),
+        ...(skillInstructions === "" ? {} : { skillInstructions }),
       });
       if (!result.ok) {
         reportContextError(result.error);
@@ -455,7 +511,7 @@ function handoffSection(slice: ContextSlice): string {
     "",
     "## Agent handoff",
     "",
-    `This slice was generated by CodeAtlas (strategy ${slice.retrieval.strategy}) for the task above. Only the ranked items above were selected — never assume the whole repository was included. For a fresh slice, run \`atlas ask "<task>"\` or the \`get_context_slice\` MCP tool.`,
+    `This slice was generated by CodeAtlas (strategy ${slice.retrieval.strategy}) for the task above. Only the ranked items above were selected — never assume the whole repository was included. For a fresh slice, run \`atlas ask "<task>"\` or the \`find_relevant_context\` MCP tool.`,
   ].join("\n");
 }
 
@@ -488,7 +544,7 @@ async function injectInstructionBlock(
     `A ranked, budgeted context slice for "${info.task}" is saved at \`${info.slicePath}\`.`,
     "Read it before searching the repository for this task.",
     'Regenerate it with `atlas context export "<task>" --for <agent>` or query fresh context',
-    "with `atlas ask` / the `get_context_slice` MCP tool.",
+    "with `atlas ask` / the `find_relevant_context` MCP tool.",
     "",
     INJECT_END,
   ].join("\n");
@@ -616,6 +672,51 @@ function assembleOptions(options: CommonOptions): AssembleOptions {
 function emit<T>(value: T, json: boolean, render: (value: T) => string): void {
   console.log(json ? JSON.stringify(value, null, 2) : render(value));
 }
+
+/**
+ * Attach skill recommendations to a JSON build output without disturbing the
+ * existing shape: an empty recommendation list adds a field set to `[]`.
+ */
+function withRecommendations<T extends object>(
+  value: T,
+  recommendations: readonly SkillRecommendation[],
+): T & { recommendedSkills: readonly SkillRecommendation[] } {
+  return { ...value, recommendedSkills: recommendations };
+}
+
+/**
+ * Compose the final build output: base content, optional `--plan` section,
+ * then a compact recommendation section. JSON output is assembled purely by
+ * `withRecommendations`, so this only appends text sections when not JSON.
+ */
+function composeBuildOutput(
+  base: string,
+  planOutput: string | undefined,
+  recommendations: readonly SkillRecommendation[],
+  json: boolean,
+): string {
+  const parts: string[] = [];
+  if (!json && planOutput !== undefined) parts.push(planOutput);
+  parts.push(base);
+  if (!json && recommendations.length > 0) {
+    parts.push(renderSkillRecommendations(recommendations));
+  }
+  return parts.join("\n\n");
+}
+
+/** Render the deterministic skill recommendation section (text output). */
+function renderSkillRecommendations(recommendations: readonly SkillRecommendation[]): string {
+  const lines = [
+    "## Recommended Skills",
+    "",
+    "The task matches a reusable workflow. Load it with `atlas skills load <id> --builtin` (or from .codeatlas/skills/), or inject it on launch with `atlas context launch --skill <id>`:",
+    "",
+  ];
+  for (const rec of recommendations) {
+    lines.push(`- **${rec.id}** (${rec.source}) — ${rec.description}`);
+  }
+  return lines.join("\n");
+}
 function renderContextAIOutcome(outcome: ContextAIOutcome): string {
   return `${renderContextPackage(outcome.package)}\n\nAI briefing unavailable: ${outcome.aiMessage}`;
 }
@@ -626,6 +727,26 @@ function reportContextError(error: unknown): void {
   console.error(error instanceof Error ? error.message : "Context command failed.");
   process.exitCode = 1;
 }
+/**
+ * Resolve `--skill` ids into a combined instruction block. Returns the block
+ * (empty string when no skills were requested), or `null` after printing the
+ * resolution error — callers abort before creating a session.
+ */
+function resolveRequestedSkills(ids: readonly string[] | undefined, root: string): string | null {
+  if (ids === undefined || ids.length === 0) return "";
+  const resolved = resolveSkillsInstructions(ids, { root });
+  if (!resolved.ok) {
+    console.error(resolved.error.message);
+    return null;
+  }
+  return resolved.value.instructions;
+}
+
+/** Commander collector for repeatable options. */
+function collectOption(value: string, previous: string[]): string[] {
+  return [...previous, value];
+}
+
 function parsePositiveInteger(value: string): number {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0)

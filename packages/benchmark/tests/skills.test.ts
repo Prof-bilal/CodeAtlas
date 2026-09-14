@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -104,8 +104,11 @@ describe("benchmark skills (minimal Agent Skills)", () => {
     expect(loadSkill(root, "other-name")).toBeNull();
   });
 
-  it("rejects traversal via non-path-safe ids", () => {
+  it("rejects traversal via non-path-safe ids and symlinked skill directories", () => {
     expect(loadSkill(root, "../etc")).toBeNull();
+    writeSkill("outside-source", sampleSkill());
+    symlinkSync(join(root, "outside-source"), join(root, "linked-skill"), "dir");
+    expect(loadSkill(root, "linked-skill")).toBeNull();
   });
 
   it("renders instructions that include body and references", () => {

@@ -61,6 +61,12 @@ This is the highest-risk area (relevant to the planned Agent Orchestrator and to
 
 ---
 
+### Browser observation
+
+`atlas browse` is an explicit, CLI-first wrapper around the user-installed `playwright-cli`; CodeAtlas does not bundle Chromium or execute browser content as code. Every URL must use HTTP(S) and match an exact origin supplied with `--allow-origin`. Browser commands use `spawn(binary, argsArray)` with `shell: false`, bounded output, timeouts, and generated evidence paths below `.codeatlas/evidence/`. External pages are untrusted data and are not uploaded or interpreted into scores.
+
+`atlas browse interact` applies the same rules to page interaction: only a fixed vocabulary (`click`/`hover`/`fill`/`press`, max 12 per call) is available, interaction targets are bounded element refs sourced from a prior snapshot, fill text is capped, named keys come from a fixed list, and every value is passed as a single argument-array entry — never a shell string. Optional evidence labels are path-safe (`[a-zA-Z0-9._-]`, ≤64 chars) so page/user-derived labels can never escape the evidence directory.
+
 ## 4. Path traversal, symlinks & malicious repositories
 
 - **Path traversal:** any path derived from repo contents or user input must be

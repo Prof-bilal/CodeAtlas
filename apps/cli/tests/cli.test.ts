@@ -399,6 +399,7 @@ describe("atlas CLI", () => {
       "agents",
       "ask",
       "benchmark",
+      "browse",
       "build",
       "claude",
       "codex",
@@ -418,12 +419,14 @@ describe("atlas CLI", () => {
       "scan",
       "search",
       "sessions",
+      "setup",
       "skills",
       "tools",
       "trace",
       "update",
       "usage",
       "verify",
+      "warden",
     ]);
   });
 
@@ -573,6 +576,45 @@ describe("atlas CLI", () => {
       expect(log.mock.calls.join("\n")).toContain("Agent Tools");
     } finally {
       log.mockRestore();
+    }
+  });
+
+  it("validates and adds custom tools through the CLI", async () => {
+    const root = mkdtempSync(join(tmpdir(), "atlas-cli-custom-tool-"));
+    const file = join(root, "tool.json");
+    writeFileSync(
+      file,
+      JSON.stringify({
+        name: "cli-private-tool",
+        description: "A CLI fixture tool.",
+        license: "MIT",
+        version: "1.0.0",
+        categories: ["Testing"],
+      }),
+    );
+    const record = {
+      name: "cli-private-tool",
+      description: "A CLI fixture tool.",
+      license: "MIT",
+      version: "1.0.0",
+      categories: ["Testing"],
+    } as unknown as ToolRegistryRecord;
+    const validateCustomTool = vi.fn(() => ok(record));
+    const addCustomTool = vi.fn(async () =>
+      ok({ tool: record, overlayPath: ".codeatlas/tools-overlay.json" }),
+    );
+    const toolkit = fakeToolkit({ validateCustomTool, addCustomTool });
+    const program = createCli({ toolkit });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync(["node", "atlas", "tools", "validate", "--file", file, "--json"]);
+      await program.parseAsync(["node", "atlas", "tools", "add", "--file", file, "--json"]);
+      expect(validateCustomTool).toHaveBeenCalledWith(record);
+      expect(addCustomTool).toHaveBeenCalledWith(record, { replace: false });
+      expect(log.mock.calls.join(" ")).toContain('"cli-private-tool"');
+    } finally {
+      log.mockRestore();
+      rmSync(root, { recursive: true, force: true });
     }
   });
 
@@ -734,6 +776,139 @@ describe("atlas CLI", () => {
     }
   });
 
+  it("forwards --skill to the integration launch and agent router, and fails fast on unknown ids", async () => {
+    const integration = fakeContextIntegration();
+    const program = createCli({ integration });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "launch",
+        "fix auth",
+        "--provider",
+        "claude",
+        "--skill",
+        "verification-before-completion",
+        "--skill",
+        "ui-check",
+      ]);
+      expect(integration.launch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          task: "fix auth",
+          provider: "claude",
+          skillInstructions: expect.stringContaining("Verification Before Completion"),
+        }),
+      );
+
+      // Unknown ids fail before any session is created.
+      (integration.launch as ReturnType<typeof vi.fn>).mockClear();
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "launch",
+        "fix auth",
+        "--provider",
+        "claude",
+        "--skill",
+        "not-a-skill",
+      ]);
+      expect(integration.launch).not.toHaveBeenCalled();
+      expect(err.mock.calls.join(" ")).toContain("not-a-skill");
+      expect(process.exitCode).toBe(1);
+      process.exitCode = 0;
+    } finally {
+      log.mockRestore();
+      err.mockRestore();
+    }
+  });
+
+  it("forwards --skill through context attach", async () => {
+    const integration = fakeContextIntegration();
+    const program = createCli({ integration });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "attach",
+        "s1",
+        "fix auth",
+        "--skill",
+        "ui-check",
+      ]);
+      expect(integration.attach).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sessionId: "s1",
+          skillInstructions: expect.stringContaining("UI Check"),
+        }),
+      );
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("appends deterministic skill recommendations to context build output", async () => {
+    const integration = fakeContextIntegration();
+    const program = createCli({ integration });
+    const repo = createTempFixtureRoot();
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      // The fixture task matches the security skill's description (>= 2 terms).
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "review the security boundaries and hostile inputs of this change",
+        "--repo",
+        repo,
+      ]);
+      const output = log.mock.calls.join("\n");
+      expect(output).toContain("Recommended Skills");
+      expect(output).toContain("trail-of-bits-security-skills");
+      expect(output).toContain("atlas skills load");
+
+      // JSON output carries the same recommendation as a field.
+      log.mockClear();
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "review the security boundaries and hostile inputs of this change",
+        "--repo",
+        repo,
+        "--json",
+      ]);
+      const json = JSON.parse(log.mock.calls.join("\n")) as {
+        recommendedSkills?: Array<{ id: string; source: string }>;
+      };
+      expect(json.recommendedSkills?.[0]?.id).toBe("trail-of-bits-security-skills");
+      expect(json.recommendedSkills?.[0]?.source).toBe("builtin");
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("keeps recommendation fields present-but-empty when nothing matches", async () => {
+    const integration = fakeContextIntegration();
+    const program = createCli({ integration });
+    const repo = createTempFixtureRoot();
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync(["node", "atlas", "context", "fix auth", "--repo", repo, "--json"]);
+      const json = JSON.parse(log.mock.calls.join("\n")) as {
+        recommendedSkills?: unknown[];
+      };
+      expect(json.recommendedSkills).toEqual([]);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
   it("forwards --context-mode through context build, launch, and the agent router", async () => {
     const integration = fakeContextIntegration();
     const program = createCli({ integration });
@@ -842,14 +1017,17 @@ describe("atlas CLI", () => {
   it("registers the complete thin Toolkit command surface", () => {
     const tools = createCli().commands.find((command) => command.name() === "tools");
     expect(tools?.commands.map((command) => command.name()).sort()).toEqual([
+      "add",
       "categories",
       "configure",
+      "create",
       "doctor",
       "info",
       "install",
       "remove",
       "search",
       "update",
+      "validate",
     ]);
   });
 

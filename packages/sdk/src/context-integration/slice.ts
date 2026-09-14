@@ -5,7 +5,7 @@
  * {@link ContextPackage} (ADR-008): the smallest ranked, budgeted,
  * deny-filtered set of repository context assembled for ONE task. Every
  * delivery channel (CLI `atlas ask`, `atlas context export`, the MCP
- * `get_context_slice` tool, the HTTP API) serves slices — never the whole
+ * `find_relevant_context` tool, the HTTP API) serves slices — never the whole
  * repository scan output.
  *
  * The slice extends (does not replace) the package with provenance the

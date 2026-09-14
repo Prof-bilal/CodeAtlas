@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { SessionStateError } from "@atlas/agents";
@@ -622,6 +622,81 @@ describe("createContextIntegration — delivery", () => {
         return;
       }
       expect(result.value.status).toBe("RUNNING");
+    });
+  });
+
+  it("prepends resolved built-in skill instructions to the launch prompt", async () => {
+    const repo = tempRepo();
+    const sessions = fakeSessions();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: sessions.port });
+      const result = await integration.launch({
+        provider: "claude",
+        repositoryPath: repo,
+        task: "double",
+        skills: ["verification-before-completion"],
+      });
+      expect(result.ok).toBe(true);
+      expect(sessions.launchPrompts.length).toBe(1);
+      const prompt = sessions.launchPrompts[0] ?? "";
+      expect(prompt).toContain("Reusable skill applied to this task");
+      expect(prompt).toContain("verification-before-completion");
+      // Skill block is prepended, context package follows.
+      expect(prompt.indexOf("Reusable skill")).toBeLessThan(
+        prompt.indexOf("export function double"),
+      );
+    });
+  });
+
+  it("prefers a custom skill over a same-id built-in and supports multiple skills", async () => {
+    const repo = tempRepo();
+    const customBody = [
+      "---",
+      "name: deep-research",
+      "description: Custom project variant used instead of the built-in.",
+      "version: 1.0.0",
+      "---",
+      "",
+      "# Custom Deep Research",
+      "",
+      "Custom workflow step.",
+    ].join("\n");
+    mkdirSync(join(repo, ".codeatlas", "skills", "deep-research"), { recursive: true });
+    writeFileSync(join(repo, ".codeatlas", "skills", "deep-research", "SKILL.md"), customBody);
+    const sessions = fakeSessions();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: sessions.port });
+      const result = await integration.launch({
+        provider: "claude",
+        repositoryPath: repo,
+        task: "double",
+        skills: ["deep-research", "ui-check"],
+      });
+      expect(result.ok).toBe(true);
+      const prompt = sessions.launchPrompts[0] ?? "";
+      expect(prompt).toContain("Custom Deep Research");
+      expect(prompt).toContain("ui-check");
+      expect(prompt.indexOf("Custom Deep Research")).toBeLessThan(prompt.indexOf("UI Check"));
+    });
+  });
+
+  it("fails the launch when a requested skill id cannot be resolved", async () => {
+    const repo = tempRepo();
+    const sessions = fakeSessions();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: sessions.port });
+      const result = await integration.launch({
+        provider: "claude",
+        repositoryPath: repo,
+        task: "double",
+        skills: ["not-a-real-skill"],
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toContain("not-a-real-skill");
+      }
+      // No session was created for the failed launch.
+      expect(sessions.launchPrompts).toHaveLength(0);
     });
   });
 

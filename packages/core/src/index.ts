@@ -66,6 +66,13 @@ export type {
   TaskClassification,
   TaskEntities as TaskClassifierEntities,
 } from "./ports/task-classifier.port";
+export type {
+  BrowseEvidence,
+  BrowseInteraction,
+  BrowseKey,
+  BrowsePort,
+  BrowseViewport,
+} from "./ports/browse.port";
 export type { CachePort } from "./ports/cache.port";
 export type {
   ContextBuilderPort,

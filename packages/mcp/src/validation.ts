@@ -130,3 +130,31 @@ export function optionalEnum(
   }
   return value;
 }
+
+/**
+ * Read an optional array of non-empty strings, bounded to `[min, max]`
+ * entries. Rejects non-arrays, non-string entries, and out-of-bounds lengths.
+ */
+export function optionalStringArray(
+  args: ToolArgs,
+  key: string,
+  min: number,
+  max: number,
+): string[] | undefined {
+  const value = args[key];
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(value)) {
+    throw new ToolInputError(`"${key}" must be an array of strings.`);
+  }
+  if (value.length < min || value.length > max) {
+    throw new ToolInputError(`"${key}" must contain between ${min} and ${max} entries.`);
+  }
+  return value.map((entry) => {
+    if (typeof entry !== "string" || entry.trim().length === 0) {
+      throw new ToolInputError(`Every "${key}" entry must be a non-empty string.`);
+    }
+    return entry;
+  });
+}

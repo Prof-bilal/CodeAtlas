@@ -785,3 +785,218 @@ describe("inspect_symbol", () => {
     });
   });
 });
+
+describe("skill injection for MCP agents", () => {
+  it("find_relevant_context returns injected skill instructions when skills are requested", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Fix the double function",
+        skills: ["ui-check"],
+      })) as {
+        skills?: { ids: string[]; instructions: string };
+      };
+      expect(result.skills).toBeDefined();
+      expect(result.skills?.ids).toEqual(["ui-check"]);
+      expect(result.skills?.instructions).toContain("UI Check");
+      expect(result.skills?.instructions).toContain("Reusable skill applied to this task");
+    });
+  });
+
+  it("find_relevant_context omits the skills field when no skills are requested", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Fix the double function",
+      })) as { skills?: unknown };
+      expect(result.skills).toBeUndefined();
+    });
+  });
+
+  it("find_relevant_context resolves custom skills over same-id built-ins", async () => {
+    const fx = createFixture();
+    const ctx = handlerContext(fx);
+    try {
+      const dir = join(fx.root, ".codeatlas", "skills", "deep-research");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(
+        join(dir, "SKILL.md"),
+        "---\nname: deep-research\ndescription: Custom project variant.\nversion: 1.0.0\n---\n\n# Custom Deep Research\n\nProject steps.\n",
+      );
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Fix the double function",
+        skills: ["deep-research"],
+      })) as { skills?: { instructions: string } };
+      expect(result.skills?.instructions).toContain("Custom Deep Research");
+    } finally {
+      ctx.ctx.close();
+      fx.cleanup();
+    }
+  });
+
+  it("find_relevant_context rejects unknown skill ids with a domain error", async () => {
+    await withFixture(async (ctx) => {
+      await expect(
+        HANDLERS.find_relevant_context(ctx, {
+          task: "Fix the double function",
+          skills: ["not-a-skill"],
+        }),
+      ).rejects.toThrow(ToolDomainError);
+      await expect(
+        HANDLERS.find_relevant_context(ctx, {
+          task: "Fix the double function",
+          skills: ["not-a-skill"],
+        }),
+      ).rejects.toThrow(/not-a-skill/);
+    });
+  });
+
+  it("find_relevant_context rejects out-of-bounds skills arrays", async () => {
+    await withFixture(async (ctx) => {
+      await expect(
+        HANDLERS.find_relevant_context(ctx, {
+          task: "t",
+          skills: ["a", "b", "c", "d", "e", "f"],
+        }),
+      ).rejects.toThrow(ToolInputError);
+    });
+  });
+
+  it("list_skills includes built-ins with provenance and honors the source filter", async () => {
+    await withFixture(async (ctx) => {
+      const all = (await HANDLERS.list_skills(ctx, {})) as {
+        skills: Array<{ id: string; source: string; path: string }>;
+        total: number;
+      };
+      expect(all.total).toBeGreaterThanOrEqual(13);
+      const uiCheck = all.skills.find((s) => s.id === "ui-check");
+      expect(uiCheck?.source).toBe("builtin");
+      expect(uiCheck?.path).toBe("builtin://ui-check");
+
+      const builtins = (await HANDLERS.list_skills(ctx, { source: "builtin" })) as {
+        skills: Array<{ source: string }>;
+      };
+      expect(builtins.skills.length).toBeGreaterThanOrEqual(13);
+      expect(builtins.skills.every((s) => s.source === "builtin")).toBe(true);
+    });
+  });
+
+  it("get_skill loads a built-in by id with builtin provenance", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.get_skill(ctx, { id: "verification-before-completion" })) as {
+        found: boolean;
+        source?: string | null;
+        rendered: string | null;
+      };
+      expect(result.found).toBe(true);
+      expect(result.source).toBe("builtin");
+      expect(result.rendered).toContain("Verification Before Completion");
+    });
+  });
+
+  it("get_skill still resolves custom skills and reports custom provenance", async () => {
+    const fx = createFixture();
+    const ctx = handlerContext(fx);
+    try {
+      const dir = join(fx.root, ".codeatlas", "skills", "my-workflow");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(
+        join(dir, "SKILL.md"),
+        "---\nname: my-workflow\ndescription: A custom workflow.\nversion: 1.0.0\n---\n\n# My Workflow\n\nSteps.\n",
+      );
+      const result = (await HANDLERS.get_skill(ctx, { id: "my-workflow" })) as {
+        found: boolean;
+        source?: string | null;
+      };
+      expect(result.found).toBe(true);
+      expect(result.source).toBe("custom");
+    } finally {
+      ctx.ctx.close();
+      fx.cleanup();
+    }
+  });
+
+  it("get_skill reports not-found for unknown ids", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.get_skill(ctx, { id: "nope" })) as {
+        found: boolean;
+        source: string | null;
+      };
+      expect(result.found).toBe(false);
+      expect(result.source).toBeNull();
+    });
+  });
+
+  it("recommends a builtin skill when the task matches its description", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "review the security boundaries and hostile inputs of this change",
+      })) as {
+        recommendedSkills?: Array<{ id: string; source: string; description: string }>;
+      };
+      expect(result.recommendedSkills).toBeDefined();
+      expect(result.recommendedSkills).toHaveLength(1);
+      expect(result.recommendedSkills?.[0]?.id).toBe("trail-of-bits-security-skills");
+      expect(result.recommendedSkills?.[0]?.source).toBe("builtin");
+    });
+  });
+
+  it("omits recommendedSkills when no skill description matches", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Fix the double function",
+      })) as { recommendedSkills?: unknown[] };
+      expect(result.recommendedSkills).toBeUndefined();
+    });
+  });
+
+  it("does not recommend on a single shared term (noise guard)", async () => {
+    await withFixture(async (ctx) => {
+      // "before" is the only meaningful overlap with deep-research's
+      // description when the security skill is already injected — one shared
+      // term must not produce a recommendation.
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "review the security boundaries and hostile inputs before implementing",
+        skills: ["trail-of-bits-security-skills"],
+      })) as { recommendedSkills?: unknown[] };
+      expect(result.recommendedSkills).toBeUndefined();
+    });
+  });
+
+  it("excludes already-injected skills from recommendations and prefers custom overrides", async () => {
+    const fx = createFixture();
+    const ctx = handlerContext(fx);
+    try {
+      // A custom skill that matches security terms — must win over the
+      // same-terms built-in because custom candidates are scored first.
+      const dir = join(fx.root, ".codeatlas", "skills", "project-security");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(
+        join(dir, "SKILL.md"),
+        "---\nname: project-security\ndescription: Review project security boundaries, hostile inputs, and secrets handling.\nversion: 1.0.0\n---\n\n# Project Security\n\nSteps.\n",
+      );
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "review the security boundaries and hostile inputs of this change",
+      })) as {
+        recommendedSkills?: Array<{ id: string; source: string }>;
+      };
+      expect(result.recommendedSkills).toHaveLength(1);
+      expect(result.recommendedSkills?.[0]?.id).toBe("project-security");
+      expect(result.recommendedSkills?.[0]?.source).toBe("custom");
+
+      // Injected skills are not recommended back.
+      const injected = (await HANDLERS.find_relevant_context(ctx, {
+        task: "review the security boundaries and hostile inputs of this change",
+        skills: ["project-security"],
+      })) as {
+        skills?: { ids: string[] };
+        recommendedSkills?: Array<{ id: string }>;
+      };
+      expect(injected.skills?.ids).toEqual(["project-security"]);
+      expect(injected.recommendedSkills?.some((s) => s.id === "project-security") ?? false).toBe(
+        false,
+      );
+    } finally {
+      ctx.ctx.close();
+      fx.cleanup();
+    }
+  });
+});

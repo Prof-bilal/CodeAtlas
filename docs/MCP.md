@@ -8,7 +8,7 @@ and any MCP-capable client.
 - Package: `@atlas/mcp` (`packages/mcp`)
 - Protocol: MCP over stdio (JSON-RPC 2.0), via the official
   `@modelcontextprotocol/sdk`
-- Status: **[IMPLEMENTED]** (2026-08-09) — twelve tools
+- Status: **[IMPLEMENTED]** (2026-08-09) — eleven tools
 
 ## Principles
 
@@ -82,12 +82,15 @@ Every tool call returns one of:
 ## Tool reference
 
 All tools are deterministic reads of the persisted index unless noted. Search
-tools use typo-tolerant fuzzy matching by default. The server exposes **twelve**
-legacy tools plus four **canonical aliases** (Phase 4 compat window):
+tools use typo-tolerant fuzzy matching by default. The server exposes **eleven**
+tools plus four **canonical aliases** (Phase 4 compat window):
 `find_relevant_context` ↔ `context_for`, `get_dependencies` ↔
 `dependencies_of`, `project_overview` ↔ `overview`, `read_file_range` ↔
 `read_range`. Both names work and return identical results; the canonical
-names are the recommended spelling for new integrations. Relevance scores are
+names are the recommended spelling for new integrations. The Phase-6 tools
+`analyze_task`, `create_plan`, `verify_answer`, and `explain_module` are
+**removed** and return `Method not found` (see
+[docs/MCP_MIGRATION.md](./MCP_MIGRATION.md)). Relevance scores are
 normalized to **0..1** on every result (the lexical scorer's raw 0..100 value
 is dual-emitted as `rawScore` during deprecation), and each hit carries a
 `confidence` band (`high`/`medium`/`low`).
@@ -104,6 +107,20 @@ dependency evidence from the index deterministically — no AI.
 | `maxItems` | integer 1–50 | – | Max items in the package (default 20). |
 | `maxTokens` | integer | – | Token budget for the package (default 12000). |
 | `contextMode` | enum | – | `auto`, `digest`, `full`, `off`, or `auto-escalate` (default `auto`). |
+| `brief` | boolean | – | One-line pointer content per item instead of full text (default `false`). |
+| `skills` | string[] (max 5) | – | Agent Skill ids to inject as instruction blocks alongside the context. Project skills (`.codeatlas/skills/`) resolve first, then first-party built-ins; unknown ids fail the call. Discover ids with `list_skills`. |
+
+When `skills` is requested, the result carries a `skills` object:
+`{ "ids": ["ui-check"], "instructions": "## Reusable skill …" }`. Read the
+instruction blocks FIRST and follow them while working with the ranked items
+(skills are instructions, not authority — they never change tool permissions).
+
+The result may also carry a `recommendedSkills` array (at most one entry): a
+deterministic suggestion when the task meaningfully term-overlaps an available
+skill's description (≥2 significant shared terms — never AI-scored, never
+invented confidence). Skills already injected via `skills` are not
+recommended back. Load a suggestion with `get_skill` or inject it directly on
+the next `find_relevant_context` call.
 
 Returns:
 
@@ -148,6 +165,25 @@ Returns the symbol definition, `callers`, `callees`, and `testFiles` arrays.
 See `docs/MCP_MIGRATION.md` for canonical alias names, the `depth` parameter,
 deprecated tools (`analyze_task`, `create_plan`, `verify_answer`,
 `explain_module`), and the Phase 6 removal schedule.
+
+### `analyze_impact`
+
+Compute the reverse-dependency closure (blast radius) for one or more changed
+file paths: which files/symbols depend on them transitively, how many are
+tests or docs, and a composite risk level. Grounded in the indexed graph, not
+guesses. Use after `find_relevant_context` when assessing a proposed change.
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `paths` | string[] (1–50) | ✅ | Changed file paths (repo-relative or absolute). |
+| `maxDepth` | integer 0–10 | – | Maximum traversal depth (`0` = unlimited, default; `1` = direct dependents only). |
+| `includeTests` | boolean | – | Include test files in the closure (default true). |
+| `includeDocs` | boolean | – | Include documentation files in the closure (default true). |
+
+Returns `subjects` (echoed inputs), `affected` (path, hop `distance`,
+test/doc flags), and a `risk` object: `level` (`low`/`medium`/`high`),
+`directDependents`, `totalAffected`, `affectedTests`, `affectedDocs`, and
+`fanOutRatio` (fraction of the graph affected, 0–1), plus `durationMs`.
 
 ### `search_symbols`
 
@@ -200,35 +236,14 @@ Returns:
 }
 ```
 
-### `analyze_task`
+### Removed tools: `analyze_task`, `create_plan`, `verify_answer`, `explain_module`
 
-Classify a task into a plan category (`locate` / `repair` / `refactor` /
-`dependency` / …) with supporting evidence. Deterministic keyword
-classification — exposed for debugging; most agents should use
-`find_relevant_context` instead.
-
-| Argument | Type | Required | Description |
-| --- | --- | --- | --- |
-| `task` | string | ✅ | The task to classify. |
-
-### `create_plan`
-
-Draft a step plan for a task from the classifier's category and the planner's
-impact set. Template-based (max 8 steps); retained for tool-loop use.
-
-| Argument | Type | Required | Description |
-| --- | --- | --- | --- |
-| `task` | string | ✅ | The task to plan for. |
-
-### `verify_answer`
-
-Check whether the assembled context actually answers the task. Harness-layer
-helper retained for backward compatibility.
-
-| Argument | Type | Required | Description |
-| --- | --- | --- | --- |
-| `task` | string | ✅ | The task that was answered. |
-| `answer` | string | ✅ | The proposed answer to verify. |
+All four were removed at the Phase 6 cut and now return `Method not found`.
+Replacements: task classification is internal to `find_relevant_context`
+assembly; multi-hop planning maps to `get_dependencies` with `depth: 2..3`;
+module explanations map to `project_overview` + `search_files` +
+`get_dependencies` scoped by path. See
+[docs/MCP_MIGRATION.md](./MCP_MIGRATION.md) for the full mapping.
 
 ### `get_summary`
 
@@ -381,6 +396,21 @@ Returns:
   "message": "File changed since this context was generated."  // only when versionMatch is false
 }
 ```
+
+### `list_skills` / `get_skill`
+
+Discover and load Agent Skills: the project's `.codeatlas/skills/` directory
+**and** the 13 first-party built-ins shipped with CodeAtlas (canonical
+`SKILL.md` files loaded through the same loader). `list_skills` returns
+id/name/description/version plus a `source` field (`custom` or `builtin`) and
+an optional `source` filter; `get_skill <id>` returns the rendered instruction
+block with the same provenance. A custom skill with the same id as a built-in
+overrides it (project-owned precedence, matching resolution everywhere).
+
+The same resolution powers `find_relevant_context`'s `skills` argument, so an
+MCP agent can inject skill instructions directly into its context retrieval
+(same precedence, same fail-on-unknown contract as `atlas context launch
+--skill`).
 
 ### `project_overview`
 

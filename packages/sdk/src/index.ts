@@ -44,6 +44,39 @@ export {
 } from "./container";
 export { indexProject } from "./indexing/indexer";
 export type { IndexRequest, IndexResult } from "./indexing/indexer";
+export { createAtlasCompletion } from "./completion";
+export type { AtlasCompletion, AtlasCompletionInput, AtlasSectionStatus } from "./completion";
+export { runSetup } from "./setup";
+export { createBrowseService, isValidEvidenceLabel } from "./browse";
+export type {
+  BrowseRunner,
+  BrowseRunnerResult,
+  BrowseService,
+  BrowseServiceOptions,
+} from "./browse";
+export type {
+  BrowseEvidence,
+  BrowseInteraction,
+  BrowseKey,
+  BrowsePort,
+  BrowseViewport,
+} from "@atlas/core";
+export { createWardenService } from "./warden";
+export type {
+  WardenRunPlan,
+  WardenRunRequest,
+  WardenRunResult,
+  WardenService,
+  WardenServiceOptions,
+  WardenStatus,
+} from "./warden";
+export type {
+  SetupInstallResult,
+  SetupOptions,
+  SetupProjectProfile,
+  SetupRecommendation,
+  SetupReport,
+} from "./setup";
 export { scanProjectOverview } from "./indexing/scan";
 export type {
   FileTreeNode,
@@ -180,6 +213,7 @@ export {
 export {
   createToolkitSDK,
   type CreateToolkitSDKOptions,
+  type CustomToolTemplateOptions,
   type ToolkitDoctorEntry,
   type ToolkitRemoveOutcome,
   type ToolkitSDK,
@@ -208,6 +242,8 @@ export {
   EnvironmentDetector,
   renderCompatibilityReport,
 } from "@atlas/toolkit";
+export { resolveSkillForTask } from "@atlas/toolkit";
+export type { SkillResolution } from "@atlas/toolkit";
 export {
   InstallApprovalDeniedError,
   InstallBlockedError,
@@ -502,9 +538,25 @@ export type {
 export { createVerifier, type VerifierServiceDeps } from "./verifier";
 export { loadVerifyConfig, VerifyConfigError } from "@atlas/verifier";
 export {
+  addCustomSkill,
+  availableSkills,
+  createCustomSkill,
   createSkillService,
+  listBuiltinSkills,
+  loadBuiltinSkill,
+  recommendSkillsForTask,
+  resolveSkillInstructions,
+  resolveSkillsInstructions,
+  validateBuiltinSkill,
   SKILLS_SUBDIR,
+  type AddCustomSkillOptions,
+  type AvailableSkill,
+  type CreateCustomSkillOptions,
   type CreateSkillServiceOptions,
+  type CustomSkillWriteResult,
+  type ResolveSkillsOptions,
+  type ResolvedSkillBlock,
+  type SkillRecommendation,
 } from "./skills/index";
 export type {
   DiscoveredSkill,

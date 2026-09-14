@@ -24,3 +24,11 @@ export {
   tryReadSkill,
   validateSkill,
 } from "./loader";
+export {
+  BUILTIN_SKILL_IDS,
+  listBuiltinSkills,
+  loadBuiltinSkill,
+  prebuiltSkillDir,
+  prebuiltSkillRoot,
+  validateBuiltinSkill,
+} from "./builtin";

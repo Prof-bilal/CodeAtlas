@@ -1,19 +1,26 @@
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import type {
   AgentMcpPort,
   AgentMcpStatus,
   AgentPort,
+  AtlasCompletion,
   FreshnessSignal,
   OllamaStatus,
   ProviderStatus,
+  ToolkitSDK,
+  WardenStatus,
 } from "@atlas/sdk";
 import {
   createAgentMcpService,
   createAgentService,
+  createAtlasCompletion,
   createContextSDK,
   createOllamaService,
   createProviderService,
+  createSkillService,
+  createToolkitSDK,
+  createWardenService,
 } from "@atlas/sdk";
 import type { Command } from "commander";
 import { contextDbPath, resolveProjectRoot } from "./search";
@@ -30,6 +37,8 @@ export interface DoctorServices {
   readonly agentMcp?: AgentMcpPort;
   readonly providers?: { readonly status: () => readonly ProviderStatus[] };
   readonly ollama?: { readonly status: () => OllamaStatus };
+  readonly warden?: { readonly status: () => WardenStatus };
+  readonly toolkit?: ToolkitSDK;
 }
 
 /** Options accepted by {@link registerDoctor}. */
@@ -53,6 +62,7 @@ export interface DoctorReport {
   readonly checks: readonly DoctorCheck[];
   /** False when any check failed; the CLI exits 1 then. */
   readonly healthy: boolean;
+  readonly atlas?: AtlasCompletion;
 }
 
 const MINIMUM_NODE = [22, 5, 0];
@@ -90,11 +100,39 @@ export async function runDoctor(
   await checkAgentMcp(checks, services.agentMcp ?? createAgentMcpService());
   checkProviders(checks, services.providers ?? createProviderService());
   checkOllama(checks, services.ollama ?? createOllamaService());
+  const warden = services.warden ?? createWardenService();
+  checkWarden(checks, warden);
+  const toolkit = services.toolkit ?? createToolkitSDK({ root });
+  const overview = await toolkit.overview();
+  const skillCount = createSkillService({ root }).listSkills(joinSkillsPath(root)).length;
+  const toolsInstalled = overview.ok
+    ? overview.value.installed.filter((manifest) => manifest.installation.type !== "skill").length
+    : 0;
+  const blockers = checks
+    .filter((check) => check.verdict === "FAIL")
+    .map((check) => `${check.name}: ${check.detail}`);
+  if (!overview.ok) blockers.push(`Toolkit: ${overview.error.message}`);
+  const wardenStatus = warden.status();
+  const atlas = createAtlasCompletion({
+    toolsInstalled,
+    skillsInstalled: skillCount,
+    warden: wardenStatus.enabled
+      ? "enabled"
+      : wardenStatus.installed
+        ? "available"
+        : "not-installed",
+    blockers,
+  });
   return {
     repositoryPath: root,
     checks,
     healthy: checks.every((check) => check.verdict !== "FAIL"),
+    atlas,
   };
+}
+
+function joinSkillsPath(root: string): string {
+  return join(root, ".codeatlas", "skills");
 }
 
 function checkNodeRuntime(checks: DoctorCheck[]): void {
@@ -211,6 +249,15 @@ function renderMcpStatus(status: AgentMcpStatus): string {
   return `Registered for ${registered.length}/${installed.length} installed tools${status.needsConfiguration ? " — run 'atlas agents connect'." : "."}`;
 }
 
+function checkWarden(checks: DoctorCheck[], warden: { readonly status: () => WardenStatus }): void {
+  const status = warden.status();
+  checks.push({
+    name: "Warden security runtime",
+    verdict: status.installed && status.enabled ? "PASS" : "WARN",
+    detail: status.note,
+  });
+}
+
 function checkProviders(
   checks: DoctorCheck[],
   providers: { readonly status: () => readonly ProviderStatus[] },
@@ -259,6 +306,15 @@ export function renderDoctorReport(report: DoctorReport): string {
     lines.push(`    ${check.detail}`);
   }
   lines.push("", report.healthy ? "All checks passed." : "One or more checks failed (exit 1).");
+  const atlas =
+    report.atlas ??
+    createAtlasCompletion({ toolsInstalled: 0, skillsInstalled: 0, warden: "not-installed" });
+  lines.push(
+    "",
+    `${atlas.banner} — TOOLS ${atlas.tools.installed}, SKILLS ${atlas.skills.installed}, Warden ${atlas.security.warden}`,
+  );
+  for (const blocker of atlas.blockers) lines.push(`  Blocker: ${blocker}`);
+  for (const warning of atlas.warnings) lines.push(`  Warning: ${warning}`);
   return lines.join("\n");
 }
 

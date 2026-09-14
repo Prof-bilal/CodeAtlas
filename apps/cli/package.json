@@ -34,7 +34,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node ../../scripts/copy-prebuilt-skills.mjs dist/skills/prebuilt",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint .",

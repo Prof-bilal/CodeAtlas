@@ -144,6 +144,10 @@ const registry = createToolRegistry();                 // shipped catalog
 const registry = createToolRegistry({ overlayPath });  // + local overlay
 const registry = createToolRegistry({ overlayData });  // injected (tests)
 
+// Toolkit SDK custom-tool workflow
+await createToolkitSDK({ root }).addCustomTool(record);
+// persists to <root>/.codeatlas/tools-overlay.json
+
 registry.listTools();          // readonly ToolRegistryRecord[]
 registry.getTool("biome");     // ToolRegistryRecord | undefined
 registry.listCategories();     // extensible category set

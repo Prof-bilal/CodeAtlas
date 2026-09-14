@@ -52,9 +52,10 @@ packages/
   summary/      # AI file/folder/module/project summaries                     [EXISTING]
   search/       # Ranked, fuzzy-aware project search (vector-ready)          [EXISTING]
   usage/        # AI usage & credits: tri-state tokens/cost, budgets, limits [EXISTING]
+  metrics/      # Local-first usage & token analytics (@atlas/metrics): collect, persist, export [EXISTING]
   context/      # Context ranking & assembly                                  [IMPLEMENTED]
   agents/       # AI CLI connection layer (AgentPort)                         [EXISTING]
-  toolkit/      # Toolkit — Registry (19) + Manifest (20) + Compatibility (21) + Installer (22)  [PARTIAL]
+  toolkit/      # Toolkit — Registry (19) + Manifest (20) + Compatibility (21) + Installer (22) + Configurator (23) + Security (24) + Skills  [PARTIAL]
   verifier/     # Deterministic claim verification                           [IMPLEMENTED]
   mcp/          # MCP server exposing context to AI tools                      [EXISTING]
   sdk/         # Composition root (Container)                                  [EXISTING]
@@ -271,12 +272,13 @@ examples/        # README placeholder only (no runnable examples)
   `Container.getSearch()`/`getContextDb()`. See
   [CONTEXT_SDK.md](./CONTEXT_SDK.md) + [ADR-005](./decisions/ADR-005.md).
 
-### CLI (`apps/cli`) — **[IMPLEMENTED]**
+### CLI (`apps/cli`) — **[IMPLEMENTED]** (command surface re-verified 2026-09-14)
 
-- Commander.js program `atlas`, **21 top-level commands** — `init`, `build`,
+- Commander.js program `atlas`, **31 top-level commands** — `init`, `build`,
   `update`, `scan`, `search`, `sessions`, `usage`, `metrics`, `explain`,
-  `doctor`, `mcp`, `context`, `tools`, `providers`, `agents`, `ollama`,
-  `benchmark`, and the
+  `doctor`, `mcp`, `context`, `ask`, `tools`, `skills`, `setup`, `providers`,
+  `agents`, `ollama`, `benchmark`, `browse`, `warden`, `verify`, `impact`,
+  `trace`, `inspect`, `evaluate`, and the
   standalone agent launchers `claude`/`gemini`/`codex`/`opencode` (sugar over
   `atlas context launch --provider <agent>`; the future slash router remains
   planned). **`benchmark`** runs the context-quality evaluation framework
@@ -291,8 +293,9 @@ examples/        # README placeholder only (no runnable examples)
   reports AI usage & credits** (`summary`/`list`/`budgets`, bare `atlas usage`
   = summary, `--json` per subcommand) through `createUsageService()` from the
   SDK against `.codeatlas/usage.db`. **`tools`** delegates to
-  `createToolkitSDK()` for overview, registry search, info, install, remove,
-  update, configure, and doctor. Install displays the exact command plus
+  `createToolkitSDK()` for the bare overview (with `--category` filter),
+  registry search, categories, info, custom tool create/validate/add, install,
+  remove, update, configure, and doctor. Install displays the exact command plus
   trust/risk before execution and requires `--yes` consent; all data commands
   support `--json`. **`init`/`build`/`update` run the SDK-owned indexer**
   (`indexProject`; `update` is incremental) and **`scan` prints a metadata-only
@@ -301,8 +304,8 @@ examples/        # README placeholder only (no runnable examples)
   summaries, and **`doctor`** runs a PASS/WARN/FAIL health checklist (exit `1`
   on failure). **Standalone agent launch commands** exist for every agent with
   a launch adapter (`atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>`:
-  sugar over `atlas context launch --provider <agent>`, `--ai` briefing
-  supported). No interactive `/agent`-style slash commands (the plan-executing
+  sugar over `atlas context launch --provider <agent>`, `--ai` briefing and
+  `--skill` injection supported). No interactive `/agent`-style slash commands (the plan-executing
   agent router is planned).
 - Dependency note: the CLI may import `@atlas/sdk` **and** `@atlas/mcp` (so it
   can start the server); enforced by ESLint. See `docs/DEPENDENCIES.md`.
@@ -311,12 +314,15 @@ examples/        # README placeholder only (no runnable examples)
   stored) AI summaries for the top 5 file hits via `summaries.generateFile`,
   failing cleanly without a configured provider. It reports a friendly error
   and exit code `1` when no context database exists.
-- Tests assert the command list, version, placeholder text, `atlas search`
-  end-to-end against a fixture database (including the missing-index error),
-  `atlas explain` (symbol/file/JSON/missing-index), `atlas doctor`
-  (healthy/`--json`/render), and the `usage` rendering/CLI (`usageDbPath`,
-  `formatMeasured`, `renderUsageSummary`, `renderUsageTable`, fresh-project
-  empty output, JSON).
+- Tests assert the command list, version, and help/placeholder text, and run
+  end-to-end command behavior against fixture databases: `atlas search`
+  (including the missing-index error), `atlas explain`, `atlas doctor`,
+  `atlas scan`, `atlas usage` (`usageDbPath`, `formatMeasured`,
+  `renderUsageSummary`, `renderUsageTable`, fresh-project empty output, JSON),
+  providers/Ollama, indexing commands, `atlas context`
+  (build/launch/attach/export with `--ai` and `--skill` resolution), the
+  `atlas <agent>` sugar commands, and the skills/setup/browse surfaces
+  (89 tests in `apps/cli/tests/cli.test.ts`).
 
 ### MCP server (`packages/mcp`) — **[IMPLEMENTED]**
 
@@ -328,10 +334,10 @@ examples/        # README placeholder only (no runnable examples)
   provider-independent: dialogue reads are deterministic; AI summary
   generation is opt-in per call (`get_summary ... generate: true`) and fails
   cleanly when no provider is configured.
-- Exposes twelve tools: five task-level (`find_relevant_context`,
-  `inspect_symbol`, `analyze_task`, `create_plan`, `verify_answer`) and seven
+- Exposes eleven tools: five task-level (`find_relevant_context`,
+  `inspect_symbol`, `analyze_impact`, `list_skills`, `get_skill`) and six
   primitives (`search_symbols`, `search_files`, `get_summary`,
-  `get_dependencies`, `explain_module`, `project_overview`,
+  `get_dependencies`, `project_overview`,
   `read_file_range`). Each has a zod
   input schema (validated by the SDK, surfaced as `-32602` on failure), an
   `outputSchema` the server validates `structuredContent` against, and returns
@@ -351,11 +357,11 @@ examples/        # README placeholder only (no runnable examples)
   default 1) with per-edge `hop` + `path` attribution; `inspect_symbol`
   caps callers/callees at 25 each with `confidence`; `project_overview`
   `detail:"full"` returns a size `warning`; `explain_module` caps are 50/50.
-  `analyze_task`, `create_plan`, `verify_answer`, `explain_module` are
-  DEPRECATED (compat window — still registered, warn per call; removal at the
-  Phase 6 cut — see `docs/MCP_MIGRATION.md`). Canonical aliases
+  `analyze_task`, `create_plan`, `verify_answer`, and `explain_module` were
+  REMOVED from the server (see `docs/MCP.md` "Removed tools"). Canonical
+  aliases
   (`context_for`, `dependencies_of`, `overview`, `read_range`) are registered
-  alongside the 12 legacy tools.
+  alongside the 11 canonical tools.
 - Ships a `codeatlas-mcp` binary (`src/bin.ts`) **and** the `atlas mcp` CLI
   command, plus a library API (`createMcpServer` / `startStdioServer`). The
   Context SDK opens lazily, so the server can start before an index exists.
@@ -466,7 +472,14 @@ examples/        # README placeholder only (no runnable examples)
   `launch`/`attach` deliver through the existing `SessionPort` (`--ai`
   prepends the briefing to the session prompt; a failed briefing still
   launches). Budget, instruction, overview, and repository/provider flags are
-  forwarded to the SDK. The future slash
+  forwarded to the SDK. **Slice delivery is also wired**: `atlas ask <question>`
+  and `atlas context export <task> --for <agent>` build a budgeted
+  `ContextSlice` (auto-refreshing stale indexes) and persist/export it, with
+  export injecting an idempotent instruction block into the target agent's
+  instruction file; `--skill <id>` (repeatable) prepends resolved Skill
+  instructions to `launch`/`attach` prompts (fail-fast on unknown ids), and
+  build output may carry a deterministic Recommended Skills suggestion. The
+  future slash
   router remains separate. Tests: `packages/sdk/tests/context-integration.test.ts`
   and `apps/cli/tests/cli.test.ts`.
   See ADR-008.
@@ -504,7 +517,7 @@ examples/        # README placeholder only (no runnable examples)
 - **MCP tool bridge** (`@atlas/mcp`, `tool-bridge.ts`): `createContextToolSource()`
   and `createContextToolSourceFromSDK()` — implements `ContextToolSource` using
   the existing `TOOLS` + `HANDLERS` from `mcp/src/tools.ts` and
-  `mcp/src/handlers.ts`. Zero duplication: the 7 MCP tool definitions remain the
+  `mcp/src/handlers.ts`. Zero duplication: the 11 MCP tool definitions remain the
   single source of truth for both the MCP server and the Ollama tool loop.
 - **Zod-to-JSON-schema converter** (`@atlas/mcp`, `zod-to-json-schema.ts`):
   Minimal, dependency-free converter for the zod subset used in `tools.ts`
@@ -655,7 +668,7 @@ examples/        # README placeholder only (no runnable examples)
 - **Standalone launch commands are implemented** for every agent with a launch
   adapter: `atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` are thin
   wrappers over `atlas context launch --provider <agent>`, sharing the same
-  context-assembly, `--ai` briefing, and rendering path
+  context-assembly, `--ai` briefing, `--skill` injection, and rendering path
   (`apps/cli/src/commands/context.ts`).
 - **`atlas agents` is implemented**: `atlas agents status` shows each AI coding
   tool (claude, gemini, codex, opencode, cursor, cline) and whether the
@@ -812,8 +825,10 @@ examples/        # README placeholder only (no runnable examples)
 | Intended direction                    | Status in repo |
 | ------------------------------------- | -------------- |
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking is deterministic (ADR-001, no AI); `search` + `mcp` are CLI-wired |
-| **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) are implemented; **standalone launch commands** (`atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` with `--ai` briefing) are implemented; the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) is **v2 / not shipped** (untracked); the plan-executing standalone router / `atlas agents` CLI remains planned |
-| **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~65% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, and the thin SDK-backed Toolkit CLI; `/tools` slash integration and `atlas setup` remain planned |
+| **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) are implemented; **standalone launch commands** (`atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` with `--ai` briefing) are implemented; the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) is **v2 / not shipped** (untracked); the plan-executing standalone router (a future `atlas agents run`-style
+surface; `atlas agents status`/`connect` themselves are implemented) remains
+planned |
+| **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~75% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, Skills loader/service, custom tools/Skills, setup recommendations, optional Warden adapter, and the thin SDK-backed Toolkit CLI. Browser observation (`atlas browse`) now provides allowlisted Playwright CLI evidence. `/tools` slash integration and richer adaptive recommendations remain planned |
 | **Ollama Tool Loop** (Phase 3) | Implemented — `ToolUsingChatAgent` with bounded tool loop (max 10 rounds), `ContextToolSource` seam, MCP tool bridge (`createContextToolSource`), conversation history via `ProviderMessage`, per-result budget cap, deny filter on sensitive files. Wired through `createSessionManager({ contextToolSource })` and CLI `atlas context launch`. Tests pass. |
 | **Benchmark Framework** (Phase 4+8) | Implemented — `BenchmarkPort` in core with 3-arm mode (`baseline`/`codeatlas`/`codeatlas-intel`), ablation config, multi-model support; `@atlas/benchmark` package with JSON-backed `BenchmarkStore`, scaffolding, two runners (OpenCode + Ollama with 3-arm agent dispatch), automated evaluator, Markdown/HTML/JSON reporters with 3-arm and ablation sections; AblationService for intel feature toggling; per-provider default budgets. CLI `atlas benchmark init/run/status/report/ablation` wired. SDK composition via `createBenchmarkService()`. Tests pass. See ADR-012. |
 

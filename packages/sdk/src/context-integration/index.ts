@@ -9,6 +9,7 @@ import type {
 } from "@atlas/core";
 import { type Result, fail, ok } from "@atlas/shared";
 import type { ContextSDK } from "../context/sdk";
+import { resolveSkillsInstructions } from "../skills/index";
 import { type AssembleOptions, assembleContextPackage } from "./assemble";
 import { type BriefingPort, createBriefingPort } from "./briefing";
 import { type CriticReview, createCritic } from "./critic";
@@ -151,12 +152,29 @@ export interface LaunchInput extends BuildPackageInput {
   readonly env?: Readonly<Record<string, string>>;
   /** Override the prompt (default: the rendered context package). */
   readonly prompt?: string;
+  /**
+   * Skill ids (custom first, then built-ins) rendered as instruction blocks
+   * and prepended to the session prompt (ADR-022 ch.5). Unknown ids fail the
+   * launch before a session is created.
+   */
+  readonly skills?: readonly string[];
+  /**
+   * Pre-resolved skill instruction block; bypasses `skills` resolution (used
+   * by consumers that already rendered the block, e.g. the CLI's fast-fail
+   * path). When both are given, `prompt` wins, then `skillInstructions`,
+   * then `skills`.
+   */
+  readonly skillInstructions?: string;
 }
 
 /** Inputs to {@link ContextIntegration.attach}. */
 export interface AttachInput extends BuildPackageInput {
   /** A session in `CREATED` state; live/terminal sessions are not attachable. */
   readonly sessionId: string;
+  /** Skill ids to render and prepend to the prompt (same rules as launch). */
+  readonly skills?: readonly string[];
+  /** Pre-resolved skill instruction block (see {@link LaunchInput}). */
+  readonly skillInstructions?: string;
 }
 
 /** Inputs to {@link ContextIntegration.buildSlice}. */
@@ -279,6 +297,15 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
 
     async launch(input: LaunchInput): Promise<Result<Session>> {
       const pkg = await this.buildPackage(input);
+      const skillsResult = await resolveLaunchSkillsBlock(
+        input.skillInstructions,
+        input.skills,
+        context.config.repositoryPath,
+      );
+      if (!skillsResult.ok) {
+        return skillsResult;
+      }
+      const skillsBlock = skillsResult.value;
       const created = sessions.createSession({
         provider: input.provider,
         repositoryPath: input.repositoryPath,
@@ -286,8 +313,9 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
       if (!created.ok) {
         return created;
       }
+      const base = input.prompt ?? renderContextPackage(pkg);
       return sessions.startSession(created.value.id, {
-        prompt: input.prompt ?? renderContextPackage(pkg),
+        prompt: skillsBlock === "" ? base : `${skillsBlock}\n\n${base}`,
         ...(input.args !== undefined ? { args: input.args } : {}),
         ...(input.env !== undefined ? { env: input.env } : {}),
       });
@@ -295,6 +323,15 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
 
     async attach(input: AttachInput): Promise<Result<Session>> {
       const pkg = await this.buildPackage(input);
+      const skillsResult = await resolveLaunchSkillsBlock(
+        input.skillInstructions,
+        input.skills,
+        context.config.repositoryPath,
+      );
+      if (!skillsResult.ok) {
+        return skillsResult;
+      }
+      const skillsBlock = skillsResult.value;
       const session = sessions.getSession(input.sessionId);
       if (session === undefined) {
         return fail(new UnknownSessionError(input.sessionId));
@@ -302,8 +339,9 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
       if (session.status !== "CREATED") {
         return fail(new ContextAttachUnsupportedError(session.id, session.status));
       }
+      const base = renderContextPackage(pkg);
       return sessions.startSession(session.id, {
-        prompt: renderContextPackage(pkg),
+        prompt: skillsBlock === "" ? base : `${skillsBlock}\n\n${base}`,
       });
     },
 
@@ -365,4 +403,27 @@ function toAssembleOptions(input: BuildPackageInput): AssembleOptions {
     ...(input.contextMode !== undefined ? { contextMode: input.contextMode } : {}),
     ...(input.brief !== undefined ? { brief: input.brief } : {}),
   };
+}
+
+/**
+ * Resolve the launch/attach skill inputs into an instruction block. Returns a
+ * failed Result for unknown ids (the caller aborts before creating a session)
+ * and an empty string when no skills were requested.
+ */
+async function resolveLaunchSkillsBlock(
+  skillInstructions: string | undefined,
+  skills: readonly string[] | undefined,
+  repositoryPath: string,
+): Promise<Result<string>> {
+  if (skillInstructions !== undefined) {
+    return ok(skillInstructions);
+  }
+  if (skills === undefined || skills.length === 0) {
+    return ok("");
+  }
+  const resolved = resolveSkillsInstructions(skills, { root: repositoryPath });
+  if (!resolved.ok) {
+    return fail(resolved.error);
+  }
+  return ok(resolved.value.instructions);
 }
