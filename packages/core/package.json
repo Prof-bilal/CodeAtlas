@@ -1,6 +1,6 @@
 {
   "name": "@atlas/core",
-  "version": "0.0.0",
+  "version": "0.5.0",
   "description": "Domain entities and ports (interfaces) for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",

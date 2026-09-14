@@ -1,7 +1,7 @@
 {
   "name": "@atlas/usage",
-  "version": "0.0.0",
-  "description": "Usage / credits tracking for CodeAtlas — local, tri-state (actual/estimated/unknown) token & cost accounting behind a UsagePort.",
+  "version": "0.5.0",
+  "description": "Usage / credits tracking for CodeAtlas \u2014 local, tri-state (actual/estimated/unknown) token & cost accounting behind a UsagePort.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

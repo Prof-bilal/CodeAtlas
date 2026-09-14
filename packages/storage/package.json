@@ -1,6 +1,6 @@
 {
   "name": "@atlas/storage",
-  "version": "0.0.0",
+  "version": "0.5.0",
   "description": "Persistence layer for CodeAtlas behind its storage port.",
   "type": "module",
   "main": "./dist/index.cjs",

@@ -1,6 +1,6 @@
 {
   "name": "@atlas/hashing",
-  "version": "0.0.0",
+  "version": "0.5.0",
   "description": "SHA-256 hashing and change detection for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",

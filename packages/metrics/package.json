@@ -1,7 +1,7 @@
 {
   "name": "@atlas/metrics",
-  "version": "0.0.0",
-  "description": "Local-first usage & token analytics for CodeAtlas — metrics collection, persistence, and export.",
+  "version": "0.5.0",
+  "description": "Local-first usage & token analytics for CodeAtlas \u2014 metrics collection, persistence, and export.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

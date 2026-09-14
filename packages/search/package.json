@@ -1,6 +1,6 @@
 {
   "name": "@atlas/search",
-  "version": "0.0.0",
+  "version": "0.5.0",
   "description": "Ranked, fuzzy-aware project search for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",
