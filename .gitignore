@@ -65,3 +65,6 @@ CodeAtlas-ui/
 # Local dev config
 opencode.json
 .commandcode/
+
+# Playwright test artifacts
+.playwright-cli/
