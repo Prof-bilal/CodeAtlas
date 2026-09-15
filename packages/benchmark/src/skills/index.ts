@@ -1,4 +1,4 @@
-// @atlas/benchmark — Skills (minimal Agent Skills implementation).
+// @prof-bilal/atlas-benchmark — Skills (minimal Agent Skills implementation).
 //
 // Export surface for the benchmark Skills capability: discovery, loading,
 // validation, rendering, and task→skill resolution against the open Agent

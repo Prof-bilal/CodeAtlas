@@ -1,6 +1,6 @@
-import { AgentService } from "@atlas/agents";
-import type { AgentPort, ConfiguratorPort } from "@atlas/core";
-import { ConfiguratorService, type ConfiguratorServiceOptions } from "@atlas/toolkit";
+import { AgentService } from "@prof-bilal/atlas-agents";
+import type { AgentPort, ConfiguratorPort } from "@prof-bilal/atlas-core";
+import { ConfiguratorService, type ConfiguratorServiceOptions } from "@prof-bilal/atlas-toolkit";
 
 export interface CreateConfiguratorOptions extends Omit<ConfiguratorServiceOptions, "agentPort"> {
   readonly agents?: AgentPort;

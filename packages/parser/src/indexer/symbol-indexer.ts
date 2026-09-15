@@ -1,7 +1,7 @@
 import { dirname } from "node:path";
 // biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
-import type { Reference, Symbol, SymbolKind } from "@atlas/core";
-import type { FilePath, SymbolId } from "@atlas/shared";
+import type { Reference, Symbol, SymbolKind } from "@prof-bilal/atlas-core";
+import type { FilePath, SymbolId } from "@prof-bilal/atlas-shared";
 import { SymbolNotIndexedError } from "../errors";
 import type { ParsedFile } from "../parsed-file";
 import type { IndexedSymbol } from "./indexed-symbol";

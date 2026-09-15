@@ -1,8 +1,8 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { hashContent } from "@atlas/hashing";
-import { createProjectContainer } from "@atlas/sdk";
+import { hashContent } from "@prof-bilal/atlas-hashing";
+import { createProjectContainer } from "@prof-bilal/atlas-sdk";
 import { describe, expect, it } from "vitest";
 import { CodeAtlasContext } from "../src/context";
 import { HANDLERS, type HandlerContext } from "../src/handlers";

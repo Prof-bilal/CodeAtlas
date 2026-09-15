@@ -1,4 +1,4 @@
-import type { EdgeId, FilePath, NodeId, ProjectId, SymbolId } from "@atlas/shared";
+import type { EdgeId, FilePath, NodeId, ProjectId, SymbolId } from "@prof-bilal/atlas-shared";
 
 /** A codebase that CodeAtlas has been asked to index. */
 export interface Project {

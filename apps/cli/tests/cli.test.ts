@@ -12,7 +12,7 @@ import type {
   ToolRegistryRecord,
   UsageRecord,
   UsageStatistics,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 import {
   type AgentMcpPort,
   type AgentMcpStatus,
@@ -29,9 +29,9 @@ import {
   type SummaryPort,
   type ToolkitSDK,
   createUsageService,
-} from "@atlas/sdk";
-import { type FilePath, type Result, type SymbolId, fail, ok } from "@atlas/shared";
-import { ContextStore } from "@atlas/storage";
+} from "@prof-bilal/atlas-sdk";
+import { type FilePath, type Result, type SymbolId, fail, ok } from "@prof-bilal/atlas-shared";
+import { ContextStore } from "@prof-bilal/atlas-storage";
 import { describe, expect, it, vi } from "vitest";
 import pkg from "../package.json";
 import { createCli } from "../src/cli";

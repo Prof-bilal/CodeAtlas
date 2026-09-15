@@ -1,8 +1,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import type { CachePort } from "@atlas/core";
-import type { CacheKey, Result } from "@atlas/shared";
-import { ok } from "@atlas/shared";
+import type { CachePort } from "@prof-bilal/atlas-core";
+import type { CacheKey, Result } from "@prof-bilal/atlas-shared";
+import { ok } from "@prof-bilal/atlas-shared";
 
 /** A stored value plus its optional expiry (epoch ms). */
 interface CacheEntry {

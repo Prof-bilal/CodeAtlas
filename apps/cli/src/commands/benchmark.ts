@@ -9,9 +9,9 @@ import {
   SINGLE_ABLATION_SCENARIOS,
   evaluateRetrieval,
   scaffoldTaskFile,
-} from "@atlas/benchmark";
-import type { BenchmarkRunner } from "@atlas/benchmark";
-import { createContextToolSourceFromSDK } from "@atlas/mcp";
+} from "@prof-bilal/atlas-benchmark";
+import type { BenchmarkRunner } from "@prof-bilal/atlas-benchmark";
+import { createContextToolSourceFromSDK } from "@prof-bilal/atlas-mcp";
 import {
   type BenchmarkConfig,
   type BenchmarkRunRequest,
@@ -28,7 +28,7 @@ import {
   createContextSDK,
   createProviderService,
   indexProject,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 
 // ---------------------------------------------------------------------------

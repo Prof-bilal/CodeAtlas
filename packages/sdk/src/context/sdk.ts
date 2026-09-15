@@ -1,6 +1,6 @@
 ﻿import { existsSync, readFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
-import { CacheService } from "@atlas/cache";
+import { CacheService } from "@prof-bilal/atlas-cache";
 import type {
   ContextData,
   ContextDatabasePort,
@@ -17,13 +17,13 @@ import type {
   SummaryOptions,
   SummaryPort,
   UsagePort,
-} from "@atlas/core";
-import { HashService, hashContent } from "@atlas/hashing";
-import { SearchService } from "@atlas/search";
-import { type FilePath, type Result, type SymbolId, fail } from "@atlas/shared";
-import { ContextStore } from "@atlas/storage";
-import { SummaryService } from "@atlas/summary";
-import { withUsageTracking } from "@atlas/usage";
+} from "@prof-bilal/atlas-core";
+import { HashService, hashContent } from "@prof-bilal/atlas-hashing";
+import { SearchService } from "@prof-bilal/atlas-search";
+import { type FilePath, type Result, type SymbolId, fail } from "@prof-bilal/atlas-shared";
+import { ContextStore } from "@prof-bilal/atlas-storage";
+import { SummaryService } from "@prof-bilal/atlas-summary";
+import { withUsageTracking } from "@prof-bilal/atlas-usage";
 import { type IndexResult, indexProject } from "../indexing/indexer";
 import { scanProjectOverview } from "../indexing/scan";
 import { createProviderService } from "../providers/index";
@@ -270,7 +270,7 @@ export interface ContextSDK {
 
 /**
  * The SDK implementation. Reads through `ReadRepositories`/`WriteRepositories`
- * (which wrap the `ContextDatabasePort`), and runs search through `@atlas/search`.
+ * (which wrap the `ContextDatabasePort`), and runs search through `@prof-bilal/atlas-search`.
  */
 class ContextSDKFacade implements ContextSDK {
   public readonly config: ContextSDKConfig;

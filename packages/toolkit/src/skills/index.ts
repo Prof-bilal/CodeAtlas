@@ -1,6 +1,6 @@
-// @atlas/toolkit — Skills module public API
+// @prof-bilal/atlas-toolkit — Skills module public API
 //
-// Dependency-free Agent Skills loader extracted from @atlas/benchmark (ADR-022).
+// Dependency-free Agent Skills loader extracted from @prof-bilal/atlas-benchmark (ADR-022).
 // All types and functions are re-exported for consumers.
 
 export type {

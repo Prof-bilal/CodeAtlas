@@ -6,7 +6,7 @@ import type {
   TaskCategory,
   TaskDefinition,
   TaskFile,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 
 /**
  * Scaffold a new benchmark suite.

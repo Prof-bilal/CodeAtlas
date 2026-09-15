@@ -1,4 +1,4 @@
-import type { MetricsPort, UsagePort } from "@atlas/core";
+import type { MetricsPort, UsagePort } from "@prof-bilal/atlas-core";
 
 /**
  * Records benchmark-specific metrics into the existing metrics and usage

@@ -1,5 +1,5 @@
-import type { InstallPlanCommand, ToolInstallMethodType, ToolInstallRequest } from "@atlas/core";
-import type { Result } from "@atlas/shared";
+import type { InstallPlanCommand, ToolInstallMethodType, ToolInstallRequest } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
 
 /**
  * What one ecosystem adapter produces for a tool: the exact, safe, argument-array

@@ -8,9 +8,9 @@ import type {
   SummaryPort,
   UsageEventInput,
   UsagePort,
-} from "@atlas/core";
-import { fail, ok } from "@atlas/shared";
-import { ContextStore } from "@atlas/storage";
+} from "@prof-bilal/atlas-core";
+import { fail, ok } from "@prof-bilal/atlas-shared";
+import { ContextStore } from "@prof-bilal/atlas-storage";
 import { afterEach, describe, expect, it } from "vitest";
 import { indexProject } from "../src/index";
 

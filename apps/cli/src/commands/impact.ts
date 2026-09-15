@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { createContextSDK } from "@atlas/sdk";
+import { createContextSDK } from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { contextDbPath, resolveProjectRoot } from "./search";
 

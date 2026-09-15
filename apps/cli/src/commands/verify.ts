@@ -6,7 +6,7 @@ import {
   createContextSDK,
   createVerifier,
   loadVerifyConfig,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { contextDbPath, resolveProjectRoot } from "./search";
 

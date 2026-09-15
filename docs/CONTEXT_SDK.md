@@ -18,31 +18,31 @@ implementation details**:
 Consumer (CLI / MCP / editor / agent)
         │
         ▼
-  Context SDK  (@atlas/sdk → createContextSDK)
+  Context SDK  (@prof-bilal/atlas-sdk → createContextSDK)
         │
         ▼
   Repositories  (ReadRepositories / WriteRepositories → ContextDatabasePort)
         │
         ▼
-  Context Database (SQLite, owned by @atlas/storage)
+  Context Database (SQLite, owned by @prof-bilal/atlas-storage)
 ```
 
-- Every `@atlas/*` import a consumer would otherwise reach for
-  (`@atlas/search`, `@atlas/storage`, `@atlas/summary`) stays internal.
+- Every `@prof-bilal/atlas-*` import a consumer would otherwise reach for
+  (`@prof-bilal/atlas-search`, `@prof-bilal/atlas-storage`, `@prof-bilal/atlas-summary`) stays internal.
 - Consumers never see SQL, table names, or raw rows.
 - `atlas search` already routes through this SDK (see `docs/CLI.md`).
 
-> **Why not `@atlas/context`?** That package is the *ranking/assembly* service
+> **Why not `@prof-bilal/atlas-context`?** That package is the *ranking/assembly* service
 > behind `ContextBuilderPort` (see [ADR-001](./decisions/ADR-001.md)). The SDK
 > is a different concern — a read/write query façade — and lives in
-> `@atlas/sdk` (see [ADR-005](./decisions/ADR-005.md)).
+> `@prof-bilal/atlas-sdk` (see [ADR-005](./decisions/ADR-005.md)).
 
 ---
 
 ## 2. Quick start
 
 ```ts
-import { createContextSDK } from "@atlas/sdk";
+import { createContextSDK } from "@prof-bilal/atlas-sdk";
 
 const context = createContextSDK({ repositoryPath: "/path/to/repo" });
 // or: createContextSDK({ dbPath: "/path/to/repo/.codeatlas/context.db" });
@@ -79,7 +79,7 @@ Layering is strict:
 
 ```text
 Consumer
-   ↓  (imports only @atlas/sdk)
+   ↓  (imports only @prof-bilal/atlas-sdk)
 ContextSDK  (sdk.ts — application-level operations)
    ↓
 ReadRepositories / WriteRepositories (repositories.ts — persistence boundary)
@@ -156,7 +156,7 @@ one.
 | `search(query, opts?)` | `readonly SearchResult[]` (ranked, fuzzy-aware) |
 
 `opts` supports `types`, `limit`, `fuzzy`, `minScore` — all relayed to
-`@atlas/search`'s `SearchPort`, so fuzzy/vector behavior and scoring stay
+`@prof-bilal/atlas-search`'s `SearchPort`, so fuzzy/vector behavior and scoring stay
 identical to `atlas search`.
 
 ### `context.project`
@@ -219,7 +219,7 @@ The SDK returns **normalized, serializable models**, never raw rows:
 - `ProjectCounts` / `ProjectOverview` / `ContextStatus` / `RelevantContext` —
   aggregates computed by the SDK.
 
-Where a stable entity already exists in `@atlas/core`, it is reused instead of
+Where a stable entity already exists in `@prof-bilal/atlas-core`, it is reused instead of
 reinvented.
 
 ---
@@ -245,7 +245,7 @@ Every error extends `ContextError` (which extends `Error`) and keeps a stable
 ## 7. Search
 
 `context.search.search(query, { types, limit, fuzzy, minScore })` delegates to
-`@atlas/search`'s ranked, typo-tolerant index over files, symbols, modules,
+`@prof-bilal/atlas-search`'s ranked, typo-tolerant index over files, symbols, modules,
 dependencies, and summaries. It returns normalized `SearchResult` hits
 (`kind`, `title`, `path`, `targetId`, `score`, optional `relation`/`snippet`),
 so callers do not need to know which table produced a hit.
@@ -266,7 +266,7 @@ const relevant = context.getRelevantContext("fix login bug");
 for (const symbol of relevant.symbols) console.log(symbol.name, symbol.filePath);
 ```
 
-This is **not** the `@atlas/context` ranker (ADR-001 stays untouched as the
+This is **not** the `@prof-bilal/atlas-context` ranker (ADR-001 stays untouched as the
 deterministic ranking seam). Assembly here is deterministic and vector-free
 today.
 
@@ -274,9 +274,9 @@ today.
 
 ## 9. Future vector-search compatibility
 
-`getRelevantContext` and `search` both route through `@atlas/search`'s
+`getRelevantContext` and `search` both route through `@prof-bilal/atlas-search`'s
 `RelevanceScorer` seam. A future embedding scorer can be added **inside
-`@atlas/search`** without changing the SDK: callers keep calling
+`@prof-bilal/atlas-search`** without changing the SDK: callers keep calling
 `context.search.search(...)` / `context.getRelevantContext(...)` and
 automatically get semantic ranking. No vector database, embeddings, or
 provider integration ships with this SDK.
@@ -286,7 +286,7 @@ provider integration ships with this SDK.
 ## 10. MCP / VS Code / Agent mapping
 
 The sub-APIs map one-to-one onto the MCP tools and the VS Code extension
-(`@atlas/mcp` and `@atlas/extension`, both thin SDK consumers):
+(`@prof-bilal/atlas-mcp` and `@prof-bilal/atlas-extension`, both thin SDK consumers):
 
 ```text
 MCP tool: search_symbols     → context.symbols.searchSymbols(...)

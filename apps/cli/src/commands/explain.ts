@@ -7,8 +7,8 @@ import type {
   Summary,
   SymbolContext,
   SymbolReference,
-} from "@atlas/sdk";
-import { createContextSDK } from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
+import { createContextSDK } from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { openMetrics } from "./metrics";
 import { contextDbPath, resolveProjectRoot } from "./search";

@@ -1,4 +1,4 @@
-// @atlas/toolkit — Built-in (prebuilt) workflow Skills.
+// @prof-bilal/atlas-toolkit — Built-in (prebuilt) workflow Skills.
 //
 // Canonical source of truth is the on-disk SKILL.md files under
 // `src/skills/prebuilt/<id>/SKILL.md` — the same canonical format the custom

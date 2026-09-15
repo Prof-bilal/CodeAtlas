@@ -6,7 +6,7 @@ Date: 2026-08-30 · Status: Accepted (Phase 2, small-model intelligence audit)
 
 ADR-015 defines `TaskClassifierPort` and `PlannerPort` as type-only contracts
 in `packages/core`. The execution plan (`old-school/research/audit/small-model-intelligence/execution-plan.md`)
-specifies that implementations live in `@atlas/sdk` (the existing composition
+specifies that implementations live in `@prof-bilal/atlas-sdk` (the existing composition
 root for context-integration), not in new feature packages.
 
 This ADR confirms the placement and explains why.
@@ -25,26 +25,26 @@ This ADR confirms the placement and explains why.
    - The classifier and planner are pure functions over existing SDK data
      (search, graph, entity extraction) — they do not need their own
      persistence, providers, or CLI surface.
-   - `@atlas/sdk` already owns `context-integration/` where entities,
+   - `@prof-bilal/atlas-sdk` already owns `context-integration/` where entities,
      sufficiency, hierarchy, and assembly live — the planner is a natural
      extension of that module.
-   - A separate `@atlas/planner` package would add workspace complexity
+   - A separate `@prof-bilal/atlas-planner` package would add workspace complexity
      (tsup config, package.json, ESLint matrix entry) for a single module
      with no independent consumers.
 
-4. The future `@atlas/verifier` feature package (ADR-015, Phase 4) is
-   **not** placed in `@atlas/sdk` because it requires command execution
+4. The future `@prof-bilal/atlas-verifier` feature package (ADR-015, Phase 4) is
+   **not** placed in `@prof-bilal/atlas-sdk` because it requires command execution
    (spawn, timeout, allow-list) — a qualitatively different concern from
    pure context assembly. That decision is deferred to ADR-017 (verification
    command policy).
 
-5. The CLI (`apps/cli`) consumes the planner through `@atlas/sdk` only —
+5. The CLI (`apps/cli`) consumes the planner through `@prof-bilal/atlas-sdk` only —
    it never imports `classifier.ts` or `planner.ts` directly.
 
 ## Consequences
 
 - The ESLint dependency matrix (`docs/DEPENDENCIES.md`) is unchanged:
-  `@atlas/sdk` already imports `@atlas/core` + `@atlas/shared`.
+  `@prof-bilal/atlas-sdk` already imports `@prof-bilal/atlas-core` + `@prof-bilal/atlas-shared`.
 - The `Container` class in `packages/sdk/src/container.ts` is **not**
   modified — the classifier and planner are stateless functions, not
   services that need injection.

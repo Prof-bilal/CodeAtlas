@@ -1,4 +1,4 @@
-import type { Brand, Result } from "@atlas/shared";
+import type { Brand, Result } from "@prof-bilal/atlas-shared";
 import type { ProviderMessage, TokenUsage } from "./provider.port";
 
 /**

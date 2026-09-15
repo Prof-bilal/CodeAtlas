@@ -1,4 +1,4 @@
-import type { Result, SymbolId } from "@atlas/shared";
+import type { Result, SymbolId } from "@prof-bilal/atlas-shared";
 import type { SourceFile, Symbol } from "../domain/entities";
 
 /** Extracts language-agnostic symbols from source code. */

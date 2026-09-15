@@ -1,7 +1,7 @@
 import { spawn as nodeSpawn } from "node:child_process";
 import { statSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
-import type { CommandRunResult, VerifyCommandConfig, VerifyConfig } from "@atlas/core";
+import type { CommandRunResult, VerifyCommandConfig, VerifyConfig } from "@prof-bilal/atlas-core";
 
 const MAX_OUTPUT_BYTES = 1 * 1024 * 1024; // 1 MiB
 const DEFAULT_TIMEOUT_MS = 60_000;

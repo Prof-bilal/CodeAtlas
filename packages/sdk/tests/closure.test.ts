@@ -1,5 +1,5 @@
-import type { Symbol as CodeSymbol, PersistedDependency } from "@atlas/core";
-import type { NodeId } from "@atlas/shared";
+import type { Symbol as CodeSymbol, PersistedDependency } from "@prof-bilal/atlas-core";
+import type { NodeId } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { expandDependencyClosure } from "../src/context/closure";
 

@@ -1,8 +1,8 @@
 import { existsSync, statSync } from "node:fs";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type { ToolInstallMethodType } from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+import type { ToolInstallMethodType } from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { ManifestError, ManifestLoadError, ManifestValidationError } from "./errors";
 import {
   DEFAULT_MANIFEST_COMPATIBILITY,

@@ -1,12 +1,12 @@
 # Agent Session Manager
 
 > **Status: [IMPLEMENTED]** — the in-memory session manager ships behind the
-> `SessionPort` port (in `@atlas/core`), is implemented in `@atlas/agents`
-> (`SessionManager`), and is composed through `@atlas/sdk` via
+> `SessionPort` port (in `@prof-bilal/atlas-core`), is implemented in `@prof-bilal/atlas-agents`
+> (`SessionManager`), and is composed through `@prof-bilal/atlas-sdk` via
 > `createSessionManager()`. It is **not** an orchestration layer: it manages
 > many **independent** agent sessions. Prompt/context construction (Task 16) and
 > usage/billing (Task 18) are out of scope and deliberately not built here.
-> Multi-agent collaboration (Task 17) is built **on top** of it, in `@atlas/sdk`
+> Multi-agent collaboration (Task 17) is built **on top** of it, in `@prof-bilal/atlas-sdk`
 > (`createOrchestrator` drives `SessionPort` directly) — see
 > [CURRENT_STATE.md](./CURRENT_STATE.md).
 
@@ -41,7 +41,7 @@ independent of the others.
 
 The manager is **provider-agnostic**. It never contains
 `if (provider === "…")` logic; all provider-specific binary names, arguments,
-and exit-code interpretation stay inside the `@atlas/agents` adapters.
+and exit-code interpretation stay inside the `@prof-bilal/atlas-agents` adapters.
 
 ## 2. Architecture & responsibility split
 
@@ -70,14 +70,14 @@ External CLI      the user's installed `claude` / `gemini` / `codex` / `opencode
 ### Port seam
 
 - `SessionPort`, `Session`, `SessionStatus`, `AgentId`, `SessionCreateRequest`,
-  `SessionLaunchRequest` live in `@atlas/core`
+  `SessionLaunchRequest` live in `@prof-bilal/atlas-core`
   (`packages/core/src/ports/session.port.ts`).
-- `SessionManager implements SessionPort` lives in `@atlas/agents`
+- `SessionManager implements SessionPort` lives in `@prof-bilal/atlas-agents`
   (`packages/agents/src/session-manager.ts`), with typed errors in
   `session-errors.ts`.
 - Consumers (CLI, MCP, editors, future orchestrator) obtain it through the
-  SDK: `createSessionManager()` from `@atlas/sdk`. The CLI may not import
-  `@atlas/agents` directly — it goes through the SDK.
+  SDK: `createSessionManager()` from `@prof-bilal/atlas-sdk`. The CLI may not import
+  `@prof-bilal/atlas-agents` directly — it goes through the SDK.
 
 ## 3. Session model
 
@@ -128,7 +128,7 @@ spawn-time error that surfaces before the child ever ran.
 
 ## 5. API
 
-`SessionPort` (exported by `@atlas/sdk`):
+`SessionPort` (exported by `@prof-bilal/atlas-sdk`):
 
 | Method | Purpose |
 | ------ | ------- |
@@ -245,7 +245,7 @@ The `atlas sessions` CLI is exercised offline: command registration, table and
   injection), Task 17 (Multi-Agent Orchestration: agents *collaborating*), and
   Task 18 (Usage/Credits/Billing) are separate. The session manager only
   *manages independent sessions*; Task 17's `createOrchestrator()` (in
-  `@atlas/sdk`) drives this port to run multiple roles and combine their
+  `@prof-bilal/atlas-sdk`) drives this port to run multiple roles and combine their
   results.
 - **Task 16 will need:** a way to supply a real `prompt`/context to
   `startSession`, and a stable way to read the session’s repository path and

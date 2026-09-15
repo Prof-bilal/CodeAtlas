@@ -1,4 +1,4 @@
-import type { MetricsDay, MetricsSnapshot } from "@atlas/core";
+import type { MetricsDay, MetricsSnapshot } from "@prof-bilal/atlas-core";
 
 /**
  * Metrics JSON schema version — incremented on breaking changes.

@@ -1,4 +1,4 @@
-import { type BrowseInteraction, type BrowseViewport, createBrowseService } from "@atlas/sdk";
+import { type BrowseInteraction, type BrowseViewport, createBrowseService } from "@prof-bilal/atlas-sdk";
 import { type Command, Option } from "commander";
 
 const NAMED_KEYS = new Set([

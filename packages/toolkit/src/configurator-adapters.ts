@@ -1,4 +1,4 @@
-import type { ConfigurationTarget } from "@atlas/core";
+import type { ConfigurationTarget } from "@prof-bilal/atlas-core";
 import type {
   ConfigFormat,
   ConfigurationAdapter,
@@ -9,7 +9,7 @@ import { configPathFor } from "./configurator-adapter";
 /**
  * The built-in configuration adapters (Task 23) — one per target
  * (Claude / Gemini / Codex / OpenCode / MCP / VS Code), mirroring the
- * `@atlas/providers` / `@atlas/agents` adapter pattern.
+ * `@prof-bilal/atlas-providers` / `@prof-bilal/atlas-agents` adapter pattern.
  *
  * The exact user-config files and sections each agent CLI reads (ADR-010):
  * Claude Code reads `~/.claude.json` (it silently ignores `mcpServers` in

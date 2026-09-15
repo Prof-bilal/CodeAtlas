@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { startStdioServer } from "@atlas/mcp";
+import { startStdioServer } from "@prof-bilal/atlas-mcp";
 import type { Command } from "commander";
 import { openMetrics } from "./metrics";
 import { resolveProjectRoot } from "./search";

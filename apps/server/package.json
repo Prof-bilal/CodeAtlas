@@ -1,7 +1,7 @@
 {
-  "name": "@atlas/server",
+  "name": "@prof-bilal/atlas-server",
   "version": "0.0.0",
-  "description": "CodeAtlas Benchmark API — a localhost HTTP server exposing the benchmark framework, community repository library, and browser benchmark over @atlas/sdk.",
+  "description": "CodeAtlas Benchmark API — a localhost HTTP server exposing the benchmark framework, community repository library, and browser benchmark over @prof-bilal/atlas-sdk.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,9 +26,9 @@
     "ts-morph": "^28.0.0"
   },
   "devDependencies": {
-    "@atlas/benchmark": "workspace:*",
-    "@atlas/mcp": "workspace:*",
-    "@atlas/sdk": "workspace:*"
+    "@prof-bilal/atlas-benchmark": "workspace:*",
+    "@prof-bilal/atlas-mcp": "workspace:*",
+    "@prof-bilal/atlas-sdk": "workspace:*"
   },
   "license": "MIT",
   "repository": {

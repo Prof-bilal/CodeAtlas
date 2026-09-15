@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { type Result, fail, ok } from "@atlas/shared";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { createAtlasCompletion } from "./completion";
 import { createSkillService } from "./skills/index";
 import { type ToolkitSDK, createToolkitSDK } from "./toolkit/facade";

@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 import type { ToolInstallMethodType } from "./tool-registry.port";
 
 /**

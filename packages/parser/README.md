@@ -1,6 +1,6 @@
-# @atlas/parser
+# @prof-bilal/atlas-parser
 
-Implements `ParserPort` from `@atlas/core`: consumes a `SourceFile` and produces
+Implements `ParserPort` from `@prof-bilal/atlas-core`: consumes a `SourceFile` and produces
 a **language-agnostic intermediate representation** — a normalized list of
 `Symbol`s — so the rest of the pipeline (graph, storage, context) never needs
 to know the source language.
@@ -100,8 +100,8 @@ Class and interface members are emitted in source order.
 ## Usage
 
 ```ts
-import { ParserService } from "@atlas/parser";
-import type { SourceFile } from "@atlas/core";
+import { ParserService } from "@prof-bilal/atlas-parser";
+import type { SourceFile } from "@prof-bilal/atlas-core";
 
 const service = new ParserService(); // TypeScript parser pre-registered
 
@@ -133,7 +133,7 @@ files that changed since the last run (the scanner + hashing pipeline produces
 those), and unchanged files are never touched:
 
 ```ts
-import { getChangedFiles } from "@atlas/hashing";
+import { getChangedFiles } from "@prof-bilal/atlas-hashing";
 // ... scanner walks the tree, hashing computes `previous`/`current` snapshots
 
 const changedPaths = getChangedFiles(previous, current); // changed + added only
@@ -161,10 +161,10 @@ idempotent.
 2. Register it with the service (or a `ParserRegistry`).
 
 ```ts
-import { ParserService } from "@atlas/parser";
-import { ok, type Result } from "@atlas/shared";
-import type { SourceFile, Symbol } from "@atlas/core";
-import type { LanguageParser, ParsedFile } from "@atlas/parser";
+import { ParserService } from "@prof-bilal/atlas-parser";
+import { ok, type Result } from "@prof-bilal/atlas-shared";
+import type { SourceFile, Symbol } from "@prof-bilal/atlas-core";
+import type { LanguageParser, ParsedFile } from "@prof-bilal/atlas-parser";
 
 class PythonParser implements LanguageParser {
   readonly languages = ["python"];
@@ -190,7 +190,7 @@ answers symbol queries. Because it operates on the normalized IR, it works with
 every language parser.
 
 ```ts
-import { ParserService, SymbolIndexer } from "@atlas/parser";
+import { ParserService, SymbolIndexer } from "@prof-bilal/atlas-parser";
 
 const service = new ParserService();
 const batch = await service.parseFiles(changedSourceFiles);

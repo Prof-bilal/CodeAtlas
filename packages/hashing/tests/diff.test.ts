@@ -1,4 +1,4 @@
-import type { HashSnapshot } from "@atlas/core";
+import type { HashSnapshot } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { compareHashes, getChangedFiles } from "../src/diff";
 

@@ -13,8 +13,8 @@ import type {
   SecurityPort,
   ToolInstallMethodType,
   ToolInstallRequest,
-} from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { defaultReadVersion, findExecutable } from "./environment";
 import type { EcosystemAdapter } from "./installer-adapter";
 import {

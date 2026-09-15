@@ -1,6 +1,6 @@
-# @atlas/context
+# @prof-bilal/atlas-context
 
-Implements `ContextBuilderPort` from `@atlas/core`: ranks files/symbols and
+Implements `ContextBuilderPort` from `@prof-bilal/atlas-core`: ranks files/symbols and
 assembles the prompt context sent to a language model.
 
 `ContextBuilderService` is a deterministic rank-and-assemble step (ADR-001

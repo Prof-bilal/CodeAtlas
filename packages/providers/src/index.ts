@@ -34,4 +34,4 @@ export type {
   ToolCall,
   ProviderRequest,
   ProviderResponse,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";

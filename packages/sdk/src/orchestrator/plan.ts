@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import type { ContextScope, ExecutionMode, RoleDefinition, TaskPlan } from "@atlas/core";
+import type { ContextScope, ExecutionMode, RoleDefinition, TaskPlan } from "@prof-bilal/atlas-core";
 import { PlanValidationError } from "./errors";
 
 /** Input for building one role of a plan. */

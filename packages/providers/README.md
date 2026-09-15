@@ -1,10 +1,10 @@
-# @atlas/providers
+# @prof-bilal/atlas-providers
 
 AI model provider adapters for CodeAtlas. A single `ProviderPort` abstraction
 over Claude, OpenAI, Gemini, and DeepSeek, with an extensible registry so new
 providers can be added without touching callers.
 
-Implements `ProviderPort` from `@atlas/core`.
+Implements `ProviderPort` from `@prof-bilal/atlas-core`.
 
 > **Status: implemented.** Four adapters and the registry are built and tested
 > against a fake transport; no real API calls are made in tests.
@@ -23,7 +23,7 @@ Implements `ProviderPort` from `@atlas/core`.
 ## Usage
 
 ```ts
-import { ProviderService } from "@atlas/providers";
+import { ProviderService } from "@prof-bilal/atlas-providers";
 
 const service = new ProviderService({
   providers: {
@@ -53,7 +53,7 @@ const result = await service.complete({
 Implement `ProviderAdapter` (id, default model, `complete`) and register it:
 
 ```ts
-import type { ProviderAdapter } from "@atlas/providers";
+import type { ProviderAdapter } from "@prof-bilal/atlas-providers";
 
 const myProvider: ProviderAdapter = {
   name: "local",

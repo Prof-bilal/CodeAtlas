@@ -1,8 +1,8 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { BenchmarkStore } from "@atlas/benchmark";
-import type { BenchmarkSuiteResult, BenchmarkTaskResult, TaskFile } from "@atlas/sdk";
+import { BenchmarkStore } from "@prof-bilal/atlas-benchmark";
+import type { BenchmarkSuiteResult, BenchmarkTaskResult, TaskFile } from "@prof-bilal/atlas-sdk";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   buildStats,

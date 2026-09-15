@@ -12,9 +12,9 @@
  * mode omits it (the model reasons over ranked items directly). Pure, bounded,
  * deterministic - no AI, no IO beyond the already-loaded index.
  */
-import type { ContextTaskCategory } from "@atlas/core";
-import type { FilePath, Result } from "@atlas/shared";
-import { ok } from "@atlas/shared";
+import type { ContextTaskCategory } from "@prof-bilal/atlas-core";
+import type { FilePath, Result } from "@prof-bilal/atlas-shared";
+import { ok } from "@prof-bilal/atlas-shared";
 import type { RelevantContext } from "../context/models";
 import type { ContextSDK } from "../context/sdk";
 import type { ContextSynthesis } from "./models";

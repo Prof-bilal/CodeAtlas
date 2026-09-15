@@ -7,7 +7,7 @@ import type {
   TokenUsageRecord,
   UsageRecord,
   UsageStatistics,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 import { combineSources } from "./cost";
 
 /** Roll up a set of usage records into {@link UsageStatistics}. */

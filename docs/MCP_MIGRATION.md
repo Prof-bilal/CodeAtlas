@@ -24,7 +24,7 @@ Both spellings return identical results. `PROTOCOL_TOOL_NAMES` in
 | Tool | Replacement |
 |---|---|
 | `analyze_task` | `context_for` (classification is internal to assembly; call it directly). |
-| `create_plan` | `context_for` + `dependencies_of` with `depth: 2`. The planner's impact-set logic stays in `@atlas/sdk` for internal use. |
+| `create_plan` | `context_for` + `dependencies_of` with `depth: 2`. The planner's impact-set logic stays in `@prof-bilal/atlas-sdk` for internal use. |
 | `verify_answer` | Run your own checks. The verifier package stays in the repo for harness use. |
 | `explain_module` | `overview` + `search_files` + `dependencies_of` (scoped by path). |
 

@@ -11,8 +11,8 @@ import type {
   SessionOutput,
   SessionPort,
   SessionStatus,
-} from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import type { AgentAdapter } from "./adapter";
 import { AgentService, type ExecutableResolver } from "./agent.service";
 import { AgentCliNotFoundError, UnknownAgentError } from "./errors";

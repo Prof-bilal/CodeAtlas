@@ -7,8 +7,8 @@ import type {
   RunnerRequest,
   RunnerResult,
   TaskFile,
-} from "@atlas/core";
-import { type Result, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, ok } from "@prof-bilal/atlas-shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { BenchmarkService } from "../src/benchmark.service";
 import { BenchmarkStore } from "../src/store";

@@ -13,9 +13,9 @@ import type {
   BenchmarkSuiteRunRequest,
   BenchmarkTaskResult,
   TaskDefinition,
-} from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
-import { loadSkill, renderSkillInstructions } from "@atlas/toolkit";
+} from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
+import { loadSkill, renderSkillInstructions } from "@prof-bilal/atlas-toolkit";
 import { evaluateTask } from "./evaluator";
 import { classifyFailure } from "./failure-classifier";
 import { BenchmarkMetrics } from "./metrics";

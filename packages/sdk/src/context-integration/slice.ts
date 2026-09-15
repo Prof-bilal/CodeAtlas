@@ -16,7 +16,7 @@
 
 import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { hashContent } from "@atlas/hashing";
+import { hashContent } from "@prof-bilal/atlas-hashing";
 import type { ContextSDK } from "../context/sdk";
 import { type AssembleOptions, assembleContextPackage } from "./assemble";
 import type {

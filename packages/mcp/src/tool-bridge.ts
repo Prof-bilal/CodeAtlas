@@ -5,7 +5,7 @@ import {
   type ToolDefinition,
   denyFilter,
   fail,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { ZodType } from "zod";
 import { z } from "zod";
 import { executeHandler } from "./handler-utils";

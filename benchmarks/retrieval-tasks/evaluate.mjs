@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Phase 0 retrieval-set smoke (plan §17 Phase 0 Task 3).
 // Validates tasks.json schema and reports set composition. Full P@k/MRR/R@k
-// scoring against a live index runs in Phase 6 via @atlas/benchmark's
+// scoring against a live index runs in Phase 6 via @prof-bilal/atlas-benchmark's
 // retrieval-metrics + paired-bootstrap (needs a built .codeatlas/context.db).
 // This smoke stays green in CI with no index, no provider, no network.
 import { readFileSync } from "node:fs";

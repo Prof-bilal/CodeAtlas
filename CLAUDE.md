@@ -17,28 +17,28 @@ rules and instruction. Read `AGENTS.md` first; everything there applies here.
 
 ## Non-obvious things to remember about this codebase
 
-- **`@atlas/context` is implemented** as a deterministic rank-and-assemble
+- **`@prof-bilal/atlas-context` is implemented** as a deterministic rank-and-assemble
   step (`ContextBuilderService` behind `ContextBuilderPort`, ADR-001). It ranks
   search hits and resolves them to source-file `ContextItem`s — no AI. Do not
   revert it to a stub.
 - **The CLI is wired.** `atlas search` opens `.codeatlas/context.db` (root from
   `ATLAS_ROOT` or cwd) and prints ranked hits via `createContextSDK`; `atlas
-  mcp` starts the MCP server (`@atlas/mcp`). `init`/`build`/`update` run the
+  mcp` starts the MCP server (`@prof-bilal/atlas-mcp`). `init`/`build`/`update` run the
   SDK indexer; `explain` resolves deterministically (AI summary only via
   `--ai`); `doctor` runs a health checklist. The interactive `atlas tui` is
   **v2 / not shipped** (untracked source). `atlas tools configure <tool>` is
   wired through `createConfigurator()` and supports installed-target detection
   plus `--dry-run`.
-- **Context is read through `createContextSDK` (`@atlas/sdk`)** — by `atlas
-  search`, the MCP tools, and the VS Code extension (`@atlas/extension`). Do not
-  open `.codeatlas/context.db` or use `@atlas/search`/`@atlas/storage` directly
+- **Context is read through `createContextSDK` (`@prof-bilal/atlas-sdk`)** — by `atlas
+  search`, the MCP tools, and the VS Code extension (`@prof-bilal/atlas-extension`). Do not
+  open `.codeatlas/context.db` or use `@prof-bilal/atlas-search`/`@prof-bilal/atlas-storage` directly
   in consumers (see `docs/CONTEXT_SDK.md`).
-- **MCP (`@atlas/mcp`) and the VS Code extension (`@atlas/extension`) are
+- **MCP (`@prof-bilal/atlas-mcp`) and the VS Code extension (`@prof-bilal/atlas-extension`) are
   implemented** thin SDK consumers. **Direction B's Agent Orchestrator**
   (`/claude`, `/gemini`, agent router) is mostly planned — the
-  narrow AI CLI connection layer (`@atlas/agents`, behind `AgentPort`) and the
+  narrow AI CLI connection layer (`@prof-bilal/atlas-agents`, behind `AgentPort`) and the
   **Agent Session Manager** (`atlas sessions`, via `createSessionManager()`
-  from `@atlas/sdk`) are implemented; the **router, slash commands, and
+  from `@prof-bilal/atlas-sdk`) are implemented; the **router, slash commands, and
   interactive TTY session handling are not** — do not reference the router,
   `/agents`, or slash commands as existing (sessions themselves do exist; see
   `docs/AGENT_SESSIONS.md`).

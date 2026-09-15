@@ -1,5 +1,5 @@
-import type { Reference, Symbol } from "@atlas/core";
-import type { FilePath, SymbolId } from "@atlas/shared";
+import type { Reference, Symbol } from "@prof-bilal/atlas-core";
+import type { FilePath, SymbolId } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { SymbolIndexer } from "../src/indexer/symbol-indexer";
 import type { ParsedFile } from "../src/parsed-file";

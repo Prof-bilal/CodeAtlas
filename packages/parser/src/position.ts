@@ -1,4 +1,4 @@
-import type { SymbolLocation } from "@atlas/core";
+import type { SymbolLocation } from "@prof-bilal/atlas-core";
 import { Node } from "ts-morph";
 import type { Node as MorphNode, SourceFile as MorphSourceFile } from "ts-morph";
 

@@ -72,7 +72,7 @@ First beta of the 0.4.0 line. Includes everything below plus the never-published
 - **`atlas benchmark` framework** — `init`/`run`/`status`/`report` for
   baseline-vs-CodeAtlas context-quality evaluation: declarative task files,
   OpenCode + Ollama runners, per-task timeout, resumable runs, automated
-  accuracy scoring, real token/cost/latency capture into `@atlas/usage`, and
+  accuracy scoring, real token/cost/latency capture into `@prof-bilal/atlas-usage`, and
   Markdown/JSON/HTML reports. Suite results shipped in `docs/benchmark.md`
   (rxjs, 1,288 files: **−22% tokens** vs baseline).
 - **Advisory tool-call policy** — `ToolCallPolicy` (allow/deny lists, call
@@ -97,9 +97,9 @@ First beta of the 0.4.0 line. Includes everything below plus the never-published
 ## [0.3.0] - 2026-08-18 (unpublished)
 
 > **Correction (2026-08-23):** this entry previously claimed `codeatlas-cli`
-> 0.3.0 and all 18 `@atlas/*` packages were published to npm. That publish
+> 0.3.0 and all 18 `@prof-bilal/atlas-*` packages were published to npm. That publish
 > never completed — the registry's latest remains `0.3.0-beta.0` and the
-> `@atlas/*` packages return 404. The real changes below shipped in-repo and
+> `@prof-bilal/atlas-*` packages return 404. The real changes below shipped in-repo and
 > are included in `0.4.0-beta.0`, the actual next npm release.
 
 ### Added
@@ -112,7 +112,7 @@ First beta of the 0.4.0 line. Includes everything below plus the never-published
 - **Conditional VACUUM** — `ContextStore.compact()` only runs `VACUUM` when
   free pages are a meaningful share (≥20%) of the database file, so
   steady-state updates no longer pay a full file rewrite every run.
-- **Bounded search index** — the `@atlas/search` index retains at most
+- **Bounded search index** — the `@prof-bilal/atlas-search` index retains at most
   `MAX_INDEXED_CONTENT_CHARS` (2,000) of file content per entry instead of
   the full body, capping index memory on huge files; winning hits fetch the
   full body from the database on demand.
@@ -150,8 +150,8 @@ First beta of the 0.4.0 line. Includes everything below plus the never-published
   dependencies and category tags.
 - **User guide** — `docs/AGENT_TOOLKIT.md` §10 rewritten as a complete CLI
   reference with real commands, examples, and the Top-10 list.
-- **Statement caching in SQLite repositories** — `@atlas/storage` and
-  `@atlas/usage` now reuse one prepared statement per SQL via a shared
+- **Statement caching in SQLite repositories** — `@prof-bilal/atlas-storage` and
+  `@prof-bilal/atlas-usage` now reuse one prepared statement per SQL via a shared
   `StatementCache` base class instead of `db.prepare()` per row. `node:sqlite`
   statements hold native memory until the connection closes, so the previous
   approach leaked ~2.5 GB of native RSS during `atlas init` on large
@@ -159,7 +159,7 @@ First beta of the 0.4.0 line. Includes everything below plus the never-published
   MB**, minimum available memory **23 MB → 1,361 MB**, wall time 241 s → 188 s.
   Root cause and fix documented in `benchmarks/extreme/benchmark.md` (§7).
 - **Parser reference resolution performance and correctness** —
-  `@atlas/parser` builds symbol lookup maps once per file (O(symbols) instead
+  `@prof-bilal/atlas-parser` builds symbol lookup maps once per file (O(symbols) instead
   of a quadratic per-reference filter), drops unresolved identifier usages so
   a large corpus stays memory-bounded, and adds a configurable reference-line
   cap (`DEFAULT_MAX_REFERENCE_LINES = 20_000`). Regression tests cover renamed
@@ -174,7 +174,7 @@ First beta of the 0.4.0 line. Includes everything below plus the never-published
 
 - `apps/cli/package.json` now ships full npm metadata (description, author,
   license, repository, homepage, bugs, keywords).
-- `@atlas/search` index building is more memory-efficient for large snapshots.
+- `@prof-bilal/atlas-search` index building is more memory-efficient for large snapshots.
 - `atlas tools info` now shows compatibility report, dependencies, and
   categories.
 - `atlas tools doctor` now runs live compatibility checks and detects conflicts.
@@ -197,7 +197,7 @@ First beta of the 0.4.0 line. Includes everything below plus the never-published
 
 ### Added
 
-- **Deterministic context ranking** — `@atlas/context` (`ContextBuilderService`)
+- **Deterministic context ranking** — `@prof-bilal/atlas-context` (`ContextBuilderService`)
   is implemented: it ranks search hits and resolves them to source-file
   `ContextItem`s (ADR-001). Previously a stub.
 - **`atlas explain`** — deterministic explanation of a symbol/file/module/concept
@@ -212,7 +212,7 @@ First beta of the 0.4.0 line. Includes everything below plus the never-published
 - **Incremental indexer** — `atlas update` re-reads and re-parses only
   changed/added TypeScript files, reuses the persisted snapshot for unchanged
   files, carries over usage edges, deletes removed files, prunes stale folder
-  modules, and merges via `updateContext` (`@atlas/sdk` `indexProject`).
+  modules, and merges via `updateContext` (`@prof-bilal/atlas-sdk` `indexProject`).
 - **Context freshness** — `createContextSDK(...).freshness()` reports
   `fresh`/`stale`/`unknown`/`unavailable` against the working tree with the
   changed/added/deleted file lists.
@@ -245,12 +245,12 @@ First beta of the 0.4.0 line. Includes everything below plus the never-published
   `apps/cli/package.json` at build time) instead of the workspace placeholder
   `0.0.0`.
 - Windows: external AI CLI `.cmd`/`.bat` shims are now spawned correctly
-  (`@atlas/agents` process layer).
+  (`@prof-bilal/atlas-agents` process layer).
 
 ### Docs
 
 - Rewrote the top-level `README.md` (status claims now reflect the implemented
-  `@atlas/context`, `atlas explain`, and `atlas doctor`; the published global
+  `@prof-bilal/atlas-context`, `atlas explain`, and `atlas doctor`; the published global
   install is the primary path).
 - New docs: `docs/installation.md`, `docs/getting-started.md`,
   `docs/configuration.md`, `docs/integrations.md`, `docs/troubleshooting.md`.

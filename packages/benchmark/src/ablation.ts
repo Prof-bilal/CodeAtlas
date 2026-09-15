@@ -4,8 +4,8 @@ import type {
   BenchmarkRunner,
   RunnerRequest,
   RunnerResult,
-} from "@atlas/core";
-import type { Result } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
 
 /**
  * Ablation service for Phase 8 (P8.2).

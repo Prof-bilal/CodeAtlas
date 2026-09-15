@@ -5,9 +5,9 @@ import type {
   ContextTaskCategory,
   SearchPort,
   SearchResult,
-} from "@atlas/core";
-import type { FilePath, Result } from "@atlas/shared";
-import { ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import type { FilePath, Result } from "@prof-bilal/atlas-shared";
+import { ok } from "@prof-bilal/atlas-shared";
 
 /** Options for {@link ContextBuilderService}. */
 export interface ContextBuilderServiceOptions {

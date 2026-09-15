@@ -54,7 +54,7 @@ audit, and documentation updates.
     resolution. Existing CLI/MCP registration and integration coverage remains
     in place.
 
-12. **Dependency/dead-package audit documented** — `@atlas/verifier` is now
+12. **Dependency/dead-package audit documented** — `@prof-bilal/atlas-verifier` is now
     recorded in `DEPENDENCIES.md`, `MODULES.md`, `CURRENT_STATE.md`,
     `ARCHITECTURE.md`, and `FEATURE_STATUS.md`. `packages/common` remains an
     intentionally untracked source directory with no workspace package or

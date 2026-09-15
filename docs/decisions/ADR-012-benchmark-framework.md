@@ -13,7 +13,7 @@ files. These are hard to maintain, hard to extend, and duplicated across
 directories.
 
 **Goal:** Consolidate into a single declarative `atlas benchmark` command with
-`init/run/status/report` subcommands, living in a new `@atlas/benchmark` package
+`init/run/status/report` subcommands, living in a new `@prof-bilal/atlas-benchmark` package
 behind a `BenchmarkPort` in core.
 
 ## Decision
@@ -26,7 +26,7 @@ A new port (`packages/core/src/ports/benchmark.port.ts`) defines the contract:
 `BenchmarkSuiteResult`, `BenchmarkStatus`, `ReportOptions`, `BenchmarkReport`,
 `BenchmarkRunner`, `RunnerRequest`, `RunnerResult`.
 
-### 2. `@atlas/benchmark` package
+### 2. `@prof-bilal/atlas-benchmark` package
 
 Owns the implementation. Components:
 

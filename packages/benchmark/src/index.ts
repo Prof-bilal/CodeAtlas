@@ -1,10 +1,10 @@
-// @atlas/benchmark — Benchmark harness for CodeAtlas
+// @prof-bilal/atlas-benchmark — Benchmark harness for CodeAtlas
 //
 // Declarative evaluation of context quality against baseline,
 // with automated scoring and Markdown reporting.
 
 export { BenchmarkService } from "./benchmark.service";
-export type { BenchmarkRunner } from "@atlas/core";
+export type { BenchmarkRunner } from "@prof-bilal/atlas-core";
 export { BenchmarkStore } from "./store";
 export { evaluateTask, fileHits, conceptHits, citedPaths } from "./evaluator";
 export { renderReport, renderSummary, renderHtml } from "./reporter";

@@ -1,5 +1,5 @@
-import type { ContextSnapshot, SourceFile } from "@atlas/core";
-import type { FilePath } from "@atlas/shared";
+import type { ContextSnapshot, SourceFile } from "@prof-bilal/atlas-core";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { SearchService } from "../src/search.service";
 import {

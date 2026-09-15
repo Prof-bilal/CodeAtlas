@@ -1,4 +1,4 @@
-import type { PlanStep, VerificationStrategy } from "@atlas/core";
+import type { PlanStep, VerificationStrategy } from "@prof-bilal/atlas-core";
 
 /**
  * Bounded agent state tracked across tool-loop rounds (Phase 5, P5.1).

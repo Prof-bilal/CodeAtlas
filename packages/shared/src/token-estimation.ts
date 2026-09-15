@@ -4,8 +4,8 @@
  * carry `estimated` provenance, never `actual`. CodeAtlas never silently
  * guesses; callers opt in to estimation at the collection seam.
  *
- * This is the single canonical implementation — `@atlas/metrics`,
- * `@atlas/usage`, and `@atlas/sdk` re-export or import it rather than forking.
+ * This is the single canonical implementation — `@prof-bilal/atlas-metrics`,
+ * `@prof-bilal/atlas-usage`, and `@prof-bilal/atlas-sdk` re-export or import it rather than forking.
  */
 export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);

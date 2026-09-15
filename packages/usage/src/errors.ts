@@ -1,4 +1,4 @@
-import type { LimitCheck, UsageScope } from "@atlas/core";
+import type { LimitCheck, UsageScope } from "@prof-bilal/atlas-core";
 
 /** Base class for usage-module errors. */
 export class UsageError extends Error {

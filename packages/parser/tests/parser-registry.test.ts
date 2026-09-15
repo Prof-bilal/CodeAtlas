@@ -1,6 +1,6 @@
-import type { SourceFile } from "@atlas/core";
-import type { Result } from "@atlas/shared";
-import { ok } from "@atlas/shared";
+import type { SourceFile } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
+import { ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import type { LanguageParser } from "../src/language-parser";
 import type { ParsedFile } from "../src/parsed-file";

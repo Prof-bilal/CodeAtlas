@@ -1,8 +1,8 @@
 // biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
-import type { Reference, Symbol } from "@atlas/core";
-import { SymbolIndexer, TypeScriptParser } from "@atlas/parser";
-import type { ParsedFile } from "@atlas/parser";
-import type { FilePath } from "@atlas/shared";
+import type { Reference, Symbol } from "@prof-bilal/atlas-core";
+import { SymbolIndexer, TypeScriptParser } from "@prof-bilal/atlas-parser";
+import type { ParsedFile } from "@prof-bilal/atlas-parser";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 
 /** Parsed + indexed input for building a graph. */
 export interface GraphFixture {

@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 import type { CompatibilityEvaluationInput } from "./compatibility.port";
 import type { SecurityAssessment } from "./security.port";
 import type {
@@ -12,7 +12,7 @@ import type {
  *
  * Safely installs tools described by the CodeAtlas registry / Tool Manifests,
  * **through official distribution channels only**, with explicit user approval
- * and recorded provenance. This port is implemented in `@atlas/toolkit` with
+ * and recorded provenance. This port is implemented in `@prof-bilal/atlas-toolkit` with
  * **one adapter per ecosystem** (`npm`, `pip`, `cargo`, `go`, `binary`,
  * `github-release`, `mcp`) mirroring the `ProviderPort` / `AgentPort` adapter
  * pattern — a new ecosystem is a new small adapter, not a fork. The MVP

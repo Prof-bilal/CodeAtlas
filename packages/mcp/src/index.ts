@@ -1,8 +1,8 @@
 /**
- * `@atlas/mcp` — a Model Context Protocol (MCP) server that exposes a project's
+ * `@prof-bilal/atlas-mcp` — a Model Context Protocol (MCP) server that exposes a project's
  * CodeAtlas context to external AI tools over stdio.
  *
- * The server consumes only `@atlas/sdk` (per the dependency matrix) and is
+ * The server consumes only `@prof-bilal/atlas-sdk` (per the dependency matrix) and is
  * provider-independent: search, dependencies, module explanation, and overview
  * are deterministic reads of the persisted index; AI summary generation is
  * opt-in per call and goes through whatever provider is wired into the SDK.

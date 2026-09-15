@@ -110,8 +110,8 @@ Check if any benchmark tests assert on dependency search results. If so, update 
 
 ## Verification
 
-1. `pnpm --filter @atlas/search test` — all search tests pass
-2. `pnpm --filter @atlas/mcp test` — all 151 MCP tests pass
+1. `pnpm --filter @prof-bilal/atlas-search test` — all search tests pass
+2. `pnpm --filter @prof-bilal/atlas-mcp test` — all 151 MCP tests pass
 3. `pnpm test` — full suite passes
 4. `pnpm exec tsx benchmarks/retrieval-tasks/evaluate-retrieval.ts` — P@5 ≥ 0.30, MRR ≥ 0.20
 5. `pnpm typecheck` — no new type errors
@@ -122,7 +122,7 @@ Check if any benchmark tests assert on dependency search results. If so, update 
 
 ## Outcome (2026-09-07, implemented)
 
-**Implemented as specified.** All 5 file changes applied; `@atlas/search` rebuilt; `dist` verified free of dependency entities.
+**Implemented as specified.** All 5 file changes applied; `@prof-bilal/atlas-search` rebuilt; `dist` verified free of dependency entities.
 
 - Search tests: 44/44 pass. MCP+benchmark+SDK: 593/593 pass. Typecheck, biome format, eslint clean on all touched files.
 - Live verification: `search("math", { types: ["dependency"] })` returns `[]`; top-5 results contain zero dependency hits.

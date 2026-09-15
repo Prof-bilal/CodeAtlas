@@ -2,14 +2,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
-import type { CompatibilityPort, CompatibilityReport } from "@atlas/core";
-import { type Result, ok } from "@atlas/shared";
+import type { CompatibilityPort, CompatibilityReport } from "@prof-bilal/atlas-core";
+import { type Result, ok } from "@prof-bilal/atlas-shared";
 import {
   InstallerProcess,
   type InstallerSpawnFn,
   createToolManifest,
   saveToolManifest,
-} from "@atlas/toolkit";
+} from "@prof-bilal/atlas-toolkit";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   EnvironmentDetector,

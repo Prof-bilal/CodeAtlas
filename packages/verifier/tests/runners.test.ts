@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import type { VerifyConfig } from "@atlas/core";
+import type { VerifyConfig } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { runCommands } from "../src/runners.js";
 

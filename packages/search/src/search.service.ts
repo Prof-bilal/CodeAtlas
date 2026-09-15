@@ -4,8 +4,8 @@ import type {
   SearchPort,
   SearchRequest,
   SearchResult,
-} from "@atlas/core";
-import { type FilePath, type Result, fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type FilePath, type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { LexicalScorer, type RelevanceScorer, bestContentWindowScore } from "./scoring";
 import type { FileEntry, IndexedEntity } from "./search-index";
 import { buildIndex } from "./search-index";

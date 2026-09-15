@@ -7,7 +7,7 @@ import type {
   VerificationVerdict,
   VerifierPort,
   VerifyConfig,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 import { classifyResults } from "./baseline.js";
 import { checkClaims } from "./claims.js";
 import { runCommands as runCommandRunners } from "./runners.js";

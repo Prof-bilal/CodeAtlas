@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import type { CommandRunResult } from "@atlas/core";
+import type { CommandRunResult } from "@prof-bilal/atlas-core";
 import { beforeEach, describe, expect, it } from "vitest";
 import { classifyResults, loadBaseline, saveBaseline } from "../src/baseline.js";
 

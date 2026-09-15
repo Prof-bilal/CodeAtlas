@@ -1,4 +1,4 @@
-import { createWardenService } from "@atlas/sdk";
+import { createWardenService } from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 
 interface CommonOptions {

@@ -1,11 +1,11 @@
-# @atlas/summary
+# @prof-bilal/atlas-summary
 
 The AI summary engine for CodeAtlas. Generates **structured** summaries of
 files, folders, modules, and projects from a language model, caches every
 summary by content hash so unchanged code is never re-summarized, and records
 token usage + generation metadata.
 
-Implements `SummaryPort` from `@atlas/core`.
+Implements `SummaryPort` from `@prof-bilal/atlas-core`.
 
 > **Status: implemented.** File / folder / module / project summaries, caching,
 > change-skipping, and custom prompts are built and tested against a fake
@@ -29,7 +29,7 @@ Implements `SummaryPort` from `@atlas/core`.
 ## Usage
 
 ```ts
-import { SummaryService } from "@atlas/summary";
+import { SummaryService } from "@prof-bilal/atlas-summary";
 
 const summary = new SummaryService({ provider, cache, hash });
 

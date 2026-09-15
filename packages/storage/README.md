@@ -1,4 +1,4 @@
-# @atlas/storage
+# @prof-bilal/atlas-storage
 
 The SQLite **Context Database** for CodeAtlas. Persists the whole project
 context — files, symbols, dependencies, modules, summaries, relationships,
@@ -6,7 +6,7 @@ hashes, and metadata — behind the `ContextDatabasePort` contract, using the
 repository pattern with migrations, versioning, and transaction support.
 
 Implements `ContextDatabasePort` (and the legacy `StoragePort`) from
-`@atlas/core`.
+`@prof-bilal/atlas-core`.
 
 > **Status: implemented.** SQLite (via `node:sqlite`), 8 tables, repository
 > pattern, migrations + versioning, transactions, search. No AI logic lives
@@ -36,7 +36,7 @@ versions.
 ## Usage
 
 ```ts
-import { ContextStore } from "@atlas/storage";
+import { ContextStore } from "@prof-bilal/atlas-storage";
 
 const store = new ContextStore({ filePath: ".codeatlas/context.db" });
 

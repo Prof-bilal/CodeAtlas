@@ -1,5 +1,5 @@
-import type { ClaimCheckResult, ProviderPort } from "@atlas/core";
-import { fail, ok } from "@atlas/shared";
+import type { ClaimCheckResult, ProviderPort } from "@prof-bilal/atlas-core";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_CRITIC_CONFIG,

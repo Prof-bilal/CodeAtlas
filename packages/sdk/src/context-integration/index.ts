@@ -1,4 +1,4 @@
-import { UnknownSessionError } from "@atlas/agents";
+import { UnknownSessionError } from "@prof-bilal/atlas-agents";
 import type {
   ClaimCheckResult,
   CriticConfig,
@@ -6,8 +6,8 @@ import type {
   SessionOutput,
   SessionPort,
   UsagePort,
-} from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import type { ContextSDK } from "../context/sdk";
 import { resolveSkillsInstructions } from "../skills/index";
 import { type AssembleOptions, assembleContextPackage } from "./assemble";
@@ -43,7 +43,7 @@ export {
 export { applyBudget, DEFAULT_CONTEXT_BUDGET } from "./budget";
 export { synthesize, type SynthesisInput } from "./synthesis";
 export type { ContextSynthesis, ContextSynthesisKind } from "./models";
-export type { ContextMode } from "@atlas/core";
+export type { ContextMode } from "@prof-bilal/atlas-core";
 export { createClassifier } from "./classifier";
 
 export {

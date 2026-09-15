@@ -30,7 +30,7 @@
 ### Who is the actual consumer?
 
 **Finding:** The real consumers are (1) AI coding agents via MCP stdio tools, (2) the `atlas` CLI user, (3) the VS Code extension tree views. The MCP path is the strategically important one.
-**Evidence:** MCP consumes only SDK (`packages/mcp/src/context.ts:46-54`); extension reads only via `createContextSDK` (`docs/CURRENT_STATE.md:339-358`); CLI imports only `sdk (+mcp)` per ESLint matrix (`docs/DEPENDENCIES.md`, `apps/cli/package.json` deps `@atlas/sdk,@atlas/mcp,@atlas/benchmark`).
+**Evidence:** MCP consumes only SDK (`packages/mcp/src/context.ts:46-54`); extension reads only via `createContextSDK` (`docs/CURRENT_STATE.md:339-358`); CLI imports only `sdk (+mcp)` per ESLint matrix (`docs/DEPENDENCIES.md`, `apps/cli/package.json` deps `@prof-bilal/atlas-sdk,@prof-bilal/atlas-mcp,@prof-bilal/atlas-benchmark`).
 **Impact:** Any V2 change must keep the SDK as the single read seam. **Confidence:** HIGH. **Priority:** P0.
 
 ### What does the MCP provide that ordinary filesystem/search tools do not?
@@ -334,7 +334,7 @@ No `shell:true` in product `src` (only SQLite `db.exec`, regex `.exec` — verif
 
 | What | Key | Invalidation | Limits | Hit/miss | Verdict |
 |---|---|---|---|---|---|
-| `@atlas/cache` (`cache.service.ts:1-100`: Map + per-entry TTL, lazy expiry on `get`, optional JSON persist, best-effort) | `CacheKey` | TTL only; corrupt file → start empty (`:83-85`) | No size cap; whole-file rewrite per write | No hit/miss counters | Correct but **used only by summaries** (`summary.service.ts:42`); does search/graph/context get faster? NO |
+| `@prof-bilal/atlas-cache` (`cache.service.ts:1-100`: Map + per-entry TTL, lazy expiry on `get`, optional JSON persist, best-effort) | `CacheKey` | TTL only; corrupt file → start empty (`:83-85`) | No size cap; whole-file rewrite per write | No hit/miss counters | Correct but **used only by summaries** (`summary.service.ts:42`); does search/graph/context get faster? NO |
 | Summary content-hash cache | content hash | Changed files bypass (`cacheHit` metadata) | Unbounded table | Proven by tests (`summary.service.test.ts:62,122`) | GOOD — the one cache that works |
 | Search index | Rebuilt per query; no persistent cache | N/A (no cache) | Only 2000-char excerpt bound | N/A | Correctness-safe, speed-poor |
 | SQLite prepared statements | Statement cache (`storage/src/*repository*`, `statement-cache.ts`) | Connection-scoped | Bounded by query variety | Transparent | GOOD |
@@ -502,7 +502,7 @@ No dead-code crisis found (TODO/FIXME/HACK/WORKAROUND grep over `packages/*/src 
 | Lexical search + scorer | IMPROVE (not rewrite) | Deterministic + prefilter-correct; needs conjunction semantics, chunked content, code-signal boosts, reranker seam exercised |
 | `ContextBuilderService` + assembly/budget/deny/sufficiency/digest/modes | IMPROVE | Best asset; needs efficiency + traversal + measured gates, not redesign |
 | Freshness probe + auto-refresh + staleness | KEEP + MEASURE | Honest states; cost unknown |
-| `@atlas/cache` | KEEP, EXTEND use | Only summaries use it; add warm search index with hash invalidation |
+| `@prof-bilal/atlas-cache` | KEEP, EXTEND use | Only summaries use it; add warm search index with hash invalidation |
 | MCP `search_symbols/search_files/get_dependencies/read_file_range/find_relevant_context` | KEEP + HARDEN | Primitives agents need; fix score scale, tighten caps, add timings |
 | `inspect_symbol`, `project_overview(summary)` | KEEP (tighten) | High value; cap discipline |
 | `explain_module`, `get_summary(generate)` | IMPROVE or REMOVE surface | Merge into primitives or gate |

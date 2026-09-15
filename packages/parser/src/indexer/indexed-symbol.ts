@@ -1,5 +1,5 @@
-import type { Reference, Symbol } from "@atlas/core";
-import type { SymbolId } from "@atlas/shared";
+import type { Reference, Symbol } from "@prof-bilal/atlas-core";
+import type { SymbolId } from "@prof-bilal/atlas-shared";
 
 /**
  * A {@link Symbol} enriched with its position in the symbol index.

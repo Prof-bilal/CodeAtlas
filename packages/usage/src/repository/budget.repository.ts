@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import type { Budget, UsageScope } from "@atlas/core";
+import type { Budget, UsageScope } from "@prof-bilal/atlas-core";
 import { type Row, colString, count } from "./row";
 import { StatementCache } from "./statement-cache";
 

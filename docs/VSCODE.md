@@ -1,4 +1,4 @@
-# VS Code Extension (`@atlas/extension`)
+# VS Code Extension (`@prof-bilal/atlas-extension`)
 
 The first editor integration. It reads repository context **only through the
 Context SDK** (`createContextSDK`) — it never opens the database or runs SQL
@@ -62,7 +62,7 @@ The default project root is the first workspace folder (`ATLAS_ROOT` env or
 ## Dev
 
 ```sh
-pnpm --filter @atlas/extension build    # bundle to dist/extension.js
+pnpm --filter @prof-bilal/atlas-extension build    # bundle to dist/extension.js
 ```
 
 The manifest (`apps/extension/package.json`) declares activation, views,

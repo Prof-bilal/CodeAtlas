@@ -1,8 +1,8 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import type { ChatAgentPort, ChatAgentResult } from "@atlas/core";
-import type { Result } from "@atlas/shared";
+import type { ChatAgentPort, ChatAgentResult } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
 import { afterEach, describe, expect, it } from "vitest";
 import { AgentCliNotFoundError, UnknownAgentError } from "../src/errors";
 import { ProcessRunner } from "../src/process";

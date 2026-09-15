@@ -14,7 +14,7 @@ import type {
   MetricsSearchEvent,
   MetricsSnapshot,
   MetricsTokenEvent,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 import { MetricsStore } from "./metrics-store";
 import { calculateSavings } from "./token-estimation";
 import { MAX_DAILY_ENTRIES, createEmptySnapshot, getOrCreateDay, todayString } from "./types";

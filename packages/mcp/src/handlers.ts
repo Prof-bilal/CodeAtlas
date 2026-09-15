@@ -6,7 +6,7 @@ import type {
   SufficiencyResult,
   Summary,
   SummaryKind,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import {
   availableSkills,
   createSkillService,
@@ -14,7 +14,7 @@ import {
   loadBuiltinSkill,
   recommendSkillsForTask,
   resolveSkillsInstructions,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { CodeAtlasContext } from "./context";
 import { isDeniedPath } from "./deny";
 import type { Logger } from "./log";
@@ -130,8 +130,8 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
   });
 
   // Build the context package via the SDK's assembly pipeline.
-  const { assembleContextPackage } = await import("@atlas/sdk");
-  const { detectStaleness } = await import("@atlas/sdk");
+  const { assembleContextPackage } = await import("@prof-bilal/atlas-sdk");
+  const { detectStaleness } = await import("@prof-bilal/atlas-sdk");
   const staleness = await detectStaleness(sdk);
 
   const assemble = (mode: "auto" | "digest" | "full" | "off"): ContextPackage => {

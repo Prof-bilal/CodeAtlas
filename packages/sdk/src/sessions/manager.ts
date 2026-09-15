@@ -5,8 +5,8 @@ import {
   type ProcessRunner,
   ProviderChatAgent,
   SessionManager,
-} from "@atlas/agents";
-import type { SessionPort } from "@atlas/core";
+} from "@prof-bilal/atlas-agents";
+import type { SessionPort } from "@prof-bilal/atlas-core";
 import { type ContextToolSource, ToolUsingChatAgent } from "../context-tools";
 import { createProviderService } from "../providers/service";
 
@@ -35,7 +35,7 @@ export interface CreateSessionManagerOptions {
 }
 
 /**
- * Create the Agent Session Manager (backed by `@atlas/agents`).
+ * Create the Agent Session Manager (backed by `@prof-bilal/atlas-agents`).
  *
  * The returned `SessionPort` is the provider-agnostic way to create, start,
  * track, inspect, stop, and terminate external AI CLI sessions. Providers are

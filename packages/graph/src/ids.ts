@@ -1,4 +1,4 @@
-import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
+import type { FilePath, NodeId, SymbolId } from "@prof-bilal/atlas-shared";
 
 /**
  * The deterministic {@link NodeId} for a symbol node. Stable across runs, so

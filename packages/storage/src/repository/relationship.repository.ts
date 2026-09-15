@@ -1,5 +1,5 @@
-import type { PersistedRelationship } from "@atlas/core";
-import type { NodeId } from "@atlas/shared";
+import type { PersistedRelationship } from "@prof-bilal/atlas-core";
+import type { NodeId } from "@prof-bilal/atlas-shared";
 import { type Row, colString, count, metadataFromRow } from "./row";
 import { StatementCache } from "./statement-cache";
 

@@ -1,6 +1,6 @@
 ﻿import { mkdir } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
-import { CacheService } from "@atlas/cache";
+import { CacheService } from "@prof-bilal/atlas-cache";
 import type {
   ContextData,
   MetricsPort,
@@ -11,11 +11,11 @@ import type {
   Summary,
   SummaryPort,
   UsagePort,
-} from "@atlas/core";
-import { GraphService } from "@atlas/graph";
-import { HashService } from "@atlas/hashing";
-import { ParserService } from "@atlas/parser";
-import { ScannerService, generateManifest } from "@atlas/scanner";
+} from "@prof-bilal/atlas-core";
+import { GraphService } from "@prof-bilal/atlas-graph";
+import { HashService } from "@prof-bilal/atlas-hashing";
+import { ParserService } from "@prof-bilal/atlas-parser";
+import { ScannerService, generateManifest } from "@prof-bilal/atlas-scanner";
 import {
   DEFAULT_CONCURRENCY,
   type FilePath,
@@ -23,10 +23,10 @@ import {
   fail,
   mapWithConcurrency,
   ok,
-} from "@atlas/shared";
-import { ContextStore } from "@atlas/storage";
-import { SummaryService } from "@atlas/summary";
-import { withUsageTracking } from "@atlas/usage";
+} from "@prof-bilal/atlas-shared";
+import { ContextStore } from "@prof-bilal/atlas-storage";
+import { SummaryService } from "@prof-bilal/atlas-summary";
+import { withUsageTracking } from "@prof-bilal/atlas-usage";
 import { type DigestInput, buildDigest } from "../context-integration/digest";
 import { fileNodeId, symbolNodeId } from "../context/nodes";
 import { createProviderService } from "../providers/index";

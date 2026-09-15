@@ -7,8 +7,8 @@ import type {
   SecurityPort,
   ToolSecurityStatusValue,
   ToolTrustLevel,
-} from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { InstallerError } from "./installer-errors";
 
 const DANGEROUS = /[\r\n;]/;

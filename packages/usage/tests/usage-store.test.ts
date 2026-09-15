@@ -1,4 +1,4 @@
-import type { UsageRecord } from "@atlas/core";
+import type { UsageRecord } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { UsageStore } from "../src";
 

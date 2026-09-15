@@ -8,7 +8,7 @@
 // Outputs P@k, R@k, MRR, and per-task details to stdout as JSON.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import type { TaskDefinition } from "@atlas/core";
+import type { TaskDefinition } from "@prof-bilal/atlas-core";
 import {
   type RetrievalReport,
   DEFAULT_K_VALUES,

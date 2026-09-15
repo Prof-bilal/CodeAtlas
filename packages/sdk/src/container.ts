@@ -1,5 +1,5 @@
-import { CacheService } from "@atlas/cache";
-import { ContextBuilderService } from "@atlas/context";
+import { CacheService } from "@prof-bilal/atlas-cache";
+import { ContextBuilderService } from "@prof-bilal/atlas-context";
 import type {
   CachePort,
   ContextBuilderPort,
@@ -11,14 +11,14 @@ import type {
   SearchPort,
   StoragePort,
   SummaryPort,
-} from "@atlas/core";
-import { GraphService } from "@atlas/graph";
-import { HashService } from "@atlas/hashing";
-import { ParserService } from "@atlas/parser";
-import { ScannerService } from "@atlas/scanner";
-import { SearchService } from "@atlas/search";
-import { ContextStore, StorageService } from "@atlas/storage";
-import { SummaryService } from "@atlas/summary";
+} from "@prof-bilal/atlas-core";
+import { GraphService } from "@prof-bilal/atlas-graph";
+import { HashService } from "@prof-bilal/atlas-hashing";
+import { ParserService } from "@prof-bilal/atlas-parser";
+import { ScannerService } from "@prof-bilal/atlas-scanner";
+import { SearchService } from "@prof-bilal/atlas-search";
+import { ContextStore, StorageService } from "@prof-bilal/atlas-storage";
+import { SummaryService } from "@prof-bilal/atlas-summary";
 import { createProviderService } from "./providers/index";
 
 /** The full set of services that make up a CodeAtlas runtime. */

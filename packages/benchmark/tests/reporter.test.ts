@@ -3,7 +3,7 @@ import type {
   BenchmarkEvaluationEntry,
   BenchmarkStatus,
   BenchmarkTaskResult,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { renderHtml, renderReport } from "../src/reporter";
 

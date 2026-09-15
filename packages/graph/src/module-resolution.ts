@@ -1,6 +1,6 @@
 import { dirname } from "node:path";
-import type { Symbol } from "@atlas/core";
-import type { FilePath } from "@atlas/shared";
+import type { Symbol } from "@prof-bilal/atlas-core";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 
 /**
  * Resolve a relative module specifier (e.g. `"./utils"`) against a source file
@@ -12,8 +12,8 @@ import type { FilePath } from "@atlas/shared";
  * `.ts`, `.tsx`, `/index.ts`, `/index.tsx`. `knownFiles` maps forward-slash
  * normalized paths to the original {@link FilePath}s.
  *
- * This mirrors the resolver inside `@atlas/parser`'s `SymbolIndexer`; it is
- * duplicated here so `@atlas/graph` stays decoupled from the parser (both may
+ * This mirrors the resolver inside `@prof-bilal/atlas-parser`'s `SymbolIndexer`; it is
+ * duplicated here so `@prof-bilal/atlas-graph` stays decoupled from the parser (both may
  * only import `core` and `shared`). Keep the two in sync.
  */
 export function resolveModulePath(

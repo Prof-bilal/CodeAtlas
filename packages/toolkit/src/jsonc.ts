@@ -1,4 +1,4 @@
-import { type Result, fail, ok } from "@atlas/shared";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 
 /**
  * JSONC support for the Tool Configurator (ADR-010). OpenCode reads its global

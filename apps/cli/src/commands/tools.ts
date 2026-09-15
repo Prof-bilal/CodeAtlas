@@ -5,7 +5,7 @@ import {
   type ToolkitDoctorEntry,
   type ToolkitSDK,
   createToolkitSDK,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 
 export interface ToolsCommandOptions {

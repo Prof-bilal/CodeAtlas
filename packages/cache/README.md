@@ -1,10 +1,10 @@
-# @atlas/cache
+# @prof-bilal/atlas-cache
 
 A generic caching layer for CodeAtlas, behind the `CachePort` contract. Stores
 JSON-serializable values in memory with optional TTL and JSON file persistence,
 so caches can survive across runs.
 
-Implements `CachePort` from `@atlas/core`.
+Implements `CachePort` from `@prof-bilal/atlas-core`.
 
 > **Status: implemented.** In-memory store with TTL and optional persistence.
 
@@ -19,7 +19,7 @@ Implements `CachePort` from `@atlas/core`.
 ## Usage
 
 ```ts
-import { CacheService } from "@atlas/cache";
+import { CacheService } from "@prof-bilal/atlas-cache";
 
 const cache = new CacheService({ filePath: ".codeatlas/cache.json" });
 await cache.set("summary:file:abc", summary, 60_000);

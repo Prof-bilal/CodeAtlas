@@ -1,4 +1,4 @@
-import type { ProjectId, Result } from "@atlas/shared";
+import type { ProjectId, Result } from "@prof-bilal/atlas-shared";
 import type { Project, SourceFile, Symbol } from "../domain/entities";
 
 /** Persists and rehydrates project, file, and symbol data. */

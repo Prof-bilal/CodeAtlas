@@ -2,7 +2,7 @@ import { cp, mkdir, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/pro
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createContextSDK, indexProject } from "@atlas/sdk";
+import { createContextSDK, indexProject } from "@prof-bilal/atlas-sdk";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it } from "vitest";

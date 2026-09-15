@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Readable } from "node:stream";
-import type { CompatibilityPort, CompatibilityReport, ToolInstallRequest } from "@atlas/core";
-import { type Result, ok } from "@atlas/shared";
+import type { CompatibilityPort, CompatibilityReport, ToolInstallRequest } from "@prof-bilal/atlas-core";
+import { type Result, ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import {
   InstallApprovalDeniedError,

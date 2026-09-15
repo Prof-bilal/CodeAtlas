@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import type { VerifyCommandConfig, VerifyConfig } from "@atlas/core";
+import type { VerifyCommandConfig, VerifyConfig } from "@prof-bilal/atlas-core";
 
 const CONFIG_FILENAME = "verify.json";
 

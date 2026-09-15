@@ -5,8 +5,8 @@ import { delimiter, extname, isAbsolute, join } from "node:path";
 /**
  * A small PATH resolver used by the Environment Detector to find package
  * managers and runtimes. AI-CLI availability is deliberately **not** resolved
- * here — that goes through `AgentPort` (via `@atlas/agents`); `@atlas/toolkit`
- * cannot import `@atlas/agents`, so this resolver is a narrow local copy used
+ * here — that goes through `AgentPort` (via `@prof-bilal/atlas-agents`); `@prof-bilal/atlas-toolkit`
+ * cannot import `@prof-bilal/atlas-agents`, so this resolver is a narrow local copy used
  * only for non-agent ecosystem binaries.
  */
 export function findExecutable(

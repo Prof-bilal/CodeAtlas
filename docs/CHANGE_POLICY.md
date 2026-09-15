@@ -20,7 +20,7 @@ Before touching architecture or a working module:
 
 - **Working code stays working.** Do not rewrite a working module "to clean it
   up" while changing behavior.
-- **Public surfaces** (ports, `@atlas/*` exports used by other packages) stay
+- **Public surfaces** (ports, `@prof-bilal/atlas-*` exports used by other packages) stay
   backwards compatible where possible. Prefer additive changes (new methods,
   new adapters) over breaking ones. Breaking changes require an ADR and a
   deprecation note.
@@ -47,7 +47,7 @@ Tests
 
 ## 4. Breaking-change policy
 
-- Detect a breaking change by checking every `@atlas/*` importer (the ESLint
+- Detect a breaking change by checking every `@prof-bilal/atlas-*` importer (the ESLint
   matrix + grep for usages).
 - Deprecate before removing: mark deprecated, keep a compat path, then remove.
 - Record the decision in `docs/decisions/` (see the ADR README) for any

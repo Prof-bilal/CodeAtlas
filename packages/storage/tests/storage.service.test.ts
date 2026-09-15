@@ -1,5 +1,5 @@
-import type { Project, SourceFile, Symbol } from "@atlas/core";
-import type { FilePath, ProjectId, SymbolId } from "@atlas/shared";
+import type { Project, SourceFile, Symbol } from "@prof-bilal/atlas-core";
+import type { FilePath, ProjectId, SymbolId } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { ContextStore } from "../src/context-store";
 import { StorageService } from "../src/storage.service";

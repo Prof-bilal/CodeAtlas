@@ -16,8 +16,8 @@ import type {
   ToolInstallRequest,
   ToolRegistryPort,
   ToolRegistryRecord,
-} from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import {
   REGISTRY_SCHEMA_VERSION,
   type ToolManifest,
@@ -26,7 +26,7 @@ import {
   toolManifestPath,
   validateOverlay,
   validateToolRecord,
-} from "@atlas/toolkit";
+} from "@prof-bilal/atlas-toolkit";
 import { createCompatibilityEngine } from "./compatibility";
 import { createConfigurator } from "./configurator";
 import { createInstaller } from "./installer";

@@ -1,4 +1,4 @@
-import type { RoleResult, RoleStatus } from "@atlas/core";
+import type { RoleResult, RoleStatus } from "@prof-bilal/atlas-core";
 
 /** One attributed section of a combined report (one role). */
 export interface CombinedSection {

@@ -25,7 +25,7 @@
 | **Language** | TypeScript, strict mode, ESM (`"type": "module"`) |
 | **Package manager** | pnpm |
 | **Git** | **Is a git repository** (branch `main`, remote `github.com/Prof-bilal/CodeAtlas.git`). `.gitignore`, `.husky`, and `commitlint` are configured. |
-| **Published version** | CLI `codeatlas-cli` `0.2.1`; `@atlas/*` workspace packages `0.0.0` (`@atlas/shared` `VERSION`) |
+| **Published version** | CLI `codeatlas-cli` `0.2.1`; `@prof-bilal/atlas-*` workspace packages `0.0.0` (`@prof-bilal/atlas-shared` `VERSION`) |
 
 Verified by full-tree inspection (`packages/*`, `apps/*`, configs) and by reading
 every package's source and tests.
@@ -37,8 +37,8 @@ every package's source and tests.
 ```
 apps/
   cli/          # Commander.js CLI — context, sessions, usage, MCP, and Toolkit commands wired [PARTIAL]
-  server/       # Benchmark API (@atlas/server) — localhost HTTP over the benchmark framework [IMPLEMENTED]
-  extension/    # VS Code extension (@atlas/extension) — SDK consumer         [IMPLEMENTED]
+  server/       # Benchmark API (@prof-bilal/atlas-server) — localhost HTTP over the benchmark framework [IMPLEMENTED]
+  extension/    # VS Code extension (@prof-bilal/atlas-extension) — SDK consumer         [IMPLEMENTED]
 packages/
   shared/       # Base types, Result, branded IDs, VERSION, ComingSoonError  [EXISTING]
   core/         # Domain entities + port interfaces (type-only)              [EXISTING]
@@ -52,7 +52,7 @@ packages/
   summary/      # AI file/folder/module/project summaries                     [EXISTING]
   search/       # Ranked, fuzzy-aware project search (vector-ready)          [EXISTING]
   usage/        # AI usage & credits: tri-state tokens/cost, budgets, limits [EXISTING]
-  metrics/      # Local-first usage & token analytics (@atlas/metrics): collect, persist, export [EXISTING]
+  metrics/      # Local-first usage & token analytics (@prof-bilal/atlas-metrics): collect, persist, export [EXISTING]
   context/      # Context ranking & assembly                                  [IMPLEMENTED]
   agents/       # AI CLI connection layer (AgentPort)                         [EXISTING]
   toolkit/      # Toolkit — Registry (19) + Manifest (20) + Compatibility (21) + Installer (22) + Configurator (23) + Security (24) + Skills  [PARTIAL]
@@ -104,7 +104,7 @@ examples/        # README placeholder only (no runnable examples)
 ### Manifest — **[EXISTING]**
 
 - Lives in `packages/scanner/src/manifest.ts` (module-level, not a separate
-  `@atlas/manifest` package).
+  `@prof-bilal/atlas-manifest` package).
 - Writes `.codeatlas/manifest.json`: schema version, name, languages, framework,
   package manager (from lockfiles), git info, timestamps, file/folder totals.
 - Merge policy: `createdAt` preserved, `updatedAt` refreshed, else recomputed.
@@ -220,7 +220,7 @@ examples/        # README placeholder only (no runnable examples)
   wraps provider calls and records actual (or **opt-in estimated**) tokens;
   `trackAgentRun` records agent-session runs as `session` events (tokens unknown
   by design). `estimateTokens` uses `Math.ceil(len/4)` character→token and is
-  exported from `@atlas/usage` (not from `@atlas/sdk`, which already exports a
+  exported from `@prof-bilal/atlas-usage` (not from `@prof-bilal/atlas-sdk`, which already exports a
   different `estimateTokens` from context-integration).
 - **Budgets (soft, never block) vs limits (hard, fail-safe):** `checkLimit`
   returns a failed `Result` (`UsageLimitExceededError`) when a projected call
@@ -228,10 +228,10 @@ examples/        # README placeholder only (no runnable examples)
 - **Privacy:** records never contain prompts, API keys, or provider secrets;
   `taskRef` is an anonymized hash.
 - **Persistence:** `UsageStore` — its own SQLite DB (`.codeatlas/usage.db`,
-  `node:sqlite`, schema + migrations in `@atlas/usage`), separate from the
+  `node:sqlite`, schema + migrations in `@prof-bilal/atlas-usage`), separate from the
   context database. Defaults to `:memory:`.
 - **SDK surface:** `createUsageService({ filePath?, store?, pricing? })` in
-  `@atlas/sdk` returns a wired `UsagePort`; errors (`UsageError`,
+  `@prof-bilal/atlas-sdk` returns a wired `UsagePort`; errors (`UsageError`,
   `UnknownPriceError`, `UsageLimitExceededError`) re-exported. CLI `atlas usage`
   is wired (see CLI section). Tests:
   `packages/usage/tests/{collector,pricing,usage.service,usage-store,integration}.test.ts`
@@ -266,8 +266,8 @@ examples/        # README placeholder only (no runnable examples)
   `WriteRepositories` (clear read/write split). No SQL/rows ever reach callers;
   errors are typed SDK errors (`FileNotFoundError`, `SymbolNotFoundError`, …).
 - `getRelevantContext` is **deterministic** (search + persisted deps + stored
-  summaries) — a richer assembly independent of `@atlas/context`'s ranker
-  (ADR-001). Future vector ranking plugs into `@atlas/search`'s `RelevanceScorer`.
+  summaries) — a richer assembly independent of `@prof-bilal/atlas-context`'s ranker
+  (ADR-001). Future vector ranking plugs into `@prof-bilal/atlas-search`'s `RelevanceScorer`.
 - The CLI's `atlas search` routes through this SDK instead of reaching for
   `Container.getSearch()`/`getContextDb()`. See
   [CONTEXT_SDK.md](./CONTEXT_SDK.md) + [ADR-005](./decisions/ADR-005.md).
@@ -307,7 +307,7 @@ examples/        # README placeholder only (no runnable examples)
   sugar over `atlas context launch --provider <agent>`, `--ai` briefing and
   `--skill` injection supported). No interactive `/agent`-style slash commands (the plan-executing
   agent router is planned).
-- Dependency note: the CLI may import `@atlas/sdk` **and** `@atlas/mcp` (so it
+- Dependency note: the CLI may import `@prof-bilal/atlas-sdk` **and** `@prof-bilal/atlas-mcp` (so it
   can start the server); enforced by ESLint. See `docs/DEPENDENCIES.md`.
 - `atlas search` accepts positional query words plus `--repo`, `--limit`,
   `type`, `no-fuzzy`, and `json`; `--ai` additionally generates (or reuses
@@ -326,8 +326,8 @@ examples/        # README placeholder only (no runnable examples)
 
 ### MCP server (`packages/mcp`) — **[IMPLEMENTED]**
 
-- `@atlas/mcp` is an MCP server over stdio (JSON-RPC 2.0) built on the official
-  `@modelcontextprotocol/sdk`. It consumes **only** `@atlas/sdk` — every tool
+- `@prof-bilal/atlas-mcp` is an MCP server over stdio (JSON-RPC 2.0) built on the official
+  `@modelcontextprotocol/sdk`. It consumes **only** `@prof-bilal/atlas-sdk` — every tool
   reads normalized context through `createContextSDK` sub-APIs
   (`symbols.searchSymbols`, `files.searchFiles`, `dependencies.query`,
   `modules.explain`, `summaries.*`, `project.overview`) — and is
@@ -369,7 +369,7 @@ examples/        # README placeholder only (no runnable examples)
 - **Known scope:** resources/prompts are not yet exposed (tools only).
 - See `docs/MCP.md` for the full tool reference.
 
-### VS Code integration — **[IMPLEMENTED]** (`@atlas/extension`)
+### VS Code integration — **[IMPLEMENTED]** (`@prof-bilal/atlas-extension`)
 
 - `apps/extension` is a VS Code extension that reads context **only through the
   Context SDK** (`createContextSDK`): Activity Bar + five tree views
@@ -411,7 +411,7 @@ examples/        # README placeholder only (no runnable examples)
 - **`ProviderChatAgent`** wraps `ProviderPort` as `ChatAgentPort` for
   single-turn non-interactive chat (e.g. Ollama without tool loop). Supports
   `messages` for conversation history forwarding.
-- **`ToolUsingChatAgent`** (`@atlas/sdk`, `context-tools/tool-loop.ts`) wraps
+- **`ToolUsingChatAgent`** (`@prof-bilal/atlas-sdk`, `context-tools/tool-loop.ts`) wraps
   `ProviderPort` + `ContextToolSource` as `ChatAgentPort` with a bounded tool
   loop: model calls tools → execute against `ContextToolSource` → feed results
   back → repeat until final answer or max rounds. Wired by `createSessionManager()`
@@ -429,7 +429,7 @@ examples/        # README placeholder only (no runnable examples)
 
 ### Context → Agent integration (Task 16) — **[IMPLEMENTED]**
 
-- **`context-integration` in `@atlas/sdk`** (ADR-008): `createContextIntegration()`
+- **`context-integration` in `@prof-bilal/atlas-sdk`** (ADR-008): `createContextIntegration()`
   composes the Context SDK (`createContextSDK`) with the session manager
   (`createSessionManager`) and assembles a **provider-independent, serializable
   `ContextPackage`** for one task: ranked file/symbol/summary/dependency items
@@ -453,7 +453,7 @@ examples/        # README placeholder only (no runnable examples)
   and recorded in the package's `ExclusionRecord`; placeholder examples in docs
   are tolerated. No `.env*` is ever sent.
 - **Staleness**: `detectStaleness()` compares persisted per-file hashes
-  (`ContextSDK.hashes()`) against the working tree via `@atlas/hashing`,
+  (`ContextSDK.hashes()`) against the working tree via `@prof-bilal/atlas-hashing`,
   reporting `fresh`/`stale`/`unknown`/`unavailable` on the package.
 - **Delivery through `SessionPort`**: `launch()` creates + starts a session with
   the rendered package as its prompt; `attach()` starts a `CREATED` session with
@@ -491,12 +491,12 @@ examples/        # README placeholder only (no runnable examples)
   `messages` array for multi-turn/tool-loop requests. When present, adapters use
   `messages` instead of constructing a single user message from `prompt`. Fully
   backward-compatible — absent `messages` falls back to the existing behavior.
-- **`ContextToolSource` interface** (`@atlas/sdk`, `context-tools/types.ts`):
+- **`ContextToolSource` interface** (`@prof-bilal/atlas-sdk`, `context-tools/types.ts`):
   Provider-independent seam for executable context tools: `listTools()` returns
   `ToolDefinition[]` (JSON Schema parameters) and `execute(name, args)` returns
-  tool results. Dependency-inverted — `@atlas/sdk` defines the interface;
-  `@atlas/mcp` implements it. No duplicate tool registry.
-- **`ToolUsingChatAgent`** (`@atlas/sdk`, `context-tools/tool-loop.ts`):
+  tool results. Dependency-inverted — `@prof-bilal/atlas-sdk` defines the interface;
+  `@prof-bilal/atlas-mcp` implements it. No duplicate tool registry.
+- **`ToolUsingChatAgent`** (`@prof-bilal/atlas-sdk`, `context-tools/tool-loop.ts`):
   Implements `ChatAgentPort` with a bounded tool loop (max 10 rounds). When the
   model responds with `tool_calls`, executes them against the `ContextToolSource`,
   feeds results back as `role: "tool"` messages, and re-calls the provider.
@@ -514,21 +514,21 @@ examples/        # README placeholder only (no runnable examples)
   in `messages` history — servers reject `role: "tool"` messages whose
   `tool_call_id` has no matching assistant tool call (regression-tested in
   `packages/providers/tests/ollama-adapter.test.ts`).
-- **MCP tool bridge** (`@atlas/mcp`, `tool-bridge.ts`): `createContextToolSource()`
+- **MCP tool bridge** (`@prof-bilal/atlas-mcp`, `tool-bridge.ts`): `createContextToolSource()`
   and `createContextToolSourceFromSDK()` — implements `ContextToolSource` using
   the existing `TOOLS` + `HANDLERS` from `mcp/src/tools.ts` and
   `mcp/src/handlers.ts`. Zero duplication: the 11 MCP tool definitions remain the
   single source of truth for both the MCP server and the Ollama tool loop.
-- **Zod-to-JSON-schema converter** (`@atlas/mcp`, `zod-to-json-schema.ts`):
+- **Zod-to-JSON-schema converter** (`@prof-bilal/atlas-mcp`, `zod-to-json-schema.ts`):
   Minimal, dependency-free converter for the zod subset used in `tools.ts`
   (string, number, boolean, enum, array, object, record, optional, nullable,
   describe, int/min/max). Avoids adding `zod-to-json-schema` as a direct
   dependency.
-- **Session manager wiring** (`@atlas/sdk`, `sessions/manager.ts`):
+- **Session manager wiring** (`@prof-bilal/atlas-sdk`, `sessions/manager.ts`):
   `createSessionManager()` accepts `contextToolSource` option; when provided,
   replaces the default single-turn `ProviderChatAgent` with `ToolUsingChatAgent`.
 - **CLI wiring** (`apps/cli`, `commands/context.ts`): `withIntegration()` passes
-  `createContextToolSourceFromSDK(context)` from `@atlas/mcp` into
+  `createContextToolSourceFromSDK(context)` from `@prof-bilal/atlas-mcp` into
   `createSessionManager()`, enabling the tool loop for all `atlas context launch`
   and `atlas <agent>` commands targeting Ollama.
 - Tests: `packages/sdk/tests/context-tools.test.ts` (tool loop agent),
@@ -547,7 +547,7 @@ examples/        # README placeholder only (no runnable examples)
   `RunnerResult`). Three-arm mode (`"baseline" | "codeatlas" | "codeatlas-intel"`),
   ablation config (`BenchmarkAblationConfig`), multi-model support (`models` array),
   and per-provider budget defaults (`ModelBudgetDefaults`).
-- **`@atlas/benchmark` package** — JSON-backed persistence (`BenchmarkStore`),
+- **`@prof-bilal/atlas-benchmark` package** — JSON-backed persistence (`BenchmarkStore`),
   suite/task scaffolding (`scaffoldSuite`, `scaffoldTaskFile`), two runners
   (`OpenCodeRunner` for `opencode run --format json`, `OllamaRunner` using
   `ChatAgentPort` in-process — mode-aware: plain chat for baseline, tool loop
@@ -585,10 +585,10 @@ examples/        # README placeholder only (no runnable examples)
 
 ### Benchmark API server (`apps/server`) — **[IMPLEMENTED]**
 
-- **`@atlas/server`** (ADR-013): a localhost HTTP API ("CodeAtlas Benchmark
+- **`@prof-bilal/atlas-server`** (ADR-013): a localhost HTTP API ("CodeAtlas Benchmark
   API", `node:http`, zero new runtime deps, default `127.0.0.1:8787`) that
   backs the rebuilt **Atlas Benchmark** page in the web UI (`old-school/miscellaneous/CodeAtlas-ui`).
-  It composes `@atlas/sdk` + `@atlas/mcp` + `@atlas/benchmark` exactly like
+  It composes `@prof-bilal/atlas-sdk` + `@prof-bilal/atlas-mcp` + `@prof-bilal/atlas-benchmark` exactly like
   the CLI (added to the ESLint dependency matrix).
 - **Same store as the CLI**: suite list/detail/report read
   `.codeatlas/benchmarks/`; aggregates are recomputed from persisted per-task
@@ -618,7 +618,7 @@ examples/        # README placeholder only (no runnable examples)
 
 ### Multi-Agent Orchestrator (Task 17) — **[IMPLEMENTED]**
 
-- **`orchestrator` in `@atlas/sdk`**: `createOrchestrator({ sessions, integration })`
+- **`orchestrator` in `@prof-bilal/atlas-sdk`**: `createOrchestrator({ sessions, integration })`
   turns a bounded `TaskPlan` into a run of **explicit agent roles** through
   `SessionPort` (never spawning directly), then collects and combines their
   results. It is the Coordinator/Supervisor: it decides what each role runs and
@@ -656,8 +656,8 @@ examples/        # README placeholder only (no runnable examples)
 
 ### Unified AI CLI Orchestrator (`/gemini`, `/claude`, `/codex`, `/opencode`, ...) — **[PARTIAL]**
 
-- **The connection layer, the session manager (`@atlas/agents`), and the
-  plan-executing orchestrator (`@atlas/sdk`) exist; the standalone orchestrator
+- **The connection layer, the session manager (`@prof-bilal/atlas-agents`), and the
+  plan-executing orchestrator (`@prof-bilal/atlas-sdk`) exist; the standalone orchestrator
   router/CLI does not.** Agent
   sessions are implemented (`SessionManager` behind `SessionPort`, `atlas
   sessions list/info/stop`, interactive `stdio: "inherit"` launches).
@@ -679,7 +679,7 @@ examples/        # README placeholder only (no runnable examples)
 
 ### Agent Toolkit (Direction C) — **[PARTIAL]**
 
-- **Tool Registry foundation (Task 19) is implemented.** `@atlas/toolkit`
+- **Tool Registry foundation (Task 19) is implemented.** `@prof-bilal/atlas-toolkit`
   behind a new `ToolRegistryPort` in `core`, composed by the SDK as
   `createToolRegistry()`. It is the authoritative catalog of *what exists*:
   a curated, schema-validated, **per-field provenance-auditable** record set
@@ -713,7 +713,7 @@ examples/        # README placeholder only (no runnable examples)
 
 ### Tool Manifest System — **[IMPLEMENTED]**
 
-- **Task 20 implemented.** `@atlas/toolkit` now ships a **versioned, validated,
+- **Task 20 implemented.** `@prof-bilal/atlas-toolkit` now ships a **versioned, validated,
   extensible Tool Manifest schema** (`TOOL_MANIFEST_SCHEMA_VERSION = 1`) that
   records **one installed tool's state** on the user's machine — which tool +
   version, where it came from (registry entry / ecosystem / release / manual),
@@ -733,7 +733,7 @@ examples/        # README placeholder only (no runnable examples)
   safe (`__proto__` preserved inertly), size-bounded (1 MiB), and tool names are
   path-safe (can never escape `tools/`). Unknown-but-well-formed fields are
   **preserved** across serialize/parse (extensibility).
-- Manifest persistence is toolkit-internal and exported from `@atlas/toolkit`
+- Manifest persistence is toolkit-internal and exported from `@prof-bilal/atlas-toolkit`
   (`createToolManifest`, `saveToolManifest`, `loadToolManifest`,
   `listInstalledTools`, `validateToolManifest`, `parseToolManifest`); the
   higher-level installer/configurator services are composed through the SDK,
@@ -742,7 +742,7 @@ examples/        # README placeholder only (no runnable examples)
 
 ### Compatibility Engine — **[IMPLEMENTED]**
 
-- **Task 21 implemented.** `@atlas/toolkit` ships the **Compatibility Engine**
+- **Task 21 implemented.** `@prof-bilal/atlas-toolkit` ships the **Compatibility Engine**
   (`compatibility.service.ts` behind `CompatibilityPort` in `core`, composed by
   the SDK as `createCompatibilityEngine()`): it determines whether a tool
   **can safely operate in the user's environment** before any install or
@@ -760,12 +760,12 @@ examples/        # README placeholder only (no runnable examples)
   permissions are **advisory** — reported but never downgrade the verdict
   (enforcement belongs to the installer's consent flow).
 - **AI-CLI detection is not reimplemented**: every agent check routes through
-  `AgentPort` (`@atlas/agents`). OS aliases (`windows`→`win32`,
+  `AgentPort` (`@prof-bilal/atlas-agents`). OS aliases (`windows`→`win32`,
   `macos`→`darwin`) and architecture aliases (`x86_64`/`amd64`→`x64`) are
   normalized. Environment detection (`EnvironmentDetector`) is **read-only and
   offline** — no network, no implicit installs, binaries located by PATH
   scanning (`spawn`-safe, no shell strings).
-- **SDK surface**: `createCompatibilityEngine()` in `@atlas/sdk` (defaults to a
+- **SDK surface**: `createCompatibilityEngine()` in `@prof-bilal/atlas-sdk` (defaults to a
   real `AgentService` + `EnvironmentDetector`; both injectable for offline
   tests). `renderCompatibilityReport()` turns a report into the design
   contract's per-check `✓ / ~ / ✗ / ?` output. `atlas tools configure` is now
@@ -774,7 +774,7 @@ examples/        # README placeholder only (no runnable examples)
 
 ### Tool Installer — **[IMPLEMENTED]**
 
-- **Task 22 implemented.** `@atlas/toolkit` ships the **Tool Installer**
+- **Task 22 implemented.** `@prof-bilal/atlas-toolkit` ships the **Tool Installer**
   (`installer.service.ts` behind `InstallerPort` in `core`, composed by the SDK
   as `createInstaller()`), with **one adapter per ecosystem**
   (`installer-adapters.ts`: `NpmAdapter` / `PipAdapter` / `CargoAdapter` /
@@ -825,19 +825,19 @@ examples/        # README placeholder only (no runnable examples)
 | Intended direction                    | Status in repo |
 | ------------------------------------- | -------------- |
 | **A. Context Engine** (scan → parse → graph → store → search → feed AI) | ~90% implemented; context ranking is deterministic (ADR-001, no AI); `search` + `mcp` are CLI-wired |
-| **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@atlas/agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), and the **multi-agent plan orchestrator** (`createOrchestrator` in `@atlas/sdk`) are implemented; **standalone launch commands** (`atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` with `--ai` briefing) are implemented; the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) is **v2 / not shipped** (untracked); the plan-executing standalone router (a future `atlas agents run`-style
+| **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@prof-bilal/atlas-agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), and the **multi-agent plan orchestrator** (`createOrchestrator` in `@prof-bilal/atlas-sdk`) are implemented; **standalone launch commands** (`atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` with `--ai` briefing) are implemented; the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) is **v2 / not shipped** (untracked); the plan-executing standalone router (a future `atlas agents run`-style
 surface; `atlas agents status`/`connect` themselves are implemented) remains
 planned |
 | **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~75% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, Skills loader/service, custom tools/Skills, setup recommendations, optional Warden adapter, and the thin SDK-backed Toolkit CLI. Browser observation (`atlas browse`) now provides allowlisted Playwright CLI evidence. `/tools` slash integration and richer adaptive recommendations remain planned |
 | **Ollama Tool Loop** (Phase 3) | Implemented — `ToolUsingChatAgent` with bounded tool loop (max 10 rounds), `ContextToolSource` seam, MCP tool bridge (`createContextToolSource`), conversation history via `ProviderMessage`, per-result budget cap, deny filter on sensitive files. Wired through `createSessionManager({ contextToolSource })` and CLI `atlas context launch`. Tests pass. |
-| **Benchmark Framework** (Phase 4+8) | Implemented — `BenchmarkPort` in core with 3-arm mode (`baseline`/`codeatlas`/`codeatlas-intel`), ablation config, multi-model support; `@atlas/benchmark` package with JSON-backed `BenchmarkStore`, scaffolding, two runners (OpenCode + Ollama with 3-arm agent dispatch), automated evaluator, Markdown/HTML/JSON reporters with 3-arm and ablation sections; AblationService for intel feature toggling; per-provider default budgets. CLI `atlas benchmark init/run/status/report/ablation` wired. SDK composition via `createBenchmarkService()`. Tests pass. See ADR-012. |
+| **Benchmark Framework** (Phase 4+8) | Implemented — `BenchmarkPort` in core with 3-arm mode (`baseline`/`codeatlas`/`codeatlas-intel`), ablation config, multi-model support; `@prof-bilal/atlas-benchmark` package with JSON-backed `BenchmarkStore`, scaffolding, two runners (OpenCode + Ollama with 3-arm agent dispatch), automated evaluator, Markdown/HTML/JSON reporters with 3-arm and ablation sections; AblationService for intel feature toggling; per-provider default budgets. CLI `atlas benchmark init/run/status/report/ablation` wired. SDK composition via `createBenchmarkService()`. Tests pass. See ADR-012. |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
 at: (1) the **standalone router** of the orchestrator (the plan-executing
-orchestrator itself exists in `@atlas/sdk`, and the TUI slash surface that
+orchestrator itself exists in `@prof-bilal/atlas-sdk`, and the TUI slash surface that
 covered agent launch/install is v2/untracked), and (2) any editor integrations
 beyond VS Code.
-MCP (`@atlas/mcp`) and the VS Code extension (`@atlas/extension`)
+MCP (`@prof-bilal/atlas-mcp`) and the VS Code extension (`@prof-bilal/atlas-extension`)
 are thin consumers of the SDK; JetBrains/other editor integrations are still
 absent.
 
@@ -858,7 +858,7 @@ absent.
 4. **CI/CD**: `.github/workflows/ci.yml` runs `pnpm check`-style gates (Node 22,
    pnpm 9.15.0) on push/PR to `main`.
 5. **`.codeatlas/`**: `atlas init`/`build`/`update` (SDK-owned `indexProject`)
-   write `manifest.json` and `context.db`; `@atlas/usage` writes `usage.db`; the
+   write `manifest.json` and `context.db`; `@prof-bilal/atlas-usage` writes `usage.db`; the
    Toolkit writes `tools/<name>.json`. See [CONTEXT_STORAGE.md](./CONTEXT_STORAGE.md).
 6. **Existing docs at the time of writing this audit:** root `ARCHITECTURE.md`,
    root `agents.md` (agent catalog), `README.md`, `docs/README.md`,

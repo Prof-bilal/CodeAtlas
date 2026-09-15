@@ -3,13 +3,13 @@ import {
   AgentService,
   type ExecutableResolver,
   type ProcessRunner,
-} from "@atlas/agents";
-import type { AgentPort, CompatibilityPort } from "@atlas/core";
+} from "@prof-bilal/atlas-agents";
+import type { AgentPort, CompatibilityPort } from "@prof-bilal/atlas-core";
 import {
   CompatibilityEngineService,
   EnvironmentDetector,
   type EnvironmentDetectorOptions,
-} from "@atlas/toolkit";
+} from "@prof-bilal/atlas-toolkit";
 
 /** Options for {@link createCompatibilityEngine}. */
 export interface CreateCompatibilityEngineOptions {

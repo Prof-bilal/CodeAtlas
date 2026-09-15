@@ -1,4 +1,4 @@
-import type { BenchmarkEvaluation, BenchmarkTaskResult, TokenMetrics } from "@atlas/core";
+import type { BenchmarkEvaluation, BenchmarkTaskResult, TokenMetrics } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { classifyAllFailures, classifyFailure } from "../src/failure-classifier";
 

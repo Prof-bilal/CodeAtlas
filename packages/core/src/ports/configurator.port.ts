@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 
 /**
  * The Agent Toolkit — Tool Configurator contract (Direction C, Task 23).
@@ -6,8 +6,8 @@ import type { Result } from "@atlas/shared";
  * After a tool is installed (Task 22), the Configurator wires it into the
  * agents/environment that can use it. Configuration targets are Claude,
  * Gemini, Codex, OpenCode, MCP, and VS Code — provider-specific logic stays
- * **inside one adapter per target**, exactly like `@atlas/providers` and
- * `@atlas/agents`. There is **no giant `if (target === …)` configuration
+ * **inside one adapter per target**, exactly like `@prof-bilal/atlas-providers` and
+ * `@prof-bilal/atlas-agents`. There is **no giant `if (target === …)` configuration
  * function.**
  *
  * Flow per applicable target: detect → generate → validate → apply → verify.
@@ -24,7 +24,7 @@ import type { Result } from "@atlas/shared";
  * - `configure({ dryRun: true })` renders the exact changes without writing
  *   anything.
  * - Only **installed, supported** targets are configured: agent targets route
- *   detection through `AgentPort` (`@atlas/agents`) — executable detection is
+ *   detection through `AgentPort` (`@prof-bilal/atlas-agents`) — executable detection is
  *   never reimplemented here.
  */
 export interface ConfiguratorPort {

@@ -29,7 +29,7 @@ back to `prompt` when `messages` is absent.
 
 ### 2. `ContextToolSource` — dependency-inverted tool bridge
 
-Define a `ContextToolSource` interface in `@atlas/sdk` (not in core,
+Define a `ContextToolSource` interface in `@prof-bilal/atlas-sdk` (not in core,
 since it's a composition seam, not a domain port):
 
 ```ts
@@ -39,7 +39,7 @@ interface ContextToolSource {
 }
 ```
 
-This inverts the dependency: the SDK defines the interface; `@atlas/mcp`
+This inverts the dependency: the SDK defines the interface; `@prof-bilal/atlas-mcp`
 implements it using its existing `TOOLS` + `HANDLERS`. No duplicate
 registry.
 
@@ -49,9 +49,9 @@ Write a minimal, dependency-free converter for the subset of zod types
 used in `mcp/src/tools.ts` (string, number, boolean, enum, object,
 optional, describe, int/min/max). This avoids adding `zod-to-json-schema`
 as a direct dependency and keeps the dependency graph clean. The converter
-lives in `@atlas/mcp` (it imports zod already).
+lives in `@prof-bilal/atlas-mcp` (it imports zod already).
 
-### 4. Tool loop agent in `@atlas/sdk`
+### 4. Tool loop agent in `@prof-bilal/atlas-sdk`
 
 Create `ToolUsingChatAgent` in `packages/sdk/src/context-tools/`:
 
@@ -77,7 +77,7 @@ filter already handles `.env*`, credentials, private keys, etc.
 - When provided, the default `ProviderChatAgent` is replaced with
   `ToolUsingChatAgent` that wraps the same `ProviderPort` + the tool source
 - CLI's `withIntegration()` passes the MCP adapter when creating the
-  session manager, reusing `TOOLS`/`HANDLERS` from `@atlas/mcp`
+  session manager, reusing `TOOLS`/`HANDLERS` from `@prof-bilal/atlas-mcp`
 
 ## Consequences
 

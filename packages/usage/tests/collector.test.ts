@@ -1,5 +1,5 @@
-import type { AgentRunResult, ProviderPort, ProviderResponse, TokenUsage } from "@atlas/core";
-import { ok } from "@atlas/shared";
+import type { AgentRunResult, ProviderPort, ProviderResponse, TokenUsage } from "@prof-bilal/atlas-core";
+import { ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { estimateTokens, normalizeEvent, trackAgentRun, withUsageTracking } from "../src";
 import { createTestUsage } from "./helpers";

@@ -9,7 +9,7 @@ import {
   type UsageScope,
   type UsageStatistics,
   createUsageService,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { resolveProjectRoot } from "./search";
 

@@ -2,9 +2,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 // biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
-import type { ContextData, MetricsPort, SourceFile, Summary, Symbol } from "@atlas/core";
-import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
-import { ContextStore } from "@atlas/storage";
+import type { ContextData, MetricsPort, SourceFile, Summary, Symbol } from "@prof-bilal/atlas-core";
+import type { FilePath, NodeId, SymbolId } from "@prof-bilal/atlas-shared";
+import { ContextStore } from "@prof-bilal/atlas-storage";
 import { describe, expect, it } from "vitest";
 import {
   type ContextSDK,

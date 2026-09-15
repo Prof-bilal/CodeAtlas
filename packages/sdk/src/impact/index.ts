@@ -1,7 +1,7 @@
-// @atlas/sdk — Impact service composition
+// @prof-bilal/atlas-sdk — Impact service composition
 
-import type { GraphPort, ImpactPort } from "@atlas/core";
-import { ImpactService } from "@atlas/graph";
+import type { GraphPort, ImpactPort } from "@prof-bilal/atlas-core";
+import { ImpactService } from "@prof-bilal/atlas-graph";
 
 export interface CreateImpactServiceOptions {
   /** A GraphPort instance to query. */
@@ -23,4 +23,4 @@ export type {
   ImpactResult,
   ImpactRiskScore,
   ImpactSubject,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";

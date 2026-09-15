@@ -2,7 +2,7 @@ import {
   type WardenService,
   type WardenServiceOptions,
   createWardenService as createToolkitWardenService,
-} from "@atlas/toolkit";
+} from "@prof-bilal/atlas-toolkit";
 
 /** SDK composition seam for the optional Warden security runtime. */
 export function createWardenService(options: WardenServiceOptions = {}): WardenService {
@@ -16,4 +16,4 @@ export type {
   WardenService,
   WardenServiceOptions,
   WardenStatus,
-} from "@atlas/toolkit";
+} from "@prof-bilal/atlas-toolkit";

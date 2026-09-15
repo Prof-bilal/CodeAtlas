@@ -1,4 +1,4 @@
-import { AgentCliNotFoundError } from "@atlas/agents";
+import { AgentCliNotFoundError } from "@prof-bilal/atlas-agents";
 import type {
   ContextScope,
   RoleResult,
@@ -8,8 +8,8 @@ import type {
   SessionOutput,
   SessionPort,
   TaskPlan,
-} from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it, vi } from "vitest";
 import {
   type ContextIntegration,

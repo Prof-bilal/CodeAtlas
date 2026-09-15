@@ -10,8 +10,8 @@ import type {
   RunnerResult,
   TokenMetrics,
   ToolCallRecord,
-} from "@atlas/core";
-import { type Result, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, ok } from "@prof-bilal/atlas-shared";
 
 /**
  * Runner that executes tasks via `opencode run --format json`.
@@ -157,7 +157,7 @@ export class OpenCodeRunner implements BenchmarkRunner {
   }
 
   /**
-   * Locate the built CodeAtlas MCP server binary (`@atlas/mcp` → bin.js).
+   * Locate the built CodeAtlas MCP server binary (`@prof-bilal/atlas-mcp` → bin.js).
    *
    * The bundled benchmark code can live at `packages/benchmark/dist` or be
    * inlined into `apps/cli/dist`, so we walk up the directory tree from the

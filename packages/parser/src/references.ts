@@ -1,5 +1,5 @@
-import type { Reference, Symbol } from "@atlas/core";
-import type { SymbolId } from "@atlas/shared";
+import type { Reference, Symbol } from "@prof-bilal/atlas-core";
+import type { SymbolId } from "@prof-bilal/atlas-shared";
 
 /**
  * Resolve each reference to a same-file definition using two name-based

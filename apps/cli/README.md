@@ -4,7 +4,7 @@ The end-user **command-line interface** for CodeAtlas, built with
 [Commander.js](https://github.com/tj/commander.js).
 
 This is a thin, dumb layer: it parses arguments and delegates to the
-[`@atlas/sdk`](../../packages/sdk) — it contains no business logic.
+[`@prof-bilal/atlas-sdk`](../../packages/sdk) — it contains no business logic.
 
 ## Install
 
@@ -46,8 +46,8 @@ modified except for its gitignored `.codeatlas/` directory.
 
 ```text
 atlas search <query...>  → wired — ranked search over .codeatlas/context.db
-                           (via @atlas/sdk createContextSDK)
-atlas mcp                → wired — starts the MCP server over stdio (@atlas/mcp)
+                           (via @prof-bilal/atlas-sdk createContextSDK)
+atlas mcp                → wired — starts the MCP server over stdio (@prof-bilal/atlas-mcp)
 atlas sessions           → wired — lists/inspects/stops AI agent sessions
 atlas usage              → wired — reports usage, budgets, and limits
 atlas tools              → wired — overview/search/info/install/remove/update/configure/doctor
@@ -61,7 +61,7 @@ atlas doctor             → wired — health checklist; exit 1 on failure
 ```
 
 `atlas search`, `atlas sessions`, `atlas usage`, and the MCP tools read indexed
-context through the **Context SDK** (`createContextSDK`, in `@atlas/sdk`) — they
+context through the **Context SDK** (`createContextSDK`, in `@prof-bilal/atlas-sdk`) — they
 never touch the database directly. See [`docs/CLI.md`](../../docs/CLI.md) for the
 full command contract and [`docs/CURRENT_STATE.md`](../../docs/CURRENT_STATE.md)
 for what is wired vs. stubbed.

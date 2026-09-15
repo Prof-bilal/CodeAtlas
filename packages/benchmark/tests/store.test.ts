@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { BenchmarkSuite, BenchmarkTaskResult, TaskFile } from "@atlas/core";
+import type { BenchmarkSuite, BenchmarkTaskResult, TaskFile } from "@prof-bilal/atlas-core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { BenchmarkStore } from "../src/store";
 

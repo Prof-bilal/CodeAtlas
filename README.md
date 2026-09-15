@@ -31,7 +31,7 @@ LLMs work best with *relevant, fresh context*, not whole repositories:
 - **Context engine** — scanner, SHA-256 hashing/change detection, TypeScript
   parser, dependency graph, AI-optional summaries, SQLite storage, ranked
   fuzzy-aware search.
-- **Context SDK** (`@atlas/sdk`) — the single read/write façade
+- **Context SDK** (`@prof-bilal/atlas-sdk`) — the single read/write façade
   (`createContextSDK`) every consumer uses: files, symbols, dependencies,
   modules, summaries, search, project stats, and freshness.
 - **Freshness & version-aware reads** — `freshness()` reports
@@ -39,11 +39,11 @@ LLMs work best with *relevant, fresh context*, not whole repositories:
   reads the working tree and flags when context is out of date.
 - **Incremental indexing** — `atlas update` re-parses only changed/added files,
   reuses persisted snapshots, and deletes removed entries.
-- **MCP server** (`@atlas/mcp`) — 7 read-only tools over stdio for Claude
+- **MCP server** (`@prof-bilal/atlas-mcp`) — 7 read-only tools over stdio for Claude
   Desktop, Cursor, VS Code, and any MCP client.
-- **VS Code extension** (`@atlas/extension`) — activity bar, tree views, and
+- **VS Code extension** (`@prof-bilal/atlas-extension`) — activity bar, tree views, and
   palette commands.
-- **Agent infrastructure** — AI CLI connection layer (`@atlas/agents`),
+- **Agent infrastructure** — AI CLI connection layer (`@prof-bilal/atlas-agents`),
   agent sessions (`atlas sessions`), usage & credits (`atlas usage`), and
   Context → Agent integration (`createContextIntegration`).
 - **Ollama as a first-class agent** — the selected local model
@@ -167,16 +167,16 @@ atlas doctor [--json]                    Diagnose installation & project health
 ```
 
 Every data-returning command supports `--json` for machine-readable output.
-The CLI imports only `@atlas/sdk` (+ `@atlas/mcp` for `atlas mcp`) — enforced by
+The CLI imports only `@prof-bilal/atlas-sdk` (+ `@prof-bilal/atlas-mcp` for `atlas mcp`) — enforced by
 ESLint. See [docs/CLI.md](docs/CLI.md).
 
 ## Integrations
 
-- **MCP** — `@atlas/mcp` exposes 7 read-only tools
+- **MCP** — `@prof-bilal/atlas-mcp` exposes 7 read-only tools
   (`search_symbols`, `search_files`, `get_summary`, `get_dependencies`,
   `explain_module`, `project_overview`, `read_file_range`) over stdio. See
   [docs/MCP.md](docs/MCP.md) and [docs/integrations.md](docs/integrations.md).
-- **VS Code** — `@atlas/extension` reads context through the SDK. See
+- **VS Code** — `@prof-bilal/atlas-extension` reads context through the SDK. See
   [docs/VSCODE.md](docs/VSCODE.md).
 - **AI coding CLIs** — the connection layer detects Claude / Gemini / Codex /
   OpenCode; `atlas context launch` (and the v2 TUI slash surface) deliver
@@ -190,7 +190,7 @@ The programmatic read (and indexing-write) API — what every consumer uses
 instead of the database:
 
 ```ts
-import { createContextSDK } from "@atlas/sdk";
+import { createContextSDK } from "@prof-bilal/atlas-sdk";
 
 const context = createContextSDK({ repositoryPath: "/path/to/repo" });
 const hits = context.search.search("authentication");

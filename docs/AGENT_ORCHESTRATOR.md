@@ -3,9 +3,9 @@
 > **Status: [PARTIAL]** — the standalone *router* (`atlas /claude`, …) described
 > below does not exist yet. But the **Agent Session Manager is implemented**
 > (Task 15): `SessionManager` behind `SessionPort`, composed by
-> `createSessionManager()` in `@atlas/sdk`, exposed as `atlas sessions` — see
+> `createSessionManager()` in `@prof-bilal/atlas-sdk`, exposed as `atlas sessions` — see
 > [AGENT_SESSIONS.md](./AGENT_SESSIONS.md). Separately, the **multi-agent plan
-> orchestrator** (Task 17) is implemented in `@atlas/sdk`
+> orchestrator** (Task 17) is implemented in `@prof-bilal/atlas-sdk`
 > (`createOrchestrator`: explicit role plans via `buildPlan`/`reviewPlan`,
 > execution through `SessionPort` with timeouts/retries/cancellation, and
 > deterministic result combining with conflict detection) — see
@@ -18,7 +18,7 @@
 > **remaining** Direction B surface — the plan-executing router as a CLI/editor
 > surface. Do **not** claim the standalone router or `atlas /claude` commands
 > are implemented. Prerequisites that are real: the **AI CLI connection layer
-> (`@atlas/agents`, behind `AgentPort`)** (adapters, executable detection,
+> (`@prof-bilal/atlas-agents`, behind `AgentPort`)** (adapters, executable detection,
 > supervised process runs) and the session manager. (See
 > [CURRENT_STATE.md](./CURRENT_STATE.md).)
 

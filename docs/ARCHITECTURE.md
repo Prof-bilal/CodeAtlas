@@ -43,15 +43,15 @@ reusable project context. **~85% implemented** (see §3).
 
 **Direction B — Unified AI CLI Orchestrator.** A unified CLI that launches and
 manages existing AI coding CLIs. **Partly implemented** — the narrow
-spawn/detect boundary (`@atlas/agents`, behind `AgentPort`) and the **Agent
+spawn/detect boundary (`@prof-bilal/atlas-agents`, behind `AgentPort`) and the **Agent
 Session Manager** (behind `SessionPort`, `atlas sessions`, via
-`createSessionManager()` in `@atlas/sdk`) are implemented; the **agent router
+`createSessionManager()` in `@prof-bilal/atlas-sdk`) are implemented; the **agent router
 and slash commands** do not exist yet (see [AGENT_SESSIONS.md](./AGENT_SESSIONS.md)
 and [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md)).
 
 **Direction C — Agent Toolkit.** A curated interface to discover, install,
 configure, and verify high-quality open-source developer/AI-agent tools.
-**Foundations implemented** — the **Tool Registry** (`@atlas/toolkit` behind
+**Foundations implemented** — the **Tool Registry** (`@prof-bilal/atlas-toolkit` behind
 `ToolRegistryPort`, composed via `createToolRegistry()`), the **Tool Manifest
 System** (versioned/validated/extensible per-installed-tool manifests in
 `.codeatlas/tools/`), and the **Compatibility Engine** (behind
@@ -73,7 +73,7 @@ See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md),
 ```
 apps/
   cli/          # Commander.js CLI — thin UI; search/scan/mcp/indexing wired
-  extension/    # VS Code extension (@atlas/extension) — SDK consumer
+  extension/    # VS Code extension (@prof-bilal/atlas-extension) — SDK consumer
 packages/
   shared/       # Base types, Result, branded IDs, VERSION             (foundation)
   core/         # Domain entities + port interfaces (type-only)        (foundation)
@@ -94,7 +94,7 @@ docs/           # This documentation system
 examples/       # Placeholder (no runnable examples yet)
 ```
 
-> `packages/agents` (`@atlas/agents`) implements the **narrow spawn/detect
+> `packages/agents` (`@prof-bilal/atlas-agents`) implements the **narrow spawn/detect
 > boundary** of the orchestrator (Direction B): per-CLI adapters, executable
 > detection, supervised non-interactive process runs behind `AgentPort`, a
 > `ProcessRunner.launch()` for long-running children, and the **Agent Session
@@ -167,14 +167,14 @@ examples/       # Placeholder (no runnable examples yet)
 
 ### Interface layer
 - **`apps/cli`** — Commander.js. Thin: parses commands and delegates to the SDK
-  (and `@atlas/mcp`). **`atlas search` is wired** through the Context SDK;
+  (and `@prof-bilal/atlas-mcp`). **`atlas search` is wired** through the Context SDK;
   **`atlas mcp` starts the MCP server**; **`atlas init`/`build`/`update` run the
   SDK-owned indexer**; **`atlas scan`** shows a metadata-only project overview;
   **`atlas explain`** resolves deterministically (AI only via `--ai`);
   **`atlas doctor`** runs a health checklist.
-- **`packages/mcp` (`@atlas/mcp`)** — MCP server over stdio exposing seven
+- **`packages/mcp` (`@prof-bilal/atlas-mcp`)** — MCP server over stdio exposing seven
   read-only tools; consumes only the Context SDK ([MCP.md](./MCP.md)).
-- **`apps/extension` (`@atlas/extension`)** — VS Code extension (Activity Bar +
+- **`apps/extension` (`@prof-bilal/atlas-extension`)** — VS Code extension (Activity Bar +
   tree views + palette commands), reads only through the Context SDK
   ([VSCODE.md](./VSCODE.md)).
 
@@ -193,7 +193,7 @@ search ◀── search ── SearchService builds an in-memory index from the 
 Today the pieces exist independently and are composed in the SDK container / by
 consumers. **`atlas search`** routes through `createContextSDK` (the Context
 API) rather than reaching for the database, and **`atlas mcp`** starts the MCP
-server (`@atlas/mcp`). The indexing pipeline that *produces* the database is
+server (`@prof-bilal/atlas-mcp`). The indexing pipeline that *produces* the database is
 wired from the CLI: **`atlas init`/`build`/`update`** run the SDK-owned
 `indexProject()` (incremental on `update`), and **`atlas scan`** prints a
 metadata-only project overview via `scanProjectOverview()`.
@@ -215,7 +215,7 @@ CodeAtlas Context ──── scan → hash → parse → graph → store → s
 
 The Toolkit reads CodeAtlas context only through the **Context SDK** (never the
 database), and detects AI CLIs through the **`AgentPort`** seam that
-`@atlas/agents` implements.
+`@prof-bilal/atlas-agents` implements.
 
 ---
 
@@ -242,16 +242,16 @@ hashing  storage         cache             providers      (indexes the    agents
 
 Planned additions (not yet in the repo):
 - **Agent Router** + slash commands (Claude/Gemini/Codex/OpenCode/DeepSeek)
-  for Direction B — the `@atlas/agents` connection layer *and* the **Agent
+  for Direction B — the `@prof-bilal/atlas-agents` connection layer *and* the **Agent
   Session Manager** exist (see [AGENT_SESSIONS.md](./AGENT_SESSIONS.md)); the
   router itself does not. See [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md).
-- **Agent Toolkit** (`@atlas/toolkit` + `atlas tools` CLI) for Direction C —
+- **Agent Toolkit** (`@prof-bilal/atlas-toolkit` + `atlas tools` CLI) for Direction C —
   curated tool registry, installer, configurator, compatibility, security/trust.
   The **Tool Registry**, **Tool Manifest**, **Compatibility Engine**, **Tool
   Installer**, and **Tool Configurator** are implemented (Tasks 19–23);
   The broader CLI surface remains planned; Security/Trust is implemented.
   See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
-- **SDK consumers** and a working CLI wired end-to-end. MCP (`@atlas/mcp`) is
+- **SDK consumers** and a working CLI wired end-to-end. MCP (`@prof-bilal/atlas-mcp`) is
   an implemented SDK consumer — see [MCP.md](./MCP.md).
 
 ---
@@ -285,15 +285,15 @@ const container = Container.create({ provider: new CustomProvider() });
 | New AI provider (Ollama, …)         | New adapter in `providers` implementing `ProviderPort`              |
 | New language support                | New parser in `parser` implementing `LanguageParser`, registered in `ParserRegistry` |
 | Alternate storage                   | New adapter in `storage` behind `StoragePort` / `ContextDatabasePort` |
-| Agent routing / `/claude` etc.      | Build on the existing `@atlas/agents` connection layer (`AgentPort`); the **Agent Session Manager** (`SessionPort`) is implemented behind the SDK; add the **router** behind the SDK (planned) |
-| Agent Toolkit (`atlas tools`)       | `@atlas/toolkit`: Registry, Manifest, Compatibility, Installer, Configurator, and Security/Trust are implemented behind `core` ports and composed by the SDK; the full `atlas tools` CLI is wired, while slash/setup surfaces remain planned |
+| Agent routing / `/claude` etc.      | Build on the existing `@prof-bilal/atlas-agents` connection layer (`AgentPort`); the **Agent Session Manager** (`SessionPort`) is implemented behind the SDK; add the **router** behind the SDK (planned) |
+| Agent Toolkit (`atlas tools`)       | `@prof-bilal/atlas-toolkit`: Registry, Manifest, Compatibility, Installer, Configurator, and Security/Trust are implemented behind `core` ports and composed by the SDK; the full `atlas tools` CLI is wired, while slash/setup surfaces remain planned |
 | New tool ecosystem (npm/pip/cargo/…) | New `InstallerPort` adapter per ecosystem; never blind `install.sh` execution (planned) |
-| MCP server                          | `@atlas/mcp` consumes the Context SDK (implemented); run it via `atlas mcp`; add MCP resources/prompts |
+| MCP server                          | `@prof-bilal/atlas-mcp` consumes the Context SDK (implemented); run it via `atlas mcp`; add MCP resources/prompts |
 | Editors / agents read context       | `createContextSDK` is the stable read interface — that is what they consume, never the DB |
-| Plugin SDK for third parties        | Publish `@atlas/sdk`; document `ContainerOptions` API               |
+| Plugin SDK for third parties        | Publish `@prof-bilal/atlas-sdk`; document `ContainerOptions` API               |
 | New CLI commands                    | `apps/cli/src/commands/<cmd>.ts` wiring to SDK services             |
-| Editor integration (VS Code)        | `@atlas/extension` consumes the SDK (implemented — see [VSCODE.md](./VSCODE.md)) |
-| Vector search                       | New `RelevanceScorer` implementation in `@atlas/search` (the scorer seam) + embedding index; no caller changes needed |
+| Editor integration (VS Code)        | `@prof-bilal/atlas-extension` consumes the SDK (implemented — see [VSCODE.md](./VSCODE.md)) |
+| Vector search                       | New `RelevanceScorer` implementation in `@prof-bilal/atlas-search` (the scorer seam) + embedding index; no caller changes needed |
 
 ---
 
@@ -311,14 +311,14 @@ These divergences from a "perfect" target are intentional and documented:
 3. **Storage uses `node:sqlite`** (Node built-in), which raises its minimum Node
    version above the rest of the monorepo — see
    [CURRENT_STATE.md](./CURRENT_STATE.md) §5.
-4. **Direction B is partly implemented** — the `@atlas/agents` connection layer
+4. **Direction B is partly implemented** — the `@prof-bilal/atlas-agents` connection layer
    and the **Agent Session Manager** exist (`atlas sessions`); the
    orchestrator's **router and slash commands** remain planned; the VS Code
-   extension (`@atlas/extension`) is implemented as a thin SDK consumer. See
+   extension (`@prof-bilal/atlas-extension`) is implemented as a thin SDK consumer. See
    [VSCODE.md](./VSCODE.md).
 5. **Direction C (Agent Toolkit) foundations are implemented** — the **Tool
    Registry**, **Tool Manifest System**, **Compatibility Engine**, **Installer**,
-   **Configurator**, and **Security/Trust assessor** exist in `@atlas/toolkit`
+   **Configurator**, and **Security/Trust assessor** exist in `@prof-bilal/atlas-toolkit`
    behind ports and are composed through the SDK
    ([AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md)). New toolkit work must keep the
    "orchestrate, don't bundle" and "opt-in install" principles — never blind

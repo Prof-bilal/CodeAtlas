@@ -1,4 +1,4 @@
-import type { AgentRunRequest } from "@atlas/core";
+import type { AgentRunRequest } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import type { AgentAdapter } from "../src/adapter";
 import { AgentService } from "../src/agent.service";

@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { type Result, fail, ok } from "@atlas/shared";
-import { type Skill, isValidSkillId, loadSkill, tryReadSkill } from "@atlas/toolkit";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
+import { type Skill, isValidSkillId, loadSkill, tryReadSkill } from "@prof-bilal/atlas-toolkit";
 import { SKILLS_SUBDIR } from "./constants";
 
 export interface CreateCustomSkillOptions {

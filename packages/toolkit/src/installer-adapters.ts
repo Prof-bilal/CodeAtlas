@@ -1,6 +1,6 @@
 import { join } from "node:path";
-import type { InstallPlanCommand, ToolInstallMethodType, ToolInstallRequest } from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+import type { InstallPlanCommand, ToolInstallMethodType, ToolInstallRequest } from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import {
   type AdapterPlan,
   type EcosystemAdapter,

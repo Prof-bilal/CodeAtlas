@@ -23,7 +23,7 @@
 
 ```bash
 # Build the index for this repo, then score the set:
-pnpm --filter @atlas/benchmark run build
+pnpm --filter @prof-bilal/atlas-benchmark run build
 node benchmarks/retrieval-tasks/evaluate.mjs --repo . --tasks benchmarks/retrieval-tasks/tasks.json
 ```
 

@@ -1,6 +1,6 @@
-import type { SourceFile } from "@atlas/core";
-import type { Result } from "@atlas/shared";
-import { fail, ok } from "@atlas/shared";
+import type { SourceFile } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 import { Project } from "ts-morph";
 import type { LanguageParser } from "../language-parser";
 import type { ParsedFile } from "../parsed-file";

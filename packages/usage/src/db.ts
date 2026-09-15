@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
 import type { DatabaseSync } from "node:sqlite";
 
-// The same `node:sqlite` loading workaround used by `@atlas/storage`: the
+// The same `node:sqlite` loading workaround used by `@prof-bilal/atlas-storage`: the
 // built-in is too new for Vite (the test runner) to keep the `node:` prefix on
 // a static import, so the constructor is required at runtime. `DatabaseSync`
 // is a type only and erased at compile time.
@@ -14,7 +14,7 @@ const DatabaseSyncConstructor = requireNode("node:sqlite").DatabaseSync as typeo
  * `node:sqlite` is synchronous. WAL journal mode only applies to file-backed
  * databases (`:memory:` ignores it). Foreign keys and a busy timeout are always
  * enabled. The usage database is **separate** from the context database — this
- * module never touches `@atlas/storage` or its tables.
+ * module never touches `@prof-bilal/atlas-storage` or its tables.
  */
 export function openDatabase(filePath: string): DatabaseSync {
   const db = new DatabaseSyncConstructor(filePath);

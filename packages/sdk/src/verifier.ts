@@ -1,8 +1,8 @@
-import type { VerifierPort } from "@atlas/core";
-import { createVerifierService } from "@atlas/verifier";
-import type { VerifierServiceDeps } from "@atlas/verifier";
+import type { VerifierPort } from "@prof-bilal/atlas-core";
+import { createVerifierService } from "@prof-bilal/atlas-verifier";
+import type { VerifierServiceDeps } from "@prof-bilal/atlas-verifier";
 
-export type { VerifierServiceDeps } from "@atlas/verifier";
+export type { VerifierServiceDeps } from "@prof-bilal/atlas-verifier";
 
 /**
  * Create a VerifierPort backed by the built-in implementation.

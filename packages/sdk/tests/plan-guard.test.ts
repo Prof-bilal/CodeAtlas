@@ -1,4 +1,4 @@
-import type { ContextPlan } from "@atlas/core";
+import type { ContextPlan } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { applyPlanAnnotations } from "../src/context-integration/plan-guard";
 

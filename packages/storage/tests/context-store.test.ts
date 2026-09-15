@@ -1,8 +1,8 @@
 import { existsSync, mkdtempSync, readdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { Symbol as AtlasSymbol, SourceFile, Summary } from "@atlas/core";
-import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
+import type { Symbol as AtlasSymbol, SourceFile, Summary } from "@prof-bilal/atlas-core";
+import type { FilePath, NodeId, SymbolId } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { ContextStore } from "../src/context-store";
 

@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { createProjectContainer } from "@atlas/sdk";
+import { createProjectContainer } from "@prof-bilal/atlas-sdk";
 import { afterEach, describe, expect, it } from "vitest";
 import { ContextClient } from "../src/client";
 import type { AtlasRunner } from "../src/commands";

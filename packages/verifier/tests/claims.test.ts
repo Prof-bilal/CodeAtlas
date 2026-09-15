@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import type { ClaimCheckInput } from "@atlas/core";
+import type { ClaimCheckInput } from "@prof-bilal/atlas-core";
 import { beforeEach, describe, expect, it } from "vitest";
 import { checkClaims, resetClaimCounter } from "../src/claims.js";
 

@@ -1,7 +1,7 @@
 import { spawn as nodeSpawn } from "node:child_process";
 import { statSync } from "node:fs";
 import { extname } from "node:path";
-import { type Result, fail, ok } from "@atlas/shared";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { InvalidWorkingDirectoryError, ProcessSpawnError } from "./errors";
 
 /**

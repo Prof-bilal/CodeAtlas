@@ -14,7 +14,7 @@ import {
   type Summary,
   createContextIntegration,
   createContextSDK,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 
 /** A serializable snapshot of a code symbol for the editor tree. */
 export interface EditorSymbol {

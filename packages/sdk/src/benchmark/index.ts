@@ -1,5 +1,5 @@
-import { BenchmarkService } from "@atlas/benchmark";
-import type { BenchmarkPort } from "@atlas/core";
+import { BenchmarkService } from "@prof-bilal/atlas-benchmark";
+import type { BenchmarkPort } from "@prof-bilal/atlas-core";
 
 /** Options for creating a benchmark service via the SDK. */
 export interface CreateBenchmarkServiceOptions {

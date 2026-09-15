@@ -3,9 +3,9 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
-import type { ProjectScan } from "@atlas/core";
-import { VERSION } from "@atlas/shared";
-import { type Result, fail, ok } from "@atlas/shared";
+import type { ProjectScan } from "@prof-bilal/atlas-core";
+import { VERSION } from "@prof-bilal/atlas-shared";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 
 /** Schema version of the manifest. Bump when the shape changes. */
 export const MANIFEST_VERSION = 1;

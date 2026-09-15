@@ -1,5 +1,5 @@
-import type { Result } from "@atlas/sdk";
-import { fail, ok } from "@atlas/sdk";
+import type { Result } from "@prof-bilal/atlas-sdk";
+import { fail, ok } from "@prof-bilal/atlas-sdk";
 import type { HandlerContext } from "./handlers";
 import type { ToolArgs } from "./validation";
 

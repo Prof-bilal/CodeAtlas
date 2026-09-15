@@ -8,7 +8,7 @@
  * - The orchestrator decides **what** each agent runs and **when**; agents never
  *   spawn other agents and never talk to each other directly.
  * - Every process/session concern goes through `SessionPort`; every provider
- *   concern through the `@atlas/agents` adapters.
+ *   concern through the `@prof-bilal/atlas-agents` adapters.
  * - A plan is a **fixed role list** with a hard cap on participating agents.
  */
 

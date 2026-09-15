@@ -5,7 +5,7 @@ import type {
   ChatAgentExecutionTrace,
   TokenMetrics,
   ToolCallRecord,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 
 function measured(value: number, note?: string): BenchmarkMetricValue {
   return { value, status: "measured", ...(note !== undefined ? { note } : {}) };

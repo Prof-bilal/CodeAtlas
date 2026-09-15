@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
-import type { ProjectScan } from "@atlas/core";
-import { buildSnapshot, compareHashes } from "@atlas/hashing";
-import type { Result } from "@atlas/shared";
+import type { ProjectScan } from "@prof-bilal/atlas-core";
+import { buildSnapshot, compareHashes } from "@prof-bilal/atlas-hashing";
+import type { Result } from "@prof-bilal/atlas-shared";
 import type { FreshnessSignal } from "./models";
 
 /**
@@ -30,7 +30,7 @@ export interface FreshnessInput {
  * Detect whether the index is fresh relative to the working tree.
  *
  * The persisted per-file hashes are compared against the current hashes of the
- * same files on disk (via `@atlas/hashing` change detection). The signal is
+ * same files on disk (via `@prof-bilal/atlas-hashing` change detection). The signal is
  * honest and best-effort:
  * - `"unavailable"` — no index exists,
  * - `"unknown"` — the persisted hashes are empty, or the on-disk files cannot

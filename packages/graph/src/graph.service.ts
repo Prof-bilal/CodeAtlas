@@ -6,9 +6,9 @@ import type {
   Reference,
   ReferenceKind,
   Symbol,
-} from "@atlas/core";
-import type { EdgeId, FilePath, NodeId, Result } from "@atlas/shared";
-import { ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import type { EdgeId, FilePath, NodeId, Result } from "@prof-bilal/atlas-shared";
+import { ok } from "@prof-bilal/atlas-shared";
 import { fileNodeId, symbolNodeId } from "./ids";
 import { buildExportIndex, resolveModulePath } from "./module-resolution";
 

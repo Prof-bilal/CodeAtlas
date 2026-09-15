@@ -7,8 +7,8 @@ import type {
   CompatibilityRuntime,
   CompatibilityState,
   ToolInstallMethodType,
-} from "@atlas/core";
-import { type Result, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, ok } from "@prof-bilal/atlas-shared";
 import { EnvironmentDetector, findExecutable } from "./environment";
 import { CompatibilityError } from "./errors";
 import type { ToolManifest } from "./manifest-schema";

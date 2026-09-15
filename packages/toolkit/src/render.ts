@@ -1,4 +1,4 @@
-import type { CompatibilityReport, CompatibilityState } from "@atlas/core";
+import type { CompatibilityReport, CompatibilityState } from "@prof-bilal/atlas-core";
 
 /** The glyph used to render each {@link CompatibilityState}. */
 export function compatibilityStateGlyph(state: CompatibilityState): string {

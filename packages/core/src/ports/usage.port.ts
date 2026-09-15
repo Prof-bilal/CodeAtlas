@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 
 /**
  * How a measured quantity was obtained — the tri-state provenance model.

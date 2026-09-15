@@ -3,8 +3,8 @@ import type {
   ChatAgentRequest,
   ChatAgentResult,
   ProviderMessage,
-} from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { OllamaRunner } from "../src/runner/ollama";
 

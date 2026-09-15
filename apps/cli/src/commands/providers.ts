@@ -5,7 +5,7 @@ import {
   type ProviderOverview,
   type ProviderStatus,
   createOllamaService,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 
 function providerGlyph(configured: boolean): string {

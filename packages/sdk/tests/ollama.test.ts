@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { HttpResponse, HttpTransport } from "@atlas/providers";
+import type { HttpResponse, HttpTransport } from "@prof-bilal/atlas-providers";
 import { describe, expect, it } from "vitest";
 import { createOllamaService } from "../src/providers/ollama";
 

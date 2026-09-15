@@ -1,6 +1,6 @@
 # CodeAtlas Agent Catalog
 
-Every implemented analysis agent maps to an `@atlas/*` package. This catalog
+Every implemented analysis agent maps to an `@prof-bilal/atlas-*` package. This catalog
 describes the **concrete agents** that exist today (the pipeline operators that
 implemented modules provide). For the *rules* agents (human or AI) must follow,
 see the root [AGENTS.md](../AGENTS.md).
@@ -13,7 +13,7 @@ see the root [AGENTS.md](../AGENTS.md).
 
 ## Scanner Agent
 
-- Package: `@atlas/scanner`
+- Package: `@prof-bilal/atlas-scanner`
 - Purpose: Recursively scans a project and collects **metadata** — files,
   folders, languages, framework, and markers — without reading file contents.
 - Operations:
@@ -32,7 +32,7 @@ see the root [AGENTS.md](../AGENTS.md).
 
 ## Hashing Agent
 
-- Package: `@atlas/hashing`
+- Package: `@prof-bilal/atlas-hashing`
 - Purpose: Manages SHA-256 hashing of file contents to detect what changed
   between runs.
 - Operations:
@@ -47,7 +47,7 @@ see the root [AGENTS.md](../AGENTS.md).
 
 ## Manifest Agent
 
-- Package: `@atlas/scanner` (`manifest.ts`)
+- Package: `@prof-bilal/atlas-scanner` (`manifest.ts`)
 - Purpose: Generates a per-project manifest describing the codebase.
 - Operations:
   - Writes `<root>/.codeatlas/manifest.json` from a fresh `ProjectScan`.
@@ -60,7 +60,7 @@ see the root [AGENTS.md](../AGENTS.md).
 
 ## Parser Agent
 
-- Package: `@atlas/parser`
+- Package: `@prof-bilal/atlas-parser`
 - Purpose: Parses source code into a **language-agnostic intermediate
   representation** — normalized `Symbol`s — so the rest of the pipeline never
   needs to know the source language.
@@ -80,7 +80,7 @@ see the root [AGENTS.md](../AGENTS.md).
 
 ## Graph Agent
 
-- Package: `@atlas/graph`
+- Package: `@prof-bilal/atlas-graph`
 - Purpose: Builds the project dependency graph and answers dependency and
   cycle queries.
 - Operations:
@@ -96,7 +96,7 @@ see the root [AGENTS.md](../AGENTS.md).
 
 ## Provider Agent
 
-- Package: `@atlas/providers`
+- Package: `@prof-bilal/atlas-providers`
 - Purpose: Unified adapter over AI model APIs so providers can be swapped.
 - Operations:
   - `complete(request)` routes a completion to the adapter named by
@@ -111,7 +111,7 @@ see the root [AGENTS.md](../AGENTS.md).
 
 ## Cache Agent
 
-- Package: `@atlas/cache`
+- Package: `@prof-bilal/atlas-cache`
 - Purpose: Generic caching to avoid repeated expensive work.
 - Operations: `get` / `set` / `delete` over an in-memory store with per-entry
   TTL; optional JSON file persistence.
@@ -119,7 +119,7 @@ see the root [AGENTS.md](../AGENTS.md).
 
 ## AI Summary Agent
 
-- Package: `@atlas/summary`
+- Package: `@prof-bilal/atlas-summary`
 - Purpose: Generates and caches structured summaries of code.
 - Operations: `summarizeFile` / `summarizeFolder` / `summarizeModule` /
   `summarizeProject`; content-hash caching (only **changed** files reach the
@@ -130,7 +130,7 @@ see the root [AGENTS.md](../AGENTS.md).
 
 ## Storage Agent
 
-- Package: `@atlas/storage`
+- Package: `@prof-bilal/atlas-storage`
 - Purpose: The SQLite **Context Database** behind `ContextDatabasePort`.
 - Operations: `saveContext` / `updateContext` / `loadContext` / `deleteContext`
   / `searchContext` over 8 tables with repositories; migrations + versioning;
@@ -142,7 +142,7 @@ see the root [AGENTS.md](../AGENTS.md).
 
 ## AI CLI Connection Layer
 
-- Package: `@atlas/agents` (behind `AgentPort` in `core`)
+- Package: `@prof-bilal/atlas-agents` (behind `AgentPort` in `core`)
 - Purpose: Detects and runs external AI coding CLIs (Claude / Gemini / Codex /
   OpenCode) — the narrow spawn/detect boundary the orchestrator builds on.
 - Operations: per-CLI `AgentAdapter`s (binary, run-mode flags, env),
@@ -161,13 +161,13 @@ see the root [AGENTS.md](../AGENTS.md).
 - See [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md) for the planned router on
   top of it.
 
-> **Direction B (Unified AI CLI) is partial.** The `@atlas/agents` connection
+> **Direction B (Unified AI CLI) is partial.** The `@prof-bilal/atlas-agents` connection
 > layer, the session manager, and the plan-executing orchestrator
-> (`createOrchestrator` in `@atlas/sdk`) are implemented; the **interactive TUI**
+> (`createOrchestrator` in `@prof-bilal/atlas-sdk`) are implemented; the **interactive TUI**
 > (`atlas tui`) slash surface (`/claude`–`/opencode` detect → launch
 > interactively → install; `/cursor` `/grok` guidance; `/agents`) is
 > **v2 / not shipped** (untracked); the **standalone router** (`atlas /claude`
 > …) remains **[PLANNED]** — see [AGENT_ORCHESTRATOR.md](./AGENT_ORCHESTRATOR.md). The
 > **Agent Toolkit** (Direction C — curated tool registry/install/config/
-> security) is implemented behind `@atlas/toolkit` with a shipped catalog —
+> security) is implemented behind `@prof-bilal/atlas-toolkit` with a shipped catalog —
 > see [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).

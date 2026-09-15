@@ -1,9 +1,9 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { BenchmarkRunner } from "@atlas/benchmark";
-import { ok } from "@atlas/sdk";
-import type { TaskFile } from "@atlas/sdk";
+import type { BenchmarkRunner } from "@prof-bilal/atlas-benchmark";
+import { ok } from "@prof-bilal/atlas-sdk";
+import type { TaskFile } from "@prof-bilal/atlas-sdk";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
 import { loadConfig } from "../src/config";
@@ -114,7 +114,7 @@ beforeAll(async () => {
       },
     ],
   };
-  const { BenchmarkStore } = await import("@atlas/benchmark");
+  const { BenchmarkStore } = await import("@prof-bilal/atlas-benchmark");
   new BenchmarkStore(benchmarkRoot).saveTaskFile(taskFile, "fixture-tasks.json");
 
   const config = loadConfig({

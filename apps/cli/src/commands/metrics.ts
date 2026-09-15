@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import type { MetricsPort, MetricsSnapshot } from "@atlas/sdk";
-import { createMetricsService, exportMetricsCsv, exportMetricsJson } from "@atlas/sdk";
+import type { MetricsPort, MetricsSnapshot } from "@prof-bilal/atlas-sdk";
+import { createMetricsService, exportMetricsCsv, exportMetricsJson } from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { metricsPath, resolveProjectRoot } from "./search";
 

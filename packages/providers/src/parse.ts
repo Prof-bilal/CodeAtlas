@@ -1,4 +1,4 @@
-import type { TokenUsage, ToolCall } from "@atlas/core";
+import type { TokenUsage, ToolCall } from "@prof-bilal/atlas-core";
 
 /** True for 2xx HTTP status codes. */
 export function isOkStatus(status: number): boolean {

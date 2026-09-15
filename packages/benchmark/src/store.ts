@@ -6,7 +6,7 @@ import type {
   BenchmarkTaskResult,
   SuiteStatus,
   TaskFile,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 
 /**
  * JSON-backed persistence for benchmark data.

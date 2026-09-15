@@ -5,7 +5,7 @@ export const SCHEMA_VERSION = 1;
 
 /**
  * DDL for the usage database: a dedicated, versioned store **owned by the
- * usage module** — it is separate from the context database (`@atlas/storage`),
+ * usage module** — it is separate from the context database (`@prof-bilal/atlas-storage`),
  * which is never modified by this package.
  *
  * `UsageEvents` stores the normalized tri-state record: every token and cost

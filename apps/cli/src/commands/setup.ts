@@ -1,4 +1,4 @@
-import { runSetup } from "@atlas/sdk";
+import { runSetup } from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 
 interface SetupCommandOptions {

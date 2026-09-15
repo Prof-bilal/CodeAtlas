@@ -6,8 +6,8 @@ import type {
   RunnerResult,
   TokenMetrics,
   ToolCallRecord,
-} from "@atlas/core";
-import { type Result, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, ok } from "@prof-bilal/atlas-shared";
 import { buildObservability, estimateTokens } from "../phase-a";
 
 /**

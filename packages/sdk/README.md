@@ -1,4 +1,4 @@
-# @atlas/sdk
+# @prof-bilal/atlas-sdk
 
 The **public façade** and composition root of CodeAtlas. It exposes a `Container`
 that registers concrete implementations behind the `core` ports and lets
@@ -8,7 +8,7 @@ Consumers should depend on **only** this package, never on individual feature
 packages directly.
 
 ```ts
-import { Container } from "@atlas/sdk";
+import { Container } from "@prof-bilal/atlas-sdk";
 
 const container = Container.create();
 const scanner = container.getScanner();
@@ -19,7 +19,7 @@ const scanner = container.getScanner();
 Any port can be swapped by passing an implementation to `Container.create()`:
 
 ```ts
-import { Container } from "@atlas/sdk";
+import { Container } from "@prof-bilal/atlas-sdk";
 import { MyProvider } from "./my-provider";
 
 const container = Container.create({ provider: new MyProvider() });

@@ -48,8 +48,8 @@ Single-package variants (any package):
 
 ```bash
 pnpm --filter codeatlas-cli build
-pnpm --filter @atlas/parser test
-pnpm --filter @atlas/sdk typecheck
+pnpm --filter @prof-bilal/atlas-parser test
+pnpm --filter @prof-bilal/atlas-sdk typecheck
 ```
 
 ## 4. Running the CLI

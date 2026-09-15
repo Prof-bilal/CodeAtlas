@@ -2,7 +2,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 
 /**
  * Result of a supervised child process run (mirrors the honest partial-output
- * contract of `@atlas/agents`' ProcessRunner, scoped to what the server needs).
+ * contract of `@prof-bilal/atlas-agents`' ProcessRunner, scoped to what the server needs).
  */
 export interface ProcessRunResult {
   readonly ok: boolean;

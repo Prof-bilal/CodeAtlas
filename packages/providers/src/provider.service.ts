@@ -1,6 +1,6 @@
-import type { ProviderPort, ProviderRequest, ProviderResponse } from "@atlas/core";
-import type { Result } from "@atlas/shared";
-import { fail } from "@atlas/shared";
+import type { ProviderPort, ProviderRequest, ProviderResponse } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
+import { fail } from "@prof-bilal/atlas-shared";
 import type { ProviderAdapter, ProviderConfig, ProviderName, ProviderStatus } from "./adapter";
 import { ClaudeAdapter } from "./adapters/anthropic";
 import { GeminiAdapter } from "./adapters/gemini";

@@ -1,6 +1,6 @@
 import { spawn as nodeSpawn } from "node:child_process";
 import { statSync } from "node:fs";
-import { type Result, fail, ok } from "@atlas/shared";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { InstallInvalidRequestError, InstallProcessError } from "./installer-errors";
 
 /**
@@ -78,8 +78,8 @@ export interface InstallerProcessOptions {
  * signals. This is the security-sensitive process boundary of the Installer
  * (Task 22) — see `docs/SECURITY.md` §3.
  *
- * `@atlas/toolkit` is dependency-restricted to `core` + `shared`, so this is a
- * deliberately small local copy of the pattern in `@atlas/agents`
+ * `@prof-bilal/atlas-toolkit` is dependency-restricted to `core` + `shared`, so this is a
+ * deliberately small local copy of the pattern in `@prof-bilal/atlas-agents`
  * `ProcessRunner.run`; it is **not** a fork of that service.
  */
 export class InstallerProcess {

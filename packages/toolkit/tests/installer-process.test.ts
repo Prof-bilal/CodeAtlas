@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { Readable } from "node:stream";
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { InstallInvalidRequestError, InstallProcessError } from "../src/installer-errors";
 import { InstallerProcess, type InstallerSpawnFn } from "../src/installer-process";

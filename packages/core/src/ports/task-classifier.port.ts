@@ -3,7 +3,7 @@ import type { ContextTaskCategory } from "./context.port";
 /**
  * Deterministic task entities extracted from the task string.
  *
- * Re-exported from `@atlas/sdk` context-integration for port contract
+ * Re-exported from `@prof-bilal/atlas-sdk` context-integration for port contract
  * completeness; the core port depends only on this shape, not the
  * implementation.
  */

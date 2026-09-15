@@ -10,7 +10,7 @@
 
 ## 1. What this is
 
-The **Tool Registry** (`@atlas/toolkit`, behind `ToolRegistryPort` in `core`) is
+The **Tool Registry** (`@prof-bilal/atlas-toolkit`, behind `ToolRegistryPort` in `core`) is
 the curated catalog of useful open-source developer / AI-agent tools. It is the
 *"what is there"* layer — deliberately separate from:
 
@@ -25,7 +25,7 @@ here** but are **evaluated by later tasks**.
 ```
 CodeAtlas
     ↓
-Agent Toolkit (@atlas/toolkit)
+Agent Toolkit (@prof-bilal/atlas-toolkit)
     ↓
 Tool Registry  (this task — "what is there")
 ```
@@ -53,8 +53,8 @@ Registry Schema (versioned, validated, extensible)
 
 ### Dependency rules
 
-`@atlas/toolkit` imports **only** `@atlas/core` + `@atlas/shared`. Consumers
-(CLI / MCP / editors) reach the registry **only** through `@atlas/sdk`
+`@prof-bilal/atlas-toolkit` imports **only** `@prof-bilal/atlas-core` + `@prof-bilal/atlas-shared`. Consumers
+(CLI / MCP / editors) reach the registry **only** through `@prof-bilal/atlas-sdk`
 (`createToolRegistry`), never through the feature package or the data files.
 
 ## 3. Record schema
@@ -138,7 +138,7 @@ The registry is **not** stored in the context database.
 ## 6. SDK surface
 
 ```ts
-import { createToolRegistry } from "@atlas/sdk";
+import { createToolRegistry } from "@prof-bilal/atlas-sdk";
 
 const registry = createToolRegistry();                 // shipped catalog
 const registry = createToolRegistry({ overlayPath });  // + local overlay

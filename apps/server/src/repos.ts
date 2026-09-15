@@ -1,7 +1,7 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createContextSDK, scanProjectOverview } from "@atlas/sdk";
+import { createContextSDK, scanProjectOverview } from "@prof-bilal/atlas-sdk";
 import { findRepositoryRoot } from "./config";
 import { runProcess } from "./process";
 

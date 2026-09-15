@@ -1,4 +1,4 @@
-import type { CompatibilityReport } from "@atlas/core";
+import type { CompatibilityReport } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { compatibilityStateGlyph, renderCompatibilityReport } from "../src/render";
 

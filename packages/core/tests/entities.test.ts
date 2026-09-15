@@ -1,4 +1,4 @@
-import type { EdgeId, FilePath, NodeId, ProjectId, SymbolId } from "@atlas/shared";
+import type { EdgeId, FilePath, NodeId, ProjectId, SymbolId } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import type {
   ContextItem,

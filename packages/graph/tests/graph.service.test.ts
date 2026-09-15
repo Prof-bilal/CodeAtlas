@@ -1,5 +1,5 @@
-import type { GraphEdge, Symbol, SymbolKind } from "@atlas/core";
-import type { FilePath, NodeId } from "@atlas/shared";
+import type { GraphEdge, Symbol, SymbolKind } from "@prof-bilal/atlas-core";
+import type { FilePath, NodeId } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { GraphService } from "../src/graph.service";
 import { fileNodeId, symbolNodeId } from "../src/ids";

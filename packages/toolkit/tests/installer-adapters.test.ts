@@ -1,6 +1,6 @@
 import { join } from "node:path";
-import type { ToolInstallRequest } from "@atlas/core";
-import type { Result } from "@atlas/shared";
+import type { ToolInstallRequest } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { baseBinaryName, validateSourceUrl } from "../src/installer-adapter";
 import {

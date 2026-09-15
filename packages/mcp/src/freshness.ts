@@ -1,5 +1,5 @@
 import { stat } from "node:fs/promises";
-import { type ContextSDK, type FilePath, scanProjectOverview } from "@atlas/sdk";
+import { type ContextSDK, type FilePath, scanProjectOverview } from "@prof-bilal/atlas-sdk";
 
 /**
  * The outcome of an auto-refresh check, surfaced to clients so they never have

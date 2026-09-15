@@ -25,7 +25,7 @@ Two unconnected "skill" concepts exist in the codebase today:
    pattern (`SKILL.md` + frontmatter + `references/`) with a dependency-free,
    size-bounded, path-safe loader (`loader.ts`: `discoverSkills`, `loadSkill`,
    `tryReadSkill`, `renderSkillInstructions`, `validateSkill`,
-   `resolveSkillForTask`). It is exported from `@atlas/benchmark` but has
+   `resolveSkillForTask`). It is exported from `@prof-bilal/atlas-benchmark` but has
    **zero production consumers** — grep finds `discoverSkills`/`loadSkill`
    usage only in its own module, its re-exports, and its tests. Benchmark task
    JSON carries `"skill": "backend-api"`
@@ -77,15 +77,15 @@ a second registry, a new config system, or a new package family.
    content matching may be added later behind an explicit opt-in, never as a
    default.
 
-3. **Implementation moves to `@atlas/toolkit`** — skills are already Toolkit
+3. **Implementation moves to `@prof-bilal/atlas-toolkit`** — skills are already Toolkit
    artifacts (installed by `SkillAdapter`, recorded in Tool Manifests, covered
    by Compatibility/Security gates). The loader core (`types.ts` + the pure
    functions in `loader.ts`) is extracted from `packages/benchmark/src/skills/`
-   into `packages/toolkit/src/skills/`. `@atlas/benchmark` **re-exports** the
+   into `packages/toolkit/src/skills/`. `@prof-bilal/atlas-benchmark` **re-exports** the
    moved API so existing imports and `benchmarks/2026-09-fresh` fixtures keep
    working. No new package is created (see Alternatives).
 
-4. **The SDK composes it** — `createSkillService()` in `@atlas/sdk`
+4. **The SDK composes it** — `createSkillService()` in `@prof-bilal/atlas-sdk`
    (`packages/sdk/src/skills/`), defaulting to `root = cwd` and reading only
    `.codeatlas/skills/` through the port. Consumers (CLI, MCP, benchmark,
    server) never read skill files directly — the same discipline that holds
@@ -134,16 +134,16 @@ a second registry, a new config system, or a new package family.
 
 ## Alternatives
 
-- **New `@atlas/skills` package.** Rejected: the loader is a small pure
+- **New `@prof-bilal/atlas-skills` package.** Rejected: the loader is a small pure
   module with no independent persistence/providers, exactly the situation
   ADR-016 rejected a package for. Toolkit already owns the install/configure/
   trust lifecycle; splitting content handling from artifact handling would
   put one feature across two packages for no dependency reason. Revisit only
   if the module grows parsing/registry complexity beyond toolkit's scope.
-- **Implementation inside `@atlas/sdk` only** (ADR-016-style placement).
+- **Implementation inside `@prof-bilal/atlas-sdk` only** (ADR-016-style placement).
   Rejected: unlike the planning layer (pure functions over SDK data), skills
   are Toolkit-managed artifacts with manifests and a security lifecycle that
-  already live in `@atlas/toolkit`; hosting the loader beside them keeps the
+  already live in `@prof-bilal/atlas-toolkit`; hosting the loader beside them keeps the
   artifact story in one package and avoids SDK growing another subsystem.
 - **Custom CodeAtlas skill format** (JSON/YAML schema richer than
   frontmatter). Rejected: forks the open Agent Skills pattern the ecosystem
@@ -160,14 +160,14 @@ a second registry, a new config system, or a new package family.
 
 ## Consequences
 
-- `@atlas/toolkit` gains `skills/` (loader) — still imports only
-  `core` + `shared`; the ESLint dependency matrix is unchanged. `@atlas/core`
-  gains one type-only port. `@atlas/sdk` gains `createSkillService()` (it
-  already imports `@atlas/toolkit`).
-- `@atlas/benchmark` keeps its public re-exports — no consumer break; its
+- `@prof-bilal/atlas-toolkit` gains `skills/` (loader) — still imports only
+  `core` + `shared`; the ESLint dependency matrix is unchanged. `@prof-bilal/atlas-core`
+  gains one type-only port. `@prof-bilal/atlas-sdk` gains `createSkillService()` (it
+  already imports `@prof-bilal/atlas-toolkit`).
+- `@prof-bilal/atlas-benchmark` keeps its public re-exports — no consumer break; its
   private resolution heuristic stays harness-only.
 - Additive CLI surface later (`atlas skills list/info/load/apply`) through
-  `@atlas/sdk` only; nothing existing changes.
+  `@prof-bilal/atlas-sdk` only; nothing existing changes.
 - Security posture improves: the update-approval gap is closed, installed
   skills become validated content, and the untrusted-content model is
   documented.
@@ -213,8 +213,8 @@ validates this ADR and bounds its scope:
 
 1. P1: extend `docs/CONTEXT_STORAGE.md` (`.codeatlas/skills/`, `slices/`) and
    `docs/FEATURE_STATUS.md` rows.
-2. P1: audit-finding cleanup adjacent to this ADR — `@atlas/verifier`
-   missing from the ESLint `ALL_PACKAGES`/matrix, unused `@atlas/storage`
+2. P1: audit-finding cleanup adjacent to this ADR — `@prof-bilal/atlas-verifier`
+   missing from the ESLint `ALL_PACKAGES`/matrix, unused `@prof-bilal/atlas-storage`
    dependency in `packages/verifier`, orphan `packages/common`.
-3. P2: deduplicate `estimateTokens` copies (`@atlas/shared` canonical,
-   `@atlas/usage` re-export, benchmark private copy).
+3. P2: deduplicate `estimateTokens` copies (`@prof-bilal/atlas-shared` canonical,
+   `@prof-bilal/atlas-usage` re-export, benchmark private copy).

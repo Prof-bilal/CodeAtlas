@@ -1,5 +1,5 @@
-import type { SymbolLocation } from "@atlas/core";
-import type { FilePath, SymbolId } from "@atlas/shared";
+import type { SymbolLocation } from "@prof-bilal/atlas-core";
+import type { FilePath, SymbolId } from "@prof-bilal/atlas-shared";
 
 /**
  * Build a deterministic, human-readable {@link SymbolId} from a declaration's

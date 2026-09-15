@@ -6,7 +6,7 @@ Every consumer reads **only** through the Context SDK
 
 ## Model Context Protocol (MCP)
 
-`@atlas/mcp` serves a project's context to any MCP-capable client (Claude
+`@prof-bilal/atlas-mcp` serves a project's context to any MCP-capable client (Claude
 Desktop, Cursor, VS Code, generic agents) over stdio.
 
 ```bash
@@ -46,13 +46,13 @@ See [MCP.md](./MCP.md) for the full tool reference.
 
 ## VS Code extension
 
-`@atlas/extension` surfaces indexed context in the editor: activity bar
+`@prof-bilal/atlas-extension` surfaces indexed context in the editor: activity bar
 entry, tree views, and palette commands. It is a thin SDK consumer. See
 [VSCODE.md](./VSCODE.md).
 
 ## AI coding CLIs (Claude / Gemini / Codex / OpenCode)
 
-`@atlas/agents` detects and runs external AI coding CLIs behind `AgentPort`.
+`@prof-bilal/atlas-agents` detects and runs external AI coding CLIs behind `AgentPort`.
 Two delivery surfaces exist:
 
 - **`atlas context launch <task> --provider <provider>`** — assembles a

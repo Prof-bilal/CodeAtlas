@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { createProjectContainer } from "@atlas/sdk";
+import { createProjectContainer } from "@prof-bilal/atlas-sdk";
 import { afterEach, describe, expect, it } from "vitest";
 import { ContextClient, hasIndex, isUnavailable, resolvePaths } from "../src/client";
 import { type Fixture, createEmptyFixture, createFixture, standardData } from "./fixture";

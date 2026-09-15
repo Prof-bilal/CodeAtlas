@@ -6,7 +6,7 @@ import type {
   BenchmarkTaskResult,
   FailureCategory,
   TaskFile,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 import { extractScenarioLabel } from "./ablation";
 
 // ---------------------------------------------------------------------------

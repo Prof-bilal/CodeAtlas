@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/benchmark",
+  "name": "@prof-bilal/atlas-benchmark",
   "version": "0.5.0",
   "description": "Benchmark harness for CodeAtlas \u2014 declarative evaluation of context quality against baseline, with automated scoring and Markdown reporting.",
   "type": "module",
@@ -26,11 +26,11 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@atlas/core": "workspace:*",
-    "@atlas/shared": "workspace:*",
-    "@atlas/agents": "workspace:*",
-    "@atlas/toolkit": "workspace:*",
-    "@atlas/usage": "workspace:*"
+    "@prof-bilal/atlas-core": "workspace:*",
+    "@prof-bilal/atlas-shared": "workspace:*",
+    "@prof-bilal/atlas-agents": "workspace:*",
+    "@prof-bilal/atlas-toolkit": "workspace:*",
+    "@prof-bilal/atlas-usage": "workspace:*"
   },
   "license": "MIT",
   "repository": {

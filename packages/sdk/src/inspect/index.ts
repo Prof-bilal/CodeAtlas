@@ -1,13 +1,13 @@
-// @atlas/sdk — HTTP Inspect service
+// @prof-bilal/atlas-sdk — HTTP Inspect service
 // Thin HTTP probe using Node built-ins. Requires localhost by default (security).
 // NOTE: Export this module from packages/sdk/src/index.ts to surface it through
-// the @atlas/sdk public API when ready.
+// the @prof-bilal/atlas-sdk public API when ready.
 
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { URL } from "node:url";
-import type { HttpProbeResult, HttpProbeTarget, InspectPort } from "@atlas/core";
-import { fail, ok } from "@atlas/shared";
+import type { HttpProbeResult, HttpProbeTarget, InspectPort } from "@prof-bilal/atlas-core";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 
 const MAX_BODY_BYTES = 256 * 1024; // 256 KB cap on response body
 

@@ -1,5 +1,5 @@
-import type { MetricsPort } from "@atlas/core";
-import { MetricsService, type MetricsStore } from "@atlas/metrics";
+import type { MetricsPort } from "@prof-bilal/atlas-core";
+import { MetricsService, type MetricsStore } from "@prof-bilal/atlas-metrics";
 
 /** Options for {@link createMetricsService}. */
 export interface CreateMetricsServiceOptions {

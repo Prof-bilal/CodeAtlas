@@ -5,12 +5,12 @@
 > foundation, the Tool Manifest System, the Compatibility Engine, the Tool
 > Installer, and the Tool Configurator are implemented** (see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md),
 > [TOOL_MANIFEST.md](./TOOL_MANIFEST.md), and [CURRENT_STATE.md](./CURRENT_STATE.md)):
-> `@atlas/toolkit` behind `ToolRegistryPort`, `CompatibilityPort`,
+> `@prof-bilal/atlas-toolkit` behind `ToolRegistryPort`, `CompatibilityPort`,
 > `InstallerPort`, and `ConfiguratorPort` in `core`, composed by the SDK as
 > `createToolRegistry()`, `createCompatibilityEngine()`, `createInstaller()`,
 > and `createConfigurator()`.
 > **Security/Trust evaluation is implemented [IMPLEMENTED]**. The Tool Configurator and
-> The `atlas tools` CLI surface is implemented for Task 25. The Toolkit also builds on `@atlas/agents`
+> The `atlas tools` CLI surface is implemented for Task 25. The Toolkit also builds on `@prof-bilal/atlas-agents`
 > (the AI CLI connection layer, `AgentPort`) — see
 > [CURRENT_STATE.md](./CURRENT_STATE.md) and [MODULES.md](./MODULES.md).
 
@@ -65,7 +65,7 @@ Curated Open Source Tools
 ## 2. Architecture
 
 The Toolkit composes through the SDK (like every other consumer) and reuses
-`@atlas/agents` for AI-CLI detection.
+`@prof-bilal/atlas-agents` for AI-CLI detection.
 
 ```mermaid
 flowchart TB
@@ -106,7 +106,7 @@ flowchart TB
     SDK1 --> CS[CLI / MCP / VS Code / Agents]
 ```
 
-> `@atlas/agents` (the narrow spawn/detect boundary behind `AgentPort`) is
+> `@prof-bilal/atlas-agents` (the narrow spawn/detect boundary behind `AgentPort`) is
 > implemented. The Configurator is wired through the SDK and depends on the
 > `AgentPort` seam (and the existing adapters)
 > for AI-CLI detection — it must **not** duplicate executable detection or
@@ -117,14 +117,14 @@ flowchart TB
 Consistent with [DEPENDENCIES.md](./DEPENDENCIES.md) (the package and toolkit
 ports exist; Security/Trust is implemented):
 
-- A new feature package `@atlas/toolkit` (imports **only** `core` + `shared`),
+- A new feature package `@prof-bilal/atlas-toolkit` (imports **only** `core` + `shared`),
   hosting the Registry, Tool Manifest, Compatibility, Installer, and
   Configurator and Security/Trust behind ports in `core` (**implemented**).
 - A thin Toolkit **CLI surface** (`atlas tools ...`) added in `apps/cli`,
   which delegates to the SDK — never to feature packages directly.
-- SDK wiring (`@atlas/sdk`) composes the Toolkit behind its ports, exactly as
+- SDK wiring (`@prof-bilal/atlas-sdk`) composes the Toolkit behind its ports, exactly as
   it composes every other feature package today.
-- `@atlas/agents` already exists behind `AgentPort` in `core`; the Toolkit
+- `@prof-bilal/atlas-agents` already exists behind `AgentPort` in `core`; the Toolkit
   depends on that **port**, not on the concrete `AgentService`.
 
 ### Dependency direction (planned, enforced by ESLint)
@@ -133,7 +133,7 @@ ports exist; Security/Trust is implemented):
 cli → sdk → toolkit + agents → core → shared
 ```
 
-The Toolkit must **not** reach for `@atlas/scanner`, `@atlas/storage`, etc.
+The Toolkit must **not** reach for `@prof-bilal/atlas-scanner`, `@prof-bilal/atlas-storage`, etc.
 directly; anything it needs from CodeAtlas context comes through the
 **Context SDK** or the port seams.
 
@@ -141,7 +141,7 @@ directly; anything it needs from CodeAtlas context comes through the
 
 ## 3. Tool Registry
 
-**Owner:** `@atlas/toolkit` — **[IMPLEMENTED]** (Task 19, registry foundation;
+**Owner:** `@prof-bilal/atlas-toolkit` — **[IMPLEMENTED]** (Task 19, registry foundation;
 see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md)). The sections below remain the
 design contract for how the registry feeds later tasks.
 
@@ -222,7 +222,7 @@ benchmarks:            # future; vendor claims vs CodeAtlas benchmarks, see §12
 
 ## 4. Tool Manifest
 
-**Owner:** `@atlas/toolkit` — **[IMPLEMENTED]** (Task 20). See
+**Owner:** `@prof-bilal/atlas-toolkit` — **[IMPLEMENTED]** (Task 20). See
 [TOOL_MANIFEST.md](./TOOL_MANIFEST.md) for the schema, storage, and validation
 details.
 
@@ -237,7 +237,7 @@ separate from the Registry entry. It records:
 - the trust + security status that applied at install time,
 - a `doctor`-able integration state (see §9).
 
-This mirrors the codebase's existing **Manifest pattern** (`@atlas/scanner`
+This mirrors the codebase's existing **Manifest pattern** (`@prof-bilal/atlas-scanner`
 `manifest.ts`) — installed-tool state lives next to the project state in
 `.codeatlas/`, so `atlas tools doctor` can reconcile what is expected vs. what
 is actually present.
@@ -246,10 +246,10 @@ is actually present.
 
 ## 5. Tool Installer
 
-**Owner:** `@atlas/toolkit` — **[IMPLEMENTED]** (Task 22) with a safe MVP subset.
+**Owner:** `@prof-bilal/atlas-toolkit` — **[IMPLEMENTED]** (Task 22) with a safe MVP subset.
 
 > **Implemented (Task 22):** `InstallerPort` in `core` + `InstallerService` in
-> `@atlas/toolkit`, composed via `createInstaller()` in `@atlas/sdk`. Adapters
+> `@prof-bilal/atlas-toolkit`, composed via `createInstaller()` in `@prof-bilal/atlas-sdk`. Adapters
 > ship for the **safe MVP subset** (`npm`, `pip`, `cargo`, `go`) plus a new
 > **`skill`** adapter that shallow-clones a skill repository (see below);
 > `binary`, `github-release`, and `mcp` are declared by the port but not yet
@@ -317,7 +317,7 @@ small adapter, not a fork.
 
 ## 6. Compatibility Engine
 
-**Owner:** `@atlas/toolkit` — **[IMPLEMENTED]** (Task 21).
+**Owner:** `@prof-bilal/atlas-toolkit` — **[IMPLEMENTED]** (Task 21).
 
 Before installing, the Toolkit determines whether the tool **can run in this
 environment at all**:
@@ -334,7 +334,7 @@ Required permissions
 
 The Registry schema lets tools **declare** compatibility requirements (see §3).
 The Compatibility Engine evaluates them against the **detected environment**,
-using `@atlas/agents` (`AgentPort`) for AI-CLI availability and version.
+using `@prof-bilal/atlas-agents` (`AgentPort`) for AI-CLI availability and version.
 
 Implemented pieces (`packages/toolkit`): `CompatibilityEngineService` behind
 `CompatibilityPort` in `core`; `EnvironmentDetector` (read-only, offline,
@@ -436,7 +436,7 @@ the assessment and records an override in the bounded install log.
 
 ## 9. Tool Configurator
 
-**Owner:** `@atlas/toolkit` (**implemented**, Task 23).
+**Owner:** `@prof-bilal/atlas-toolkit` (**implemented**, Task 23).
 
 A major purpose of the Toolkit is **automatic configuration**: after install,
 the tool is wired into the agents/environment that can use it.
@@ -444,7 +444,7 @@ the tool is wired into the agents/environment that can use it.
 ```
 Tool installed
     ↓
-Detect supported agents   (via AgentPort / @atlas/agents)
+Detect supported agents   (via AgentPort / @prof-bilal/atlas-agents)
     ↓
 Generate configuration
     ↓
@@ -456,7 +456,7 @@ Verify integration
 ### Provider-specific configuration = adapters
 
 Provider/target-specific logic **must** live in small **adapters**, exactly
-like `@atlas/providers` and `@atlas/agents`. There is **one** config adapter
+like `@prof-bilal/atlas-providers` and `@prof-bilal/atlas-agents`. There is **one** config adapter
 per target (Claude / Gemini / Codex / OpenCode / MCP / VS Code). **No giant
 `if (target === …)` configuration function.**
 
@@ -694,7 +694,7 @@ Important rules:
 ## 13. Context + Toolkit integration
 
 The Toolkit composes through the **Context SDK** — it never opens the database
-or imports feature packages directly (same rule as `@atlas/mcp`, `atlas
+or imports feature packages directly (same rule as `@prof-bilal/atlas-mcp`, `atlas
 search`, and the VS Code extension). Context signals (repeated reads, large
 outputs, high churn) feed the **future** Recommendation Engine — see
 [CONTEXT_SDK.md](./CONTEXT_SDK.md).
@@ -718,13 +718,13 @@ outputs, high churn) feed the **future** Recommendation Engine — see
 
 | Concern | Owner / seam |
 | ------- | ------------ |
-| Tool catalog | `@atlas/toolkit` Registry — **implemented** (Task 19) |
+| Tool catalog | `@prof-bilal/atlas-toolkit` Registry — **implemented** (Task 19) |
 | Installed-tool state | Tool Manifest in `.codeatlas/tools/` — **implemented** (Task 20) |
-| Compatibility | `@atlas/toolkit` Compatibility Engine — **implemented** (Task 21) |
+| Compatibility | `@prof-bilal/atlas-toolkit` Compatibility Engine — **implemented** (Task 21) |
 | Installers | `InstallerPort` + per-ecosystem adapters — **implemented** (Task 22, MVP subset `npm`/`pip`/`cargo`/`go` + `skill` git-clone) |
 | Configuration | `ConfiguratorPort` + per-target adapters — **implemented** (Task 23) |
 | Security / trust | `SecurityPort` + offline `SecurityAssessor` — **implemented** (Task 24); hard installer gate |
-| AI-CLI detection | `@atlas/agents` (`AgentPort`) — **implemented** |
+| AI-CLI detection | `@prof-bilal/atlas-agents` (`AgentPort`) — **implemented** |
 | CLI surface | `atlas tools` overview/search/info/validate/add/create/install/remove/update/configure/doctor — **implemented**; `atlas skills` custom and built-in workflows — **implemented**; `atlas setup` performs deterministic project detection, evidence-based recommendations, explicit-approval installation, CI-safe dry runs, separate TOOLS/SKILLS/SECURITY reporting, and Warden presence detection; `atlas warden status/run` provides explicit policy-based Warden execution; the `atlas tui` slash surface adding `/toolkit` and `/tools-install <tool>` is **v2 / not shipped** (untracked) |
 | AI-CLI catalog | the four npm-installable AI CLIs (`claude`, `gemini`, `codex`, `opencode`) ship as curated Registry entries with official npm install methods, so a missing agent can be installed through the same approval-gated installer (via `atlas tools` or the v2 TUI) |
 | Recommendation | separate future module (planned) |

@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import type { CommandRunResult } from "@atlas/core";
+import type { CommandRunResult } from "@prof-bilal/atlas-core";
 
 const BASELINE_FILENAME = "verify-baseline.json";
 

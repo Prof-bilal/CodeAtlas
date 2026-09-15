@@ -3,9 +3,9 @@ import { mkdir, readFile, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { URL } from "node:url";
-import type { BrowseEvidence, BrowseInteraction, BrowsePort, BrowseViewport } from "@atlas/core";
-import { fail, ok } from "@atlas/shared";
-import { findExecutable } from "@atlas/toolkit";
+import type { BrowseEvidence, BrowseInteraction, BrowsePort, BrowseViewport } from "@prof-bilal/atlas-core";
+import { fail, ok } from "@prof-bilal/atlas-shared";
+import { findExecutable } from "@prof-bilal/atlas-toolkit";
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 const MAX_TIMEOUT_MS = 300_000;

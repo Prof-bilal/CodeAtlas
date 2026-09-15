@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 import type { ToolSecurityStatusValue, ToolTrustLevel } from "./tool-registry.port";
 
 export type SecurityCheckVerdict = "pass" | "warn" | "fail" | "unknown";

@@ -7,8 +7,8 @@ import type {
   ContextSnapshot,
   SearchOptions,
   SearchResult,
-} from "@atlas/core";
-import type { FilePath, SymbolId } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import type { FilePath, SymbolId } from "@prof-bilal/atlas-shared";
 import { openDatabase } from "./db";
 import { type Migration, lastAppliedVersion, runMigrations } from "./migrations";
 import { DependencyRepository } from "./repository/dependency.repository";
@@ -415,12 +415,12 @@ export class ContextStore implements ContextDatabasePort {
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
-/** Graph node id for a file (mirrors `@atlas/graph` without importing it). */
+/** Graph node id for a file (mirrors `@prof-bilal/atlas-graph` without importing it). */
 function fileNodeId(path: FilePath): string {
   return `n:file:${path.replace(/\\/g, "/")}`;
 }
 
-/** Graph node id for a symbol (mirrors `@atlas/graph` without importing it). */
+/** Graph node id for a symbol (mirrors `@prof-bilal/atlas-graph` without importing it). */
 function symbolNodeId(symbolId: SymbolId): string {
   return `n:${symbolId}`;
 }

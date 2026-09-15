@@ -1,6 +1,6 @@
-import type { ProviderResponse } from "@atlas/core";
-import type { Result } from "@atlas/shared";
-import { ok } from "@atlas/shared";
+import type { ProviderResponse } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
+import { ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import type { ProviderAdapter } from "../src/adapter";
 import { ProviderNetworkError, ProviderRequestError, UnknownProviderError } from "../src/errors";

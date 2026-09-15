@@ -1,5 +1,5 @@
-import type { Reference, Symbol } from "@atlas/core";
-import type { FilePath } from "@atlas/shared";
+import type { Reference, Symbol } from "@prof-bilal/atlas-core";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 
 /**
  * The parser's normalized output for a single source file.

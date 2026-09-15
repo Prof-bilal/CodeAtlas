@@ -5,7 +5,7 @@ export interface HttpResponse {
   readonly json: unknown;
 }
 
-import type { TokenUsage, ToolCall } from "@atlas/core";
+import type { TokenUsage, ToolCall } from "@prof-bilal/atlas-core";
 
 /** A chunk of a streaming response. */
 export interface StreamChunk {

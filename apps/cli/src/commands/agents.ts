@@ -5,7 +5,7 @@ import {
   type AgentMcpTarget,
   type ConfigureOutcome,
   createAgentMcpService,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 
 export interface AgentsCommandOptions {

@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
-import type { ClaimCheck, ClaimCheckInput, ClaimCheckResult } from "@atlas/core";
+import type { ClaimCheck, ClaimCheckInput, ClaimCheckResult } from "@prof-bilal/atlas-core";
 
 let claimCounter = 0;
 function nextId(): string {

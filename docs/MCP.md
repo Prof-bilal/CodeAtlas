@@ -2,10 +2,10 @@
 
 Exposes a project's CodeAtlas context to AI coding tools over the **Model
 Context Protocol** (MCP) over stdio. It is the interface between the Context
-Engine (`@atlas/sdk`) and external agents — Claude Desktop, Cursor, VS Code,
+Engine (`@prof-bilal/atlas-sdk`) and external agents — Claude Desktop, Cursor, VS Code,
 and any MCP-capable client.
 
-- Package: `@atlas/mcp` (`packages/mcp`)
+- Package: `@prof-bilal/atlas-mcp` (`packages/mcp`)
 - Protocol: MCP over stdio (JSON-RPC 2.0), via the official
   `@modelcontextprotocol/sdk`
 - Status: **[IMPLEMENTED]** (2026-08-09) — eleven tools
@@ -448,7 +448,7 @@ Every object result also carries `freshness` (state/refreshed/checkedAt) and
 ## Programmatic API
 
 ```ts
-import { createMcpServer, startStdioServer } from "@atlas/mcp";
+import { createMcpServer, startStdioServer } from "@prof-bilal/atlas-mcp";
 
 const mcp = createMcpServer({ root: "/path/to/project" }); // or { dbPath }
 await mcp.connect(someTransport);

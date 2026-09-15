@@ -20,7 +20,7 @@ moment `context.db` appears — no restart needed.
 
 ## SQLite / `node:sqlite` errors
 
-`@atlas/storage` requires **Node `>=22.5.0`**. Symptoms: `ERR_UNKNOWN_FILE_EXTENSION`
+`@prof-bilal/atlas-storage` requires **Node `>=22.5.0`**. Symptoms: `ERR_UNKNOWN_FILE_EXTENSION`
 or a `node:sqlite` module-not-found at runtime.
 
 Fix: switch to Node 22 (`nvm use 22` / match `.nvmrc`) and re-run
@@ -95,4 +95,4 @@ Namespaces and bare expressions are not extracted. See
 ## `pnpm --filter <name>` says "No projects matched"
 
 Per-package filters use the package `name` field. Examples: `codeatlas-cli`
-(apps/cli), `@atlas/sdk`, `@atlas/mcp`, `@atlas/parser`, `@atlas/storage`.
+(apps/cli), `@prof-bilal/atlas-sdk`, `@prof-bilal/atlas-mcp`, `@prof-bilal/atlas-parser`, `@prof-bilal/atlas-storage`.

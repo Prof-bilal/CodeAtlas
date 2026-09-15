@@ -1,5 +1,5 @@
-import type { GraphEdge } from "@atlas/core";
-import type { FilePath } from "@atlas/shared";
+import type { GraphEdge } from "@prof-bilal/atlas-core";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { GraphService, deriveTestEdges } from "../src/graph.service";
 import { fileNodeId } from "../src/ids";

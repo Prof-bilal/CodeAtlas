@@ -1,4 +1,4 @@
-import type { PersistedModule } from "@atlas/core";
+import type { PersistedModule } from "@prof-bilal/atlas-core";
 import { type Row, colString, count } from "./row";
 import { StatementCache } from "./statement-cache";
 

@@ -1,4 +1,4 @@
-import type { CacheKey, Result } from "@atlas/shared";
+import type { CacheKey, Result } from "@prof-bilal/atlas-shared";
 
 /** Generic caching contract used to avoid repeated expensive work. */
 export interface CachePort {

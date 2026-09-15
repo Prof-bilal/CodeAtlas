@@ -7,8 +7,8 @@ import type {
   SourceFile,
   Summary,
   Symbol,
-} from "@atlas/core";
-import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import type { FilePath, NodeId, SymbolId } from "@prof-bilal/atlas-shared";
 import {
   DatabaseError,
   DependencyNotFoundError,
@@ -22,7 +22,7 @@ import { buildNodeLabels, fileNodeId, symbolNodeId } from "./nodes";
  * Read repositories for the Context SDK.
  *
  * Every method reads through the injected `ContextDatabasePort` — the same
- * contract the `@atlas/search` index uses — and maps stored rows to normalized
+ * contract the `@prof-bilal/atlas-search` index uses — and maps stored rows to normalized
  * context models. No SQL appears here and driver failures are re-surfaced as
  * typed SDK errors, so consumers never depend on database internals.
  */

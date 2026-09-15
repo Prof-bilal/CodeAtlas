@@ -3,14 +3,14 @@
   Symbol as PersistedSymbol,
   SearchResult,
   Summary,
-} from "@atlas/core";
-import type { FilePath, SymbolId } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import type { FilePath, SymbolId } from "@prof-bilal/atlas-shared";
 
 /**
  * Normalized, serializable context models for the CodeAtlas Context SDK.
  *
  * These are the stable, consumer-facing shapes. Where a normalized domain
- * entity already exists in `@atlas/core` (`PersistedSymbol`, `Summary`, `SearchResult`,
+ * entity already exists in `@prof-bilal/atlas-core` (`PersistedSymbol`, `Summary`, `SearchResult`,
  * `PersistedModule`) it is reused as-is; the SDK adds only the aggregates it
  * needs on top of the persisted snapshot. Raw SQLite rows are never exposed.
  */

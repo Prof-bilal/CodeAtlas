@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/scanner",
+  "name": "@prof-bilal/atlas-scanner",
   "version": "0.5.0",
   "description": "File-system discovery and ignore-rule handling for CodeAtlas.",
   "type": "module",
@@ -26,8 +26,8 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@atlas/core": "workspace:*",
-    "@atlas/shared": "workspace:*"
+    "@prof-bilal/atlas-core": "workspace:*",
+    "@prof-bilal/atlas-shared": "workspace:*"
   },
   "license": "MIT",
   "repository": {

@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/hashing",
+  "name": "@prof-bilal/atlas-hashing",
   "version": "0.5.0",
   "description": "SHA-256 hashing and change detection for CodeAtlas.",
   "type": "module",
@@ -26,8 +26,8 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@atlas/core": "workspace:*",
-    "@atlas/shared": "workspace:*"
+    "@prof-bilal/atlas-core": "workspace:*",
+    "@prof-bilal/atlas-shared": "workspace:*"
   },
   "license": "MIT",
   "repository": {

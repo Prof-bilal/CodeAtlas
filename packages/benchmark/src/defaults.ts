@@ -7,12 +7,12 @@
  *
  * Import and use as:
  * ```ts
- * import { PROVIDER_BUDGET_DEFAULTS } from "@atlas/benchmark";
+ * import { PROVIDER_BUDGET_DEFAULTS } from "@prof-bilal/atlas-benchmark";
  * const budget = PROVIDER_BUDGET_DEFAULTS["ollama"];
  * ```
  */
 
-import type { ModelBudgetDefaults } from "@atlas/core";
+import type { ModelBudgetDefaults } from "@prof-bilal/atlas-core";
 
 /**
  * Default budget configuration per provider.

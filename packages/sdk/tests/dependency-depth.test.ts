@@ -1,7 +1,7 @@
-import type { ContextData, SourceFile, Symbol } from "@atlas/core";
+import type { ContextData, SourceFile, Symbol } from "@prof-bilal/atlas-core";
 import type { ContextSDK } from "../src/index";
-import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
-import { ContextStore } from "@atlas/storage";
+import type { FilePath, NodeId, SymbolId } from "@prof-bilal/atlas-shared";
+import { ContextStore } from "@prof-bilal/atlas-storage";
 import { describe, expect, it } from "vitest";
 import { createContextSDK } from "../src/index";
 

@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { AgentInfo, AgentPort } from "@atlas/core";
-import { fail } from "@atlas/shared";
+import type { AgentInfo, AgentPort } from "@prof-bilal/atlas-core";
+import { fail } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { type ConfigWriter, FsConfigWriter } from "../src/configurator-adapter";
 import { ConfiguratorService } from "../src/configurator.service";

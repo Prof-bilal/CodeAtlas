@@ -1,4 +1,4 @@
-import type { UsageScope } from "@atlas/core";
+import type { UsageScope } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { UsageLimitExceededError } from "../src";
 import { createTestUsage } from "./helpers";

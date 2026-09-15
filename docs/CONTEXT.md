@@ -56,15 +56,15 @@ Two important notes on what is wired **today**:
   SDK-owned incremental indexer (see §3), and `atlas scan` prints the
   `ProjectScan` overview. `createContextSDK` reads the resulting database,
   which is exactly how the CLI `atlas search` and the MCP tools work.
-- `@atlas/context` (rank/assemble "the most relevant context for an LLM") is a
+- `@prof-bilal/atlas-context` (rank/assemble "the most relevant context for an LLM") is a
   deterministic rank-and-assemble step (ADR-001): `ContextBuilderService` ranks
   search hits and resolves them to source-file `ContextItem`s. The SDK's
   `getRelevantContext` is a *richer* deterministic assembly built from
-  `@atlas/search` + stored data.
+  `@prof-bilal/atlas-search` + stored data.
 
 ## 2. Layer by layer
 
-### Scanner (`@atlas/scanner`)
+### Scanner (`@prof-bilal/atlas-scanner`)
 Deterministic, read-only discovery. `scanProject(root)` produces a `ProjectScan`:
 files with metadata (absolute path, name, extension, size, detected language),
 a nested tree, folder/file totals, languages, and root markers (`package.json`,
@@ -75,7 +75,7 @@ configurable, case-insensitive ignore list (`node_modules`, `.git`, `dist`,
 `.codeatlas/manifest.json` (repo metadata + context versioning) — see
 [CONTEXT_STORAGE.md](./CONTEXT_STORAGE.md).
 
-### File hashing (`@atlas/hashing`)
+### File hashing (`@prof-bilal/atlas-hashing`)
 Hashing is what makes the pipeline **incremental**. `buildSnapshot` hashes every
 path (SHA-256, hex). `compareHashes(previous, current)` classifies every known
 path as `changed`, `added`, `deleted`, or `unchanged`. `getChangedFiles` returns
@@ -83,7 +83,7 @@ path as `changed`, `added`, `deleted`, or `unchanged`. `getChangedFiles` returns
 versioned JSON (`SNAPSHOT_VERSION = 1`) so they can persist between runs — the
 caller decides where. Hashing decides *what changed*, never *what to do*.
 
-### Parsing & symbols (`@atlas/parser`)
+### Parsing & symbols (`@prof-bilal/atlas-parser`)
 The parser turns **only the files it is given** into a language-agnostic
 intermediate representation — normalized `Symbol`s — so the rest of the
 pipeline never depends on the source language. `LanguageParser`
@@ -102,7 +102,7 @@ indexes the session's symbols and resolves references across files
 Renamed imports (`import { a as b }`) and `export default <expression>` **do**
 resolve cross-file via the import symbol's `importedName`.
 
-### Dependency graph (`@atlas/graph`)
+### Dependency graph (`@prof-bilal/atlas-graph`)
 `GraphService.build(symbols, references)` turns symbols + resolved references
 into a directed graph. Nodes are symbols plus one file pseudo-node per file.
 Edges are categorized (`calls`, `constructs`, `accesses`, `references`, `reads`,
@@ -112,7 +112,7 @@ dependency/dependent queries, `shortestPath` (BFS), `detectCircularDependencies`
 resolution** (`module-resolution.ts`) so it never imports the parser — a
 deliberate, documented duplication.
 
-### AI summaries (`@atlas/summary`) — optional
+### AI summaries (`@prof-bilal/atlas-summary`) — optional
 Deterministic analysis does not need AI. When a provider **is** configured,
 `SummaryService` builds structured summaries (`overview` + `keyPoints`) for a
 file, folder, module, or project from a single template, asks for strict JSON,
@@ -120,7 +120,7 @@ and **content-hash caches** so only changed files reach the model
 (`metadata.cacheHit`). Without a provider, every summary call fails cleanly
 with a `fail` `Result` — the pipeline never depends on AI.
 
-### Context database (`@atlas/storage`)
+### Context database (`@prof-bilal/atlas-storage`)
 Persists the analysis: eight tables (Files, Symbols, Summaries, Modules,
 Dependencies, Relationships, Hashes, Metadata) behind `ContextStore`, which
 implements `ContextDatabasePort`. Full replace (`saveContext`), merge
@@ -131,17 +131,17 @@ substring scoring with snippets). SQLite via `node:sqlite`
 table, transactions, `.`, WAL for file-backed stores, foreign keys enforced.
 A legacy `StorageService` satisfies the older `StoragePort` over the same store.
 
-### Search (`@atlas/search`)
+### Search (`@prof-bilal/atlas-search`)
 `SearchService` builds an **in-memory index** from a `ContextSnapshot` (loaded
 through an injected `ContextDatabasePort`) and returns ranked hits across
 **files, symbols, modules, dependencies, and summaries**. Default ranking is a
 deterministic `LexicalScorer`: exact → prefix → whole-token → substring → fuzzy
 (Levenshtein), with fields damped by type. `RelevanceScorer` is the seam where a
 future embedding/vector scorer can be swapped in — **no embeddings today**.
-(There is also the DB-level `searchContext` LIKE fallback in `@atlas/storage`.)
+(There is also the DB-level `searchContext` LIKE fallback in `@prof-bilal/atlas-storage`.)
 Search neither parses nor persists; it reads the snapshot only.
 
-### Context API/SDK (`@atlas/sdk`)
+### Context API/SDK (`@prof-bilal/atlas-sdk`)
 The stable read (and write) façade — `[CONTEXT_SDK.md](./CONTEXT_SDK.md)`. It
 hides the database behind repositories, returns normalized models, exposes
 typed errors (`FileNotFoundError`, `SymbolNotFoundError`, …), and adds
@@ -165,7 +165,7 @@ create → scan → hash → parse → graph → (summaries?) → store → quer
   replace) are the building blocks of an incremental `atlas update`. The
   hash diff classifies every path as `changed`/`added`/`deleted`/`unchanged`
   and drives the reported counters. **Verified behavior:** the SDK-owned
-  indexer (`@atlas/sdk` `indexProject`, which `atlas init`/`build`/`update` run)
+  indexer (`@prof-bilal/atlas-sdk` `indexProject`, which `atlas init`/`build`/`update` run)
   is **incremental** — on `update` it re-reads and re-parses only
   `changed` + `added` TypeScript files, reuses the persisted snapshot
   (files/symbols/hashes) for `unchanged` files, carries over usage edges from
@@ -188,7 +188,7 @@ create → scan → hash → parse → graph → (summaries?) → store → quer
   the SDK reports `status()` with the saved-at timestamp.
 - **Incremental > wholesale.** Respect hashing; do not rescan/ re-parse the
   entire repository without a reason.
-- **Persistence lives in `@atlas/storage`.** No other package writes the
+- **Persistence lives in `@prof-bilal/atlas-storage`.** No other package writes the
   context database directly.
 
 ---
@@ -197,12 +197,12 @@ create → scan → hash → parse → graph → (summaries?) → store → quer
 
 | Question | Where the answer lives |
 | -------- | ---------------------- |
-| How is a file's language detected? | `@atlas/scanner` (`language.ts`) |
-| How does change detection work? | `@atlas/hashing` (`diff.ts`, `hash.service.ts`) |
-| What symbols does the parser emit and how? | `@atlas/parser` (`extractors.ts`, `symbol-indexer.ts`) |
-| How is the graph built? | `@atlas/graph` (`graph.service.ts`) |
-| What tables exist / what's stored? | `@atlas/storage` (`schema.ts`, `migrations.ts`) |
-| How is search scored? | `@atlas/search` (`scoring.ts`, `fuzzy.ts`) |
+| How is a file's language detected? | `@prof-bilal/atlas-scanner` (`language.ts`) |
+| How does change detection work? | `@prof-bilal/atlas-hashing` (`diff.ts`, `hash.service.ts`) |
+| What symbols does the parser emit and how? | `@prof-bilal/atlas-parser` (`extractors.ts`, `symbol-indexer.ts`) |
+| How is the graph built? | `@prof-bilal/atlas-graph` (`graph.service.ts`) |
+| What tables exist / what's stored? | `@prof-bilal/atlas-storage` (`schema.ts`, `migrations.ts`) |
+| How is search scored? | `@prof-bilal/atlas-search` (`scoring.ts`, `fuzzy.ts`) |
 | What is the stable read API? | [CONTEXT_SDK.md](./CONTEXT_SDK.md) |
 | Where does data live on disk? | [CONTEXT_STORAGE.md](./CONTEXT_STORAGE.md) |
 

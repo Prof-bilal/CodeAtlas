@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import type { Budget, UsageLimit, UsageQuery, UsageRecord, UsageScope } from "@atlas/core";
+import type { Budget, UsageLimit, UsageQuery, UsageRecord, UsageScope } from "@prof-bilal/atlas-core";
 import { openDatabase } from "./db";
 import { type Migration, lastAppliedVersion, runMigrations } from "./migrations";
 import { BudgetRepository } from "./repository/budget.repository";

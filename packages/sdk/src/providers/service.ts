@@ -6,7 +6,7 @@ import {
   type ProviderStatus,
   loadUserSettings,
   readProviderConfigs,
-} from "@atlas/providers";
+} from "@prof-bilal/atlas-providers";
 
 /** Options for {@link createProviderService}. */
 export interface CreateProviderServiceOptions {
@@ -45,4 +45,4 @@ export function createProviderService(options: CreateProviderServiceOptions = {}
 }
 
 export type { ProviderConfig, ProviderName, ProviderStatus };
-export { maskApiKey, readApiKeys } from "@atlas/providers";
+export { maskApiKey, readApiKeys } from "@prof-bilal/atlas-providers";

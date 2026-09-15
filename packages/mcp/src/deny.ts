@@ -1,4 +1,4 @@
-import { denyFilter } from "@atlas/sdk";
+import { denyFilter } from "@prof-bilal/atlas-sdk";
 
 /**
  * Path-only secret deny-filter for MCP tool handlers (beta audit Fix 6).

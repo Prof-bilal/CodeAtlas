@@ -1,4 +1,4 @@
-import type { SymbolId } from "@atlas/shared";
+import type { SymbolId } from "@prof-bilal/atlas-shared";
 
 /**
  * Returned as a failed {@link Result} when no {@link LanguageParser} is

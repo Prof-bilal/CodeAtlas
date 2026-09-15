@@ -11,13 +11,13 @@ import { type IncomingMessage, type ServerResponse, createServer } from "node:ht
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createContextToolSourceFromSDK } from "@atlas/mcp";
+import { createContextToolSourceFromSDK } from "@prof-bilal/atlas-mcp";
 import {
   ToolUsingChatAgent,
   createContextSDK,
   createProviderService,
   indexProject,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import { afterEach, describe, expect, it } from "vitest";
 import { OllamaRunner } from "../src/runner/ollama";
 import { OpenCodeRunner } from "../src/runner/opencode";

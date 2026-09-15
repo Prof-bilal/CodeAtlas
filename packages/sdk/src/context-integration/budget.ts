@@ -1,4 +1,4 @@
-import { estimateTokens } from "@atlas/shared";
+import { estimateTokens } from "@prof-bilal/atlas-shared";
 import type { BudgetRecord, ContextBudget, ContextPackageItem } from "./models";
 
 /** The default budget for a context package (overridable per call). */

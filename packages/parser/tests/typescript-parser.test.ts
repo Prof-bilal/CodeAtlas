@@ -1,4 +1,4 @@
-import type { FilePath } from "@atlas/shared";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { TypeScriptParser } from "../src/typescript/typescript-parser";
 import { parseTs, tsFile } from "./helpers";

@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/agents",
+  "name": "@prof-bilal/atlas-agents",
   "version": "0.5.0",
   "description": "AI CLI connection layer for CodeAtlas \u2014 detect and run external AI coding CLIs.",
   "type": "module",
@@ -26,8 +26,8 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@atlas/core": "workspace:*",
-    "@atlas/shared": "workspace:*"
+    "@prof-bilal/atlas-core": "workspace:*",
+    "@prof-bilal/atlas-shared": "workspace:*"
   },
   "license": "MIT",
   "repository": {

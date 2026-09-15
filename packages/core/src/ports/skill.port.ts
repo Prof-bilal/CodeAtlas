@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 
 /** Metadata parsed from a skill's SKILL.md frontmatter. */
 export interface SkillManifest {
@@ -47,7 +47,7 @@ export interface RenderOptions {
 
 /**
  * Port for loading, validating, and rendering Agent Skills.
- * Implemented in `@atlas/toolkit`, composed in `@atlas/sdk`.
+ * Implemented in `@prof-bilal/atlas-toolkit`, composed in `@prof-bilal/atlas-sdk`.
  */
 export interface SkillPort {
   /** Lightweight discovery (stage 1): list all skills in `dir`. */

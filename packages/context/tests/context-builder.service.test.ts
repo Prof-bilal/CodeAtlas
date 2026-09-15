@@ -1,7 +1,7 @@
-import type { Symbol as CoreSymbol, SourceFile } from "@atlas/core";
-import { SearchService } from "@atlas/search";
-import type { FilePath, SymbolId } from "@atlas/shared";
-import { ContextStore } from "@atlas/storage";
+import type { Symbol as CoreSymbol, SourceFile } from "@prof-bilal/atlas-core";
+import { SearchService } from "@prof-bilal/atlas-search";
+import type { FilePath, SymbolId } from "@prof-bilal/atlas-shared";
+import { ContextStore } from "@prof-bilal/atlas-storage";
 import { describe, expect, it } from "vitest";
 import { ContextBuilderService } from "../src/context-builder.service";
 

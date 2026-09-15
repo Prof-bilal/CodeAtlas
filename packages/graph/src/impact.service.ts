@@ -6,8 +6,8 @@ import type {
   ImpactResult,
   ImpactRiskScore,
   ImpactSubject,
-} from "@atlas/core";
-import { type FilePath, type NodeId, type Result, fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type FilePath, type NodeId, type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { fileNodeId } from "./ids";
 
 const TEST_PATH_RE = /[/\\](tests?|specs?)[/\\]|\.test\.[^.]+$|\.spec\.[^.]+$/i;

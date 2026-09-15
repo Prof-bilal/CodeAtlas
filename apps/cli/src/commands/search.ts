@@ -10,7 +10,7 @@ import {
   type SummaryPort,
   type UsagePort,
   createContextSDK,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import { InvalidArgumentError } from "commander";
 import type { Command } from "commander";
 import { openMetrics } from "./metrics";

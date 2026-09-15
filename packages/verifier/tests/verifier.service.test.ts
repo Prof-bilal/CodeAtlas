@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import type { ClaimCheckInput, VerifyConfig } from "@atlas/core";
+import type { ClaimCheckInput, VerifyConfig } from "@prof-bilal/atlas-core";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createVerifierService } from "../src/verifier.service.js";
 

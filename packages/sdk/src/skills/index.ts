@@ -1,11 +1,11 @@
-// @atlas/sdk — Skills service (ADR-022)
+// @prof-bilal/atlas-sdk — Skills service (ADR-022)
 //
-// Composes the @atlas/toolkit skills loader behind SkillPort.
+// Composes the @prof-bilal/atlas-toolkit skills loader behind SkillPort.
 // Default root is process.cwd(); reads from .codeatlas/skills/ by default.
 
 import { join } from "node:path";
-import type { DiscoveredSkill, RenderOptions, Skill, SkillError, SkillPort } from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+import type { DiscoveredSkill, RenderOptions, Skill, SkillError, SkillPort } from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import {
   discoverSkills,
   listBuiltinSkills,
@@ -15,7 +15,7 @@ import {
   renderSkillInstructions,
   resolveSkillForTask,
   validateBuiltinSkill,
-} from "@atlas/toolkit";
+} from "@prof-bilal/atlas-toolkit";
 import { addCustomSkill, createCustomSkill } from "./authoring";
 import { SKILLS_SUBDIR } from "./constants";
 

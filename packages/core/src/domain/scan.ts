@@ -1,4 +1,4 @@
-import type { FilePath } from "@atlas/shared";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 
 /**
  * A single file discovered during a project scan. No file contents are read;

@@ -7,7 +7,7 @@
  * no IO — the same input always yields the same output.
  */
 
-import type { ContextTier, LineRange } from "@atlas/core";
+import type { ContextTier, LineRange } from "@prof-bilal/atlas-core";
 
 /**
  * Budget-consumption priority by tier (lower = consumed/kept first):

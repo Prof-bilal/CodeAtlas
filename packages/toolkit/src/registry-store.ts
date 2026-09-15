@@ -1,4 +1,4 @@
-import type { ToolRegistryRecord, ToolRegistrySource } from "@atlas/core";
+import type { ToolRegistryRecord, ToolRegistrySource } from "@prof-bilal/atlas-core";
 import type { ToolRegistryCatalog } from "./schema";
 
 /** Options for constructing a {@link RegistryStore}. */

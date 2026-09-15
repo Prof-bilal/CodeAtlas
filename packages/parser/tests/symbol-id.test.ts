@@ -1,5 +1,5 @@
-import type { SymbolLocation } from "@atlas/core";
-import type { FilePath } from "@atlas/shared";
+import type { SymbolLocation } from "@prof-bilal/atlas-core";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { createSymbolId } from "../src/symbol-id";
 

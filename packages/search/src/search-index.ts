@@ -1,4 +1,4 @@
-import type { ContextSnapshot } from "@atlas/core";
+import type { ContextSnapshot } from "@prof-bilal/atlas-core";
 
 /**
  * A denormalized, language-agnostic record in the search index. One entry per

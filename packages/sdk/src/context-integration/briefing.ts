@@ -1,21 +1,21 @@
-import { CacheService } from "@atlas/cache";
+import { CacheService } from "@prof-bilal/atlas-cache";
 import type {
   ProviderPort,
   ProviderRequest,
   SummaryContent,
   SummaryMetadata,
   UsagePort,
-} from "@atlas/core";
-import { HashService } from "@atlas/hashing";
-import type { CacheKey, Result } from "@atlas/shared";
-import { fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { HashService } from "@prof-bilal/atlas-hashing";
+import type { CacheKey, Result } from "@prof-bilal/atlas-shared";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 import {
   SYSTEM_JSON_INSTRUCTION,
   parseSummaryContent,
   render,
   truncateContent,
-} from "@atlas/summary";
-import { withUsageTracking } from "@atlas/usage";
+} from "@prof-bilal/atlas-summary";
+import { withUsageTracking } from "@prof-bilal/atlas-usage";
 import { createProviderService } from "../providers/index";
 
 /** Default prompt: turn the assembled context package into a task briefing. */

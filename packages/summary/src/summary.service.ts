@@ -9,9 +9,9 @@ import type {
   SummaryMetadata,
   SummaryOptions,
   SummaryPort,
-} from "@atlas/core";
-import type { CacheKey, Result } from "@atlas/shared";
-import { fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import type { CacheKey, Result } from "@prof-bilal/atlas-shared";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 import { parseSummaryContent } from "./json";
 import {
   FILE_PROMPT_TEMPLATE,

@@ -6,8 +6,8 @@ import type {
   UsageEventInput,
   UsagePort,
   UsageRecord,
-} from "@atlas/core";
-import type { Result } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
 import { estimateTokens } from "./estimate";
 
 /** Extra correlation metadata attached by the caller at the collection seam. */

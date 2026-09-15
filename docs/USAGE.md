@@ -4,8 +4,8 @@ How CodeAtlas records, aggregates, budgets, and enforces **AI usage** (agent,
 provider, model, task, session, tokens, requests, latency, cost), and how the
 CLI exposes it. Complements [AI_PROVIDERS.md](./AI_PROVIDERS.md) (how calls are
 made) and [CLI.md](./CLI.md) (the command surface). The implementation lives in
-`@atlas/usage` behind the `UsagePort` contract in `@atlas/core`; consumers reach
-it through `@atlas/sdk` (`createUsageService`).
+`@prof-bilal/atlas-usage` behind the `UsagePort` contract in `@prof-bilal/atlas-core`; consumers reach
+it through `@prof-bilal/atlas-sdk` (`createUsageService`).
 
 > Everything here is **verified against the code**. The tri-state provenance
 > model below is the core invariant — never drop it or replace it with a plain
@@ -58,7 +58,7 @@ Both feed `normalizeEvent` → `UsagePort.record`, which persists a normalized
 Estimation is **never silent**: provider events may carry
 `estimatedInputTokens`/`estimatedOutputTokens` (produced by `withUsageTracking`
 only when the caller opts in via `{ estimateTokens: true }`). `estimateTokens`
-(`@atlas/usage`) derives a rough count from `request.prompt` / `response.content`
+(`@prof-bilal/atlas-usage`) derives a rough count from `request.prompt` / `response.content`
 (`Math.ceil(length / 4)`); such tokens carry `estimated` provenance and the
 `TOKEN_ESTIMATE_NOTE` note. Providers that report real usage always win.
 
@@ -66,8 +66,8 @@ only when the caller opts in via `{ estimateTokens: true }`). `estimateTokens`
 
 Records never contain prompts, API keys, or provider secrets; `taskRef` is a
 hash, never raw task text. The usage database (`.codeatlas/usage.db`) is a
-separate SQLite store from the context database (`@atlas/storage` owns the
-context DB; `@atlas/usage` owns usage persistence).
+separate SQLite store from the context database (`@prof-bilal/atlas-storage` owns the
+context DB; `@prof-bilal/atlas-usage` owns usage persistence).
 
 ---
 
@@ -75,7 +75,7 @@ context DB; `@atlas/usage` owns usage persistence).
 
 Two ways usage enters the store:
 
-- **`withUsageTracking`** (`@atlas/usage`, exported via `@atlas/sdk`) — a thin
+- **`withUsageTracking`** (`@prof-bilal/atlas-usage`, exported via `@prof-bilal/atlas-sdk`) — a thin
   wrapper around a provider call (`UsagePort` function or `ProviderPort.complete`
   call). Records a `provider` event with actual tokens (when reported) and
   optional estimation; supports `recordOnError`, `defaultProvider`, and an
@@ -152,18 +152,18 @@ or per-provider pricing adapter implements the same interface — no
 
 ## 6. On-disk storage & the SDK surface
 
-- **Store:** `UsageStore` (`@atlas/usage`) — SQLite via `node:sqlite`
-  (needs Node `>=22.5.0`), schema + migrations in `@atlas/usage` (usage /
+- **Store:** `UsageStore` (`@prof-bilal/atlas-usage`) — SQLite via `node:sqlite`
+  (needs Node `>=22.5.0`), schema + migrations in `@prof-bilal/atlas-usage` (usage /
   budget / limit tables via row/repository helpers). Defaults to `:memory:`.
-- **SDK:** `createUsageService({ filePath?, store?, pricing? })` (`@atlas/sdk` →
+- **SDK:** `createUsageService({ filePath?, store?, pricing? })` (`@prof-bilal/atlas-sdk` →
   `./usage/service.ts`) returns a fully-wired `UsagePort`. Consumers (CLI, MCP,
   agents) must use this — not the store or repositories directly.
 - **Errors:** `UsageError`, `UnknownPriceError`, `UsageLimitExceededError`
-  (carries the failing `LimitCheck`), all exported from `@atlas/usage` and
-  re-exported by `@atlas/sdk`.
+  (carries the failing `LimitCheck`), all exported from `@prof-bilal/atlas-usage` and
+  re-exported by `@prof-bilal/atlas-sdk`.
 - **Independently usable helpers:** `aggregateUsage`, `sumCost`, `sumTokens`,
   `combineSources`, `computeCost`, `estimateTokens`, `normalizeEvent`,
-  `StaticPricingSource` — exported from `@atlas/usage`. Note: `@atlas/sdk`
+  `StaticPricingSource` — exported from `@prof-bilal/atlas-usage`. Note: `@prof-bilal/atlas-sdk`
   re-exports only the subset above (it does **not** re-export `estimateTokens`;
   the SDK already exports a different `estimateTokens` from
   context-integration — ADR-008).
@@ -215,5 +215,5 @@ rendering is covered in `apps/cli/tests/cli.test.ts`. See
 
 > **Ground truth:** [CURRENT_STATE.md](./CURRENT_STATE.md) and
 > [FEATURE_STATUS.md](./FEATURE_STATUS.md) reflect what is actually implemented;
-> status tags for `@atlas/usage` live there. ADR-009 records the design
+> status tags for `@prof-bilal/atlas-usage` live there. ADR-009 records the design
 > decision behind this module.

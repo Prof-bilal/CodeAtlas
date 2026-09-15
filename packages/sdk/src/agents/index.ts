@@ -1,13 +1,13 @@
-import { AgentService, type AgentServiceOptions } from "@atlas/agents";
-import type { AgentMcpPort, AgentPort } from "@atlas/core";
-import type { Result } from "@atlas/shared";
-import { AgentMcpService, type AgentMcpServiceOptions } from "@atlas/toolkit";
+import { AgentService, type AgentServiceOptions } from "@prof-bilal/atlas-agents";
+import type { AgentMcpPort, AgentPort } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
+import { AgentMcpService, type AgentMcpServiceOptions } from "@prof-bilal/atlas-toolkit";
 
 /**
  * Build the agent connection layer (`AgentPort`): detects installed AI coding
  * CLIs (Claude Code, Gemini, Codex, OpenCode, …) and runs non-interactive
  * invocations of them. The CLI, MCP server, and VS Code extension reach the
- * agent layer through this SDK surface — never through `@atlas/agents` or
+ * agent layer through this SDK surface — never through `@prof-bilal/atlas-agents` or
  * `node:child_process` directly.
  *
  * The session manager (`createSessionManager`) is the higher-level
@@ -39,7 +39,7 @@ export function createAgentMcpService(options: CreateAgentMcpServiceOptions = {}
  * launch: no non-interactive run-mode flags (no `-p`) and no prompt argument,
  * so the CLI opens its own terminal UI. Extra provider-specific args
  * (`--model`, …) are still forwarded. Provider-specific binary names and flags
- * stay inside the `@atlas/agents` adapters; consumers (the VS Code chat panel)
+ * stay inside the `@prof-bilal/atlas-agents` adapters; consumers (the VS Code chat panel)
  * use this to spawn an interactive terminal without `if (provider === …)`.
  */
 export function buildInteractiveArgs(

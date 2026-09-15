@@ -1,8 +1,8 @@
-# @atlas/scanner
+# @prof-bilal/atlas-scanner
 
 Recursively scan a project directory and collect structured metadata.
 
-Implements `ScannerPort` from `@atlas/core`. This package is **metadata only** —
+Implements `ScannerPort` from `@prof-bilal/atlas-core`. This package is **metadata only** —
 it does not parse source code, invoke AI, or touch a database.
 
 ## Features
@@ -21,7 +21,7 @@ it does not parse source code, invoke AI, or touch a database.
 ## Usage
 
 ```ts
-import { scanProject } from "@atlas/scanner";
+import { scanProject } from "@prof-bilal/atlas-scanner";
 
 const result = await scanProject("/path/to/project" as FilePath);
 if (result.ok) {
@@ -56,7 +56,7 @@ Existing values are preserved where possible — notably `createdAt` is only set
 on first creation and never reset on later updates.
 
 ```ts
-import { scanProject, generateManifest } from "@atlas/scanner";
+import { scanProject, generateManifest } from "@prof-bilal/atlas-scanner";
 
 const result = await scanProject("/path/to/project");
 if (result.ok) {

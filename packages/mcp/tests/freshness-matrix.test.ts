@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync, unlinkSync, renameSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { indexProject } from "@atlas/sdk";
+import { indexProject } from "@prof-bilal/atlas-sdk";
 import { describe, expect, it } from "vitest";
 import { CodeAtlasContext } from "../src/context";
 import { silentLogger } from "./fixture";

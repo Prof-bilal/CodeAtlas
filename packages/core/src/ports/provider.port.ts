@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 
 /** Token counts for a single model call. */
 export interface TokenUsage {

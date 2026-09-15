@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import type { MeasuredQuantity, QuantitySource, UsageQuery, UsageRecord } from "@atlas/core";
+import type { MeasuredQuantity, QuantitySource, UsageQuery, UsageRecord } from "@prof-bilal/atlas-core";
 import { type Row, colBoolean, colNumber, colString, count } from "./row";
 import { StatementCache } from "./statement-cache";
 

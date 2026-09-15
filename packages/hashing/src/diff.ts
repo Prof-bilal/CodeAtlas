@@ -1,4 +1,4 @@
-import type { HashDiff, HashSnapshot } from "@atlas/core";
+import type { HashDiff, HashSnapshot } from "@prof-bilal/atlas-core";
 
 /**
  * Compare two {@link HashSnapshot}s and classify every known path as changed,

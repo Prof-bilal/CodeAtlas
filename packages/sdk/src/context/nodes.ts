@@ -1,19 +1,19 @@
-import type { ContextSnapshot } from "@atlas/core";
-import type { NodeId, SymbolId } from "@atlas/shared";
+import type { ContextSnapshot } from "@prof-bilal/atlas-core";
+import type { NodeId, SymbolId } from "@prof-bilal/atlas-shared";
 
 /**
  * Graph node-id helpers and snapshot label resolution for the Context SDK.
  *
- * The node-id scheme mirrors `@atlas/graph`, `@atlas/search`, and `@atlas/mcp`
+ * The node-id scheme mirrors `@prof-bilal/atlas-graph`, `@prof-bilal/atlas-search`, and `@prof-bilal/atlas-mcp`
  * without importing any of them (the SDK cannot import feature packages).
  */
 
-/** Graph node id for a file (mirrors `@atlas/graph` without importing it). */
+/** Graph node id for a file (mirrors `@prof-bilal/atlas-graph` without importing it). */
 export function fileNodeId(path: string): NodeId {
   return `n:file:${path.replace(/\\/g, "/")}` as NodeId;
 }
 
-/** Graph node id for a symbol (mirrors `@atlas/graph` without importing it). */
+/** Graph node id for a symbol (mirrors `@prof-bilal/atlas-graph` without importing it). */
 export function symbolNodeId(symbolId: SymbolId): NodeId {
   return `n:${symbolId}` as NodeId;
 }

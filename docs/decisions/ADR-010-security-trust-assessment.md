@@ -2,12 +2,12 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-12
-- **Scope:** `@atlas/core`, `@atlas/toolkit`, `@atlas/sdk`
+- **Scope:** `@prof-bilal/atlas-core`, `@prof-bilal/atlas-toolkit`, `@prof-bilal/atlas-sdk`
 
 ## Decision
 
-Task 24 adds `SecurityPort` in `@atlas/core` and a pure, offline
-`SecurityAssessor` in `@atlas/toolkit`. The assessor evaluates metadata and
+Task 24 adds `SecurityPort` in `@prof-bilal/atlas-core` and a pure, offline
+`SecurityAssessor` in `@prof-bilal/atlas-toolkit`. The assessor evaluates metadata and
 manifest-derived inputs with per-check verdicts, an overall risk level, and
 exactly five trust states: `verified`, `reviewed`, `community`, `unverified`,
 and `blocked`.

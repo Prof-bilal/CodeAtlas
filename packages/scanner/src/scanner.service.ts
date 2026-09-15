@@ -8,9 +8,9 @@ import type {
   ScannedFile,
   ScannerPort,
   SourceFile,
-} from "@atlas/core";
-import type { FilePath, Result } from "@atlas/shared";
-import { fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import type { FilePath, Result } from "@prof-bilal/atlas-shared";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 import { type FrameworkSignals, detectFramework } from "./framework";
 import {
   GITIGNORE_FILE_NAME,
@@ -72,7 +72,7 @@ async function readJson(path: string): Promise<Readonly<Record<string, unknown>>
  * Recursively scan a project directory and collect metadata using the default
  * configuration.
  *
- * This is the convenience entry point of `@atlas/scanner`. No parsing, AI, or
+ * This is the convenience entry point of `@prof-bilal/atlas-scanner`. No parsing, AI, or
  * persistence is performed — the result is metadata only.
  *
  * @param rootPath - Absolute path of the project root to scan.
@@ -86,7 +86,7 @@ export async function scanProject(rootPath: FilePath): Promise<Result<ProjectSca
 /**
  * Discover the filesystem layout of a project.
  *
- * Implements {@link ScannerPort} from `@atlas/core`.
+ * Implements {@link ScannerPort} from `@prof-bilal/atlas-core`.
  */
 export class ScannerService implements ScannerPort {
   private readonly ignored: readonly string[] = DEFAULT_IGNORED_DIRECTORIES;

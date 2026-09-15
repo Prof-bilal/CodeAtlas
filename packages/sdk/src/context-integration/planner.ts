@@ -20,7 +20,7 @@ import type {
   PlannerPort,
   TaskClassification,
   VerificationStrategy,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 import type { ContextSDK } from "../context/sdk";
 
 // ── Constants ──────────────────────────────────────────────────────────────

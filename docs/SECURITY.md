@@ -107,7 +107,7 @@ Belt-and-braces on anything that touches a shell, a path, or the network.
 
 ## 6. MCP exposure
 
-`@atlas/mcp` exposes *context* to external agents over stdio (see `docs/MCP.md`):
+`@prof-bilal/atlas-mcp` exposes *context* to external agents over stdio (see `docs/MCP.md`):
 
 - All seven tools are **read-only** today: they query the persisted index
   (`search_*`, `get_dependencies`, `explain_module`, `project_overview`,

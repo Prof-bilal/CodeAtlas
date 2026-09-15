@@ -1,4 +1,4 @@
-import type { InstallRollbackStatus } from "@atlas/core";
+import type { InstallRollbackStatus } from "@prof-bilal/atlas-core";
 
 /** Base class for all Tool Installer (Task 22) errors. */
 export class InstallerError extends Error {

@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 import type { SearchHitKind, SearchResult } from "./context-db.port";
 
 /** Options for {@link SearchPort.search}. */
@@ -16,7 +16,7 @@ export interface SearchRequest {
 /**
  * Ranked, deterministic search over the indexed context.
  *
- * Implemented by `@atlas/search`, which builds an in-memory index from a
+ * Implemented by `@prof-bilal/atlas-search`, which builds an in-memory index from a
  * `ContextSnapshot` (files, symbols, modules, dependencies, summaries) and
  * scores every kind against the query. Ranking is lexical today; an embedding
  * scorer can be plugged in behind the search service's scorer seam without

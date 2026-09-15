@@ -7,7 +7,7 @@ import {
   createContextSDK,
   createSessionManager,
   createUsageService,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { contextDbPath } from "./search";
 import { formatMeasured, usageDbPath } from "./usage";

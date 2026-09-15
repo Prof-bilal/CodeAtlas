@@ -12,7 +12,7 @@
  * but the default path is entirely rule-based.
  */
 
-import type { ContextTaskCategory, TaskClassification } from "@atlas/core";
+import type { ContextTaskCategory, TaskClassification } from "@prof-bilal/atlas-core";
 import { extractTaskEntities } from "./entities";
 
 // ── Keyword patterns per category ──────────────────────────────────────────

@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/summary",
+  "name": "@prof-bilal/atlas-summary",
   "version": "0.5.0",
   "description": "AI summary engine for CodeAtlas.",
   "type": "module",
@@ -26,11 +26,11 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@atlas/core": "workspace:*",
-    "@atlas/shared": "workspace:*"
+    "@prof-bilal/atlas-core": "workspace:*",
+    "@prof-bilal/atlas-shared": "workspace:*"
   },
   "devDependencies": {
-    "@atlas/hashing": "workspace:*"
+    "@prof-bilal/atlas-hashing": "workspace:*"
   },
   "license": "MIT",
   "repository": {

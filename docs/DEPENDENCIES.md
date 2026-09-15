@@ -1,7 +1,7 @@
 # CodeAtlas Dependency Rules & Policy
 
 Two things are covered here: **(1)** the allowed dependency direction between
-`@atlas/*` packages (enforced by ESLint), and **(2)** the policy for adding new
+`@prof-bilal/atlas-*` packages (enforced by ESLint), and **(2)** the policy for adding new
 dependencies (any package manager).
 
 ---
@@ -30,9 +30,9 @@ The rules below are enforced by ESLint `no-restricted-imports` (see
 | `toolkit`  | core, shared                                                   | everything else |
 | `verifier` | core, shared, storage                                          | everything else |
 | `sdk`      | shared, core, hashing, scanner, parser, storage, graph, context, cache, providers, summary, search, usage, agents *(`agents` was added when the SDK composed the connection layer for the session manager — ADR-007; `usage` when it composed the usage service — ADR-009)* | — |
-| `cli`      | `sdk`, `mcp`, `benchmark` *(benchmark runners for `atlas benchmark`)* | every other `@atlas/*` feature package |
-| `server`   | `sdk`, `mcp`, `benchmark` *(Benchmark API composition root, ADR-013)* | every other `@atlas/*` feature package |
-| `mcp`      | `sdk`                                                          | every `@atlas/*` feature package |
+| `cli`      | `sdk`, `mcp`, `benchmark` *(benchmark runners for `atlas benchmark`)* | every other `@prof-bilal/atlas-*` feature package |
+| `server`   | `sdk`, `mcp`, `benchmark` *(Benchmark API composition root, ADR-013)* | every other `@prof-bilal/atlas-*` feature package |
+| `mcp`      | `sdk`                                                          | every `@prof-bilal/atlas-*` feature package |
 
 Rules that follow:
 
@@ -41,27 +41,27 @@ Rules that follow:
    classes; the **SDK** composes them.
 3. **`cli` touches the SDK, MCP, and the benchmark package only.** The CLI must never import
    `parser`, `scanner`, etc. Its additional allowed dependencies are
-   `@atlas/mcp` (so it can start the MCP server, `atlas mcp`) and
-   `@atlas/benchmark` (benchmark runners for `atlas benchmark`) — MCP itself
-   imports only `@atlas/sdk`, and so does the VS Code extension
-   (`apps/extension` / `@atlas/extension`). Future editor integrations will
+   `@prof-bilal/atlas-mcp` (so it can start the MCP server, `atlas mcp`) and
+   `@prof-bilal/atlas-benchmark` (benchmark runners for `atlas benchmark`) — MCP itself
+   imports only `@prof-bilal/atlas-sdk`, and so does the VS Code extension
+   (`apps/extension` / `@prof-bilal/atlas-extension`). Future editor integrations will
    follow the same rule (SDK only). The Benchmark API server
-   (`apps/server` / `@atlas/server`, ADR-013) mirrors the CLI's allowance:
+   (`apps/server` / `@prof-bilal/atlas-server`, ADR-013) mirrors the CLI's allowance:
    `sdk` + `mcp` + `benchmark`, nothing else.
 4. Feature packages **implement** `core` ports; they never depend on concrete
    classes from other feature packages.
-5. **`@atlas/usage`** (Usage & Credits) is a feature package: it may import
+5. **`@prof-bilal/atlas-usage`** (Usage & Credits) is a feature package: it may import
    **only** `core` + `shared`; the SDK composes it as `createUsageService()` and
    consumers (CLI) reach it via the SDK, never the store/repositories directly.
    See [USAGE.md](./USAGE.md) + ADR-009.
-6. **`@atlas/toolkit`** (Agent Toolkit) is a feature package: it imports
+6. **`@prof-bilal/atlas-toolkit`** (Agent Toolkit) is a feature package: it imports
    **only** `core` + `shared` (the Registry, Manifest, Compatibility Engine,
   Installer, Configurator, and Security/Trust are implemented),
    reads CodeAtlas context through the **Context
-   SDK**/port seams, and is composed behind its ports by `@atlas/sdk`
+   SDK**/port seams, and is composed behind its ports by `@prof-bilal/atlas-sdk`
    (`createToolRegistry`).
    `atlas tools configure` and future `atlas tools`/`atlas setup` commands delegate to the SDK and must
-   **not** import `@atlas/toolkit` directly. See
+   **not** import `@prof-bilal/atlas-toolkit` directly. See
    [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) + [TOOL_REGISTRY.md](./TOOL_REGISTRY.md)
    + [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
 7. **Cross-package types** are imported with `import type` to avoid runtime
@@ -77,9 +77,9 @@ Database → CLI          ✗ (storage has no UI knowledge)
 AI → Scanner            ✗ (summaries consume scanner output, never control it)
 ```
 
-> The **one documented exception** in the current code: `@atlas/graph` keeps a
+> The **one documented exception** in the current code: `@prof-bilal/atlas-graph` keeps a
 > copy of module-path resolution (`module-resolution.ts`) that also exists in
-> `@atlas/parser` — a deliberate decoupling so graph never imports parser at
+> `@prof-bilal/atlas-parser` — a deliberate decoupling so graph never imports parser at
 > runtime. If a shared home is ever introduced in `core`, that duplication
 > should be removed.
 
@@ -100,7 +100,7 @@ every question:
 5. **Does it meaningfully increase project complexity?** Small, focused
    utilities are fine; framework bundles are not.
 6. **Does it duplicate existing functionality?** e.g. a "cache library" when
-   `@atlas/cache` exists, or a command parser when `commander` is already
+   `@prof-bilal/atlas-cache` exists, or a command parser when `commander` is already
    declared.
 
 Do **not** install packages simply because they are popular.

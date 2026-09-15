@@ -1,7 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { TaskDefinition } from "@atlas/core";
+import type { TaskDefinition } from "@prof-bilal/atlas-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { citedPathCandidates, evaluateTask, hallucinatedPaths, wrongFiles } from "../src/evaluator";
 

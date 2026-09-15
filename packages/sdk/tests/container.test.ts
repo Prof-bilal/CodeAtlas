@@ -11,8 +11,8 @@ import type {
   StoragePort,
   // biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
   Symbol,
-} from "@atlas/core";
-import type { FilePath, SymbolId } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import type { FilePath, SymbolId } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { Container, createProjectContainer } from "../src/container";
 

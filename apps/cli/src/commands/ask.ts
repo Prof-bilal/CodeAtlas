@@ -1,13 +1,13 @@
 import { existsSync } from "node:fs";
 import { copyFile } from "node:fs/promises";
-import type { ContextIntegration, ContextPlan, ContextSlice, TaskClassification } from "@atlas/sdk";
+import type { ContextIntegration, ContextPlan, ContextSlice, TaskClassification } from "@prof-bilal/atlas-sdk";
 import {
   createClassifier,
   createContextSDK,
   createPlanner,
   renderContextSlice,
   saveContextSlice,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { withIntegration } from "./context";
 import { contextDbPath, resolveProjectRoot } from "./search";

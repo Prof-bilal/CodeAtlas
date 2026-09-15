@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import type { FilePath } from "@atlas/shared";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import {
   MANIFEST_DIR_NAME,

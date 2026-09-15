@@ -1,5 +1,5 @@
-import type { ToolRegistryPort } from "@atlas/core";
-import { loadRegistry } from "@atlas/toolkit";
+import type { ToolRegistryPort } from "@prof-bilal/atlas-core";
+import { loadRegistry } from "@prof-bilal/atlas-toolkit";
 
 /** Options for {@link createToolRegistry}. */
 export interface CreateToolRegistryOptions {

@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { type ContextSDK, type MetricsPort, type UsagePort, createContextSDK } from "@atlas/sdk";
+import { type ContextSDK, type MetricsPort, type UsagePort, createContextSDK } from "@prof-bilal/atlas-sdk";
 import { FreshnessController, type FreshnessReport } from "./freshness";
 import { ToolDomainError } from "./validation";
 

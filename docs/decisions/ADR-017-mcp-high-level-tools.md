@@ -4,7 +4,7 @@ Date: 2026-08-30 · Status: Accepted (Phase 3, small-model intelligence audit)
 
 ## Context
 
-The MCP server (`@atlas/mcp`) currently exposes 7 low-level tools:
+The MCP server (`@prof-bilal/atlas-mcp`) currently exposes 7 low-level tools:
 `search_symbols`, `search_files`, `get_summary`, `get_dependencies`,
 `explain_module`, `project_overview`, `read_file_range`. These are
 fine-grained building blocks that require the calling model to orchestrate

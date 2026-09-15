@@ -10,8 +10,8 @@ import type {
   ConfigurationTarget,
   ConfigurationTargetCheck,
   ConfigureOutcome,
-} from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import {
   type ConfigFormat,
   type ConfigWriter,
@@ -24,7 +24,7 @@ import {
 } from "./configurator-adapter";
 
 export interface AgentMcpServiceOptions {
-  /** Agent detection (`@atlas/agents`), injected exactly like the tool
+  /** Agent detection (`@prof-bilal/atlas-agents`), injected exactly like the tool
    *  Configurator — never reimplemented here. */
   readonly agentPort: AgentPort;
   /** Project root the server entry's `ATLAS_ROOT` env points at. */

@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { SessionStateError } from "@atlas/agents";
+import { SessionStateError } from "@prof-bilal/atlas-agents";
 import type {
   ContextData,
   Symbol as CoreSymbol,
@@ -9,9 +9,9 @@ import type {
   SessionPort,
   SourceFile,
   Summary,
-} from "@atlas/core";
-import { type FilePath, type NodeId, type SymbolId, fail, ok } from "@atlas/shared";
-import { ContextStore } from "@atlas/storage";
+} from "@prof-bilal/atlas-core";
+import { type FilePath, type NodeId, type SymbolId, fail, ok } from "@prof-bilal/atlas-shared";
+import { ContextStore } from "@prof-bilal/atlas-storage";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   type BriefingPort,

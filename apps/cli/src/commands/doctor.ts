@@ -10,7 +10,7 @@ import type {
   ProviderStatus,
   ToolkitSDK,
   WardenStatus,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import {
   createAgentMcpService,
   createAgentService,
@@ -21,7 +21,7 @@ import {
   createSkillService,
   createToolkitSDK,
   createWardenService,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { contextDbPath, resolveProjectRoot } from "./search";
 

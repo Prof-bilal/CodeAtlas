@@ -562,7 +562,7 @@ Date: 2026-09-14 · Status: Implemented (ADR-022 ch.5 delivery path).
 
 ### 15.1 What was added
 
-- SDK (`@atlas/sdk`): `resolveSkillInstructions(id)` + `resolveSkillsInstructions(ids)`
+- SDK (`@prof-bilal/atlas-sdk`): `resolveSkillInstructions(id)` + `resolveSkillsInstructions(ids)`
   in the skills service — one id (or an ordered, deduplicated list) resolves
   through the existing SkillPort: project custom Skills
   (`.codeatlas/skills/`) first, then first-party built-ins. Unknown ids return
@@ -645,7 +645,7 @@ matches an available skill:
 ### 15.6 Same recommendation in `atlas context build`
 
 Implemented 2026-09-14. The CLI build path uses the same shared SDK helper
-(`recommendSkillsForTask` moved into `@atlas/sdk` so CLI and MCP share one
+(`recommendSkillsForTask` moved into `@prof-bilal/atlas-sdk` so CLI and MCP share one
 implementation):
 
 - Text output appends a compact **Recommended Skills** section (id, source,

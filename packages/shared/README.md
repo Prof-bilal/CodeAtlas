@@ -1,8 +1,8 @@
-# @atlas/shared
+# @prof-bilal/atlas-shared
 
 The dependency-free foundation of CodeAtlas. This package owns the **base
 types**, **constants**, and tiny **shared utilities** that every other package
-relies on. It must never import from another `@atlas/*` package.
+relies on. It must never import from another `@prof-bilal/atlas-*` package.
 
 ## Contents
 
@@ -16,5 +16,5 @@ relies on. It must never import from another `@atlas/*` package.
 
 ## Rules
 
-- No dependencies on other `@atlas/*` packages.
+- No dependencies on other `@prof-bilal/atlas-*` packages.
 - No business logic — only what everyone else needs.

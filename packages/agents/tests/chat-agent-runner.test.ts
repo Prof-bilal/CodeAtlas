@@ -1,5 +1,5 @@
-import type { ProviderPort, ProviderResponse } from "@atlas/core";
-import { fail, ok } from "@atlas/shared";
+import type { ProviderPort, ProviderResponse } from "@prof-bilal/atlas-core";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { ProviderChatAgent } from "../src/chat-agent-runner";
 

@@ -74,7 +74,7 @@ package so the model has a structured scaffold.
 
 - Purely additive — no storage schema change, no breaking change to
   `ContextBuilderPort` (ADR-001 seam intact).
-- The classifier and planner are composed in `@atlas/sdk` behind these
+- The classifier and planner are composed in `@prof-bilal/atlas-sdk` behind these
   ports, following the existing pattern (SDK owns composition, core owns
   contracts).
 - Future phases (P4 verification, P5 iterative loop, P6 critic) build on

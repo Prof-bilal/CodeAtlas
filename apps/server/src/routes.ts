@@ -1,8 +1,8 @@
 import { existsSync, statSync } from "node:fs";
 import { basename } from "node:path";
-import { BenchmarkService, BenchmarkStore } from "@atlas/benchmark";
-import type { BenchmarkRunner } from "@atlas/benchmark";
-import type { BenchmarkMode } from "@atlas/sdk";
+import { BenchmarkService, BenchmarkStore } from "@prof-bilal/atlas-benchmark";
+import type { BenchmarkRunner } from "@prof-bilal/atlas-benchmark";
+import type { BenchmarkMode } from "@prof-bilal/atlas-sdk";
 import { ApiError, type Route, type RouteHandler } from "./app";
 import {
   buildStats,

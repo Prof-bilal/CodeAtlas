@@ -1,5 +1,5 @@
-import type { ProviderPort, ProviderResponse, ToolCall } from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+import type { ProviderPort, ProviderResponse, ToolCall } from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { SearchMemory, ToolUsingChatAgent, inspectResult } from "../src/context-tools/tool-loop";
 import type { ToolLoopConfig } from "../src/context-tools/tool-loop";

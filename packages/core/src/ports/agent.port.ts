@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 
 /**
  * The "Agent Interface" contract for the Unified AI CLI Orchestrator (Direction B).

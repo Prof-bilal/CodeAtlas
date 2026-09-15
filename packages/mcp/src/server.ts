@@ -1,4 +1,4 @@
-import { VERSION } from "@atlas/sdk";
+import { VERSION } from "@prof-bilal/atlas-sdk";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";

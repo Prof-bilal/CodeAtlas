@@ -40,7 +40,7 @@ Options take precedence over environment/config where they overlap.
 | `atlas update` | **[implemented]** | Incrementally update an existing index via the SDK indexer: reuse hashes, re-parse and merge only `changed`/`added` files, drop `deleted` files. No-op when nothing changed. `--summaries` generates AI summaries for the re-parsed files only. |
 | `atlas scan` | **[implemented]** | Show a hierarchical overview of a project tree (files, folders, languages, framework) with **no indexing** — metadata only, via `scanProjectOverview()` from the SDK. Options: `--repo <path>`, `--json`. |
 | `atlas search <query...>` | **[implemented]** | Search the index (symbols, files, modules, dependencies, summaries) with ranked, fuzzy-aware results. Options: `repo <path>`, `limit <n>`, `type <kind>` (repeatable), `no-fuzzy`, `json`, `--ai`. `--ai` additionally generates (or reuses stored) AI summaries for the **top 5 file hits** via `summaries.generateFile` — explicit opt-in, content-hash cached, fails cleanly without a configured provider; deterministic hits are unchanged. Reads `.codeatlas/context.db` via the **Context SDK** (`createContextSDK` — see [CONTEXT_SDK.md](./CONTEXT_SDK.md)); errors with exit code `1` when no index exists. |
-| `atlas mcp` | **[implemented]** | Start the **MCP server** over stdio for the current project (option `--root <path>` overrides `ATLAS_ROOT`/cwd). `@atlas/mcp` tools read context through the Context SDK. See [MCP.md](./MCP.md). |
+| `atlas mcp` | **[implemented]** | Start the **MCP server** over stdio for the current project (option `--root <path>` overrides `ATLAS_ROOT`/cwd). `@prof-bilal/atlas-mcp` tools read context through the Context SDK. See [MCP.md](./MCP.md). |
 | `atlas sessions` / `atlas sessions list` | **[implemented]** | List tracked AI agent sessions (table). |
 | `atlas sessions info <id>` | **[implemented]** | Show details for one session (provider, status, repository, pid, started/ended, exit code). Never prints keys/env. |
 | `atlas sessions stop <id>` | **[implemented]** | Gracefully stop a running session (`✓ Session stopped`), then print a **token-impact** report: tokens the session burned (usage records scoped to its session id, read from `.codeatlas/usage.db`), the estimated "without CodeAtlas" baseline (whole-repo source tokens = indexed file bytes ÷ 4), and tokens saved. Tri-state: `unknown` when a figure has no data. `--ai`-free, deterministic. Missing/bad id exits `1` with a message. Sessions are created programmatically via the SDK (`createSessionManager`) or `atlas context launch`. |
@@ -69,7 +69,7 @@ Options take precedence over environment/config where they overlap.
 | `atlas ollama disconnect` | **[implemented]** | Clear the saved Ollama connection (env keys kept). |
 | `atlas ollama models` | **[implemented]** | List models exposed by the Ollama server. `--json` supported. |
 | `atlas ollama use <model>` | **[implemented]** | Select the active Ollama model for context summarization. |
-| `atlas benchmark` | **[implemented]** parent command | Context-quality benchmark framework (`@atlas/benchmark` behind `BenchmarkPort`, ADR-012 — see [benchmark.md](./benchmark.md)). |
+| `atlas benchmark` | **[implemented]** parent command | Context-quality benchmark framework (`@prof-bilal/atlas-benchmark` behind `BenchmarkPort`, ADR-012 — see [benchmark.md](./benchmark.md)). |
 | `atlas benchmark init` | **[implemented]** | Create a suite (`--id`, `--name`, `--agent opencode\|ollama`, `--model`, plus `--repo` for a starter task file or `--task-file` to import one). |
 | `atlas benchmark run <suite>` | **[implemented]** | Run tasks in baseline + codeatlas modes (`--repo` required; `--task`, `--mode`, `--force` optional). Resumes completed runs; auto-indexes unindexed repos before codeatlas runs. |
 | `atlas benchmark status <suite>` | **[implemented]** | Show suite progress (`completed/total`); `--json` supported. |
@@ -125,7 +125,7 @@ flags match `atlas context launch`: `--repo <path>`, `--json`,
 `--max-tokens-total <number>`, `--context-mode <mode>`,
 `--include-instructions`, `--no-instructions`, `--include-overview`,
 `--no-overview`, `--skill <id>` (repeatable, resolved before launch). These cover the agents that have a
-defined launch adapter (`@atlas/agents`); the interactive **slash surface**
+defined launch adapter (`@prof-bilal/atlas-agents`); the interactive **slash surface**
 (`/claude`, `/cursor`, `/grok`, …) inside `atlas tui` remains **v2 / not
 shipped** (untracked, see `atlas tui` above).
 
@@ -155,7 +155,7 @@ shipped** (untracked, see `atlas tui` above).
   `benchmark status/report`, `tools`, `skills`, `context`, `ask`, `verify`,
   `impact`, `trace`, `inspect`, `evaluate`, `warden`, `setup`, `browse`).
 - **No business logic in the CLI.** Commands parse args and delegate to the SDK.
-  The CLI imports only `@atlas/sdk` (enforced by eslint).
+  The CLI imports only `@prof-bilal/atlas-sdk` (enforced by eslint).
 - **Help text** is the contract of record for users; update it when the contract changes.
 
 ---
@@ -164,8 +164,8 @@ shipped** (untracked, see `atlas tui` above).
 
 ```text
 atlas search   → createContextSDK({ dbPath }) → context.search.search(...)
-atlas scan     → scanProjectOverview() → @atlas/scanner (metadata only)
-atlas mcp      → @atlas/mcp startStdioServer({ root })
+atlas scan     → scanProjectOverview() → @prof-bilal/atlas-scanner (metadata only)
+atlas mcp      → @prof-bilal/atlas-mcp startStdioServer({ root })
 atlas sessions → createSessionManager() → SessionPort (list/get/stop)
 atlas usage    → createUsageService({ filePath }) → UsagePort (summary/list/budgets)
 atlas context  → createContextIntegration() → Context SDK / Context Package /
@@ -190,7 +190,7 @@ atlas explain/doctor → createContextSDK(status/freshness/symbols/files/modules
                         `--ai` when a provider is configured
 ```
 
-Wired commands call exactly the SDK/`@atlas/mcp` surface they need and render
+Wired commands call exactly the SDK/`@prof-bilal/atlas-mcp` surface they need and render
 its results (text or `--json`); `atlas search` releases the SDK handle
 (`context.close()`) afterwards. A command that only prints success when nothing
 ran is a regression.

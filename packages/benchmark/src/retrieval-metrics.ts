@@ -9,9 +9,9 @@
 //
 // Deterministic: no AI, no network, same index + query ⇒ same numbers.
 
-import type { SearchRequest, SearchResult, TaskDefinition } from "@atlas/core";
+import type { SearchRequest, SearchResult, TaskDefinition } from "@prof-bilal/atlas-core";
 
-/** Minimal local type for the Context SDK — avoids a forbidden `@atlas/sdk` import. */
+/** Minimal local type for the Context SDK — avoids a forbidden `@prof-bilal/atlas-sdk` import. */
 export interface ContextSDK {
   readonly isAvailable: boolean;
   readonly search: {

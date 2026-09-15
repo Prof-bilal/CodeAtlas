@@ -1,6 +1,6 @@
-export { VERSION } from "@atlas/shared";
-export type { FilePath, Result } from "@atlas/shared";
-export { estimateTokens, fail, ok } from "@atlas/shared";
+export { VERSION } from "@prof-bilal/atlas-shared";
+export type { FilePath, Result } from "@prof-bilal/atlas-shared";
+export { estimateTokens, fail, ok } from "@prof-bilal/atlas-shared";
 export type {
   ContextSnapshot,
   PersistedDependency,
@@ -13,7 +13,7 @@ export type {
   SummaryKind,
   SummaryPort,
   Symbol,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export type {
   ConfiguratorPort,
   ConfiguratorRequest,
@@ -24,18 +24,18 @@ export type {
   ConfigurationTargetFailure,
   ConfigurationVerification,
   ConfigureOutcome,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export type {
   ContextPlan,
   PlannerPort,
   PlanStep,
   VerificationStrategy,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export type {
   TaskClassifierPort,
   TaskClassification,
   TaskClassifierEntities,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export {
   Container,
   createProjectContainer,
@@ -60,7 +60,7 @@ export type {
   BrowseKey,
   BrowsePort,
   BrowseViewport,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export { createWardenService } from "./warden";
 export type {
   WardenRunPlan,
@@ -83,7 +83,7 @@ export type {
   ProjectScan,
   ToolDefinition,
   ContextTaskCategory,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export {
   createContextSDK,
   resolveContextConfig,
@@ -154,13 +154,13 @@ export {
   MAX_TOOL_RESULT_CHARS,
   evaluateToolCallPolicy,
 } from "./context-tools/index";
-export { ProviderChatAgent } from "@atlas/agents";
+export { ProviderChatAgent } from "@prof-bilal/atlas-agents";
 export type {
   ChatAgentPort,
   ChatAgentRequest,
   ChatAgentResult,
   ProviderPort,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export {
   createAgentService,
   buildInteractiveArgs,
@@ -176,8 +176,8 @@ export type {
   AgentPort,
   AgentRunRequest,
   AgentRunResult,
-} from "@atlas/core";
-export type { AgentServiceOptions } from "@atlas/agents";
+} from "@prof-bilal/atlas-core";
+export type { AgentServiceOptions } from "@prof-bilal/atlas-agents";
 export {
   createUsageService,
   type CreateUsageServiceOptions,
@@ -196,7 +196,7 @@ export type {
   OllamaStatus,
   ProviderOverview,
 } from "./providers/index";
-export type { ProviderStatus } from "@atlas/providers";
+export type { ProviderStatus } from "@prof-bilal/atlas-providers";
 export {
   createToolRegistry,
   type CreateToolRegistryOptions,
@@ -223,27 +223,27 @@ export {
   withUsageTracking,
   trackAgentRun,
   StaticPricingSource,
-} from "@atlas/usage";
-export type { TrackingContext, WithUsageTrackingOptions } from "@atlas/usage";
+} from "@prof-bilal/atlas-usage";
+export type { TrackingContext, WithUsageTrackingOptions } from "@prof-bilal/atlas-usage";
 export {
   UsageError,
   UnknownPriceError,
   UsageLimitExceededError,
-} from "@atlas/usage";
+} from "@prof-bilal/atlas-usage";
 export {
   RegistryError,
   RegistryLoadError,
   RegistrySchemaVersionError,
   RegistryValidationError,
-} from "@atlas/toolkit";
+} from "@prof-bilal/atlas-toolkit";
 export {
   CompatibilityError,
   compatibilityStateGlyph,
   EnvironmentDetector,
   renderCompatibilityReport,
-} from "@atlas/toolkit";
-export { resolveSkillForTask } from "@atlas/toolkit";
-export type { SkillResolution } from "@atlas/toolkit";
+} from "@prof-bilal/atlas-toolkit";
+export { resolveSkillForTask } from "@prof-bilal/atlas-toolkit";
+export type { SkillResolution } from "@prof-bilal/atlas-toolkit";
 export {
   InstallApprovalDeniedError,
   InstallBlockedError,
@@ -253,7 +253,7 @@ export {
   InstallProcessError,
   InstallUnsupportedMethodError,
   InstallerError,
-} from "@atlas/toolkit";
+} from "@prof-bilal/atlas-toolkit";
 export type {
   CompatibilityCheck,
   CompatibilityEvaluationInput,
@@ -262,7 +262,7 @@ export type {
   CompatibilityRequirements,
   CompatibilityRuntime,
   CompatibilityState,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export type {
   InstallApproval,
   InstallerPort,
@@ -273,8 +273,8 @@ export type {
   InstallVerificationStatus,
   ToolInstallInstruction,
   ToolInstallRequest,
-} from "@atlas/core";
-export type { EnvironmentDetectorOptions } from "@atlas/toolkit";
+} from "@prof-bilal/atlas-core";
+export type { EnvironmentDetectorOptions } from "@prof-bilal/atlas-toolkit";
 export {
   createContextIntegration,
   type AttachInput,
@@ -402,7 +402,7 @@ export type {
   RoleStatus,
   RunStatus,
   TaskPlan,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export type {
   MetricsActivity,
   MetricsContextEvent,
@@ -417,7 +417,7 @@ export type {
   MetricsSnapshot,
   MetricsTokenEvent,
   MetricsTokens,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export type {
   Budget,
   BudgetInput,
@@ -440,7 +440,7 @@ export type {
   UsageRecord,
   UsageScope,
   UsageStatistics,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export type {
   FieldProvenance,
   InstallMethod,
@@ -456,7 +456,7 @@ export type {
   ToolSecurityStatusValue,
   ToolTier,
   ToolTrustLevel,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export type {
   SecurityAssessment,
   SecurityAssessmentInput,
@@ -466,13 +466,13 @@ export type {
   SecurityOverride,
   SecurityPort,
   SecurityRiskLevel,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export {
   InvalidRepositoryPathError,
   SessionError,
   SessionStateError,
   UnknownSessionError,
-} from "@atlas/agents";
+} from "@prof-bilal/atlas-agents";
 export {
   MetricsError,
   MetricsValidationError,
@@ -484,7 +484,7 @@ export {
   estimateTokens as estimateMetricTokens,
   calculateSavings,
   createEmptySnapshot,
-} from "@atlas/metrics";
+} from "@prof-bilal/atlas-metrics";
 export { createBenchmarkService } from "./benchmark";
 export type { CreateBenchmarkServiceOptions } from "./benchmark";
 export type {
@@ -510,7 +510,7 @@ export type {
   TaskFile,
   TokenMetrics,
   ToolCallRecord,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export type {
   ClaimCheck,
   ClaimCheckInput,
@@ -523,7 +523,7 @@ export type {
   VerifierPort,
   VerifyCommandConfig,
   VerifyConfig,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export type {
   CriticCheckCategory,
   CriticCheckInput,
@@ -534,9 +534,9 @@ export type {
   CriticPort,
   CriticVerdict,
   OutputContractCheck,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export { createVerifier, type VerifierServiceDeps } from "./verifier";
-export { loadVerifyConfig, VerifyConfigError } from "@atlas/verifier";
+export { loadVerifyConfig, VerifyConfigError } from "@prof-bilal/atlas-verifier";
 export {
   addCustomSkill,
   availableSkills,
@@ -566,7 +566,7 @@ export type {
   SkillManifest,
   SkillPort,
   SkillReference,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export {
   createInspectService,
   type CreateInspectServiceOptions,
@@ -575,7 +575,7 @@ export type {
   HttpProbeResult,
   HttpProbeTarget,
   InspectPort,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 export {
   createImpactService,
   type CreateImpactServiceOptions,

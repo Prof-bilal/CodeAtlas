@@ -1,4 +1,4 @@
-import type { Summary, SummaryKind } from "@atlas/core";
+import type { Summary, SummaryKind } from "@prof-bilal/atlas-core";
 import { type Row, colBoolean, colNumber, colString, count, parseJsonArray } from "./row";
 import { StatementCache } from "./statement-cache";
 

@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 
 /**
  * A single changed file or symbol in a diff.
@@ -97,7 +97,7 @@ export interface ImpactOptions {
 
 /**
  * Port for computing the blast radius of a change set.
- * Implemented in `@atlas/graph`, composed in `@atlas/sdk`.
+ * Implemented in `@prof-bilal/atlas-graph`, composed in `@prof-bilal/atlas-sdk`.
  */
 export interface ImpactPort {
   /**

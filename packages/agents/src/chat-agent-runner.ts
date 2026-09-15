@@ -1,5 +1,5 @@
-import type { ChatAgentPort, ChatAgentRequest, ChatAgentResult, ProviderPort } from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+import type { ChatAgentPort, ChatAgentRequest, ChatAgentResult, ProviderPort } from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);

@@ -36,15 +36,15 @@ The manifest records:
 - comments on unknown-but-well-formed fields, which are **preserved** so
   forward-compatible tools never lose data.
 
-It lives in `@atlas/toolkit` and mirrors the codebase's existing **Scanner
-manifest pattern** (`@atlas/scanner` `manifest.ts`): state sits **next to the
+It lives in `@prof-bilal/atlas-toolkit` and mirrors the codebase's existing **Scanner
+manifest pattern** (`@prof-bilal/atlas-scanner` `manifest.ts`): state sits **next to the
 project state in `.codeatlas/`**, so a future `atlas tools doctor` can
 reconcile what is expected vs. what is actually present.
 
 ## 2. Architecture
 
 ```
-Tool Manifest (@atlas/toolkit)
+Tool Manifest (@prof-bilal/atlas-toolkit)
     ├── manifest-schema.ts   — versioned schema + validate / serialize / parse
     ├── manifest.ts          — createToolManifest + .codeatlas/tools/ store
     └── errors.ts            — ManifestError + typed errors
@@ -64,9 +64,9 @@ Tool Manifest (@atlas/toolkit)
 
 ### Dependency rules
 
-Same as the Registry: `@atlas/toolkit` imports **only** `@atlas/core` +
-`@atlas/shared`. The manifest is a data/state layer that later Toolkit tasks
-(21–24) consume *within* `@atlas/toolkit`; the SDK exposes the higher-level
+Same as the Registry: `@prof-bilal/atlas-toolkit` imports **only** `@prof-bilal/atlas-core` +
+`@prof-bilal/atlas-shared`. The manifest is a data/state layer that later Toolkit tasks
+(21–24) consume *within* `@prof-bilal/atlas-toolkit`; the SDK exposes the higher-level
 installer and configurator services, while manifest persistence remains an
 internal toolkit data layer.
 
@@ -108,7 +108,7 @@ status + trust default to `unverified`, `verification` to `unverified`,
 
 ```text
 .codeatlas/
-├── manifest.json     # repo manifest (@atlas/scanner)          [IMPLEMENTED]
+├── manifest.json     # repo manifest (@prof-bilal/atlas-scanner)          [IMPLEMENTED]
 └── tools/
     ├── biome.json    # one Tool Manifest per installed tool     [IMPLEMENTED]
     └── <name>.json
@@ -176,7 +176,7 @@ Per [SECURITY.md](./SECURITY.md) and the Task 24 threat list:
 - **No context database** access — installed-tool state is plain JSON in
   `.codeatlas/tools/`.
 - `createToolManifest`/`saveToolManifest`/`loadToolManifest`/
-  `listInstalledTools` are exported from `@atlas/toolkit` and consumed by
+  `listInstalledTools` are exported from `@prof-bilal/atlas-toolkit` and consumed by
   Toolkit tasks; the full Task 25 `atlas tools` command surface is available
   through the SDK/CLI.
 - **No execution of anything in a manifest** (§6).

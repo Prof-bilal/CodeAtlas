@@ -1,6 +1,6 @@
-import type { SummaryContent } from "@atlas/core";
-import type { Result } from "@atlas/shared";
-import { fail, ok } from "@atlas/shared";
+import type { SummaryContent } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 
 /** Thrown (as a `Result` failure) when a model's output is not a valid summary. */
 export class SummaryParseError extends Error {

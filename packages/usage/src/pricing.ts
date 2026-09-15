@@ -1,6 +1,6 @@
-import type { ModelPrice, PricingSource } from "@atlas/core";
-import type { Result } from "@atlas/shared";
-import { fail, ok } from "@atlas/shared";
+import type { ModelPrice, PricingSource } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 import { UnknownPriceError } from "./errors";
 
 /** A static per-1M-token price entry for one model. */

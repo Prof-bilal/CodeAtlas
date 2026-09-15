@@ -4,7 +4,7 @@ import type {
   ModelPrice,
   QuantitySource,
   TokenUsageRecord,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 
 /**
  * Combine two provenance sources, "worst wins": `unknown` > `estimated` >

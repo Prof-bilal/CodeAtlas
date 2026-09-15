@@ -1,5 +1,5 @@
-import type { ProviderRequest, ProviderResponse } from "@atlas/core";
-import type { Result } from "@atlas/shared";
+import type { ProviderRequest, ProviderResponse } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
 
 /** The built-in provider ids. */
 export type ProviderName = "claude" | "openai" | "gemini" | "deepseek" | "ollama";

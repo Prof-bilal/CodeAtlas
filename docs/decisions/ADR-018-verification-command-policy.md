@@ -69,8 +69,8 @@ that governs how verification commands are spawned, validated, and sandboxed.
 
 ## Consequences
 
-- The verifier package (`@atlas/verifier`) is a new feature package behind
-  `VerifierPort` in `@atlas/core`. It follows the existing package pattern
+- The verifier package (`@prof-bilal/atlas-verifier`) is a new feature package behind
+  `VerifierPort` in `@prof-bilal/atlas-core`. It follows the existing package pattern
   (port in core, implementation in feature package, SDK composition).
 - The `.codeatlas/verify.json` config is opt-in: projects that don't have it
   get claim-only verification (no command spawning).

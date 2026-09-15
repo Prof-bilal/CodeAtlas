@@ -1,6 +1,6 @@
-import type { ProviderRequest, ProviderResponse, TokenUsage } from "@atlas/core";
-import type { Result } from "@atlas/shared";
-import { fail, ok } from "@atlas/shared";
+import type { ProviderRequest, ProviderResponse, TokenUsage } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 import type { ProviderAdapter, ProviderConfig } from "../adapter";
 import { ProviderNetworkError, ProviderRequestError } from "../errors";
 import { asObject, getNumber, getString, isOkStatus, usageFrom } from "../parse";

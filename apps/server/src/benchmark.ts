@@ -7,16 +7,16 @@ import {
   OpenCodeRunner,
   evaluateTask,
   scaffoldTaskFile,
-} from "@atlas/benchmark";
-import type { BenchmarkRunner } from "@atlas/benchmark";
-import { createContextToolSourceFromSDK } from "@atlas/mcp";
+} from "@prof-bilal/atlas-benchmark";
+import type { BenchmarkRunner } from "@prof-bilal/atlas-benchmark";
+import { createContextToolSourceFromSDK } from "@prof-bilal/atlas-mcp";
 import {
   ProviderChatAgent,
   ToolUsingChatAgent,
   createContextSDK,
   createProviderService,
   indexProject,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type {
   BenchmarkConfig,
   BenchmarkEvaluationEntry,
@@ -30,7 +30,7 @@ import type {
   ProviderPort,
   Result,
   TaskFile,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { JobContext } from "./jobs";
 
 // ---------------------------------------------------------------------------
@@ -451,7 +451,7 @@ function uniqueSuiteId(store: BenchmarkStore, base: string): string {
  * Per-task execution goes through `BenchmarkService.runTask` and the final
  * `runSuite` call takes the store's resume path (every result already exists),
  * which computes the aggregates and marks the suite completed — no changes to
- * `@atlas/benchmark` needed for progress reporting.
+ * `@prof-bilal/atlas-benchmark` needed for progress reporting.
  */
 export async function runBenchmarkJob(
   ctx: JobContext,

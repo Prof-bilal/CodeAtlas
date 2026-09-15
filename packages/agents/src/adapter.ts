@@ -1,4 +1,4 @@
-import type { AgentRunRequest } from "@atlas/core";
+import type { AgentRunRequest } from "@prof-bilal/atlas-core";
 
 /** The built-in agent provider ids (the "configured AI CLIs"). */
 export type AgentName = "claude" | "gemini" | "codex" | "opencode";

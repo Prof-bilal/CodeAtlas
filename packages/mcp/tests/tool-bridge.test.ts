@@ -1,4 +1,4 @@
-import type { ContextSDK } from "@atlas/sdk";
+import type { ContextSDK } from "@prof-bilal/atlas-sdk";
 import { describe, expect, it } from "vitest";
 import type { HandlerContext } from "../src/handlers";
 import { createLogger } from "../src/log";

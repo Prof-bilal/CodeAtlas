@@ -151,20 +151,20 @@ html{scroll-behavior:smooth}
 <section id="architecture">
 <h2>3. Architecture</h2>
 <div class="highlight blue">
-<p><strong>Dependency direction is untouched:</strong> <code>cli → sdk → feature packages → core → shared</code>. The harness lives in <code>apps/cli</code> (<code>src/tui/</code>), consumes <strong>only</strong> <code>@atlas/sdk</code> (plus <code>@atlas/mcp</code> for MCP surface), and every AI-provider concern stays quarantined in <code>@atlas/providers</code> adapters. No new infrastructure — orchestration of existing seams.</p>
+<p><strong>Dependency direction is untouched:</strong> <code>cli → sdk → feature packages → core → shared</code>. The harness lives in <code>apps/cli</code> (<code>src/tui/</code>), consumes <strong>only</strong> <code>@prof-bilal/atlas-sdk</code> (plus <code>@prof-bilal/atlas-mcp</code> for MCP surface), and every AI-provider concern stays quarantined in <code>@prof-bilal/atlas-providers</code> adapters. No new infrastructure — orchestration of existing seams.</p>
 </div>
 <div class="ascii-art">┌────────────────────── apps/cli: atlas tui (ink) ──────────────────────┐
 │  views/ (chat, sessions, models overlay, freebuff panel)              │
 │  state/ (React-ink state, command router, theme loader)               │
 └──────────────┬─────────────────────────────────────────────────────────┘
-               │ only @atlas/sdk (+ @atlas/mcp)
-┌──────────────▼──────────────── @atlas/sdk ────────────────────────────┐
+               │ only @prof-bilal/atlas-sdk (+ @prof-bilal/atlas-mcp)
+┌──────────────▼──────────────── @prof-bilal/atlas-sdk ────────────────────────────┐
 │  createContextSDK   createSessionManager   createUsageService         │
 │  createOrchestrator createContextIntegration (context→agent delivery) │
 └──────┬──────────────────┬──────────────────────┬──────────────────────┘
        │                  │                      │
 ┌──────▼─────┐   ┌────────▼────────┐   ┌─────────▼─────────┐
-│ @atlas/     │   │ @atlas/agents   │   │ @atlas/providers  │
+│ @prof-bilal/atlas-     │   │ @prof-bilal/atlas-agents   │   │ @prof-bilal/atlas-providers  │
 │ context     │   │ SessionPort     │   │ ProviderPort      │
 │ (ranked     │   │ AgentPort       │   │ (quarantined      │
 │  context)   │   │ (claude/gemini/ │   │  adapters:        │
@@ -172,7 +172,7 @@ html{scroll-behavior:smooth}
 └─────────────┘   └─────────────────┘   └───────────────────┘</div>
 <ul>
 <li><strong>Existing seams reused:</strong> <code>ProviderChatAgent</code> (defaults to Ollama), <code>tool-loop.ts</code> (policy + budgets), <code>createOrchestrator</code> (roles/conflicts), <code>createContextIntegration().buildSlice()</code> (budgeted context packages), <code>createSessionManager()</code> (supervised agent processes).</li>
-<li><strong>New, quarantined:</strong> <code>RouterPort</code> in core (ADR-020) — model routing policy in SDK, provider logic stays inside <code>@atlas/providers</code> adapters.</li>
+<li><strong>New, quarantined:</strong> <code>RouterPort</code> in core (ADR-020) — model routing policy in SDK, provider logic stays inside <code>@prof-bilal/atlas-providers</code> adapters.</li>
 </ul>
 </section>
 
@@ -238,7 +238,7 @@ html{scroll-behavior:smooth}
 </ol></li>
 </ul>
 <div class="highlight red">
-<p><strong>Not viable:</strong> forced/pre-roll ads before agent runs, repo-targeted ads, or anything touching <code>@atlas/sdk</code> — that would repeat SponsorLink's exact failure mode in a repo-indexing tool, the most trust-sensitive category there is.</p>
+<p><strong>Not viable:</strong> forced/pre-roll ads before agent runs, repo-targeted ads, or anything touching <code>@prof-bilal/atlas-sdk</code> — that would repeat SponsorLink's exact failure mode in a repo-indexing tool, the most trust-sensitive category there is.</p>
 </div>
 <div class="highlight orange">
 <p><strong>Recommendation:</strong> build the <strong>credit-sponsored variant first</strong> (sponsors underwrite model credits — zero ad-network dependency), keep the reels panel as the opt-in earning surface behind a config flag, off by default. Same UX, lower risk, launchable later without re-architecture.</p>
@@ -250,7 +250,7 @@ html{scroll-behavior:smooth}
 <h3>ADRs (<code>docs/decisions/</code>, next numbers 019+; written when each phase starts)</h3>
 <ul>
 <li><strong>ADR-019:</strong> Harness UI — ink-based TUI in <code>apps/cli</code> over SDK seams; slash registry; theme system; <code>provider/model</code> addressing.</li>
-<li><strong>ADR-020:</strong> Adaptive Model Router — <code>local → free → paid</code> fallback chains, rate-limit-aware, behind a new <code>RouterPort</code> in <code>core</code> (provider logic stays quarantined in <code>@atlas/providers</code>).</li>
+<li><strong>ADR-020:</strong> Adaptive Model Router — <code>local → free → paid</code> fallback chains, rate-limit-aware, behind a new <code>RouterPort</code> in <code>core</code> (provider logic stays quarantined in <code>@prof-bilal/atlas-providers</code>).</li>
 <li><strong>ADR-021:</strong> Free provider profiles &amp; Freebuff credits ledger (usage-store extension; additive schema change per the database rules).</li>
 <li>Later: <strong>ADR-022</strong> Sandbox (F07), <strong>ADR-023</strong> Control Plane (F12) — each requires its own design cycle.</li>
 </ul>
@@ -283,7 +283,7 @@ html{scroll-behavior:smooth}
 <tr><td><code>anthropic/openai</code></td><td>native</td><td><span class="tag impl">EXISTS</span></td></tr>
 </table>
 <div class="highlight blue">
-<p><strong>Key architectural point:</strong> "MiMo" resolution = ship Kimi + Zhipu GLM adapters on the <code>OpenAICompatibleAdapter</code> base. Each new adapter is base URL + header quirks only; model catalog, token counting, and streaming stay in the shared base. Provider logic never leaks outside <code>@atlas/providers</code>.</p>
+<p><strong>Key architectural point:</strong> "MiMo" resolution = ship Kimi + Zhipu GLM adapters on the <code>OpenAICompatibleAdapter</code> base. Each new adapter is base URL + header quirks only; model catalog, token counting, and streaming stay in the shared base. Provider logic never leaks outside <code>@prof-bilal/atlas-providers</code>.</p>
 </div>
 </section>
 

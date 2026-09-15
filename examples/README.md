@@ -1,6 +1,6 @@
 # Examples
 
-This directory will hold runnable examples showing how to use the `@atlas/sdk`
+This directory will hold runnable examples showing how to use the `@prof-bilal/atlas-sdk`
 programmatically and how to write plugins.
 
 Today the SDK entry points are real and tested: `createContextSDK` (read a

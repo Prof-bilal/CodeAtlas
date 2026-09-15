@@ -4,7 +4,7 @@ import type {
   BenchmarkTaskResult,
   FailureCategory,
   FailureClassification,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 
 // ---------------------------------------------------------------------------
 // Classification logic

@@ -1,4 +1,4 @@
-import type { ContextPlan, TaskClassification } from "@atlas/core";
+import type { ContextPlan, TaskClassification } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { createPlanner } from "../src/context-integration/planner";
 

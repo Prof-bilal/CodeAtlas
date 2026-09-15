@@ -12,7 +12,7 @@
  * expanded item carries a deterministic human-readable `reason`; annotation is
  * exactly what a small model cannot derive itself (ADR-014).
  *
- * Graph node ids mirror `@atlas/graph`'s convention without importing it:
+ * Graph node ids mirror `@prof-bilal/atlas-graph`'s convention without importing it:
  * files are `n:file:<forward-slash-path>`, symbols are `n:<symbolId>`.
  */
 
@@ -21,10 +21,10 @@ import type {
   ContextSnapshot,
   ContextTier,
   PersistedDependency,
-} from "@atlas/core";
-import type { FilePath } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 
-/** The file prefix of `@atlas/graph` file node ids. */
+/** The file prefix of `@prof-bilal/atlas-graph` file node ids. */
 const FILE_NODE_PREFIX = "n:file:";
 
 /** What relationship an expanded file has to a seed. */
@@ -75,7 +75,7 @@ const TEST_FILE_RE = /(^|\/)(__tests__\/|__tests__\\)|\.test\.|\.spec\./;
 const CONFIG_FILE_RE =
   /(^|\/)(package|tsconfig|jsconfig|vitest\.config|jest\.config|vite\.config|webpack\.config|rollup\.config|eslint|biome)(\.[\w-]+)*\.(json|js|ts|mjs|cjs|ya?ml|toml)$|(^|\/)\.env\.example$/;
 
-/** Graph node id for a file (mirrors `@atlas/graph` without importing it). */
+/** Graph node id for a file (mirrors `@prof-bilal/atlas-graph` without importing it). */
 function fileNodeId(path: string): string {
   return `${FILE_NODE_PREFIX}${path.replace(/\\/g, "/")}`;
 }

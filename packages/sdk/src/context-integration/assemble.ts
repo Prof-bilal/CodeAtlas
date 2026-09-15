@@ -1,13 +1,13 @@
 import { sep as pathSep } from "node:path";
-import { rerankByContextTaskCategory } from "@atlas/context";
+import { rerankByContextTaskCategory } from "@prof-bilal/atlas-context";
 import type {
   ContextMode,
   ContextTaskCategory,
   ContextTier,
   LineRange,
   Summary,
-} from "@atlas/core";
-import { estimateTokens } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { estimateTokens } from "@prof-bilal/atlas-shared";
 import { InvalidQueryError } from "../context/errors";
 import type {
   DependencyContext,
@@ -1080,12 +1080,12 @@ function symbolIdFromTarget(targetId: string | null): string | null {
   return targetId.slice("symbol:".length);
 }
 
-/** Graph node id for a file (mirrors `@atlas/graph` without importing it). */
+/** Graph node id for a file (mirrors `@prof-bilal/atlas-graph` without importing it). */
 function fileNodeId(path: string): string {
   return `n:file:${path.replace(/\\/g, "/")}`;
 }
 
-/** Graph node id for a symbol (mirrors `@atlas/graph` without importing it). */
+/** Graph node id for a symbol (mirrors `@prof-bilal/atlas-graph` without importing it). */
 function symbolNodeId(symbolId: string): string {
   return `n:${symbolId}`;
 }

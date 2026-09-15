@@ -20,10 +20,10 @@ server is stdio-only).
 
 ## Decision
 
-Add a new consumer app, **`apps/server` (`@atlas/server`)** — a localhost HTTP
+Add a new consumer app, **`apps/server` (`@prof-bilal/atlas-server`)** — a localhost HTTP
 API ("CodeAtlas Benchmark API") built on `node:http` with **zero new runtime
 npm dependencies**. Like the CLI, it is a composition root that may import
-`@atlas/sdk`, `@atlas/mcp`, and `@atlas/benchmark` (added to the ESLint
+`@prof-bilal/atlas-sdk`, `@prof-bilal/atlas-mcp`, and `@prof-bilal/atlas-benchmark` (added to the ESLint
 dependency matrix), and it reuses the existing building blocks rather than
 forking them:
 
@@ -31,7 +31,7 @@ forking them:
   same `.codeatlas/benchmarks/` root the CLI uses.
 - **Suite runs** through `BenchmarkService.runTask` per task × mode (so real
   per-task progress exists), finalized by `runSuite`'s resume path (aggregates
-  + `completed` status) — no changes to `@atlas/benchmark` were needed for
+  + `completed` status) — no changes to `@prof-bilal/atlas-benchmark` were needed for
   progress reporting.
 - **Aggregates** are recomputed from the persisted per-task results via
   `evaluateTask` because a filtered CLI `--task` run can leave a
@@ -95,4 +95,4 @@ returned with every score and shown in the UI.
 - Progress granularity is per task × mode plus stage transitions; a streaming
   event bus (SSE/WebSocket) may come later behind the same job model.
 - `apps/server` follows the CLI precedent for workspace packaging
-  (`@atlas/*` as devDependencies bundled by tsup, `ts-morph` external).
+  (`@prof-bilal/atlas-*` as devDependencies bundled by tsup, `ts-morph` external).

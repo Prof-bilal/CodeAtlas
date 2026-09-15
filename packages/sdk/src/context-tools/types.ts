@@ -1,11 +1,11 @@
-import type { ToolDefinition } from "@atlas/core";
-import type { Result } from "@atlas/shared";
+import type { ToolDefinition } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
 
 /**
  * A provider-independent source of executable context tools.
  *
  * This interface inverts the dependency between the tool loop and the tool
- * registry: `@atlas/sdk` defines this seam; `@atlas/mcp` implements it using
+ * registry: `@prof-bilal/atlas-sdk` defines this seam; `@prof-bilal/atlas-mcp` implements it using
  * its existing `TOOLS` + `HANDLERS`. No duplicate tool registry.
  */
 export interface ContextToolSource {

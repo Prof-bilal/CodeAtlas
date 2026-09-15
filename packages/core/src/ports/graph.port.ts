@@ -1,4 +1,4 @@
-import type { NodeId, Result } from "@atlas/shared";
+import type { NodeId, Result } from "@prof-bilal/atlas-shared";
 import type { GraphEdge, GraphNode } from "../domain/entities";
 
 /**

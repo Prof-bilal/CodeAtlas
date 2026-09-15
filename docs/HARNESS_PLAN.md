@@ -114,7 +114,7 @@ apps/cli/src/tui/                 ← NEW (git-tracked)
 apps/cli/src/commands/tui.ts      `atlas tui` — thin launcher, options injected for tests
 ```
 
-Rules honored: CLI imports only `@atlas/sdk` (+ commander); no DB access; no
+Rules honored: CLI imports only `@prof-bilal/atlas-sdk` (+ commander); no DB access; no
 direct feature-package imports; provider specifics stay in adapters; argv-array
 spawns only; no secrets in transcripts; tests use fake spawns/transport (no
 network, no real CLIs).
@@ -159,7 +159,7 @@ Status tags use the repo convention and were verified against source, not docs.
 | F02 | Adaptive Model Router | **[PLANNED]** (seams exist) | The router itself: task-class → model policy, fallback chains, budget/limit awareness. Built **on** `ChatAgentPort` + orchestrator roles + provider profiles (§5) |
 | F03 | Context & Token Budget Manager | **[IMPLEMENTED]** core | `applyBudget`/`DEFAULT_CONTEXT_BUDGET`, usage budgets + hard limits exist. Missing: per-provider default budget table, cross-provider budget for multi-model loops |
 | F04 | Knowledge Gap + Research Engine | **[PARTIAL]** seams only | Planner exposes `unknowns`; sufficiency gate exists; benchmark configs reference Tavily/web tools. Missing: runtime gap detector + opt-in allow-listed research tools feeding back into context |
-| F05 | Verify → Repair → Escalate Loop | **[PARTIAL]** | `VerifierPort` + `@atlas/verifier` (claim checks, ADR-018 allow-listed commands), `atlas verify` exist. Missing: auto-repair retry and **escalation to a stronger model** (couples to F02) |
+| F05 | Verify → Repair → Escalate Loop | **[PARTIAL]** | `VerifierPort` + `@prof-bilal/atlas-verifier` (claim checks, ADR-018 allow-listed commands), `atlas verify` exist. Missing: auto-repair retry and **escalation to a stronger model** (couples to F02) |
 | F06 | Risk-Aware Tool Execution | **[IMPLEMENTED]** core | Tool-loop policy + denials + budgets; Toolkit `SecurityPort` trust states. Missing: unified risk policy across external agent-CLI sessions |
 | F07 | Sandbox + Capability Security | **[PLANNED]** | No real sandboxing today. `ProcessRunner` is argv-only; verifier commands are allow-listed. Needs its own ADR (per-OS confinement is a large lift) |
 | F08 | Prompt Injection + Secret Guard | **[PARTIAL]** | Slices treated as untrusted input; deny lists for secrets/sensitive paths; MCP hardening. Missing: dedicated injection detector on inbound repo content + outbound secret redaction at the context boundary |
@@ -236,7 +236,7 @@ core workflow uninvited.
      layers — the boundary is structural, not policy.
 
 **Not viable:** forced/pre-roll ads before agent runs, repo-targeted ads, or
-anything touching `@atlas/sdk` — that would repeat SponsorLink's exact failure
+anything touching `@prof-bilal/atlas-sdk` — that would repeat SponsorLink's exact failure
 mode in a repo-indexing tool, the most trust-sensitive category there is.
 
 **Recommendation:** build the **credit-sponsored variant first** (sponsors
@@ -252,7 +252,7 @@ lower risk, launchable later without re-architecture.
   registry; theme system; `provider/model` addressing.
 - **ADR-020:** Adaptive Model Router — `local → free → paid` fallback chains,
   rate-limit-aware, behind a new `RouterPort` in `core` (provider logic stays
-  quarantined in `@atlas/providers`).
+  quarantined in `@prof-bilal/atlas-providers`).
 - **ADR-021:** Free provider profiles & Freebuff credits ledger (usage-store
   extension; additive schema change per the database rules).
 - Later: **ADR-022** Sandbox (F07), **ADR-023** Control Plane (F12) — each

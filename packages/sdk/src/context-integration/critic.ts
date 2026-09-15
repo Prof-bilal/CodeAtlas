@@ -8,10 +8,10 @@ import type {
   CriticReview,
   CriticVerdict,
   ProviderPort,
-} from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 
-export type { CriticConfig, CriticReview } from "@atlas/core";
+export type { CriticConfig, CriticReview } from "@prof-bilal/atlas-core";
 
 /** Default critic configuration. */
 export const DEFAULT_CRITIC_CONFIG: CriticConfig = {

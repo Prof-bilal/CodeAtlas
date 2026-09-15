@@ -12,7 +12,7 @@
  * downstream search fan-out.
  */
 
-import type { FilePath } from "@atlas/shared";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 
 /** The extraction result for one task string. */
 export interface TaskEntities {

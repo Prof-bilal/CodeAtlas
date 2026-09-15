@@ -1,11 +1,11 @@
-# @atlas/graph
+# @prof-bilal/atlas-graph
 
 The code-dependency graph for CodeAtlas. Built from the parser's normalized
 `Symbol`s and resolved `Reference`s, it models **imports, exports, function
 calls, class inheritance, interface implementations, and module dependencies**
 as a directed graph and answers dependency, reachability, and cycle queries.
 
-Implements `GraphPort` from `@atlas/core`.
+Implements `GraphPort` from `@prof-bilal/atlas-core`.
 
 > **Status: implemented.** Graph construction, queries, cycle detection, and
 > JSON export are built and tested. No visualization.
@@ -27,7 +27,7 @@ Implements `GraphPort` from `@atlas/core`.
 ## Usage
 
 ```ts
-import { GraphService, symbolNodeId } from "@atlas/graph";
+import { GraphService, symbolNodeId } from "@prof-bilal/atlas-graph";
 
 // Feed the graph the parser's output (symbols + resolved references).
 const graph = new GraphService().build(symbols, references);
@@ -48,8 +48,8 @@ parser, and cross-file usages resolve to the local import binding. The graph
 adds `importBinding → definition` edges to complete cross-file reachability.
 
 ```ts
-import { SymbolIndexer, TypeScriptParser } from "@atlas/parser";
-import { GraphService } from "@atlas/graph";
+import { SymbolIndexer, TypeScriptParser } from "@prof-bilal/atlas-parser";
+import { GraphService } from "@prof-bilal/atlas-graph";
 
 const parser = new TypeScriptParser();
 const parsed = [];

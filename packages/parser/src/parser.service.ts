@@ -1,6 +1,6 @@
-import type { ParserPort, SourceFile, Symbol } from "@atlas/core";
-import type { Result, SymbolId } from "@atlas/shared";
-import { DEFAULT_CONCURRENCY, fail, mapWithConcurrency, ok } from "@atlas/shared";
+import type { ParserPort, SourceFile, Symbol } from "@prof-bilal/atlas-core";
+import type { Result, SymbolId } from "@prof-bilal/atlas-shared";
+import { DEFAULT_CONCURRENCY, fail, mapWithConcurrency, ok } from "@prof-bilal/atlas-shared";
 import { UnsupportedLanguageError } from "./errors";
 import type { LanguageParser } from "./language-parser";
 import type { ParseBatch, ParsedFile, SkippedFile } from "./parsed-file";

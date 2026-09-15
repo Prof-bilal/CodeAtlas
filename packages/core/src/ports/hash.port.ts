@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 import type { BuildSnapshotOptions, HashDiff, HashSnapshot } from "../domain/hashing";
 
 /**

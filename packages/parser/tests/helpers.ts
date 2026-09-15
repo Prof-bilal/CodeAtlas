@@ -1,5 +1,5 @@
-import type { SourceFile } from "@atlas/core";
-import type { FilePath } from "@atlas/shared";
+import type { SourceFile } from "@prof-bilal/atlas-core";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 import type { ParsedFile } from "../src/parsed-file";
 import { TypeScriptParser } from "../src/typescript/typescript-parser";
 

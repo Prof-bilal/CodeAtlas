@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
-import type { FileTreeNode, ProjectScan } from "@atlas/sdk";
-import { scanProjectOverview } from "@atlas/sdk";
+import type { FileTreeNode, ProjectScan } from "@prof-bilal/atlas-sdk";
+import { scanProjectOverview } from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { resolveProjectRoot } from "./search";
 

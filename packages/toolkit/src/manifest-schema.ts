@@ -1,5 +1,5 @@
-import type { ToolInstallMethodType, ToolSecurityStatusValue, ToolTrustLevel } from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+import type { ToolInstallMethodType, ToolSecurityStatusValue, ToolTrustLevel } from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { ManifestSchemaVersionError, ManifestValidationError } from "./errors";
 import { INSTALL_METHOD_TYPES, SECURITY_STATUSES, TRUST_LEVELS } from "./schema";
 

@@ -5,9 +5,9 @@ import type {
   Symbol as PersistedSymbol,
   SourceFile,
   Summary,
-} from "@atlas/core";
-import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
-import { ContextStore } from "@atlas/storage";
+} from "@prof-bilal/atlas-core";
+import type { FilePath, NodeId, SymbolId } from "@prof-bilal/atlas-shared";
+import { ContextStore } from "@prof-bilal/atlas-storage";
 import { describe, expect, it } from "vitest";
 import { LexicalScorer, type RelevanceScorer } from "../src/scoring";
 import { MAX_INDEXED_CONTENT_CHARS } from "../src/search-index";

@@ -60,7 +60,7 @@ export const PROTOCOL_TOOL_NAMES: readonly string[] = [
   ...Object.keys(TOOL_ALIASES),
 ].sort();
 
-/** Symbol kinds the parser can emit (mirrors `@atlas/core` `SymbolKind`). */
+/** Symbol kinds the parser can emit (mirrors `@prof-bilal/atlas-core` `SymbolKind`). */
 export const SYMBOL_KINDS = [
   "class",
   "interface",
@@ -98,7 +98,7 @@ function intRange(min: number, max: number): z.ZodNumber {
 /**
  * Maximum length for string inputs (queries, paths, targets). Bounds keep the
  * fuzzy scorer and path resolution away from pathological inputs: a multi-KB
- * query would otherwise blow up the whole-token regex inside `@atlas/search`
+ * query would otherwise blow up the whole-token regex inside `@prof-bilal/atlas-search`
  * with an uncontrolled internal error instead of a clean validation rejection.
  */
 const MAX_STRING_LENGTH = 10_000;

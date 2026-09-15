@@ -13,7 +13,7 @@
  * - **serializable** — plain data, no functions, no AI-CLI-specific formatting.
  */
 
-import type { ContextTier, LineRange, SummaryContent, SummaryMetadata } from "@atlas/core";
+import type { ContextTier, LineRange, SummaryContent, SummaryMetadata } from "@prof-bilal/atlas-core";
 import type { FreshnessSignal, FreshnessState } from "../context/models";
 
 /**

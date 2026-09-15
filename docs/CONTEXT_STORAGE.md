@@ -5,7 +5,7 @@ How CodeAtlas persists project context, and the on-disk `.codeatlas/` layout.
 > **Status:** the `.codeatlas/` directory is created by the Scanner manifest
 > step; **`manifest.json`** is written today ([IMPLEMENTED]) and the
 > **`tools/`** directory — one Tool Manifest per installed tool — is written by
-> `@atlas/toolkit`'s `saveToolManifest` ([IMPLEMENTED], Task 20). The
+> `@prof-bilal/atlas-toolkit`'s `saveToolManifest` ([IMPLEMENTED], Task 20). The
 > **`context.db`** file is *read* by `atlas search`, the MCP server, and the VS
 > Code extension (via `createContextSDK`), and is **written by the SDK-owned
 > incremental indexer** that `atlas init`/`build`/`update` run ([IMPLEMENTED]).
@@ -46,8 +46,8 @@ How CodeAtlas persists project context, and the on-disk `.codeatlas/` layout.
 | Piece | Where | Notes |
 | ----- | ----- | ----- |
 | `manifest.json` | `packages/scanner/src/manifest.ts` | Written by `generateManifest(scan)`. Schema versioned; `createdAt` preserved, `updatedAt` refreshed, rest recomputed from the scan. |
-| Versioned hash snapshots | `@atlas/hashing` (JSON snapshots) | These live wherever the caller chooses (`saveSnapshot(path)`), not yet standardized under `.codeatlas/`. |
-| SQLite context DB | `@atlas/storage` (`ContextStore`) | Backed by `node:sqlite` (Needs Node ≥22.5.0). `ContextStoreOptions.filePath` selects the file (default `:memory:`); WAL for file-backed stores. Written via `saveContext`/`updateContext`; read by the SDK/CLI/MCP/extension. |
+| Versioned hash snapshots | `@prof-bilal/atlas-hashing` (JSON snapshots) | These live wherever the caller chooses (`saveSnapshot(path)`), not yet standardized under `.codeatlas/`. |
+| SQLite context DB | `@prof-bilal/atlas-storage` (`ContextStore`) | Backed by `node:sqlite` (Needs Node ≥22.5.0). `ContextStoreOptions.filePath` selects the file (default `:memory:`); WAL for file-backed stores. Written via `saveContext`/`updateContext`; read by the SDK/CLI/MCP/extension. |
 
 ---
 
@@ -74,15 +74,15 @@ Context storage must be:
 
 | Concern | Owner |
 | ------- | ----- |
-| Manifest write/read | `@atlas/scanner` (`manifest.ts`) |
-| Tool manifests (`tools/`) | `@atlas/toolkit` (`manifest.ts`) — installed-tool state, not context |
-| Change detection / snapshots | `@atlas/hashing` |
-| Context database (files, symbols, deps, summaries, relationships, hashes, metadata) | `@atlas/storage` |
-| Graph/symbol JSON exports | `@atlas/graph` / `@atlas/parser` (future) |
+| Manifest write/read | `@prof-bilal/atlas-scanner` (`manifest.ts`) |
+| Tool manifests (`tools/`) | `@prof-bilal/atlas-toolkit` (`manifest.ts`) — installed-tool state, not context |
+| Change detection / snapshots | `@prof-bilal/atlas-hashing` |
+| Context database (files, symbols, deps, summaries, relationships, hashes, metadata) | `@prof-bilal/atlas-storage` |
+| Graph/symbol JSON exports | `@prof-bilal/atlas-graph` / `@prof-bilal/atlas-parser` (future) |
 
 Persistence **belongs to `storage`** for the context DB; other `.codeatlas/`
 files are owned by the package that defines them (scanner manifest, toolkit
-tool manifests, `@atlas/usage`'s `usage.db`).
+tool manifests, `@prof-bilal/atlas-usage`'s `usage.db`).
 
 ---
 

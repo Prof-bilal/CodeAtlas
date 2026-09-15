@@ -49,7 +49,7 @@ The testing contract for the monorepo.
 ```bash
 pnpm test           # full suite
 pnpm test:watch     # watch mode
-pnpm --filter @atlas/parser test   # single package
+pnpm --filter @prof-bilal/atlas-parser test   # single package
 pnpm check          # typecheck + lint + format + test (the CI gate)
 ```
 

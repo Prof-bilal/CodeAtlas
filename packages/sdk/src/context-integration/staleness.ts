@@ -1,4 +1,4 @@
-import type { FilePath } from "@atlas/shared";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 import type { ContextSDK } from "../context/sdk";
 import { detectFreshness } from "../context/staleness";
 import { scanProjectOverview } from "../indexing/scan";
@@ -9,7 +9,7 @@ import type { StaleContextSignal } from "./models";
  *
  * Delegates to the shared core (`detectFreshness`), which compares the
  * persisted per-file hashes (`ContextSDK.hashes()`) against the current hashes
- * of the same files on disk (via `@atlas/hashing` change detection). The signal
+ * of the same files on disk (via `@prof-bilal/atlas-hashing` change detection). The signal
  * is honest and best-effort: `"unavailable"` when no index exists, `"unknown"`
  * when no comparison is possible, and `"fresh"` / `"stale"` otherwise. The
  * working tree is scanned so files added after the last index are detected as

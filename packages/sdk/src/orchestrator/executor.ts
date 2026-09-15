@@ -1,4 +1,4 @@
-import { AgentCliNotFoundError, ProcessSpawnError } from "@atlas/agents";
+import { AgentCliNotFoundError, ProcessSpawnError } from "@prof-bilal/atlas-agents";
 import type {
   RoleDefinition,
   RoleResult,
@@ -8,7 +8,7 @@ import type {
   SessionPort,
   SessionStatus,
   TaskPlan,
-} from "@atlas/core";
+} from "@prof-bilal/atlas-core";
 import type { ContextIntegration } from "../context-integration/index";
 import { renderContextPackage } from "../context-integration/index";
 import type { ContextPackage } from "../context-integration/models";

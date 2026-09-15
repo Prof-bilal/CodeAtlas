@@ -63,19 +63,19 @@ importers:
         specifier: ^28.0.0
         version: 28.0.0
     devDependencies:
-      '@atlas/benchmark':
+      '@prof-bilal/atlas-benchmark':
         specifier: workspace:*
         version: link:../../packages/benchmark
-      '@atlas/mcp':
+      '@prof-bilal/atlas-mcp':
         specifier: workspace:*
         version: link:../../packages/mcp
-      '@atlas/sdk':
+      '@prof-bilal/atlas-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
 
   apps/extension:
     dependencies:
-      '@atlas/sdk':
+      '@prof-bilal/atlas-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
     devDependencies:
@@ -89,92 +89,92 @@ importers:
         specifier: ^28.0.0
         version: 28.0.0
     devDependencies:
-      '@atlas/benchmark':
+      '@prof-bilal/atlas-benchmark':
         specifier: workspace:*
         version: link:../../packages/benchmark
-      '@atlas/mcp':
+      '@prof-bilal/atlas-mcp':
         specifier: workspace:*
         version: link:../../packages/mcp
-      '@atlas/sdk':
+      '@prof-bilal/atlas-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
 
   packages/agents:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/benchmark:
     dependencies:
-      '@atlas/agents':
+      '@prof-bilal/atlas-agents':
         specifier: workspace:*
         version: link:../agents
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
-      '@atlas/toolkit':
+      '@prof-bilal/atlas-toolkit':
         specifier: workspace:*
         version: link:../toolkit
-      '@atlas/usage':
+      '@prof-bilal/atlas-usage':
         specifier: workspace:*
         version: link:../usage
 
   packages/cache:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/context:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/core:
     dependencies:
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/graph:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
     devDependencies:
-      '@atlas/parser':
+      '@prof-bilal/atlas-parser':
         specifier: workspace:*
         version: link:../parser
 
   packages/hashing:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/mcp:
     dependencies:
-      '@atlas/sdk':
+      '@prof-bilal/atlas-sdk':
         specifier: workspace:*
         version: link:../sdk
       '@modelcontextprotocol/sdk':
@@ -189,19 +189,19 @@ importers:
 
   packages/metrics:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/parser:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
       ts-morph:
@@ -210,85 +210,85 @@ importers:
 
   packages/providers:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/scanner:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/sdk:
     dependencies:
-      '@atlas/agents':
+      '@prof-bilal/atlas-agents':
         specifier: workspace:*
         version: link:../agents
-      '@atlas/benchmark':
+      '@prof-bilal/atlas-benchmark':
         specifier: workspace:*
         version: link:../benchmark
-      '@atlas/cache':
+      '@prof-bilal/atlas-cache':
         specifier: workspace:*
         version: link:../cache
-      '@atlas/context':
+      '@prof-bilal/atlas-context':
         specifier: workspace:*
         version: link:../context
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/graph':
+      '@prof-bilal/atlas-graph':
         specifier: workspace:*
         version: link:../graph
-      '@atlas/hashing':
+      '@prof-bilal/atlas-hashing':
         specifier: workspace:*
         version: link:../hashing
-      '@atlas/metrics':
+      '@prof-bilal/atlas-metrics':
         specifier: workspace:*
         version: link:../metrics
-      '@atlas/parser':
+      '@prof-bilal/atlas-parser':
         specifier: workspace:*
         version: link:../parser
-      '@atlas/providers':
+      '@prof-bilal/atlas-providers':
         specifier: workspace:*
         version: link:../providers
-      '@atlas/scanner':
+      '@prof-bilal/atlas-scanner':
         specifier: workspace:*
         version: link:../scanner
-      '@atlas/search':
+      '@prof-bilal/atlas-search':
         specifier: workspace:*
         version: link:../search
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
-      '@atlas/storage':
+      '@prof-bilal/atlas-storage':
         specifier: workspace:*
         version: link:../storage
-      '@atlas/summary':
+      '@prof-bilal/atlas-summary':
         specifier: workspace:*
         version: link:../summary
-      '@atlas/toolkit':
+      '@prof-bilal/atlas-toolkit':
         specifier: workspace:*
         version: link:../toolkit
-      '@atlas/usage':
+      '@prof-bilal/atlas-usage':
         specifier: workspace:*
         version: link:../usage
-      '@atlas/verifier':
+      '@prof-bilal/atlas-verifier':
         specifier: workspace:*
         version: link:../verifier
 
   packages/search:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
@@ -296,53 +296,53 @@ importers:
 
   packages/storage:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/summary:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
     devDependencies:
-      '@atlas/hashing':
+      '@prof-bilal/atlas-hashing':
         specifier: workspace:*
         version: link:../hashing
 
   packages/toolkit:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/usage:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/verifier:
     dependencies:
-      '@atlas/core':
+      '@prof-bilal/atlas-core':
         specifier: workspace:*
         version: link:../core
-      '@atlas/shared':
+      '@prof-bilal/atlas-shared':
         specifier: workspace:*
         version: link:../shared
-      '@atlas/storage':
+      '@prof-bilal/atlas-storage':
         specifier: workspace:*
         version: link:../storage
     devDependencies:

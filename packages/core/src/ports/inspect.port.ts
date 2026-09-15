@@ -1,4 +1,4 @@
-import type { Result } from "@atlas/shared";
+import type { Result } from "@prof-bilal/atlas-shared";
 
 /** A single HTTP probe target. */
 export interface HttpProbeTarget {
@@ -30,7 +30,7 @@ export interface HttpProbeResult {
 /**
  * Port for live HTTP inspection of running services.
  * Always requires explicit per-target approval (network egress).
- * Implemented as a thin adapter in `@atlas/sdk`.
+ * Implemented as a thin adapter in `@prof-bilal/atlas-sdk`.
  */
 export interface InspectPort {
   /** Send a single HTTP probe request and return the result. */

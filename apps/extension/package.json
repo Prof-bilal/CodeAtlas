@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/extension",
+  "name": "@prof-bilal/atlas-extension",
   "displayName": "CodeAtlas",
   "private": true,
   "description": "AI context for your codebase, right in the editor. Search symbols, explore dependencies, view summaries, and run atlas build/update.",
@@ -22,7 +22,7 @@
     "format": "biome format --write ."
   },
   "dependencies": {
-    "@atlas/sdk": "workspace:*"
+    "@prof-bilal/atlas-sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/vscode": "^1.92.0"

@@ -1,11 +1,11 @@
-# @atlas/hashing
+# @prof-bilal/atlas-hashing
 
 SHA-256 hashing and change detection for CodeAtlas. This module powers
 **incremental updates**: it hashes every file, persists the hashes as a JSON
 snapshot, and can tell you exactly which files **changed**, were **deleted**, or
 are **new** between runs.
 
-Implements `HashPort` from `@atlas/core`.
+Implements `HashPort` from `@prof-bilal/atlas-core`.
 
 ## Features
 
@@ -20,7 +20,7 @@ Implements `HashPort` from `@atlas/core`.
 ## Usage
 
 ```ts
-import { HashService } from "@atlas/hashing";
+import { HashService } from "@prof-bilal/atlas-hashing";
 
 const hasher = new HashService();
 

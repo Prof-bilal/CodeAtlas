@@ -1,4 +1,4 @@
-// @atlas/benchmark — Skills (minimal Agent Skills implementation)
+// @prof-bilal/atlas-benchmark — Skills (minimal Agent Skills implementation)
 //
 // A minimal, dependency-free implementation of the open "Agent Skills" pattern
 // (a folder with a SKILL.md that carries frontmatter metadata + markdown

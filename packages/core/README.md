@@ -1,4 +1,4 @@
-# @atlas/core
+# @prof-bilal/atlas-core
 
 The **heart of the CodeAtlas domain**. This package owns the domain **entities**
 and the **ports** (interfaces) that every feature package implements.

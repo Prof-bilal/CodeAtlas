@@ -5,8 +5,8 @@ import type {
   AgentRunResult,
   CompatibilityEvaluationInput,
   CompatibilityRequirements,
-} from "@atlas/core";
-import { type Result, ok } from "@atlas/shared";
+} from "@prof-bilal/atlas-core";
+import { type Result, ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { CompatibilityEngineService } from "../src/compatibility.service";
 import { EnvironmentDetector } from "../src/environment";

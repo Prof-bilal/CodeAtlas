@@ -5,7 +5,7 @@
  * prompts, or secrets.
  */
 import { writeFileSync } from "node:fs";
-import type { MetricsSnapshot } from "@atlas/core";
+import type { MetricsSnapshot } from "@prof-bilal/atlas-core";
 
 export interface ExportOptions {
   /** Output file path. Defaults to `codeatlas-metrics.json` in the current directory. */

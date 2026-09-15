@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type { ConfigurationChange, ConfigurationTarget } from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+import type { ConfigurationChange, ConfigurationTarget } from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import {
   ConfigMergeError,
   ConfigReadError,
@@ -36,7 +36,7 @@ export type ConfigFormat = "json" | "jsonc" | "toml";
 
 /**
  * One configuration adapter per target (Claude / Gemini / Codex / OpenCode /
- * MCP / VS Code), mirroring `@atlas/providers` and `@atlas/agents`.
+ * MCP / VS Code), mirroring `@prof-bilal/atlas-providers` and `@prof-bilal/atlas-agents`.
  *
  * Provider-specific facts — the config file each target reads, the section
  * it writes into, the entry shape, and the change description — live

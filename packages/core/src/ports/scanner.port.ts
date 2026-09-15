@@ -1,4 +1,4 @@
-import type { FilePath, Result } from "@atlas/shared";
+import type { FilePath, Result } from "@prof-bilal/atlas-shared";
 import type { SourceFile } from "../domain/entities";
 import type { ProjectScan } from "../domain/scan";
 

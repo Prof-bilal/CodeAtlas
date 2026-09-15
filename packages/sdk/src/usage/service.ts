@@ -1,5 +1,5 @@
-import type { PricingSource, UsagePort } from "@atlas/core";
-import { StaticPricingSource, UsageService, UsageStore } from "@atlas/usage";
+import type { PricingSource, UsagePort } from "@prof-bilal/atlas-core";
+import { StaticPricingSource, UsageService, UsageStore } from "@prof-bilal/atlas-usage";
 
 /** Options for {@link createUsageService}. */
 export interface CreateUsageServiceOptions {

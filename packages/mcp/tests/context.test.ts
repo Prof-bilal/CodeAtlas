@@ -1,8 +1,8 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { createProjectContainer } from "@atlas/sdk";
-import type { FilePath } from "@atlas/shared";
+import { createProjectContainer } from "@prof-bilal/atlas-sdk";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { CodeAtlasContext, resolveContextConfig } from "../src/context";
 import { ToolDomainError } from "../src/validation";

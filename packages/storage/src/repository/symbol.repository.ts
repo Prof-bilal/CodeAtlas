@@ -1,6 +1,6 @@
 // biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
-import type { Symbol, SymbolKind, Visibility } from "@atlas/core";
-import type { FilePath, SymbolId } from "@atlas/shared";
+import type { Symbol, SymbolKind, Visibility } from "@prof-bilal/atlas-core";
+import type { FilePath, SymbolId } from "@prof-bilal/atlas-shared";
 import { type Row, colBoolean, colNumber, colString, count, parseJsonArray } from "./row";
 import { StatementCache } from "./statement-cache";
 

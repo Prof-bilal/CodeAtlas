@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { AgentInfo, AgentMcpTarget, AgentPort } from "@atlas/core";
+import type { AgentInfo, AgentMcpTarget, AgentPort } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { AGENT_MCP_TOOL_NAME, AgentMcpService } from "../src/agent-mcp";
 import { parseTomlDocument } from "../src/configurator-toml";

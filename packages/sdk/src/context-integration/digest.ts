@@ -11,7 +11,7 @@
  * Pure and deterministic: no AI, no IO, same input ⇒ same output.
  */
 
-import type { Summary, SummaryMetadata } from "@atlas/core";
+import type { Summary, SummaryMetadata } from "@prof-bilal/atlas-core";
 
 /** Inputs needed to build a digest. All data comes from the index — no IO. */
 export interface DigestInput {

@@ -7,7 +7,7 @@ import {
   createContextSDK,
   detectStaleness,
   indexProject,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it } from "vitest";

@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { createContextToolSourceFromSDK } from "@atlas/mcp";
+import { createContextToolSourceFromSDK } from "@prof-bilal/atlas-mcp";
 import {
   ToolUsingChatAgent,
   assembleContextPackage,
@@ -8,8 +8,8 @@ import {
   createProviderService,
   indexProject,
   scanProjectOverview,
-} from "@atlas/sdk";
-import type { ContextPackage } from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
+import type { ContextPackage } from "@prof-bilal/atlas-sdk";
 import type { JobContext } from "./jobs";
 
 /**

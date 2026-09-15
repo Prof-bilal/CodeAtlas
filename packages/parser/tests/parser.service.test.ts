@@ -1,6 +1,6 @@
-import type { SourceFile } from "@atlas/core";
-import type { FilePath, Result, SymbolId } from "@atlas/shared";
-import { fail, ok } from "@atlas/shared";
+import type { SourceFile } from "@prof-bilal/atlas-core";
+import type { FilePath, Result, SymbolId } from "@prof-bilal/atlas-shared";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { UnsupportedLanguageError } from "../src/errors";
 import type { LanguageParser } from "../src/language-parser";

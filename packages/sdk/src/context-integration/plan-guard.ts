@@ -10,7 +10,7 @@
  * Pure and deterministic: no AI, no IO.
  */
 
-import type { ContextPlan, PlanStep } from "@atlas/core";
+import type { ContextPlan, PlanStep } from "@prof-bilal/atlas-core";
 
 /** A model-proposed annotation on a plan step. */
 export interface ModelAnnotation {

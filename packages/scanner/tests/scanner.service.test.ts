@@ -1,5 +1,5 @@
 import { basename, join } from "node:path";
-import type { FilePath } from "@atlas/shared";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { ScannerService, scanProject } from "../src/scanner.service";
 import { createTestProject } from "./helpers";

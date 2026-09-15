@@ -1,5 +1,5 @@
-import type { AgentInfo, AgentPort, AgentRunRequest, AgentRunResult } from "@atlas/core";
-import { type Result, fail, ok } from "@atlas/shared";
+import type { AgentInfo, AgentPort, AgentRunRequest, AgentRunResult } from "@prof-bilal/atlas-core";
+import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import type { AgentAdapter } from "./adapter";
 import { builtinAdapters } from "./adapters";
 import { AgentCliNotFoundError, AgentConfigError, UnknownAgentError } from "./errors";

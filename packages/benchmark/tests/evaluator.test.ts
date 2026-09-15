@@ -1,4 +1,4 @@
-import type { TaskDefinition } from "@atlas/core";
+import type { TaskDefinition } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { conceptHits, evaluateTask, fileHits } from "../src/evaluator";
 

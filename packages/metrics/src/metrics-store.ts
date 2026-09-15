@@ -14,7 +14,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
-import type { MetricsSnapshot } from "@atlas/core";
+import type { MetricsSnapshot } from "@prof-bilal/atlas-core";
 import {
   MAX_METRICS_FILE_SIZE,
   METRICS_FILE_NAME,

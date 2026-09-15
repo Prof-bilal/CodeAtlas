@@ -9,8 +9,8 @@ import {
   maskApiKey,
   removeUserSettings,
   saveUserSettings,
-} from "@atlas/providers";
-import type { Result } from "@atlas/shared";
+} from "@prof-bilal/atlas-providers";
+import type { Result } from "@prof-bilal/atlas-shared";
 import { createProviderService } from "./service";
 
 /** Options for {@link createOllamaService}. */

@@ -10,29 +10,29 @@ import type { Options } from "tsup";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
 
 /**
- * Map `@atlas/*` package names to their source entry points so that bundled
+ * Map `@prof-bilal/atlas-*` package names to their source entry points so that bundled
  * packages (e.g. the CLI and the SDK) can pull workspace sources directly.
  * This removes any cross-package build-order requirement.
  */
 const workspaceAliases: Record<string, string> = {
-  "@atlas/shared": resolve(ROOT, "packages/shared/src/index.ts"),
-  "@atlas/core": resolve(ROOT, "packages/core/src/index.ts"),
-  "@atlas/hashing": resolve(ROOT, "packages/hashing/src/index.ts"),
-  "@atlas/scanner": resolve(ROOT, "packages/scanner/src/index.ts"),
-  "@atlas/parser": resolve(ROOT, "packages/parser/src/index.ts"),
-  "@atlas/storage": resolve(ROOT, "packages/storage/src/index.ts"),
-  "@atlas/graph": resolve(ROOT, "packages/graph/src/index.ts"),
-  "@atlas/context": resolve(ROOT, "packages/context/src/index.ts"),
-  "@atlas/cache": resolve(ROOT, "packages/cache/src/index.ts"),
-  "@atlas/providers": resolve(ROOT, "packages/providers/src/index.ts"),
-  "@atlas/search": resolve(ROOT, "packages/search/src/index.ts"),
-  "@atlas/summary": resolve(ROOT, "packages/summary/src/index.ts"),
-  "@atlas/sdk": resolve(ROOT, "packages/sdk/src/index.ts"),
-  "@atlas/agents": resolve(ROOT, "packages/agents/src/index.ts"),
-  "@atlas/usage": resolve(ROOT, "packages/usage/src/index.ts"),
-  "@atlas/metrics": resolve(ROOT, "packages/metrics/src/index.ts"),
-  "@atlas/toolkit": resolve(ROOT, "packages/toolkit/src/index.ts"),
-  "@atlas/mcp": resolve(ROOT, "packages/mcp/src/index.ts"),
+  "@prof-bilal/atlas-shared": resolve(ROOT, "packages/shared/src/index.ts"),
+  "@prof-bilal/atlas-core": resolve(ROOT, "packages/core/src/index.ts"),
+  "@prof-bilal/atlas-hashing": resolve(ROOT, "packages/hashing/src/index.ts"),
+  "@prof-bilal/atlas-scanner": resolve(ROOT, "packages/scanner/src/index.ts"),
+  "@prof-bilal/atlas-parser": resolve(ROOT, "packages/parser/src/index.ts"),
+  "@prof-bilal/atlas-storage": resolve(ROOT, "packages/storage/src/index.ts"),
+  "@prof-bilal/atlas-graph": resolve(ROOT, "packages/graph/src/index.ts"),
+  "@prof-bilal/atlas-context": resolve(ROOT, "packages/context/src/index.ts"),
+  "@prof-bilal/atlas-cache": resolve(ROOT, "packages/cache/src/index.ts"),
+  "@prof-bilal/atlas-providers": resolve(ROOT, "packages/providers/src/index.ts"),
+  "@prof-bilal/atlas-search": resolve(ROOT, "packages/search/src/index.ts"),
+  "@prof-bilal/atlas-summary": resolve(ROOT, "packages/summary/src/index.ts"),
+  "@prof-bilal/atlas-sdk": resolve(ROOT, "packages/sdk/src/index.ts"),
+  "@prof-bilal/atlas-agents": resolve(ROOT, "packages/agents/src/index.ts"),
+  "@prof-bilal/atlas-usage": resolve(ROOT, "packages/usage/src/index.ts"),
+  "@prof-bilal/atlas-metrics": resolve(ROOT, "packages/metrics/src/index.ts"),
+  "@prof-bilal/atlas-toolkit": resolve(ROOT, "packages/toolkit/src/index.ts"),
+  "@prof-bilal/atlas-mcp": resolve(ROOT, "packages/mcp/src/index.ts"),
 };
 
 /** Base tsup configuration shared by every package and app. */

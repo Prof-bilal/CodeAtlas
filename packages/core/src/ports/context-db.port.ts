@@ -1,4 +1,4 @@
-import type { FilePath, NodeId, SymbolId } from "@atlas/shared";
+import type { FilePath, NodeId, SymbolId } from "@prof-bilal/atlas-shared";
 import type { SourceFile, Symbol } from "../domain/entities";
 import type { Summary } from "./summary.port";
 
@@ -7,7 +7,7 @@ export type ContextSearchKind = "file" | "symbol" | "summary" | "module";
 
 /**
  * Every kind the search pipeline can return. Extends the database's own match
- * kinds with `"dependency"`, which the `@atlas/search` service resolves from the
+ * kinds with `"dependency"`, which the `@prof-bilal/atlas-search` service resolves from the
  * context snapshot rather than from `searchContext` (the DB port keeps
  * `ContextSearchKind` as its narrower contract).
  */
@@ -68,7 +68,7 @@ export interface SearchOptions {
   readonly types?: readonly ContextSearchKind[];
 }
 
-/** A single search match (`searchContext` or the `@atlas/search` service). */
+/** A single search match (`searchContext` or the `@prof-bilal/atlas-search` service). */
 export interface SearchResult {
   readonly kind: SearchHitKind;
   readonly title: string;
@@ -95,7 +95,7 @@ export interface SearchResult {
  *
  * Deliberately synchronous: the underlying driver is `node:sqlite`'s
  * `DatabaseSync`, and reads are optimized for speed. Wrappers that need async
- * `Result` shapes re-emit these methods (see `@atlas/storage`'s
+ * `Result` shapes re-emit these methods (see `@prof-bilal/atlas-storage`'s
  * `StorageService`). No AI logic lives here.
  */
 export interface ContextDatabasePort {

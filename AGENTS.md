@@ -17,12 +17,12 @@ to developer tools and AI agents, and can later route work to installed AI
 coding CLIs (`/claude`, `/gemini`, `/codex`, `/opencode`, …) and curated
 open-source tools.
 
-It is a **pnpm + TypeScript monorepo** (packages `@atlas/*` in `packages/`, a
+It is a **pnpm + TypeScript monorepo** (packages `@prof-bilal/atlas-*` in `packages/`, a
 CLI in `apps/cli`, and a VS Code extension in `apps/extension`). Clean
 architecture: contracts in `packages/core`, implementations in feature
 packages, composition in `packages/sdk`. Each feature package implements a
 `core` port. The CLI, MCP, and the VS Code extension consume **only**
-`@atlas/sdk` (plus `@atlas/mcp` for `atlas mcp`). Dependency direction is
+`@prof-bilal/atlas-sdk` (plus `@prof-bilal/atlas-mcp` for `atlas mcp`). Dependency direction is
 enforced by ESLint (`no-restricted-imports`) — see `docs/DEPENDENCIES.md`.
 
 ## 2. Current state — read this first
@@ -33,7 +33,7 @@ status table. Never assume planned features exist; verify against code.
 
 Non-obvious facts (verified as of 2026-08-14):
 
-- `@atlas/context` (context ranking/assembly) is **implemented** as a
+- `@prof-bilal/atlas-context` (context ranking/assembly) is **implemented** as a
   deterministic rank-and-assemble step (`ContextBuilderService` behind
   `ContextBuilderPort`, ADR-001): it ranks search hits and resolves them to
   source-file `ContextItem`s — no AI. Do not add AI gating or revert it to a
@@ -41,44 +41,44 @@ Non-obvious facts (verified as of 2026-08-14):
 - The CLI has **twenty-one** top-level subcommands. `atlas search`, `atlas mcp`,
   `atlas sessions`, `atlas usage`, `atlas agents`, `atlas metrics`, the full
   SDK-backed `atlas tools`, `atlas context`, `atlas explain`, `atlas benchmark`
-  (init/run/status/report — `@atlas/benchmark` behind `BenchmarkPort`,
+  (init/run/status/report — `@prof-bilal/atlas-benchmark` behind `BenchmarkPort`,
   ADR-012), and `atlas doctor`
   command surface are wired
   (through the **Context SDK**,
-  `@atlas/mcp`, `createSessionManager()`, and `createUsageService()`
+  `@prof-bilal/atlas-mcp`, `createSessionManager()`, and `createUsageService()`
   respectively); `init`/`build`/`update` now run the SDK-owned indexer.
   `atlas explain` resolves deterministically (AI summary only via `--ai`);
   `atlas doctor` runs a PASS/WARN/FAIL health checklist (exit 1 on FAIL).
   The interactive **`atlas tui`** is **v2 / not shipped** — its source
   (`apps/cli/src/tui/`, `apps/cli/src/commands/tui.ts`, `apps/cli/tests/tui.test.ts`)
   is git-untracked so fresh clones build without it; bare `atlas` prints help.
-- **`createContextSDK` (`@atlas/sdk`)** is the single read interface consumers
+- **`createContextSDK` (`@prof-bilal/atlas-sdk`)** is the single read interface consumers
   (CLI, MCP, VS Code extension, agents) use to read indexed context. Consumers
-  must **not** reach for the SQLite database, `@atlas/search`,
-  `@atlas/storage`, or `@atlas/summary` directly. **AI usage/credits**
-  (`@atlas/usage`, tri-state actual/estimated/unknown tokens & cost,
+  must **not** reach for the SQLite database, `@prof-bilal/atlas-search`,
+  `@prof-bilal/atlas-storage`, or `@prof-bilal/atlas-summary` directly. **AI usage/credits**
+  (`@prof-bilal/atlas-usage`, tri-state actual/estimated/unknown tokens & cost,
   budgets/limits) is likewise reached **only** through the SDK
   (`createUsageService`) — see `docs/USAGE.md` (ADR-009); its store
   (`.codeatlas/usage.db`) is separate from the context database.
-- **MCP (`@atlas/mcp`) and the VS Code extension (`@atlas/extension`) are
+- **MCP (`@prof-bilal/atlas-mcp`) and the VS Code extension (`@prof-bilal/atlas-extension`) are
   implemented** thin SDK consumers. The **Agent Orchestrator (Direction B)** is
-  mostly planned — the narrow **AI CLI connection layer (`@atlas/agents`,
+  mostly planned — the narrow **AI CLI connection layer (`@prof-bilal/atlas-agents`,
   behind `AgentPort`)** and the **Agent Session Manager** (behind `SessionPort`,
-  composed via `createSessionManager()` in `@atlas/sdk`, surfaced as
+  composed via `createSessionManager()` in `@prof-bilal/atlas-sdk`, surfaced as
   `atlas sessions`) are implemented. No agent router, no `/agents` commands, no
   slash commands — those remain **[PLANNED]**. See
   `docs/AGENT_SESSIONS.md` (ADR-007).
-- **Context → Agent integration (`@atlas/sdk`'s `context-integration` module,
+- **Context → Agent integration (`@prof-bilal/atlas-sdk`'s `context-integration` module,
   `createContextIntegration()`, ADR-008) is implemented**: it assembles a
   budgeted, deny-filtered, provider-independent `ContextPackage` per task (from
   `createContextSDK`, never the DB directly) and delivers it through the session
   manager (`launch`/`attach` via `SessionPort`). The CLI `atlas context`
   build/explain/json/launch/attach surface is wired; the future slash router
   remains a follow-up.
-- **Direction C — the Agent Toolkit (`@atlas/toolkit`, `atlas tools`)**: the
-  **Tool Registry foundation (Task 19) is implemented** — `@atlas/toolkit`
+- **Direction C — the Agent Toolkit (`@prof-bilal/atlas-toolkit`, `atlas tools`)**: the
+  **Tool Registry foundation (Task 19) is implemented** — `@prof-bilal/atlas-toolkit`
   behind `ToolRegistryPort` in `core`, composed via `createToolRegistry()` in
-  `@atlas/sdk`: a curated, schema-validated, provenance-auditable catalog
+  `@prof-bilal/atlas-sdk`: a curated, schema-validated, provenance-auditable catalog
   (`packages/toolkit/src/catalog.json`) merged with a local overlay. **The Tool
   Manifest System (Task 20) is implemented** — a versioned, validated,
   extensible schema (`TOOL_MANIFEST_SCHEMA_VERSION = 1`) recording one
@@ -86,15 +86,15 @@ Non-obvious facts (verified as of 2026-08-14):
   mirroring the Scanner manifest pattern, loaded as untrusted input (never
   executed, prototype-pollution safe, size-bounded, path-safe names). See
   `docs/TOOL_MANIFEST.md`. **The Compatibility Engine (Task 21) is
-  implemented** — `@atlas/toolkit` behind `CompatibilityPort` in `core`,
-  composed via `createCompatibilityEngine()` in `@atlas/sdk`: evaluates a
+  implemented** — `@prof-bilal/atlas-toolkit` behind `CompatibilityPort` in `core`,
+  composed via `createCompatibilityEngine()` in `@prof-bilal/atlas-sdk`: evaluates a
   tool's declared requirements (OS/architecture/runtimes/package manager/AI
   CLIs via `AgentPort`/MCP/permissions) against the detected, injectable
   environment (`EnvironmentDetector`); never installs anything and **never
   fails open** — `incompatible` ⇒ not installable here, `unknown` flagged never
   guessed, declared permissions advisory. See `docs/AGENT_TOOLKIT.md` §6. **The
-  Tool Installer (Task 22) is implemented** — `@atlas/toolkit` behind
-  `InstallerPort` in `core`, composed via `createInstaller()` in `@atlas/sdk`:
+  Tool Installer (Task 22) is implemented** — `@prof-bilal/atlas-toolkit` behind
+  `InstallerPort` in `core`, composed via `createInstaller()` in `@prof-bilal/atlas-sdk`:
   a safe MVP subset (`npm`, `pip`, `cargo`, `go`) installs through **official
   distribution channels only**; every command is an **argument-array spawn**
   (`shell:false`, never a shell string — adversarial tests assert this);
@@ -135,7 +135,7 @@ before touching more than one file. Key rules:
 - Everyone reads context through **`createContextSDK`** (`docs/CONTEXT_SDK.md`).
   The CLI must not query the database, MCP must not query the database, the VS
   Code extension must not query the database, and agents must never bypass the
-  Context SDK. Persistence belongs to `@atlas/storage` repositories; provider-
+  Context SDK. Persistence belongs to `@prof-bilal/atlas-storage` repositories; provider-
   specific logic belongs inside provider adapters; process/agent management
   (when it ships) belongs behind the planned orchestrator.
 
@@ -156,11 +156,11 @@ Do **not** randomly refactor or redesign working systems.
 
 ### 4.3 Do not duplicate or reinvent
 Before writing a new module/class, look for one that already does the job
-(`@atlas/cache`, the parser registry, `ContextStore`, `createContextSDK`,
+(`@prof-bilal/atlas-cache`, the parser registry, `ContextStore`, `createContextSDK`,
 repository classes, `Result`, branded types, …). Reuse; do not fork.
 
 ### 4.4 Database rules
-The context database is owned by `@atlas/storage`. **Do not modify the schema
+The context database is owned by `@prof-bilal/atlas-storage`. **Do not modify the schema
 casually.** Before any database change: inspect the schema (`src/schema.ts`,
 `src/migrations.ts`), the migration/versioning approach, every repository that
 touches the tables, and the tests. Prefer additive, backward-compatible
@@ -175,7 +175,7 @@ do not invalidate existing context without a good reason. See
 `docs/CONTEXT.md` and `docs/CONTEXT_STORAGE.md`.
 
 ### 4.6 AI provider rules
-Provider behavior is **quarantined in adapters** (`@atlas/providers`); the rest
+Provider behavior is **quarantined in adapters** (`@prof-bilal/atlas-providers`); the rest
 of the app sees only `ProviderPort`. Do **not** assume all providers share CLI
 arguments, features, authentication, or context-injection behavior. Never leave
 `if (provider === "...")` switches outside adapters. Default model ids are
@@ -253,8 +253,8 @@ secrets.
 - How the repo is understood: `docs/CONTEXT.md`; the on-disk `.codeatlas/`
   layout: `docs/CONTEXT_STORAGE.md`.
 - Reader-facing API: `docs/CONTEXT_SDK.md`.
-- Integrated consumers: `docs/MCP.md` (`@atlas/mcp`), `docs/VSCODE.md`
-  (`@atlas/extension`).
+- Integrated consumers: `docs/MCP.md` (`@prof-bilal/atlas-mcp`), `docs/VSCODE.md`
+  (`@prof-bilal/atlas-extension`).
 - Security / privacy / testing / quality / process:
   `docs/SECURITY.md`, `docs/PRIVACY.md`, `docs/TESTING.md`,
   `docs/CODE_QUALITY.md`, `docs/CHANGE_POLICY.md`.

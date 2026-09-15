@@ -1,6 +1,6 @@
 // Tests for Phase A task A3 — scoreTaskRetrieval.
 
-import type { TaskDefinition } from "@atlas/core";
+import type { TaskDefinition } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
 import { scoreTaskRetrieval } from "../src/retrieval-metrics.js";
 import type { ContextSDK } from "../src/retrieval-metrics.js";

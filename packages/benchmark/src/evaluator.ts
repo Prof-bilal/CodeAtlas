@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { basename, join } from "node:path";
-import type { BenchmarkEvaluation, TaskDefinition } from "@atlas/core";
+import type { BenchmarkEvaluation, TaskDefinition } from "@prof-bilal/atlas-core";
 
 // ---------------------------------------------------------------------------
 // Normalization helpers

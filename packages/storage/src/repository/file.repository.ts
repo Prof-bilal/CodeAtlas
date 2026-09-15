@@ -1,5 +1,5 @@
-import type { SourceFile } from "@atlas/core";
-import type { FilePath } from "@atlas/shared";
+import type { SourceFile } from "@prof-bilal/atlas-core";
+import type { FilePath } from "@prof-bilal/atlas-shared";
 import { type Row, colNumber, colString, count } from "./row";
 import { StatementCache } from "./statement-cache";
 

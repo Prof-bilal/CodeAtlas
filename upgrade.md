@@ -249,16 +249,16 @@ existing seam.** No new framework, no new config, no event bus.
 
 | Capability | Host | Port | SDK | CLI/MCP | Security | Optional? |
 |---|---|---|---|---|---|---|
-| **Skills (ADR-022)** | `@atlas/toolkit` (loader moved from benchmark) + `SkillPort` in core | `SkillPort` | `createSkillService()` | `atlas skills list/info/load` (SDK only); launch-time injection | Post-install validation, approval-gated updates (closes audit HIGH finding) | n/a — P0 foundation |
-| **Impact / blast radius** | `@atlas/graph` (new query service) + `@atlas/sdk` composition | `ImpactPort` (diff→affected symbols/tests/docs) | `createImpactService()` | `atlas impact`; MCP `analyze_impact` (additive) | Read-only over the index | Opt-in command |
-| **Browser QA** | **No new package** — Toolkit catalog + skills; screenshot-diff primitive in `@atlas/shared` or toolkit utils | none (tool orchestration) | skill delivery only | Skills; artifacts under `.codeatlas/qa/` | Browser runs only via approved Toolkit installs; never auto-launch; no unrestricted file access (mirror Playwright's `--allow-unrestricted-file-access` default-off) | Optional dependency |
-| **Evaluate report** | `@atlas/sdk` (aggregation over verifier/benchmark/qa artifacts) | none (pure aggregation) | `createEvaluationService()` | `atlas evaluate` | Read-only aggregation + local-only human feedback | Opt-in |
-| **HTTP probe** | `@atlas/toolkit` or small `@atlas/inspect` module in SDK | `InspectPort` (probe/request capture) | `createInspectService()` | `atlas inspect http` | **Explicit per-target approval** (network egress), localhost-default, no cred sending (docs/SECURITY.md rules) | Opt-in |
-| **Trace (error grounding)** | `@atlas/sdk` (stack-parse + index resolve) | none (pure function over index) | part of context SDK surface | `atlas trace` | Read-only | Opt-in |
-| **Docs drift** | `@atlas/sdk` or `@atlas/verifier` extension | none (index queries) | part of verify surface | `atlas verify --docs` | Read-only | Opt-in |
-| **Breaking-change report** | `@atlas/sdk` (snapshot diff) | none | part of impact service | `atlas impact --breaking` | Read-only | Opt-in |
+| **Skills (ADR-022)** | `@prof-bilal/atlas-toolkit` (loader moved from benchmark) + `SkillPort` in core | `SkillPort` | `createSkillService()` | `atlas skills list/info/load` (SDK only); launch-time injection | Post-install validation, approval-gated updates (closes audit HIGH finding) | n/a — P0 foundation |
+| **Impact / blast radius** | `@prof-bilal/atlas-graph` (new query service) + `@prof-bilal/atlas-sdk` composition | `ImpactPort` (diff→affected symbols/tests/docs) | `createImpactService()` | `atlas impact`; MCP `analyze_impact` (additive) | Read-only over the index | Opt-in command |
+| **Browser QA** | **No new package** — Toolkit catalog + skills; screenshot-diff primitive in `@prof-bilal/atlas-shared` or toolkit utils | none (tool orchestration) | skill delivery only | Skills; artifacts under `.codeatlas/qa/` | Browser runs only via approved Toolkit installs; never auto-launch; no unrestricted file access (mirror Playwright's `--allow-unrestricted-file-access` default-off) | Optional dependency |
+| **Evaluate report** | `@prof-bilal/atlas-sdk` (aggregation over verifier/benchmark/qa artifacts) | none (pure aggregation) | `createEvaluationService()` | `atlas evaluate` | Read-only aggregation + local-only human feedback | Opt-in |
+| **HTTP probe** | `@prof-bilal/atlas-toolkit` or small `@prof-bilal/atlas-inspect` module in SDK | `InspectPort` (probe/request capture) | `createInspectService()` | `atlas inspect http` | **Explicit per-target approval** (network egress), localhost-default, no cred sending (docs/SECURITY.md rules) | Opt-in |
+| **Trace (error grounding)** | `@prof-bilal/atlas-sdk` (stack-parse + index resolve) | none (pure function over index) | part of context SDK surface | `atlas trace` | Read-only | Opt-in |
+| **Docs drift** | `@prof-bilal/atlas-sdk` or `@prof-bilal/atlas-verifier` extension | none (index queries) | part of verify surface | `atlas verify --docs` | Read-only | Opt-in |
+| **Breaking-change report** | `@prof-bilal/atlas-sdk` (snapshot diff) | none | part of impact service | `atlas impact --breaking` | Read-only | Opt-in |
 
-Dependency-matrix note: `@atlas/verifier` is currently missing from the ESLint
+Dependency-matrix note: `@prof-bilal/atlas-verifier` is currently missing from the ESLint
 `ALL_PACKAGES` matrix (audit finding) — fix that *before* extending verifier.
 
 ---
@@ -300,7 +300,7 @@ Dependency-matrix note: `@atlas/verifier` is currently missing from the ESLint
 13. Attack-surface graph queries; OTel span-reading adapter.
 14. Design-token extraction capability (computed-style eval) feeding the QA
     loop; mutation testing curation (Stryker); bundle/Lighthouse curation.
-15. Internal: fix audit P1 hygiene (verifier ESLint entry, `@atlas/common`
+15. Internal: fix audit P1 hygiene (verifier ESLint entry, `@prof-bilal/atlas-common`
     orphan, `estimateTokens` dedup) — *before or during* the first capability
     that touches verifier.
 

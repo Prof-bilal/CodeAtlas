@@ -8,7 +8,7 @@ import {
   type UsagePort,
   createToolkitSDK,
   indexProject,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { openMetrics } from "./metrics";
 import { resolveProjectRoot } from "./search";

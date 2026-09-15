@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
-import { createContextToolSourceFromSDK } from "@atlas/mcp";
+import { createContextToolSourceFromSDK } from "@prof-bilal/atlas-mcp";
 import {
   type AssembleOptions,
   type ContextIntegration,
@@ -23,7 +23,7 @@ import {
   renderContextSlice,
   resolveSkillsInstructions,
   saveContextSlice,
-} from "@atlas/sdk";
+} from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { openMetrics } from "./metrics";
 import { contextDbPath, resolveProjectRoot } from "./search";

@@ -48,8 +48,8 @@
     "ts-morph": "^28.0.0"
   },
   "devDependencies": {
-    "@atlas/benchmark": "workspace:*",
-    "@atlas/mcp": "workspace:*",
-    "@atlas/sdk": "workspace:*"
+    "@prof-bilal/atlas-benchmark": "workspace:*",
+    "@prof-bilal/atlas-mcp": "workspace:*",
+    "@prof-bilal/atlas-sdk": "workspace:*"
   }
 }

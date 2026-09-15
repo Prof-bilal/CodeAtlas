@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import type { Project, SourceFile, StoragePort, Symbol } from "@atlas/core";
-import type { FilePath, ProjectId, Result } from "@atlas/shared";
-import { fail, ok } from "@atlas/shared";
+import type { Project, SourceFile, StoragePort, Symbol } from "@prof-bilal/atlas-core";
+import type { FilePath, ProjectId, Result } from "@prof-bilal/atlas-shared";
+import { fail, ok } from "@prof-bilal/atlas-shared";
 import { ContextStore } from "./context-store";
 
 /** Options for constructing a {@link StorageService}. */

@@ -1,5 +1,5 @@
-import type { BuildSnapshotOptions, HashDiff, HashPort, HashSnapshot } from "@atlas/core";
-import type { Result } from "@atlas/shared";
+import type { BuildSnapshotOptions, HashDiff, HashPort, HashSnapshot } from "@prof-bilal/atlas-core";
+import type { Result } from "@prof-bilal/atlas-shared";
 // Re-export the core `HashDiff` type so the package index can surface it
 // (see `src/index.ts`). It is a core domain type, not defined here.
 export type { HashDiff };

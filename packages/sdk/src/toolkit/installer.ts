@@ -1,10 +1,10 @@
-import type { CompatibilityPort, InstallerPort, SecurityPort } from "@atlas/core";
+import type { CompatibilityPort, InstallerPort, SecurityPort } from "@prof-bilal/atlas-core";
 import {
   type EcosystemAdapter,
   type InstallerProcess,
   InstallerService,
   SecurityAssessor,
-} from "@atlas/toolkit";
+} from "@prof-bilal/atlas-toolkit";
 import { type CreateCompatibilityEngineOptions, createCompatibilityEngine } from "./compatibility";
 
 /** Options for {@link createInstaller}. */

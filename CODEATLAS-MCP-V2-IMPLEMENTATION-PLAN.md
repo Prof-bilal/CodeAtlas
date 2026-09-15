@@ -46,7 +46,7 @@ pnpm 9.15.0, Node `>=22.5.0` floor (`node:sqlite`). Dependency direction `cli â†
 | `storage` | `ContextStore`, 8 tables, `SCHEMA_VERSION=1` (`storage/src/schema.ts:4,10-99`), WAL, conditional VACUUM | Implemented |
 | `search` | In-memory lexical index, `LexicalScorer`, `RelevanceScorer` seam only, **no embeddings** | Lexical only |
 | `context` | `ContextBuilderService` rank-and-assemble (ADR-001) | Implemented |
-| `summary`/`cache` | AI summaries cached by content hash; `@atlas/cache` used **only** by summaries | Narrow but correct |
+| `summary`/`cache` | AI summaries cached by content hash; `@prof-bilal/atlas-cache` used **only** by summaries | Narrow but correct |
 | `sdk` | Composition root: `createContextSDK` (`sdk/src/context/sdk.ts`), `indexProject` (`sdk/src/indexing/indexer.ts:98-105`), `context-integration/` (assemble/budget/sufficiency/deny/hierarchy/classifier/planner/staleness/slice-store) | Implemented |
 | `mcp` | 12-tool stdio server, SDK-only reads | Implemented (docs say 7 â€” stale) |
 | `benchmark` | Harness + evaluator + `retrieval-metrics.ts` (P@k/R@k/MRR) + `paired-bootstrap.ts` + `significance.ts` | Implemented, n=1 pilot only |

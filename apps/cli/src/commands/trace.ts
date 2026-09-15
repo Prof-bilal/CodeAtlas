@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { createContextSDK } from "@atlas/sdk";
+import { createContextSDK } from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 
 interface TraceOptions {

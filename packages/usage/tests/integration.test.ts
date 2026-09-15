@@ -1,8 +1,8 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { ProviderPort } from "@atlas/core";
-import { ok } from "@atlas/shared";
+import type { ProviderPort } from "@prof-bilal/atlas-core";
+import { ok } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { StaticPricingSource, UsageService, UsageStore, withUsageTracking } from "../src";
 

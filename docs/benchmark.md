@@ -1,7 +1,7 @@
 # Benchmarking CodeAtlas — `atlas benchmark`
 
 **Status: [IMPLEMENTED]** (`packages/benchmark` behind `BenchmarkPort` in
-`@atlas/core`, composed in the CLI — ADR-012). The benchmark framework
+`@prof-bilal/atlas-core`, composed in the CLI — ADR-012). The benchmark framework
 measures **agent context quality**: for each task, the same prompt runs twice —
 once **baseline** (the agent without CodeAtlas context) and once **codeatlas**
 (the agent with CodeAtlas in the loop) — with real token/cost/latency numbers
@@ -9,7 +9,7 @@ and automated accuracy scoring.
 
 ## Skills (minimal Agent Skills) & the 2026-09 fresh cycle
 
-`@atlas/benchmark` ships a minimal, dependency-free **Skills** capability
+`@prof-bilal/atlas-benchmark` ships a minimal, dependency-free **Skills** capability
 (`packages/benchmark/src/skills/`) implementing the open **Agent Skills**
 pattern for benchmark use: discovery (metadata only) → load (full `SKILL.md` +
 bounded `references/`) → render → task→skill resolution. It is path-safe,
@@ -71,19 +71,19 @@ and concept-ratio hits plus on-disk citation checks.
   accuracy scores, and aggregate savings land as JSON under
   `.codeatlas/benchmarks/suites/<id>/tasks/<task>-<mode>.json` plus a
   `raw-results.json` aggregate.
-- Each task run feeds `MetricsPort.recordTokenEstimate` and `@atlas/usage`
+- Each task run feeds `MetricsPort.recordTokenEstimate` and `@prof-bilal/atlas-usage`
   (`latencyMs`, agent `benchmark:<suite>`).
 - Ollama models price at $0/token through the static pricing wildcard
   ("local inference"; cloud-hosted endpoints may differ).
 
 ## HTTP API & the Benchmark dashboard — **[IMPLEMENTED]** (ADR-013)
 
-`apps/server` (`@atlas/server`) exposes the framework over a localhost HTTP
+`apps/server` (`@prof-bilal/atlas-server`) exposes the framework over a localhost HTTP
 API (`127.0.0.1:8787` by default, `node:http`, zero new runtime dependencies)
 that backs the **Atlas Benchmark** page in the web UI:
 
 ```
-pnpm --filter @atlas/server build && node apps/server/dist/index.js
+pnpm --filter @prof-bilal/atlas-server build && node apps/server/dist/index.js
 ```
 
 - **Suite reads/writes** go through the same `BenchmarkService`/`BenchmarkStore`
@@ -168,7 +168,7 @@ Test repository: `tests/fixtures/mcp-audit-repo` (copied to a temp directory)
 
 ## Methodology
 
-- **Token counts are estimates.** `estimateTokens` from `@atlas/sdk` uses
+- **Token counts are estimates.** `estimateTokens` from `@prof-bilal/atlas-sdk` uses
   `ceil(character_count / 4)`. No external model/provider token telemetry was
   available, so every token figure in this report is an **estimate**, never a
   measured count.
