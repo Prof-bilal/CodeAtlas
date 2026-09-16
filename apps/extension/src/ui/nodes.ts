@@ -1,4 +1,9 @@
-import type { DependencyContext, ModuleContext, ProjectOverview, Summary } from "@atlas/sdk";
+import type {
+  DependencyContext,
+  ModuleContext,
+  ProjectOverview,
+  Summary,
+} from "@prof-bilal/atlas-sdk";
 import type { EditorSymbol } from "../client";
 import type { VscodeTreeItemBase } from "../vscode-host";
 

@@ -32,7 +32,7 @@ Thumbs.db
 
 # Generated CodeAtlas artifacts (local index, evidence, installed tools)
 .codeatlas/
-ui/
+/ui/
 docs/DESIGN.md
 
 # The interactive TUI (v2 / not shipped): kept on disk but untracked so fresh
