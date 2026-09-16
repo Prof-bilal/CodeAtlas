@@ -4,16 +4,16 @@ node_modules/
 
 # Build output
 dist/
-build/
+/build/
 *.tsbuildinfo
-.release/
+/.release/
 
 # Test output
-coverage/
-.tmp/
+/coverage/
+/.tmp/
 
 # Logs
-logs/
+/logs/
 *.log
 npm-debug.log*
 pnpm-debug.log*
