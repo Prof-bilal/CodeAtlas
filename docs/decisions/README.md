@@ -46,6 +46,14 @@ ADR-002.md       ...
 | [ADR-009](./ADR-009.md) | Usage & Credits as a dedicated `@prof-bilal/atlas-usage` feature package behind `UsagePort` (tri-state actual/estimated/unknown provenance, `PricingSource` abstraction, budgets/limits, `atlas usage`) | Accepted | 2026-08-11 |
 | [ADR-010](./ADR-010-security-trust-assessment.md) | Offline security assessment and trust-gated installation | Accepted | 2026-08-12 |
 | [ADR-022](./ADR-022-skills-architecture.md) | Unified Skills: one Agent Skills format; `SkillPort` in `core`, loader extracted into `@prof-bilal/atlas-toolkit`, composed by the SDK (`createSkillService`); launch-time injection primary, additive MCP tools secondary; validated + approval-gated install/update | Proposed | 2026-09-12 |
+| [ADR-023](./ADR-023-remove-browser-and-benchmark-subsystems.md) | Remove browser control (Playwright) and the benchmark harness from this repository; install CodeAtlas only and let `atlas setup` install just what the user selects | Accepted | 2026-09-16 |
+
+### Superseded / removed
+
+- **ADR-012 (benchmark framework)** and **ADR-013 (benchmark API server)** were
+  superseded by [ADR-023](./ADR-023-remove-browser-and-benchmark-subsystems.md).
+  The benchmark package, `apps/server`, the CLI surface and the corpus they
+  describe were removed; their decision files went with them.
 
 ---
 

@@ -19,8 +19,8 @@ import type {
  * implements a safe subset of those adapters; the port reports the implemented
  * types via {@link InstallerPort.implementedTypes}.
  *
- * Trust rules the port enforces (see `docs/AGENT_TOOLKIT.md` §5 and
- * `docs/SECURITY.md`):
+ * Trust rules the port enforces (see `docs/architecture/AGENT_TOOLKIT.md` §5 and
+ * `docs/reference/SECURITY.md`):
  * - **Never** executes arbitrary repository / third-party install scripts.
  * - **Never** builds a shell string — every command is an **argument array**
  *   (`spawn(file, argsArray)`, `shell: false`), so manifest/registry/AI-derived

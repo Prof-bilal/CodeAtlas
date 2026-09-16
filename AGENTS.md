@@ -23,7 +23,7 @@ architecture: contracts in `packages/core`, implementations in feature
 packages, composition in `packages/sdk`. Each feature package implements a
 `core` port. The CLI, MCP, and the VS Code extension consume **only**
 `@prof-bilal/atlas-sdk` (plus `@prof-bilal/atlas-mcp` for `atlas mcp`). Dependency direction is
-enforced by ESLint (`no-restricted-imports`) — see `docs/DEPENDENCIES.md`.
+enforced by ESLint (`no-restricted-imports`) — see `docs/architecture/DEPENDENCIES.md`.
 
 ## 2. Current state — read this first
 
@@ -38,11 +38,10 @@ Non-obvious facts (verified as of 2026-08-14):
   `ContextBuilderPort`, ADR-001): it ranks search hits and resolves them to
   source-file `ContextItem`s — no AI. Do not add AI gating or revert it to a
   stub.
-- The CLI has **twenty-one** top-level subcommands. `atlas search`, `atlas mcp`,
+- The CLI has **29** top-level subcommands. `atlas search`, `atlas mcp`,
   `atlas sessions`, `atlas usage`, `atlas agents`, `atlas metrics`, the full
-  SDK-backed `atlas tools`, `atlas context`, `atlas explain`, `atlas benchmark`
-  (init/run/status/report — `@prof-bilal/atlas-benchmark` behind `BenchmarkPort`,
-  ADR-012), and `atlas doctor`
+  SDK-backed `atlas tools`, `atlas context`, `atlas explain`, `atlas skills`
+  (alias `atlas skill`), `atlas setup`, and `atlas doctor`
   command surface are wired
   (through the **Context SDK**,
   `@prof-bilal/atlas-mcp`, `createSessionManager()`, and `createUsageService()`
@@ -52,13 +51,37 @@ Non-obvious facts (verified as of 2026-08-14):
   The interactive **`atlas tui`** is **v2 / not shipped** — its source
   (`apps/cli/src/tui/`, `apps/cli/src/commands/tui.ts`, `apps/cli/tests/tui.test.ts`)
   is git-untracked so fresh clones build without it; bare `atlas` prints help.
+- **Skills are a primary feature.** 13 first-party workflow Skills ship as
+  canonical `SKILL.md` files at
+  `packages/toolkit/src/skills/prebuilt/<id>/SKILL.md` (one format, one loader —
+  never add a second Skill system). Bare `atlas skills` **lists built-in and
+  installed Skills** (`--builtin`/`--installed` narrow it);
+  `info`/`validate`/`load` resolve project-first, then built-in; MCP exposes
+  `list_skills`/`get_skill`; the build copies the tree to `dist/skills/prebuilt`
+  so the published CLI ships it. Four of them (`ui-research`, `ui-check`,
+  `ui-build`, `webapp-testing`) use the **agent's own web fetch/search tools**
+  and the project's own test tooling: they may inspect fetched markup/CSS as
+  source evidence and must report rendering-dependent checks as *could not run*
+  rather than inferring them. No Skill body may reference a browser runner,
+  Playwright, or `atlas browse` — not even the word "browser";
+  `builtin-skills.test.ts` enforces this across all 13 built-ins.
+- **Installing CodeAtlas installs CodeAtlas only.** `atlas setup` builds a plan
+  (`planSetup()`), shows recommended + optional items, and installs **only what
+  the user selects and confirms** — never an implicit install of Tools/Skills.
+  Keep that property when touching `packages/sdk/src/setup.ts` or
+  `apps/cli/src/commands/setup.ts`.
+- **Browser control / benchmark are out of scope for this phase.** There is no
+  `atlas browse`, no `BrowsePort`, no Playwright dependency, no benchmark
+  package, and no `apps/server`. Do not rebuild them, and do not re-point the
+  four web-facing Skills back at a browser runner — they are already wired to
+  the agent's own web access.
 - **`createContextSDK` (`@prof-bilal/atlas-sdk`)** is the single read interface consumers
   (CLI, MCP, VS Code extension, agents) use to read indexed context. Consumers
   must **not** reach for the SQLite database, `@prof-bilal/atlas-search`,
   `@prof-bilal/atlas-storage`, or `@prof-bilal/atlas-summary` directly. **AI usage/credits**
   (`@prof-bilal/atlas-usage`, tri-state actual/estimated/unknown tokens & cost,
   budgets/limits) is likewise reached **only** through the SDK
-  (`createUsageService`) — see `docs/USAGE.md` (ADR-009); its store
+  (`createUsageService`) — see `docs/reference/USAGE.md` (ADR-009); its store
   (`.codeatlas/usage.db`) is separate from the context database.
 - **MCP (`@prof-bilal/atlas-mcp`) and the VS Code extension (`@prof-bilal/atlas-extension`) are
   implemented** thin SDK consumers. The **Agent Orchestrator (Direction B)** is
@@ -67,7 +90,7 @@ Non-obvious facts (verified as of 2026-08-14):
   composed via `createSessionManager()` in `@prof-bilal/atlas-sdk`, surfaced as
   `atlas sessions`) are implemented. No agent router, no `/agents` commands, no
   slash commands — those remain **[PLANNED]**. See
-  `docs/AGENT_SESSIONS.md` (ADR-007).
+  `docs/architecture/AGENT_SESSIONS.md` (ADR-007).
 - **Context → Agent integration (`@prof-bilal/atlas-sdk`'s `context-integration` module,
   `createContextIntegration()`, ADR-008) is implemented**: it assembles a
   budgeted, deny-filtered, provider-independent `ContextPackage` per task (from
@@ -85,14 +108,14 @@ Non-obvious facts (verified as of 2026-08-14):
   installed tool's state, persisted per tool in `.codeatlas/tools/<name>.json`
   mirroring the Scanner manifest pattern, loaded as untrusted input (never
   executed, prototype-pollution safe, size-bounded, path-safe names). See
-  `docs/TOOL_MANIFEST.md`. **The Compatibility Engine (Task 21) is
+  `docs/reference/TOOL_MANIFEST.md`. **The Compatibility Engine (Task 21) is
   implemented** — `@prof-bilal/atlas-toolkit` behind `CompatibilityPort` in `core`,
   composed via `createCompatibilityEngine()` in `@prof-bilal/atlas-sdk`: evaluates a
   tool's declared requirements (OS/architecture/runtimes/package manager/AI
   CLIs via `AgentPort`/MCP/permissions) against the detected, injectable
   environment (`EnvironmentDetector`); never installs anything and **never
   fails open** — `incompatible` ⇒ not installable here, `unknown` flagged never
-  guessed, declared permissions advisory. See `docs/AGENT_TOOLKIT.md` §6. **The
+  guessed, declared permissions advisory. See `docs/architecture/AGENT_TOOLKIT.md` §6. **The
   Tool Installer (Task 22) is implemented** — `@prof-bilal/atlas-toolkit` behind
   `InstallerPort` in `core`, composed via `createInstaller()` in `@prof-bilal/atlas-sdk`:
   a safe MVP subset (`npm`, `pip`, `cargo`, `go`) installs through **official
@@ -109,8 +132,8 @@ Non-obvious facts (verified as of 2026-08-14):
   offline per-check risk assessment, exact five trust states, hostile-input
   rejection, fail-closed installer gating, and explicit unverified override
   recording. Design contract:
-  `docs/AGENT_TOOLKIT.md`; registry details:
-  `docs/TOOL_REGISTRY.md`.
+  `docs/architecture/AGENT_TOOLKIT.md`; registry details:
+  `docs/architecture/TOOL_REGISTRY.md`.
 - Pipelines that are implemented and tested: scanner, hashing, manifest,
   parser (TypeScript only — **[PARTIAL]**), graph, SQLite storage, search,
   summaries, cache, providers. Parser known gaps: renamed imports and
@@ -122,17 +145,17 @@ Non-obvious facts (verified as of 2026-08-14):
 
 ## 3. Architecture & consumers
 
-Read `docs/ARCHITECTURE.md` (canonical) and `docs/MODULES.md` (ownership)
+Read `docs/architecture/ARCHITECTURE.md` (canonical) and `docs/architecture/MODULES.md` (ownership)
 before touching more than one file. Key rules:
 
 - Dependencies point **inward**: `cli → sdk → feature packages → core → shared`.
 - Feature packages import **only** `core` + `shared`; `cli` imports only
   `sdk` (+ `mcp`); `mcp` and `apps/extension` import only `sdk`. Enforced by
-  ESLint. See `docs/DEPENDENCIES.md`.
+  ESLint. See `docs/architecture/DEPENDENCIES.md`.
 - The indexing pipeline data flow is
   `scanner → hashing → parser → graph → storage → search → SDK` — see
-  `docs/CONTEXT.md` for how CodeAtlas understands a repository.
-- Everyone reads context through **`createContextSDK`** (`docs/CONTEXT_SDK.md`).
+  `docs/architecture/CONTEXT.md` for how CodeAtlas understands a repository.
+- Everyone reads context through **`createContextSDK`** (`docs/reference/CONTEXT_SDK.md`).
   The CLI must not query the database, MCP must not query the database, the VS
   Code extension must not query the database, and agents must never bypass the
   Context SDK. Persistence belongs to `@prof-bilal/atlas-storage` repositories; provider-
@@ -172,7 +195,7 @@ Context is the product. Do not rescan the entire repository unnecessarily;
 respect file hashing and snapshots; preserve incremental updates; never bypass
 the Context SDK; do not create duplicate context storage in another package;
 do not invalidate existing context without a good reason. See
-`docs/CONTEXT.md` and `docs/CONTEXT_STORAGE.md`.
+`docs/architecture/CONTEXT.md` and `docs/architecture/CONTEXT_STORAGE.md`.
 
 ### 4.6 AI provider rules
 Provider behavior is **quarantined in adapters** (`@prof-bilal/atlas-providers`); the rest
@@ -186,22 +209,22 @@ Avoid shell execution when unnecessary. Prefer `spawn(file, argsArray)` over
 `spawn(..., { shell: true })` and `exec(shellString)`. Validate paths, never
 build a shell string from repository-derived or AI-generated content, never
 execute arbitrary repository content automatically. Never introduce
-`shell: true` without a documented reason. See `docs/SECURITY.md`.
+`shell: true` without a documented reason. See `docs/reference/SECURITY.md`.
 
 ### 4.8 File-system rules
 Respect `.gitignore` and ignored `.codeatlas/`. Never access `.env*`,
 credentials, or private keys found in a repository. Handle symlinks, binary
 files, and large files carefully. Never assume every repository file is safe to
-send to an external AI provider. See `docs/SECURITY.md`.
+send to an external AI provider. See `docs/reference/SECURITY.md`.
 
 ### 4.9 Secrets & privacy
 Never log or print API keys, tokens, or provider config values. Never commit
 `.env*`. Provider calls are **user-configured and explicit**; they send narrow,
 relevant context — never implicit whole-repository uploads. See
-`docs/SECURITY.md` and `docs/PRIVACY.md`.
+`docs/reference/SECURITY.md` and `docs/reference/PRIVACY.md`.
 
 ### 4.10 Testing
-Add or adjust tests per `docs/TESTING.md`. A task is not done until the relevant
+Add or adjust tests per `docs/contributing/TESTING.md`. A task is not done until the relevant
 tests pass. Do **not** delete failing tests to make the suite pass; do **not**
 weaken assertions. Add regression tests for bugs. Mock external AI CLIs and
 provider transports in unit tests; normal tests require **no** provider
@@ -228,8 +251,8 @@ secrets.
 ## 5. Workflow
 
 1. Read this file.
-2. Read `docs/CURRENT_STATE.md` and `docs/DOCUMENTATION_MAP.md` (find the doc
-   you need).
+2. Read `docs/CURRENT_STATE.md`, `docs/REPOSITORY_MAP.md`, and `docs/README.md`
+   (find the doc you need).
 3. Read the relevant `docs/` for the module(s) you'll touch.
 4. Inspect the implementation (source + tests) and its dependency implications.
 5. Plan (write an ADR for architectural changes).
@@ -237,27 +260,30 @@ secrets.
 7. Test — `pnpm check` (typecheck + lint + format + test). Add/adjust tests.
 8. Document — update the affected docs and `docs/FEATURE_STATUS.md` if status
    changed.
-9. Review — self-review vs `docs/CODE_QUALITY.md`, `docs/SECURITY.md`, and
-   `docs/CHANGE_POLICY.md`.
-10. Report — per `docs/DEVELOPMENT_WORKFLOW.md`: files changed, what changed,
+9. Review — self-review vs `docs/contributing/CODE_QUALITY.md`, `docs/reference/SECURITY.md`, and
+   `docs/contributing/CHANGE_POLICY.md`.
+10. Report — per `docs/contributing/DEVELOPMENT_WORKFLOW.md`: files changed, what changed,
     tests run/passed, known limitations, remaining work.
 
 ## 6. Where things live
 
-- Docs index & navigation: `docs/DOCUMENTATION_MAP.md`.
+- Docs index & navigation: `docs/README.md`. Repository map ("where do I add
+  this?"): `docs/REPOSITORY_MAP.md`.
 - Current state / feature status: `docs/CURRENT_STATE.md`,
   `docs/FEATURE_STATUS.md`.
-- Canonical architecture: `docs/ARCHITECTURE.md` (root `ARCHITECTURE.md` is a
+- Superseded plans/audits/research: `docs/archive/` (historical only — never
+  treat them as current requirements).
+- Canonical architecture: `docs/architecture/ARCHITECTURE.md` (root `ARCHITECTURE.md` is a
   pointer).
-- Module ownership: `docs/MODULES.md`. Dependency matrix: `docs/DEPENDENCIES.md`.
-- How the repo is understood: `docs/CONTEXT.md`; the on-disk `.codeatlas/`
-  layout: `docs/CONTEXT_STORAGE.md`.
-- Reader-facing API: `docs/CONTEXT_SDK.md`.
-- Integrated consumers: `docs/MCP.md` (`@prof-bilal/atlas-mcp`), `docs/VSCODE.md`
+- Module ownership: `docs/architecture/MODULES.md`. Dependency matrix: `docs/architecture/DEPENDENCIES.md`.
+- How the repo is understood: `docs/architecture/CONTEXT.md`; the on-disk `.codeatlas/`
+  layout: `docs/architecture/CONTEXT_STORAGE.md`.
+- Reader-facing API: `docs/reference/CONTEXT_SDK.md`.
+- Integrated consumers: `docs/reference/MCP.md` (`@prof-bilal/atlas-mcp`), `docs/guides/VSCODE.md`
   (`@prof-bilal/atlas-extension`).
 - Security / privacy / testing / quality / process:
-  `docs/SECURITY.md`, `docs/PRIVACY.md`, `docs/TESTING.md`,
-  `docs/CODE_QUALITY.md`, `docs/CHANGE_POLICY.md`.
-- Development setup: `docs/DEVELOPMENT.md`. Contributing: `docs/CONTRIBUTING.md`.
-- Implemented analysis agents: `docs/AGENT_CATALOG.md`.
-- Agent Toolkit design/current state: `docs/AGENT_TOOLKIT.md`.
+  `docs/reference/SECURITY.md`, `docs/reference/PRIVACY.md`, `docs/contributing/TESTING.md`,
+  `docs/contributing/CODE_QUALITY.md`, `docs/contributing/CHANGE_POLICY.md`.
+- Development setup: `docs/contributing/DEVELOPMENT.md`. Contributing: `docs/contributing/CONTRIBUTING.md`.
+- Implemented analysis agents: `docs/architecture/AGENT_CATALOG.md`.
+- Agent Toolkit design/current state: `docs/architecture/AGENT_TOOLKIT.md`.

@@ -136,7 +136,7 @@ export interface ProcessRunnerOptions {
  * Supervises one external process invocation: validates the working directory,
  * spawns with an argument array, captures output, enforces a timeout, and
  * reports exit codes and signals. This is the security-sensitive process
- * boundary of the orchestrator (see `docs/SECURITY.md`).
+ * boundary of the orchestrator (see `docs/reference/SECURITY.md`).
  */
 export class ProcessRunner {
   private readonly spawnFn: SpawnFn;

@@ -398,8 +398,6 @@ describe("atlas CLI", () => {
     expect(names).toEqual([
       "agents",
       "ask",
-      "benchmark",
-      "browse",
       "build",
       "claude",
       "codex",

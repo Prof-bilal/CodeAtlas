@@ -1,5 +1,0 @@
-{
-  "provider": "node-cron",
-  "timezone": "UTC",
-  "maxConcurrent": 10
-}

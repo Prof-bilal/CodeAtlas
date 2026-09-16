@@ -1,4 +1,8 @@
-import type { ContextSnapshot, SourceFile, Symbol as PersistedSymbol } from "@prof-bilal/atlas-core";
+import type {
+  ContextSnapshot,
+  Symbol as PersistedSymbol,
+  SourceFile,
+} from "@prof-bilal/atlas-core";
 import type { FilePath, SymbolId } from "@prof-bilal/atlas-shared";
 import { describe, expect, it } from "vitest";
 import { LexicalScorer } from "../src/scoring";

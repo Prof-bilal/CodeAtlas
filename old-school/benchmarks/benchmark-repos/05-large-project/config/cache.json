@@ -1,7 +1,0 @@
-{
-  "provider": "redis",
-  "host": "localhost",
-  "port": 6379,
-  "defaultTTL": 300000,
-  "maxMemory": "256mb"
-}

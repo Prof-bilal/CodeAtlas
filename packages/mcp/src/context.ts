@@ -1,6 +1,11 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { type ContextSDK, type MetricsPort, type UsagePort, createContextSDK } from "@prof-bilal/atlas-sdk";
+import {
+  type ContextSDK,
+  type MetricsPort,
+  type UsagePort,
+  createContextSDK,
+} from "@prof-bilal/atlas-sdk";
 import { FreshnessController, type FreshnessReport } from "./freshness";
 import { ToolDomainError } from "./validation";
 
@@ -102,7 +107,7 @@ export class CodeAtlasContext {
     const sdk = this.open();
     if (sdk === null) {
       throw new ToolDomainError(
-        `No context index found at ${this.dbPath}. Build the CodeAtlas index first (see docs/CONTEXT_STORAGE.md).`,
+        `No context index found at ${this.dbPath}. Build the CodeAtlas index first (see docs/architecture/CONTEXT_STORAGE.md).`,
       );
     }
     return sdk;

@@ -1,5 +1,9 @@
-import type { DatabaseSync } from "node:sqlite";
-import type { MeasuredQuantity, QuantitySource, UsageQuery, UsageRecord } from "@prof-bilal/atlas-core";
+import type {
+  MeasuredQuantity,
+  QuantitySource,
+  UsageQuery,
+  UsageRecord,
+} from "@prof-bilal/atlas-core";
 import { type Row, colBoolean, colNumber, colString, count } from "./row";
 import { StatementCache } from "./statement-cache";
 
@@ -9,10 +13,6 @@ import { StatementCache } from "./statement-cache";
  * secrets are never written here (only anonymized `taskRef` references).
  */
 export class UsageRepository extends StatementCache {
-  public constructor(db: DatabaseSync) {
-    super(db);
-  }
-
   public insert(record: UsageRecord): void {
     this.prepare(
       `INSERT INTO UsageEvents (

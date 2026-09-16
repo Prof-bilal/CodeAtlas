@@ -1,14 +1,9 @@
-import type { DatabaseSync } from "node:sqlite";
 import type { UsageLimit, UsageScope } from "@prof-bilal/atlas-core";
 import { type Row, colString, count } from "./row";
 import { StatementCache } from "./statement-cache";
 
 /** CRUD for the `Limits` table (hard caps — deny calls when exceeded). */
 export class LimitRepository extends StatementCache {
-  public constructor(db: DatabaseSync) {
-    super(db);
-  }
-
   public upsert(limit: UsageLimit): void {
     this.prepare(
       `INSERT INTO Limits (id, scope_kind, scope_value, currency, token_limit, cost_limit, created_at)

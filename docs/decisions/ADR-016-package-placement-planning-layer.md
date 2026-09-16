@@ -5,7 +5,7 @@ Date: 2026-08-30 · Status: Accepted (Phase 2, small-model intelligence audit)
 ## Context
 
 ADR-015 defines `TaskClassifierPort` and `PlannerPort` as type-only contracts
-in `packages/core`. The execution plan (`old-school/research/audit/small-model-intelligence/execution-plan.md`)
+in `packages/core`. The execution plan (the archived planning notes)
 specifies that implementations live in `@prof-bilal/atlas-sdk` (the existing composition
 root for context-integration), not in new feature packages.
 
@@ -43,7 +43,7 @@ This ADR confirms the placement and explains why.
 
 ## Consequences
 
-- The ESLint dependency matrix (`docs/DEPENDENCIES.md`) is unchanged:
+- The ESLint dependency matrix (`docs/architecture/DEPENDENCIES.md`) is unchanged:
   `@prof-bilal/atlas-sdk` already imports `@prof-bilal/atlas-core` + `@prof-bilal/atlas-shared`.
 - The `Container` class in `packages/sdk/src/container.ts` is **not**
   modified — the classifier and planner are stateless functions, not

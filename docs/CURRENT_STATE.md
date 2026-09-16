@@ -37,7 +37,6 @@ every package's source and tests.
 ```
 apps/
   cli/          # Commander.js CLI — context, sessions, usage, MCP, and Toolkit commands wired [PARTIAL]
-  server/       # Benchmark API (@prof-bilal/atlas-server) — localhost HTTP over the benchmark framework [IMPLEMENTED]
   extension/    # VS Code extension (@prof-bilal/atlas-extension) — SDK consumer         [IMPLEMENTED]
 packages/
   shared/       # Base types, Result, branded IDs, VERSION, ComingSoonError  [EXISTING]
@@ -210,7 +209,7 @@ examples/        # README placeholder only (no runnable examples)
 - **Tri-state provenance — never guess:** every token, cost, latency, and price
   value is `actual`, `estimated` (documented, labeled heuristic), or `unknown`
   (`value: null`); aggregation keeps `unknown` unknown; cost is computed at
-  record time from tokens + pricing (`computeCost`). See `docs/USAGE.md`.
+  record time from tokens + pricing (`computeCost`). See `docs/reference/USAGE.md`.
 - **Pricing is quarantined** behind `PricingSource` (`priceFor` +
   `listProviders`); `StaticPricingSource` ships a built-in estimated table
   (claude/openai/deepseek/gemini — "published list price, not verified").
@@ -270,20 +269,18 @@ examples/        # README placeholder only (no runnable examples)
   (ADR-001). Future vector ranking plugs into `@prof-bilal/atlas-search`'s `RelevanceScorer`.
 - The CLI's `atlas search` routes through this SDK instead of reaching for
   `Container.getSearch()`/`getContextDb()`. See
-  [CONTEXT_SDK.md](./CONTEXT_SDK.md) + [ADR-005](./decisions/ADR-005.md).
+  [CONTEXT_SDK.md](./reference/CONTEXT_SDK.md) + [ADR-005](./decisions/ADR-005.md).
 
 ### CLI (`apps/cli`) — **[IMPLEMENTED]** (command surface re-verified 2026-09-14)
 
-- Commander.js program `atlas`, **31 top-level commands** — `init`, `build`,
+- Commander.js program `atlas`, **29 top-level commands** — `init`, `build`,
   `update`, `scan`, `search`, `sessions`, `usage`, `metrics`, `explain`,
-  `doctor`, `mcp`, `context`, `ask`, `tools`, `skills`, `setup`, `providers`,
-  `agents`, `ollama`, `benchmark`, `browse`, `warden`, `verify`, `impact`,
+  `doctor`, `mcp`, `context`, `ask`, `tools`, `skills` (alias `skill`), `setup`,
+  `providers`, `agents`, `ollama`, `warden`, `verify`, `impact`,
   `trace`, `inspect`, `evaluate`, and the
   standalone agent launchers `claude`/`gemini`/`codex`/`opencode` (sugar over
   `atlas context launch --provider <agent>`; the future slash router remains
-  planned). **`benchmark`** runs the context-quality evaluation framework
-  (`init`/`run`/`status`/`report`/`ablation`; see the Benchmark Framework section below
-  and `docs/benchmark.md`).
+  planned).
   **`search` is wired
   to the Context SDK**: it opens `.codeatlas/context.db` (via `ATLAS_ROOT` or
   cwd) with `createContextSDK`, runs `context.search.search(...)`, and prints
@@ -308,7 +305,7 @@ examples/        # README placeholder only (no runnable examples)
   `--skill` injection supported). No interactive `/agent`-style slash commands (the plan-executing
   agent router is planned).
 - Dependency note: the CLI may import `@prof-bilal/atlas-sdk` **and** `@prof-bilal/atlas-mcp` (so it
-  can start the server); enforced by ESLint. See `docs/DEPENDENCIES.md`.
+  can start the server); enforced by ESLint. See `docs/architecture/DEPENDENCIES.md`.
 - `atlas search` accepts positional query words plus `--repo`, `--limit`,
   `type`, `no-fuzzy`, and `json`; `--ai` additionally generates (or reuses
   stored) AI summaries for the top 5 file hits via `summaries.generateFile`,
@@ -320,9 +317,11 @@ examples/        # README placeholder only (no runnable examples)
   `atlas scan`, `atlas usage` (`usageDbPath`, `formatMeasured`,
   `renderUsageSummary`, `renderUsageTable`, fresh-project empty output, JSON),
   providers/Ollama, indexing commands, `atlas context`
-  (build/launch/attach/export with `--ai` and `--skill` resolution), the
-  `atlas <agent>` sugar commands, and the skills/setup/browse surfaces
-  (89 tests in `apps/cli/tests/cli.test.ts`).
+  (build/launch/attach/export with `--ai` and `--skill` resolution), and the
+  `atlas <agent>` sugar commands (89 tests in `apps/cli/tests/cli.test.ts`),
+  plus dedicated suites for `atlas skills` discovery/override
+  (`apps/cli/tests/skills.test.ts`) and the `atlas setup` selection flow
+  (`apps/cli/tests/setup.test.ts`).
 
 ### MCP server (`packages/mcp`) — **[IMPLEMENTED]**
 
@@ -358,7 +357,7 @@ examples/        # README placeholder only (no runnable examples)
   caps callers/callees at 25 each with `confidence`; `project_overview`
   `detail:"full"` returns a size `warning`; `explain_module` caps are 50/50.
   `analyze_task`, `create_plan`, `verify_answer`, and `explain_module` were
-  REMOVED from the server (see `docs/MCP.md` "Removed tools"). Canonical
+  REMOVED from the server (see `docs/reference/MCP.md` "Removed tools"). Canonical
   aliases
   (`context_for`, `dependencies_of`, `overview`, `read_range`) are registered
   alongside the 11 canonical tools.
@@ -367,7 +366,7 @@ examples/        # README placeholder only (no runnable examples)
   Context SDK opens lazily, so the server can start before an index exists.
   Logs go to stderr only.
 - **Known scope:** resources/prompts are not yet exposed (tools only).
-- See `docs/MCP.md` for the full tool reference.
+- See `docs/reference/MCP.md` for the full tool reference.
 
 ### VS Code integration — **[IMPLEMENTED]** (`@prof-bilal/atlas-extension`)
 
@@ -384,7 +383,7 @@ examples/        # README placeholder only (no runnable examples)
   explicit `--ai`), and `atlas doctor` runs a health checklist (exit `1` on
   failure).
 - The extension is anonymous at the database: it never opens `.codeatlas`
-  itself (see `docs/VSCODE.md`), and is tested headlessly.
+  itself (see `docs/guides/VSCODE.md`), and is tested headlessly.
 - Interactive agent launching lived in the **TUI** (`atlas tui`), which is
   **v2 / not shipped** (untracked source; bare `atlas` prints help). The
   extension is a read-only context viewer.
@@ -406,7 +405,7 @@ examples/        # README placeholder only (no runnable examples)
   bound stdout/stderr (readable later via `SessionPort.getSessionOutput`, even
   after exit), which the orchestrator uses to report partial output honestly.
   The SDK composes it (`createSessionManager()`) and the CLI exposes
-  `atlas sessions list` / `info` / `stop`. See `docs/AGENT_SESSIONS.md` +
+  `atlas sessions list` / `info` / `stop`. See `docs/architecture/AGENT_SESSIONS.md` +
   ADR-007.
 - **`ProviderChatAgent`** wraps `ProviderPort` as `ChatAgentPort` for
   single-turn non-interactive chat (e.g. Ollama without tool loop). Supports
@@ -537,85 +536,6 @@ examples/        # README placeholder only (no runnable examples)
   `packages/providers/tests/ollama-adapter.test.ts` (adapter messages support).
   See ADR-011.
 
-### Benchmark Framework (Phase 4+8) — **[IMPLEMENTED]**
-
-- **`BenchmarkPort` in core** (`packages/core/src/ports/benchmark.port.ts`):
-  Full contract with suite lifecycle types (`BenchmarkConfig`, `BenchmarkSuite`,
-  `TaskDefinition`, `TaskFile`, `BenchmarkTaskResult`, `TokenMetrics`,
-  `ToolCallRecord`, `BenchmarkEvaluation`, `BenchmarkSuiteResult`, `BenchmarkStatus`,
-  `ReportOptions`, `BenchmarkReport`, `BenchmarkRunner`, `RunnerRequest`,
-  `RunnerResult`). Three-arm mode (`"baseline" | "codeatlas" | "codeatlas-intel"`),
-  ablation config (`BenchmarkAblationConfig`), multi-model support (`models` array),
-  and per-provider budget defaults (`ModelBudgetDefaults`).
-- **`@prof-bilal/atlas-benchmark` package** — JSON-backed persistence (`BenchmarkStore`),
-  suite/task scaffolding (`scaffoldSuite`, `scaffoldTaskFile`), two runners
-  (`OpenCodeRunner` for `opencode run --format json`, `OllamaRunner` using
-  `ChatAgentPort` in-process — mode-aware: plain chat for baseline, tool loop
-  for codeatlas and codeatlas-intel, with per-task timeout and policy-denied call marking),
-  automated evaluator (file/concept hit scoring), Markdown/HTML report
-  generators (`renderReport`/`renderSummary`/`renderHtml`) with 3-arm and
-  ablation comparison sections, and metrics
-  capture via `MetricsPort`/`UsagePort`. `BenchmarkService` orchestrates the
-  full pipeline.
-- **AblationService** (`packages/benchmark/src/ablation.ts`):
-  Defines `SINGLE_ABLATION_SCENARIOS` (full-intel, no-planner, no-hierarchy,
-  no-verification, no-critic), `AblationRunner` wrapper for applying ablation
-  configs, and helpers for task-ID tagging and scenario extraction.
-- **Per-provider budgets** (`packages/benchmark/src/defaults.ts`):
-  `PROVIDER_BUDGET_DEFAULTS` with recommended limits for ollama, opencode,
-  openai, anthropic, google; `resolveBudget()` merges provider defaults with
-  config overrides.
-- **SDK composition** (`packages/sdk/src/benchmark/index.ts`):
-  `createBenchmarkService()` wires store, runners, evaluator, metrics, and
-  reporter into the service.
-- **CLI command** (`atlas benchmark init/run/status/report/ablation`):
-  `init` scaffolds a benchmark suite (defaults to 3-arm modes); `run` executes
-  tasks in all configured modes with resume (`--force` re-runs) and auto-indexing;
-  `ablation` runs single-feature ablation scenarios on a suite; `status` shows
-  progress; `report` generates Markdown (default), JSON (`--json`), or standalone
-  HTML (`--format html`) with 3-arm and ablation comparison sections.
-- Ollama models price at $0/token via the `StaticPricingSource` provider
-  wildcard ("local inference" note; see `packages/usage/src/pricing.ts`).
-- Tests: `packages/benchmark/tests/evaluator.test.ts` (11 tests),
-  `packages/benchmark/tests/store.test.ts` (7 tests),
-  `packages/benchmark/tests/reporter.test.ts` (4 tests),
-  `packages/benchmark/tests/runner-ollama.test.ts` (5 tests),
-  `packages/benchmark/tests/e2e-agents.test.ts` (5 e2e tests).
-  See ADR-012.
-
-### Benchmark API server (`apps/server`) — **[IMPLEMENTED]**
-
-- **`@prof-bilal/atlas-server`** (ADR-013): a localhost HTTP API ("CodeAtlas Benchmark
-  API", `node:http`, zero new runtime deps, default `127.0.0.1:8787`) that
-  backs the rebuilt **Atlas Benchmark** page in the web UI (`old-school/miscellaneous/CodeAtlas-ui`).
-  It composes `@prof-bilal/atlas-sdk` + `@prof-bilal/atlas-mcp` + `@prof-bilal/atlas-benchmark` exactly like
-  the CLI (added to the ESLint dependency matrix).
-- **Same store as the CLI**: suite list/detail/report read
-  `.codeatlas/benchmarks/`; aggregates are recomputed from persisted per-task
-  results via the evaluator (a filtered CLI `--task` run can leave a
-  subset-only `raw-results.json`). Suite repository paths persist in a
-  server-owned sidecar `suites/<id>/repository.json`.
-- **Jobs with real progress**: suite runs execute per task × mode
-  (`BenchmarkService.runTask`) behind a `JobManager` (1 concurrent, bounded
-  queue → 429, cooperative cancel, wall-clock budget), finalized by
-  `runSuite`'s resume path; the UI polls `GET /api/jobs/:id`. Browser
-  benchmarks ("Test in Browser" quick tests) measure scan → index →
-  deterministic retrieval latency → budgeted context assembly with an
-  estimated raw-vs-context token comparison; the optional AI answer runs only
-  with a configured Ollama provider (else honestly `unavailable`).
-- **Community library** (`apps/server/config/community-repos.json`,
-  operator-editable): local entries (pinned winston/commander/axios/rxjs
-  clones + scan fixtures) and `git` entries shallow-cloned (`git clone
-  --depth 1`, argument-array spawn) into isolated temp workspaces that are
-  always cleaned up; availability checked live (fs / `git ls-remote`), no
-  hardcoded statistics. A transparent 0–100 display score is computed only
-  from measured inputs and ships its formula with every value.
-- Security: localhost bind by default, `shell:false` spawns, 1 MiB body cap,
-  repo-relative paths in responses, path-safe static UI serving.
-- Tests: `apps/server/tests/{jobs,repos,benchmark,api}.test.ts` (33 tests —
-  includes a full HTTP end-to-end run with a fake runner and a real indexed
-  fixture repository; no network/credentials required).
-
 ### Multi-Agent Orchestrator (Task 17) — **[IMPLEMENTED]**
 
 - **`orchestrator` in `@prof-bilal/atlas-sdk`**: `createOrchestrator({ sessions, integration })`
@@ -694,7 +614,7 @@ examples/        # README placeholder only (no runnable examples)
   advisory only and recorded as `external` provenance — never trusted blindly,
   never auto-approved. The install/compat/security **fields are declared and
   validated here but evaluated by later tasks** (Tasks 21–24). No network,
-  no database. See [TOOL_REGISTRY.md](./TOOL_REGISTRY.md).
+  no database. See [TOOL_REGISTRY.md](./architecture/TOOL_REGISTRY.md).
 - **The Configurator (Task 23) is implemented**: `ConfiguratorPort` with
   Claude/Gemini/Codex/OpenCode/MCP/VS Code adapters, AgentPort-backed target
   detection, merge/backup/rollback/read-back verification, dry-run support,
@@ -707,9 +627,43 @@ examples/        # README placeholder only (no runnable examples)
   defaults to `unverified`, documented human review is required for promotion,
   hostile metadata is rejected, and the Installer uses the result as a hard
   gate. `unverified` requires explicit installation consent; `blocked` cannot
-  be overridden. See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §7–§8.
+  be overridden. See [AGENT_TOOLKIT.md](./architecture/AGENT_TOOLKIT.md) §7–§8.
 - The remaining `atlas tools`/`/tools` surface remains [PLANNED]. See
-  [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md).
+  [AGENT_TOOLKIT.md](./architecture/AGENT_TOOLKIT.md).
+
+### Skills (Agent Skills) — **[IMPLEMENTED]** (re-verified 2026-09-16)
+
+- **13 built-in workflow Skills ship as canonical `SKILL.md` files** at
+  `packages/toolkit/src/skills/prebuilt/<id>/SKILL.md` — the same format the
+  custom-Skills loader consumes (one format, one loader, no second system).
+  IDs: `mcp-builder`, `deep-research`, `trail-of-bits-security-skills`,
+  `webapp-testing`, `ui-check`, `ui-research`, `ui-build`,
+  `systematic-debugging`, `verification-before-completion`, `writing-plans`,
+  `executing-plans`, `using-git-worktrees`, `react-best-practices`.
+- **Loader/service** live in `@prof-bilal/atlas-toolkit` behind `SkillPort`;
+  the SDK composes them as `createSkillService()`, `resolveSkillInstructions()`,
+  `availableSkills()` and `recommendSkillsForTask()` (ADR-022). Project Skills
+  in `.codeatlas/skills/` take precedence over built-ins of the same id.
+- **Packaging:** the build copies the canonical tree next to each bundle
+  (`scripts/copy-prebuilt-skills.mjs` → `dist/skills/prebuilt`), and
+  `prebuiltSkillRoot()` resolves it at runtime from source, dist, or the
+  published CLI package.
+- **CLI:** `atlas skills` (alias `atlas skill`) lists built-ins **and** installed
+  Skills by default (`--builtin` / `--installed` narrow the view);
+  `atlas skills info|validate|load <id>` resolve project-first, then built-in.
+  `create`/`add` write validated custom Skills into `.codeatlas/skills/`.
+- **MCP:** `list_skills` and `get_skill` expose the same library to MCP clients.
+- **Setup integration:** `atlas setup` plans from the registry, lists
+  recommendations, and installs **only** what the user selects (`planSetup()` in
+  `@prof-bilal/sdk` + the interactive CLI selector) — installing CodeAtlas never
+  installs optional Tools or Skills.
+- **Web-dependent Skills:** `ui-research`, `ui-check`, `ui-build` and
+  `webapp-testing` drive the **agent's own web access** (its built-in web
+  fetch/search tools) and the project's **own** test tooling. Rendering-dependent
+  checks they cannot make are reported as *could not run*. No Skill body
+  references the removed layer, a browser runner, or Playwright —
+  `packages/toolkit/tests/builtin-skills.test.ts` asserts that invariant across
+  all 13 built-ins.
 
 ### Tool Manifest System — **[IMPLEMENTED]**
 
@@ -738,7 +692,7 @@ examples/        # README placeholder only (no runnable examples)
   `listInstalledTools`, `validateToolManifest`, `parseToolManifest`); the
   higher-level installer/configurator services are composed through the SDK,
   including `atlas tools configure`. No network, no database. See
-  [TOOL_MANIFEST.md](./TOOL_MANIFEST.md).
+  [TOOL_MANIFEST.md](./reference/TOOL_MANIFEST.md).
 
 ### Compatibility Engine — **[IMPLEMENTED]**
 
@@ -770,7 +724,7 @@ examples/        # README placeholder only (no runnable examples)
   tests). `renderCompatibilityReport()` turns a report into the design
   contract's per-check `✓ / ~ / ✗ / ?` output. `atlas tools configure` is now
   wired through the Toolkit SDK; the future slash surface is planned. See
-  [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §6.
+  [AGENT_TOOLKIT.md](./architecture/AGENT_TOOLKIT.md) §6.
 
 ### Tool Installer — **[IMPLEMENTED]**
 
@@ -814,7 +768,7 @@ examples/        # README placeholder only (no runnable examples)
   install→verify→manifest flow and rollback against a fake package-manager
   executable; adversarial tests assert no shell syntax, path traversal, or
   secret exfiltration is possible. SDK `createInstaller()` is exercised in
-  `packages/sdk/tests/toolkit.test.ts`. See [AGENT_TOOLKIT.md](./AGENT_TOOLKIT.md) §5.
+  `packages/sdk/tests/toolkit.test.ts`. See [AGENT_TOOLKIT.md](./architecture/AGENT_TOOLKIT.md) §5.
 
 
 
@@ -828,9 +782,8 @@ examples/        # README placeholder only (no runnable examples)
 | **B. Unified AI CLI Orchestrator** (`/claude`, `/gemini`, …) | Partial — the connection layer (`@prof-bilal/atlas-agents` behind `AgentPort`), the session manager (`SessionManager`, `atlas sessions`, interactive `stdio: "inherit"` launches), and the **multi-agent plan orchestrator** (`createOrchestrator` in `@prof-bilal/atlas-sdk`) are implemented; **standalone launch commands** (`atlas claude`/`gemini`/`codex`/`opencode` `<prompt...>` with `--ai` briefing) are implemented; the **`atlas tui` slash surface** (`/claude`–`/opencode` launch/install, `/cursor` `/grok` guidance, `/agents`, `/toolkit`) is **v2 / not shipped** (untracked); the plan-executing standalone router (a future `atlas agents run`-style
 surface; `atlas agents status`/`connect` themselves are implemented) remains
 planned |
-| **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~75% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, Skills loader/service, custom tools/Skills, setup recommendations, optional Warden adapter, and the thin SDK-backed Toolkit CLI. Browser observation (`atlas browse`) now provides allowlisted Playwright CLI evidence. `/tools` slash integration and richer adaptive recommendations remain planned |
+| **C. Agent Toolkit** (curated tool registry → assess → install → configure → verify) | ~80% — Tasks 19–25 implemented: Registry, Manifest, Compatibility Engine, Installer, Configurator, Security/Trust, Skills loader/service (13 built-in `SKILL.md` Skills + custom Skills), custom tools/Skills, `atlas setup` plan + interactive selection, optional Warden adapter, and the thin SDK-backed Toolkit CLI. `/tools` slash integration and richer adaptive recommendations remain planned. Browser observation (`atlas browse` / Playwright CLI) was removed from this phase |
 | **Ollama Tool Loop** (Phase 3) | Implemented — `ToolUsingChatAgent` with bounded tool loop (max 10 rounds), `ContextToolSource` seam, MCP tool bridge (`createContextToolSource`), conversation history via `ProviderMessage`, per-result budget cap, deny filter on sensitive files. Wired through `createSessionManager({ contextToolSource })` and CLI `atlas context launch`. Tests pass. |
-| **Benchmark Framework** (Phase 4+8) | Implemented — `BenchmarkPort` in core with 3-arm mode (`baseline`/`codeatlas`/`codeatlas-intel`), ablation config, multi-model support; `@prof-bilal/atlas-benchmark` package with JSON-backed `BenchmarkStore`, scaffolding, two runners (OpenCode + Ollama with 3-arm agent dispatch), automated evaluator, Markdown/HTML/JSON reporters with 3-arm and ablation sections; AblationService for intel feature toggling; per-provider default budgets. CLI `atlas benchmark init/run/status/report/ablation` wired. SDK composition via `createBenchmarkService()`. Tests pass. See ADR-012. |
 
 The existing code fully implements **Direction A's pipeline layers** but stops
 at: (1) the **standalone router** of the orchestrator (the plan-executing
@@ -859,7 +812,7 @@ absent.
    pnpm 9.15.0) on push/PR to `main`.
 5. **`.codeatlas/`**: `atlas init`/`build`/`update` (SDK-owned `indexProject`)
    write `manifest.json` and `context.db`; `@prof-bilal/atlas-usage` writes `usage.db`; the
-   Toolkit writes `tools/<name>.json`. See [CONTEXT_STORAGE.md](./CONTEXT_STORAGE.md).
+   Toolkit writes `tools/<name>.json`. See [CONTEXT_STORAGE.md](./architecture/CONTEXT_STORAGE.md).
 6. **Existing docs at the time of writing this audit:** root `ARCHITECTURE.md`,
    root `agents.md` (agent catalog), `README.md`, `docs/README.md`,
    `examples/README.md`. No `CLAUDE.md`. These docs predate/replace with the
@@ -873,5 +826,5 @@ absent.
 
 Full test files exist in every package (`packages/*/tests/*.test.ts`) and in
 `apps/cli`. Coverage is genuine (unit-level, behavior-focused). See
-[TESTING.md](./TESTING.md) and `pnpm test` for the runnable suite. At the time
+[TESTING.md](./contributing/TESTING.md) and `pnpm test` for the runnable suite. At the time
 of writing the suite is expected to pass.

@@ -99,8 +99,8 @@ describe("budget end-to-end via MCP server", () => {
   /**
    * Helper: build a live MCP server in the given env, connected to a local
    * MCP client over in-memory transport. This exercises the exact runTool path
-   * that opencod / kilo / browser-benchmark agents funnel every tool call
-   * through, with the per-session ToolCallBudget enforced before the handler.
+   * that agents funnel every tool call through, with the per-session
+   * ToolCallBudget enforced before the handler.
    */
   async function withBudgetServer<T>(
     _env: Record<string, string>,

@@ -25,24 +25,15 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Local tool state (e.g. freebuff workspace metadata)
-.freebuff/
-
 # Environment
 .env
 .env.local
 .env.*.local
 
-# TypeScript
-*.tsbuildinfo
-
-# Generated CodeAtlas artifacts
+# Generated CodeAtlas artifacts (local index, evidence, installed tools)
 .codeatlas/
 ui/
 docs/DESIGN.md
-
-# Unrelated experimental app (Go + Bun TUI spike, planning notes only)
-go-tui-app/
 
 # The interactive TUI (v2 / not shipped): kept on disk but untracked so fresh
 # clones build without it.
@@ -50,21 +41,8 @@ apps/cli/src/tui/
 apps/cli/src/commands/tui.ts
 apps/cli/tests/tui.test.ts
 
-# Historical archive — see old-school/README.md for context.
-old-school/
-
-# Benchmarks — the retrieval-gate harness is tracked; personal result dirs are not.
-benchmarks/*
-!benchmarks/retrieval-tasks/
-!benchmarks/scale-grid/
-docs/test-results/
-
-# UI prototype (local development only)
-CodeAtlas-ui/
-
-# Local dev config
+# Local tool / agent state (not part of the product)
+.opencode/
+.freebuff/
 opencode.json
 .commandcode/
-
-# Playwright test artifacts
-.playwright-cli/

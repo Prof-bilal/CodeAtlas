@@ -5,7 +5,7 @@ import type { ConfigureOutcome } from "./configurator.port";
  * The agent MCP-integration contract (Direction B, follow-up to Task 23).
  *
  * Registers **CodeAtlas's own MCP server** (the `codeatlas` stdio server, see
- * `docs/MCP.md`) into the MCP sections of installed AI coding tools — Claude,
+ * `docs/reference/MCP.md`) into the MCP sections of installed AI coding tools — Claude,
  * Gemini, Codex, OpenCode, Cursor, and Cline — so those tools can query the
  * project's context index. This is separate from the tool-oriented
  * {@link ConfiguratorPort}, which wires *installed toolkit tools* into agents;
@@ -15,8 +15,8 @@ import type { ConfigureOutcome } from "./configurator.port";
  * one adapter per target, exactly like the Configurator. Configuration is
  * written to **user config only** (never the analyzed repository), existing
  * config is merged/backed up/verified (never clobbered), and
- * `configure({ dryRun: true })` writes nothing. See `docs/MCP.md` and
- * `docs/SECURITY.md`.
+ * `configure({ dryRun: true })` writes nothing. See `docs/reference/MCP.md` and
+ * `docs/reference/SECURITY.md`.
  */
 export interface AgentMcpPort {
   /** The targets this build can register the server into (all six). */

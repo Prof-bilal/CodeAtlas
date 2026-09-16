@@ -1,4 +1,8 @@
-import type { InstallPlanCommand, ToolInstallMethodType, ToolInstallRequest } from "@prof-bilal/atlas-core";
+import type {
+  InstallPlanCommand,
+  ToolInstallMethodType,
+  ToolInstallRequest,
+} from "@prof-bilal/atlas-core";
 import type { Result } from "@prof-bilal/atlas-shared";
 
 /**
@@ -61,7 +65,7 @@ export function adapterProblems(request: ToolInstallRequest, problems: string[])
  * control characters, whitespace, and leading `-` (so it can never be
  * interpreted as an option); `/` is allowed (scoped npm packages, Go module
  * paths). Path-separator-rich strings that would escape a directory are the
- * Tool Manifest name check's job — see `docs/TOOL_MANIFEST.md` §6.
+ * Tool Manifest name check's job — see `docs/reference/TOOL_MANIFEST.md` §6.
  */
 export function validateInstallArg(
   value: string,

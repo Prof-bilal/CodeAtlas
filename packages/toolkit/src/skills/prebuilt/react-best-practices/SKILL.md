@@ -23,20 +23,20 @@ Keep React changes aligned with component boundaries, accessibility, state owner
 3. Prefer semantic HTML, keyboard support, visible focus, and accessible labels.
 4. Handle loading, empty, error, overflow, and responsive states explicitly.
 5. Avoid speculative memoization and broad rewrites; measure or test behavior when performance matters.
-6. Verify the rendered flow with the project's tests and browser checks when available (`atlas browse`).
+6. Verify the rendered flow with the project's own tests; report any check they cannot express as *could not run*.
 
 ## Required capabilities
 
 - Repository understanding: search, inspect
-- Verification: project tests; browser observation when available
+- Verification: the project's own tests, typecheck, and lint
 
 ## Expected output
 
-React changes following existing conventions, with explicit non-happy-path states, and verification evidence from tests and/or browser observation.
+React changes following existing conventions, with explicit non-happy-path states, and verification evidence from the project's own checks.
 
 ## Verification
 
-- Rendered flow observed via tests or `atlas browse` after the final edit.
+- The rendered flow is verified by tests that actually ran, or listed as *could not run* — never inferred from code alone.
 - Loading/empty/error/responsive states exist and behave, not just the happy path.
 
 ## Rules / constraints

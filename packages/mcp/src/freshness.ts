@@ -44,10 +44,9 @@ export interface FreshnessControllerOptions {
  * A repository with no changes is never re-indexed.
  *
  * Phase 5 decision (measure-only): no warm index / incremental probe cache is
- * built in P0. `probeMs` is published on every `FreshnessReport` so the scale
- * grid (`benchmarks/scale-grid/`) can prove whether the full walk hurts; the
- * warm-index work ships only if the grid shows probe >5% of p50 read latency
- * or branch-storm pain. Invalidation would be hash-versioned + fail-closed.
+ * built in P0. `probeMs` is published on every `FreshnessReport`, so the probe
+ * cost stays observable before any caching is added. Invalidation would be
+ * hash-versioned + fail-closed.
  */
 export class FreshnessController {
   /** Cached `savedAt` baseline; reset to `now` after each successful refresh. */

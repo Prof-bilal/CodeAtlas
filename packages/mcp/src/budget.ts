@@ -1,23 +1,21 @@
 /**
  * Per-session tool-call budget + attribution for the MCP server.
  *
- * Each MCP server process serves exactly one agent session (one opencod /
- * kilo / browser-benchmark run). Counters therefore reset with the server,
- * giving a natural per-run budget boundary — without any task-boundary
- * protocol the server would otherwise lack.
+ * Each MCP server process serves exactly one agent session. Counters
+ * therefore reset with the server, giving a natural per-run budget boundary —
+ * without any task-boundary protocol the server would otherwise lack.
  *
  * Configuration is **env-gated and defaults to unlimited** so that enabling
  * this module never changes existing behavior unless an operator opts in.
- * This keeps it safe to land before the benchmark harness wiring (Phase A
- * measure-first): it only observes + attributes until a limit env var is set.
+ * This keeps it safe to land in isolation: it only observes and attributes
+ * until a limit env var is set.
  *
  * Env vars (all default `0` = unlimited):
  *  - `ATLAS_MCP_MAX_TOOL_CALLS`          — global cap across every tool
  *  - `ATLAS_MCP_MAX_READ_RANGE_CALLS`    — cap for the `read_file_range` tool
  *
- * The attribution counters (call counts + bytes returned) feed the A5
- * "where did the tokens come from" dimension; see
- * `docs/benchmark.md` §"Tool-call attribution".
+ * The attribution counters (call counts + bytes returned) answer "where did
+ * the tokens come from"; see `docs/reference/MCP.md` ("Tool-call attribution").
  */
 
 /** Parsed, validated config for a {@link ToolCallBudget}. */

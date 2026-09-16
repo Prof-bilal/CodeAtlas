@@ -1,7 +1,12 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { ContextData, Symbol as CoreSymbol, SourceFile, Summary } from "@prof-bilal/atlas-core";
+import type {
+  ContextData,
+  Symbol as CoreSymbol,
+  SourceFile,
+  Summary,
+} from "@prof-bilal/atlas-core";
 import type { FilePath, NodeId, SymbolId } from "@prof-bilal/atlas-shared";
 import { ContextStore } from "@prof-bilal/atlas-storage";
 import { afterEach, describe, expect, it } from "vitest";

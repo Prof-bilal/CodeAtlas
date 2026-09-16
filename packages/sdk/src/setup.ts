@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { ToolRegistryRecord } from "@prof-bilal/atlas-core";
 import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import { createAtlasCompletion } from "./completion";
-import { createSkillService } from "./skills/index";
+import { createSkillService, listBuiltinSkills } from "./skills/index";
 import { type ToolkitSDK, createToolkitSDK } from "./toolkit/facade";
 import { createWardenService } from "./warden";
 
@@ -57,6 +58,112 @@ export interface SetupOptions {
   readonly toolkit?: ToolkitSDK;
 }
 
+/** One installable candidate shown by `atlas setup`. */
+export interface SetupCandidate {
+  readonly id: string;
+  readonly kind: "tool" | "skill";
+  readonly description: string;
+  readonly trust: string;
+  /** Matches the evidence-based recommendation list for this project. */
+  readonly recommended: boolean;
+  /** Why it is recommended, or null when it is merely available. */
+  readonly reason: string | null;
+  /** A manifest already exists for this id in the project. */
+  readonly installed: boolean;
+}
+
+/** A first-party Skill that is usable without installing anything. */
+export interface SetupAvailableSkill {
+  readonly id: string;
+  readonly description: string;
+  /** Recommended for this project by evidence (or the curated tier). */
+  readonly recommended: boolean;
+}
+
+/**
+ * The read-only half of setup: what this project looks like, what is
+ * recommended, and everything else that could be installed. Nothing here
+ * installs, spawns, or writes — the CLI renders it and asks the user.
+ */
+export interface SetupPlan {
+  readonly root: string;
+  readonly profile: SetupProjectProfile;
+  /** Evidence-based recommendations (may point at already-shipped Skills). */
+  readonly recommendations: readonly SetupRecommendation[];
+  /** Installable registry entries: recommended first, then the rest by id. */
+  readonly candidates: readonly SetupCandidate[];
+  /** First-party Skills shipped with CodeAtlas (no install required). */
+  readonly available: readonly SetupAvailableSkill[];
+}
+
+/**
+ * Discover what setup could do for this project without doing any of it.
+ * Safe to call anywhere: it only reads the registry and local manifests.
+ */
+export async function planSetup(options: SetupOptions = {}): Promise<Result<SetupPlan>> {
+  const root = options.root ?? process.cwd();
+  const profile = detectProject(root);
+  const toolkit = options.toolkit ?? createToolkitSDK({ root });
+  const overview = await toolkit.overview();
+  if (!overview.ok) return fail(overview.error);
+  const installed = new Set(overview.value.installed.map((manifest) => manifest.name));
+  const recommendations = recommend(profile, toolkit);
+  const reasons = new Map(recommendations.map((item) => [item.id, item.reason]));
+  // The registry's own `recommended` tier is the curated Top-N; it is the only
+  // other source of recommendations, so setup never invents selection criteria.
+  for (const tool of overview.value.recommended) {
+    if (!reasons.has(tool.name)) reasons.set(tool.name, CURATED_REASON);
+  }
+  // Skills that already ship with CodeAtlas are never install candidates: the
+  // built-in file is the canonical copy and installing a clone would shadow it.
+  const shipped = new Set(listBuiltinSkills().map((skill) => skill.id));
+  const candidates = toolkit.registry
+    .listTools()
+    .filter((record) => !shipped.has(record.name))
+    .map((record) => toCandidate(record, reasons.get(record.name) ?? null, installed))
+    .sort((a, b) => {
+      if (a.recommended !== b.recommended) return a.recommended ? -1 : 1;
+      if (a.kind !== b.kind) return a.kind === "skill" ? -1 : 1;
+      return a.id.localeCompare(b.id);
+    });
+
+  return ok({
+    root,
+    profile,
+    recommendations,
+    candidates,
+    available: listBuiltinSkills().map((skill) => ({
+      id: skill.id,
+      description: skill.description,
+      recommended: reasons.has(skill.id),
+    })),
+  });
+}
+
+function toCandidate(
+  record: ToolRegistryRecord,
+  reason: string | null,
+  installed: ReadonlySet<string>,
+): SetupCandidate {
+  return {
+    id: record.name,
+    kind: kindOf(record),
+    description: record.description,
+    trust: record.trust,
+    recommended: reason !== null,
+    reason,
+    installed: installed.has(record.name),
+  };
+}
+
+/** Reason shown for catalog entries flagged `tier: recommended`. */
+const CURATED_REASON = "Curated CodeAtlas recommendation (registry tier: recommended).";
+
+/** A registry record is a Skill when it installs as one. */
+function kindOf(record: ToolRegistryRecord): "tool" | "skill" {
+  return record.installMethods.some((method) => method.type === "skill") ? "skill" : "tool";
+}
+
 /**
  * Run the deterministic first-run setup flow. It only installs when both
  * `approve` and `dryRun === false` are set; discovery and recommendations never
@@ -67,7 +174,10 @@ export async function runSetup(options: SetupOptions = {}): Promise<Result<Setup
   const profile = detectProject(root);
   const toolkit = options.toolkit ?? createToolkitSDK({ root });
   const recommendations = recommend(profile, toolkit);
-  const selected = normalizeSelection(options.selected, recommendations);
+  // Nothing is selected implicitly. Recommendations are suggestions the user
+  // opts into (interactively or with `--tools`); installing CodeAtlas never
+  // installs optional Tools or Skills on its own.
+  const selected = normalizeSelection(options.selected);
   const existing = await toolkit.overview();
   if (!existing.ok) return fail(existing.error);
   const installed = new Set(existing.value.installed.map((manifest) => manifest.name));
@@ -256,16 +366,12 @@ function recommend(profile: SetupProjectProfile, toolkit: ToolkitSDK): SetupReco
     const record = toolkit.registry.getTool(id);
     result.push({
       id,
-      kind: record?.installMethods.some((method) => method.type === "skill") ? "skill" : "tool",
+      kind: record === undefined ? "tool" : kindOf(record),
       reason,
     });
   };
 
   if (profile.frontend) {
-    add(
-      "playwright-cli",
-      "Frontend markers detected; browser and responsive verification is useful.",
-    );
     add("webapp-testing", "Frontend markers detected; add a repeatable web testing workflow.");
     add("react-best-practices", "React-compatible project detected; use the curated UI guidance.");
   }
@@ -292,11 +398,8 @@ function recommend(profile: SetupProjectProfile, toolkit: ToolkitSDK): SetupReco
   return result;
 }
 
-function normalizeSelection(
-  selected: readonly string[] | undefined,
-  recommendations: readonly SetupRecommendation[],
-): string[] {
-  const values = selected === undefined ? recommendations.map((item) => item.id) : selected;
+function normalizeSelection(selected: readonly string[] | undefined): string[] {
+  const values = selected ?? [];
   return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))];
 }
 

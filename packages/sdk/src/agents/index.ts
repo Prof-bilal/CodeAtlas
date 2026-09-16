@@ -24,7 +24,7 @@ export interface CreateAgentMcpServiceOptions extends Omit<AgentMcpServiceOption
 
 /**
  * Build the agent MCP-integration layer (`AgentMcpPort`): registers CodeAtlas's
- * own MCP server (`codeatlas` stdio server, see `docs/MCP.md`) into the MCP
+ * own MCP server (`codeatlas` stdio server, see `docs/reference/MCP.md`) into the MCP
  * sections of installed AI coding tools (Claude, Gemini, Codex, OpenCode,
  * Cursor, Cline). Composed over {@link createAgentService} for detection and
  * the Toolkit's configurator-adapter machinery for safe user-config merges.

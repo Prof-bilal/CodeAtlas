@@ -22,7 +22,7 @@ export interface SpawnedProcess {
 /**
  * The injectable spawn boundary. The default implementation calls
  * `node:child_process` `spawn` with `shell: false` — an **argument array**, never
- * a shell string (see `docs/SECURITY.md`). Tests inject a fake to exercise the
+ * a shell string (see `docs/reference/SECURITY.md`). Tests inject a fake to exercise the
  * lifecycle offline.
  */
 export type InstallerSpawnFn = (
@@ -76,7 +76,7 @@ export interface InstallerProcessOptions {
  * the working directory, spawns with an **argument array** (`shell: false`),
  * captures bounded output, enforces a timeout, and reports exit codes and
  * signals. This is the security-sensitive process boundary of the Installer
- * (Task 22) — see `docs/SECURITY.md` §3.
+ * (Task 22) — see `docs/reference/SECURITY.md` §3.
  *
  * `@prof-bilal/atlas-toolkit` is dependency-restricted to `core` + `shared`, so this is a
  * deliberately small local copy of the pattern in `@prof-bilal/atlas-agents`

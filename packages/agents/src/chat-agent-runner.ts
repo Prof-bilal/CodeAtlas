@@ -1,4 +1,9 @@
-import type { ChatAgentPort, ChatAgentRequest, ChatAgentResult, ProviderPort } from "@prof-bilal/atlas-core";
+import type {
+  ChatAgentPort,
+  ChatAgentRequest,
+  ChatAgentResult,
+  ProviderPort,
+} from "@prof-bilal/atlas-core";
 import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 
 function estimateTokens(text: string): number {

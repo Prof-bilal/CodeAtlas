@@ -1,6 +1,0 @@
-{
-  "provider": "datadog",
-  "apiKey": "",
-  "appKey": "",
-  "tags": ["env:production"]
-}

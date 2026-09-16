@@ -42,8 +42,7 @@
     "@prof-bilal/atlas-usage": "workspace:*",
     "@prof-bilal/atlas-metrics": "workspace:*",
     "@prof-bilal/atlas-toolkit": "workspace:*",
-    "@prof-bilal/atlas-verifier": "workspace:*",
-    "@prof-bilal/atlas-benchmark": "workspace:*"
+    "@prof-bilal/atlas-verifier": "workspace:*"
   },
   "license": "MIT",
   "repository": {

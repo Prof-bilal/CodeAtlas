@@ -20,13 +20,13 @@ disclosure.
 
 ## Hard rules for code in this repository
 
-The full policy is in [docs/SECURITY.md](docs/SECURITY.md). The non-negotiable
+The full policy is in [docs/reference/SECURITY.md](./docs/reference/SECURITY.md). The non-negotiable
 highlights:
 
 - **Secrets** — never commit `.env*`; never log/print API keys or tokens; keys
   come from user environment/config, never from the analyzed repository.
 - **Local first** — no implicit uploads; AI provider calls are explicit and send
-  only the relevant context (see [docs/PRIVACY.md](docs/PRIVACY.md)).
+  only the relevant context (see [docs/reference/PRIVACY.md](./docs/reference/PRIVACY.md)).
 - **Process execution** — `spawn(file, argsArray)`, never `shell: true` without
   a documented reason; never build a shell string from repo-derived or
   AI-generated content; timeouts on every child.

@@ -12,7 +12,6 @@ interface EvaluationResult {
   readonly build: { readonly status: "pass" | "skip"; readonly note: string };
   readonly tests: { readonly count: number; readonly path: string | null };
   readonly qa: { readonly screenshots: number; readonly path: string };
-  readonly browser: { readonly evidence: number; readonly path: string };
   readonly overall: "pass" | "warn" | "fail";
   readonly items: readonly {
     readonly check: string;
@@ -71,29 +70,7 @@ export function registerEvaluate(program: Command): void {
           : "No QA artifacts found (.codeatlas/qa/)",
       });
 
-      // 4. Browser observation evidence is raw evidence only; this check never invents a score.
-      const browserDir = join(root, ".codeatlas", "evidence");
-      const browserExists = existsSync(browserDir);
-      let browserEvidence = 0;
-      if (browserExists) {
-        try {
-          browserEvidence = readdirSync(browserDir).filter((f) =>
-            /\.(png|txt|json)$/i.test(f),
-          ).length;
-        } catch {
-          // ignore read errors — report no readable evidence
-        }
-      }
-      items.push({
-        check: "Browser observation evidence",
-        status: browserEvidence > 0 ? "pass" : "warn",
-        note:
-          browserEvidence > 0
-            ? `${browserEvidence} evidence file(s) in ${browserDir}`
-            : "No browser evidence found — run atlas browse with explicit origin approval",
-      });
-
-      // 5. Check for test config
+      // 4. Check for test config
       const hasVitest =
         existsSync(join(root, "vitest.config.ts")) || existsSync(join(root, "vitest.config.js"));
       const hasJest =
@@ -121,7 +98,6 @@ export function registerEvaluate(program: Command): void {
         },
         tests: { count: 0, path: hasTests ? root : null },
         qa: { screenshots, path: qaDir },
-        browser: { evidence: browserEvidence, path: browserDir },
         overall,
         items,
       };

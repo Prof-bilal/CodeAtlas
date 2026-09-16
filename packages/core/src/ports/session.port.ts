@@ -224,7 +224,7 @@ export interface ChatAgentResult {
    */
   readonly agentState?: unknown;
   /**
-   * Additive execution trace used by benchmark/reporting code to attribute
+   * Additive execution trace used by reporting code to attribute
    * token and transcript overhead without changing runtime behavior.
    */
   readonly executionTrace?: ChatAgentExecutionTrace;

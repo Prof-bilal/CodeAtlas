@@ -1,6 +1,0 @@
-{
-  "provider": "meilisearch",
-  "host": "localhost",
-  "port": 7700,
-  "apiKey": ""
-}

@@ -1,8 +1,6 @@
 import type { Command } from "commander";
 import { type AgentsCommandOptions, registerAgents } from "./agents";
 import { registerAsk } from "./ask";
-import { registerBenchmark } from "./benchmark";
-import { registerBrowse } from "./browse";
 import { type ContextCommandOptions, registerAgentRouter, registerContext } from "./context";
 import { type DoctorCommandOptions, registerDoctor } from "./doctor";
 import { registerEvaluate } from "./evaluate";
@@ -65,12 +63,10 @@ export function registerCommands(
   registerExplain(program);
   registerDoctor(program, options.doctor === undefined ? {} : { doctor: options.doctor });
   registerMcp(program);
-  registerBenchmark(program);
-  registerBrowse(program);
   registerVerify(program);
   registerWarden(program);
   registerSkills(program);
-  registerSetup(program);
+  registerSetup(program, options.prompt === undefined ? {} : { prompt: options.prompt });
   registerImpact(program);
   registerInspect(program);
   registerEvaluate(program);

@@ -1,0 +1,735 @@
+# Agent Toolkit
+
+> **Status: [PARTIAL]** — this document is the **design contract** for a new
+> first-class CodeAtlas subsystem. As of Tasks 19–25 the **Tool Registry
+> foundation, the Tool Manifest System, the Compatibility Engine, the Tool
+> Installer, and the Tool Configurator are implemented** (see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md),
+> [TOOL_MANIFEST.md](../reference/TOOL_MANIFEST.md), and [CURRENT_STATE.md](../CURRENT_STATE.md)):
+> `@prof-bilal/atlas-toolkit` behind `ToolRegistryPort`, `CompatibilityPort`,
+> `InstallerPort`, and `ConfiguratorPort` in `core`, composed by the SDK as
+> `createToolRegistry()`, `createCompatibilityEngine()`, `createInstaller()`,
+> and `createConfigurator()`.
+> **Security/Trust evaluation is implemented [IMPLEMENTED]**. The Tool Configurator and
+> The `atlas tools` CLI surface is implemented for Task 25. The Toolkit also builds on `@prof-bilal/atlas-agents`
+> (the AI CLI connection layer, `AgentPort`) — see
+> [CURRENT_STATE.md](../CURRENT_STATE.md) and [MODULES.md](./MODULES.md).
+
+---
+
+## 1. Purpose
+
+CodeAtlas is an **AI Context Engine** (Direction A, implemented) and a
+**Unified AI CLI Orchestrator** (Direction B, planned). The **Agent Toolkit**
+adds a third, complementary capability: a single trusted interface for
+**discovering, installing, configuring, managing, and verifying high-quality
+open-source developer / AI-agent tools**.
+
+Today a user must manually research GitHub, npm, PyPI, MCP directories, CLI
+tools, and AI-agent utilities to assemble their agent toolchain. The Toolkit
+gives them one curated place to do that:
+
+```
+CodeAtlas
+    ↓
+Agent Toolkit
+    ↓
+Curated Open Source Tools
+    ├── Context tools
+    ├── Token optimization
+    ├── AI quality tools
+    ├── Agent tools
+    ├── MCP servers
+    ├── CLI utilities
+    ├── Code analysis
+    └── Developer productivity
+```
+
+### What it is NOT
+
+- **Not a random package installer.** The Toolkit never does
+  `download random repo → execute install.sh → done`.
+- **Not a fork or bundle.** CodeAtlas does **not** copy third-party projects
+  into its repository. It references and installs them through their **official
+  distribution mechanisms**, respecting licenses, copyright, attribution,
+  security, and package ownership (see [§7 Security](#7-security-model) and
+  [§8 Trust](#8-trust-model)).
+- **Not a marketplace.** It is a curated, verified layer that sits *above*
+  package ecosystems and recommends from an authoritative registry.
+
+> **Guiding principle (same as the orchestrator):** CodeAtlas **orchestrates**
+> and is the **intelligence layer**; it does not reimplement the internals of
+> the tools it manages.
+
+---
+
+## 2. Architecture
+
+The Toolkit composes through the SDK (like every other consumer) and reuses
+`@prof-bilal/atlas-agents` for AI-CLI detection.
+
+```mermaid
+flowchart TB
+    subgraph CA[CodeAtlas]
+        subgraph CI[Code Intelligence - Direction A]
+            S1[Scanner] --> S2[Symbols]
+            P1[Parser] --> G1[Dependency Graph]
+            S2 & G1 --> DB1[Context DB]
+            DB1 --> SE1[Search]
+            SE1 --> SDK1[Context SDK]
+        end
+        subgraph AP[Agent Platform - Direction B]
+            subgraph OM[Orchestrator - planned]
+                AR1[Agent Router]
+                SM1[Session Manager]
+            end
+            subgraph TK[Agent Toolkit - partial]
+                R1[Registry]
+                I1[Installer]
+                C1[Configurator]
+                C2[Compatibility]
+                SE2[Security / Trust]
+            end
+        end
+    end
+
+    SDK1 <--> TK
+    AG1[atlas/agents - implemented] --> OM
+    AG1 --> TK
+    R1 --> I1
+    C2 --> I1
+    SE2 --> I1
+    I1 --> C1
+
+    TK --> OST[Open Source Tools]
+    OM --> CLI1[AI CLIs: Claude / Gemini / Codex / OpenCode]
+
+    SDK1 --> CS[CLI / MCP / VS Code / Agents]
+```
+
+> `@prof-bilal/atlas-agents` (the narrow spawn/detect boundary behind `AgentPort`) is
+> implemented. The Configurator is wired through the SDK and depends on the
+> `AgentPort` seam (and the existing adapters)
+> for AI-CLI detection — it must **not** duplicate executable detection or
+> provider-specific launch arguments.
+
+### Where the Toolkit lives
+
+Consistent with [DEPENDENCIES.md](./DEPENDENCIES.md) (the package and toolkit
+ports exist; Security/Trust is implemented):
+
+- A new feature package `@prof-bilal/atlas-toolkit` (imports **only** `core` + `shared`),
+  hosting the Registry, Tool Manifest, Compatibility, Installer, and
+  Configurator and Security/Trust behind ports in `core` (**implemented**).
+- A thin Toolkit **CLI surface** (`atlas tools ...`) added in `apps/cli`,
+  which delegates to the SDK — never to feature packages directly.
+- SDK wiring (`@prof-bilal/atlas-sdk`) composes the Toolkit behind its ports, exactly as
+  it composes every other feature package today.
+- `@prof-bilal/atlas-agents` already exists behind `AgentPort` in `core`; the Toolkit
+  depends on that **port**, not on the concrete `AgentService`.
+
+### Dependency direction (planned, enforced by ESLint)
+
+```
+cli → sdk → toolkit + agents → core → shared
+```
+
+The Toolkit must **not** reach for `@prof-bilal/atlas-scanner`, `@prof-bilal/atlas-storage`, etc.
+directly; anything it needs from CodeAtlas context comes through the
+**Context SDK** or the port seams.
+
+---
+
+## 3. Tool Registry
+
+**Owner:** `@prof-bilal/atlas-toolkit` — **[IMPLEMENTED]** (Task 19, registry foundation;
+see [TOOL_REGISTRY.md](./TOOL_REGISTRY.md)). The sections below remain the
+design contract for how the registry feeds later tasks.
+
+The Registry is the **authoritative catalog of what exists** — the *"what is
+there"* layer. It is deliberately **separate from the Recommendation Engine**
+(§11), which answers *"what is useful for this user/project."*
+
+### Responsibilities
+
+- Curate tool metadata: name, description, categories, versions, licenses,
+  repositories, websites, maintainers.
+- Record installation methods (npm / pip / cargo / go / binary / GitHub
+  release / MCP package).
+- Record compatibility requirements (OS, runtime, package manager, AI CLI
+  availability/version, MCP compatibility, architecture, permissions).
+- Record configuration requirements and supported agents.
+- Record security status and trust level (see §7, §8).
+- Track last-update / maintenance signals. **Stars are not the quality
+  signal** — they are one weak input among many.
+- Keep categories **extensible**; nothing is hardcoded around the initial
+  category list.
+
+### Registry sources (planned)
+
+The CodeAtlas registry is the **authoritative layer**. External sources are
+advisory inputs that must pass the curated/sanitized pipeline before they can
+be recommended:
+
+```
+Curated CodeAtlas registry  ← authoritative
+GitHub / npm / PyPI / Cargo / MCP ecosystem  ← inputs, never trusted directly
+```
+
+Do **not** automatically trust arbitrary external metadata. External metadata
+is enriched, reconciled, and then *curated*; it is never auto-approved.
+
+### Data model (conceptual, not final)
+
+```yaml
+name: example-tool
+description: Tool description
+repository: https://github.com/org/example-tool
+website: https://example-tool.dev
+license: MIT
+version: 1.2.3
+stars: 1234            # weak signal only, not a trust basis
+lastUpdate: 2026-07-01
+maintainer: example-org
+categories:
+  - token-optimization
+install:
+  type: npm            # npm | pip | cargo | go | binary | github-release | mcp
+  package: example-tool
+supports:
+  - claude
+  - gemini
+  - codex
+  - opencode
+compatibility:
+  os: [win32, linux, darwin]
+  runtimes: [{ name: node, ">=": "20.19.0" }]
+  agents: [claude, gemini]
+configuration:
+  type: automatic      # automatic | manual | none
+security:
+  status: reviewed     # verified | reviewed | community | unverified | blocked
+  lastReview: 2026-07-01
+benchmarks:            # future; vendor claims vs CodeAtlas benchmarks, see §12
+  - metric: tokens
+    source: vendor-claim
+```
+
+> The exact schema is **not** final — this is a starting point to be refined
+> during implementation (Task 19/20). Do not treat the YAML above as
+> committed.
+
+---
+
+## 4. Tool Manifest
+
+**Owner:** `@prof-bilal/atlas-toolkit` — **[IMPLEMENTED]** (Task 20). See
+[TOOL_MANIFEST.md](../reference/TOOL_MANIFEST.md) for the schema, storage, and validation
+details.
+
+A **Tool Manifest** describes *one installed tool* on the user's machine —
+separate from the Registry entry. It records:
+
+- which tool + version is installed,
+- **where** it was installed from (registry entry, npm package, release asset),
+- the **install method** and provenance,
+- the **verification result** (checksum / signature / build from source),
+- the **applied configuration** and which agents it was configured for,
+- the trust + security status that applied at install time,
+- a `doctor`-able integration state (see §9).
+
+This mirrors the codebase's existing **Manifest pattern** (`@prof-bilal/atlas-scanner`
+`manifest.ts`) — installed-tool state lives next to the project state in
+`.codeatlas/`, so `atlas tools doctor` can reconcile what is expected vs. what
+is actually present.
+
+---
+
+## 5. Tool Installer
+
+**Owner:** `@prof-bilal/atlas-toolkit` — **[IMPLEMENTED]** (Task 22) with a safe MVP subset.
+
+> **Implemented (Task 22):** `InstallerPort` in `core` + `InstallerService` in
+> `@prof-bilal/atlas-toolkit`, composed via `createInstaller()` in `@prof-bilal/atlas-sdk`. Adapters
+> ship for the **safe MVP subset** (`npm`, `pip`, `cargo`, `go`) plus a new
+> **`skill`** adapter that shallow-clones a skill repository (see below);
+> `binary`, `github-release`, and `mcp` are declared by the port but not yet
+> executable — adding one is a **new small adapter**, never a fork. Every
+> command is an argument-array spawn (`shell:false`), approval is mandatory,
+> `blocked` tools fail closed, verification reports
+> `verified`/`unverified`/`failed` honestly, and a Tool Manifest (Task 20)
+> records provenance with best-effort rollback.
+> See [CURRENT_STATE.md](../CURRENT_STATE.md) and the
+> `packages/toolkit/tests/installer-*.test.ts` suite (incl. adversarial tests).
+
+The Installer enforces the product decision from the brief: **automatic
+installation is opt-in; the user stays in control.**
+
+```
+Validate tool
+    ↓
+Check compatibility   (see §6)
+    ↓
+Check security metadata (see §7)
+    ↓
+Ask user approval
+    ↓
+Install
+    ↓
+Configure (see §9)
+    ↓
+Verify
+```
+
+### Install types (design the abstraction, implement incrementally)
+
+- `npm` / `pip` / `cargo` / `go` — the ecosystem's package manager,
+  installing the **official package**, never a tarball from a random URL.
+- `skill` — a self-contained `SKILL.md` (plus helper files) installed by
+  shallow-cloning its **canonical http(s) repository** into
+  `<root>/.codeatlas/skills/<name>/`. The `installMethods[].note` field carries
+  the skill's sub-path inside the repo (`skills/mcp-builder`), or is omitted
+  for repo-root skills. Verification is by **file existence** (`SKILL.md` under
+  the clone via `verifyPath`), never a PATH binary; removal is a directory
+  deletion handled by the SDK facade (there is no ecosystem uninstall command,
+  so rollback is reported honestly). Compatibility requires `git` on PATH.
+- `binary` — official release asset, with checksum verification.
+- `github-release` — official release artifact with checksum/signature checks.
+- `mcp` — an MCP server package (npm/pip) installed as a tool that CodeAtlas
+  can register for an agent.
+
+**Do not implement all installers now.** The MVP ships a safe subset (npm, pip,
+cargo, go, skill). The abstraction is an
+**`InstallerPort`** with one adapter per install type, mirroring the existing
+`ProviderPort` / `AgentPort` adapter pattern — so a new ecosystem is a new
+small adapter, not a fork.
+
+### Security-critical rules (non-negotiable, see [SECURITY.md](../reference/SECURITY.md))
+
+- Install through **official distribution channels only**.
+- **Never** execute arbitrary install scripts downloaded from a repository.
+- Verify **checksums/signatures** for binary and release installs.
+- Pass package-manager arguments as **argument arrays**, never shell strings.
+- Record **provenance** in the Tool Manifest.
+- Any network access is explicit and user-approved; no implicit uploads
+  ([PRIVACY.md](../reference/PRIVACY.md)).
+
+---
+
+## 6. Compatibility Engine
+
+**Owner:** `@prof-bilal/atlas-toolkit` — **[IMPLEMENTED]** (Task 21).
+
+Before installing, the Toolkit determines whether the tool **can run in this
+environment at all**:
+
+```
+Operating System
+Runtime version (Node, Python, Go, …)
+Package manager availability
+AI CLI availability + version
+MCP compatibility
+Architecture (x64 / arm64 …)
+Required permissions
+```
+
+The Registry schema lets tools **declare** compatibility requirements (see §3).
+The Compatibility Engine evaluates them against the **detected environment**,
+using `@prof-bilal/atlas-agents` (`AgentPort`) for AI-CLI availability and version.
+
+Implemented pieces (`packages/toolkit`): `CompatibilityEngineService` behind
+`CompatibilityPort` in `core`; `EnvironmentDetector` (read-only, offline,
+injectable OS/arch/Node-version/binary resolver); a minimal documented semver
+range matcher (`version-range.ts` — `*`, exact, `> >= < <= =`, `^`/`~`, AND
+groups, `||` OR; everything else fails closed); and `renderCompatibilityReport`
+(`✓ / ~ / ✗ / ?` per check, sub-checks indented, then the overall verdict).
+Composed by the SDK as `createCompatibilityEngine()`.
+
+Example output:
+
+```text
+Tool: Token Tool (v1.4.2)
+✓ OS — running on win32
+✓ Node >=20.19.0 — found node (v22.14.0)
+✓ AI agents
+  ✓ claude — found claude v2.0.1
+  ✗ gemini — AI CLI 'gemini' not found on PATH
+✓ Architecture — running on x64
+? Python >=3.12 — found python3 (banana) but its version could not be parsed
+OVERALL: partially-compatible
+```
+
+A tool that fails compatibility is surfaced as **not installable in this
+environment** (`OVERALL: incompatible — not installable in this environment`)
+— it is not auto-installed and not silently skipped.
+
+---
+
+## 7. Security Model
+
+**Status: implemented (Task 24).** CodeAtlas must **never** blindly execute arbitrary
+installation scripts from GitHub.
+
+### Security inputs
+
+Before any install, consider:
+
+- Repository (owner, stars, activity, fork status)
+- License
+- Release / version / tag
+- Package source (official registry vs. unknown tarball)
+- Dependencies (transitive supply chain)
+- Install commands (what would actually run)
+- Required permissions (network, filesystem, processes)
+- Secrets (does the install ask for / expose keys?)
+- Maintenance status (last commit, open issues, bus factor)
+
+### Security status
+
+Every registry entry carries one of:
+
+| Status      | Meaning |
+| ----------- | ------- |
+| `verified`  | Reviewed by CodeAtlas against a concrete checklist (rare; high bar) |
+| `reviewed`  | Passed a documented review pass (metadata + install path + provenance) |
+| `community` | Community-used and reported, but not individually audited by CodeAtlas |
+| `unverified`| Not yet reviewed; installable only with explicit user override |
+| `blocked`   | Known bad — cannot be installed through the Toolkit |
+
+**Do not claim CodeAtlas has audited a tool unless it actually has.** The
+default is `unverified`; promotion to `reviewed`/`verified` is a deliberate,
+documented, human-in-the-loop act.
+
+---
+
+## 8. Trust Model
+
+A user-facing **trust hierarchy** so a user understands, *before* installing,
+where a tool sits:
+
+```
+Verified
+        ↓
+Reviewed
+        ↓
+Community
+        ↓
+Unverified
+        ↓
+Blocked
+```
+
+- **Verified** — CodeAtlas completed a documented high-bar checklist; this is
+  rare and never inferred from popularity or an official registry.
+- **Reviewed** — passed a CodeAtlas review pass.
+- **Community** — used in the wild, not individually audited here.
+- **Unverified** — not yet reviewed; requires explicit user opt-in.
+- **Blocked** — disallowed (malware, abuse, broken provenance).
+
+The exact trust states are `verified`, `reviewed`, `community`, `unverified`,
+and `blocked`; `official` is a distribution/source concept, not a trust state.
+The SecurityAssessor records the state in the install plan and Tool Manifest.
+`unverified` requires explicit consent; `blocked` is a hard gate. The broader
+list/install CLI rendering remains planned, while the SDK/installer surfaces
+the assessment and records an override in the bounded install log.
+
+---
+
+## 9. Tool Configurator
+
+**Owner:** `@prof-bilal/atlas-toolkit` (**implemented**, Task 23).
+
+A major purpose of the Toolkit is **automatic configuration**: after install,
+the tool is wired into the agents/environment that can use it.
+
+```
+Tool installed
+    ↓
+Detect supported agents   (via AgentPort / @prof-bilal/atlas-agents)
+    ↓
+Generate configuration
+    ↓
+Apply configuration
+    ↓
+Verify integration
+```
+
+### Provider-specific configuration = adapters
+
+Provider/target-specific logic **must** live in small **adapters**, exactly
+like `@prof-bilal/atlas-providers` and `@prof-bilal/atlas-agents`. There is **one** config adapter
+per target (Claude / Gemini / Codex / OpenCode / MCP / VS Code). **No giant
+`if (target === …)` configuration function.**
+
+```
+ConfiguratorPort
+   ├── ClaudeAdapter      → writes Claude settings / MCP registration
+   ├── GeminiAdapter      → writes Gemini settings
+   ├── CodexAdapter       → writes Codex settings
+   ├── OpenCodeAdapter    → writes OpenCode settings
+   ├── McpAdapter         → registers MCP servers in the agent config
+   └── VsCodeAdapter      → writes VS Code settings / recommends extensions
+```
+
+Configuration is written to **user config**, never silently into the analyzed
+repository (see [SECURITY.md](../reference/SECURITY.md) — repo files are untrusted input;
+keys come from user config).
+
+---
+
+## 10. CLI User Guide
+
+> **Status: implemented.** All commands below are wired through the SDK and
+> tested. Every `--json` flag produces machine-readable output.
+
+### Top-10 recommended tools
+
+The registry curates a **Top-10 executive recommendation** (`tier: recommended`).
+These are the tools CodeAtlas suggests installing first:
+
+| # | Tool | Category | What it does |
+|---|------|----------|-------------|
+| 1 | `mcp-builder` | MCP | Build and validate MCP servers |
+| 2 | `systematic-debugging` | AI Quality | Force root-cause tracing before patching |
+| 3 | `verification-before-completion` | AI Quality | Prevent unsupported "done" claims |
+| 4 | `trail-of-bits-security-skills` | AI Quality | Security-oriented analysis from Trail of Bits |
+| 5 | `deep-research` | AI Quality | Research-before-editing with provenance |
+| 6 | `webapp-testing` | Testing | Verify web app behavior through the project's own checks |
+| 7 | `writing-plans` | Developer Productivity | Convert vague work into sequenced packets |
+| 8 | `executing-plans` | Developer Productivity | Run plans with checkpoints and criteria |
+| 9 | `using-git-worktrees` | Developer Productivity | Isolate parallel agent changes |
+| 10 | `react-best-practices` | AI Coding | Keep React changes aligned with conventions |
+
+All other tools are `optional` or `experimental`. See `atlas tools categories`
+for the full category list.
+
+### `atlas tools` — overview
+
+Shows recommended tools and installed tools:
+
+```bash
+atlas tools                    # recommended + installed
+atlas tools --json             # machine-readable
+atlas tools --category MCP     # filter overview by category
+```
+
+### `atlas tools search <query>` — search the registry
+
+```bash
+atlas tools search mcp          # search by name/description
+atlas tools search debug --category AI Quality   # combine search + category
+atlas tools search react --json
+```
+
+### `atlas tools categories` — list all categories
+
+```bash
+atlas tools categories          # prints: Agent Tools, AI Quality, MCP, ...
+atlas tools categories --json
+```
+
+### `atlas tools info <tool>` — inspect a tool
+
+Shows registry metadata, trust level, security status, install methods,
+categories, dependencies, and the compatibility report:
+
+```bash
+atlas tools info mcp-builder
+atlas tools info deep-research --json
+```
+
+Output includes a per-check compatibility verdict (✓/✗/?) for OS, runtimes,
+AI agents, architecture, and permissions.
+
+### `atlas tools install <tool>` — install a tool
+
+Two-step flow: **plan** → **approve**:
+
+```bash
+# Step 1: review the plan
+atlas tools install mcp-builder
+
+# Step 2: approve and install
+atlas tools install mcp-builder --yes
+atlas tools install mcp-builder --yes --note "needed for MCP work"
+```
+
+Without `--yes`, the plan is printed and nothing is installed. The plan shows
+the exact command, compatibility verdict, security assessment, and dangerous
+flags. Skills are installed by shallow-cloning their canonical repository;
+ecosystem tools are installed through their official package manager.
+
+### `atlas tools remove <tool>` — uninstall a tool
+
+Removes the installed tool and cleans up any agent configuration entries
+(Claude, Gemini, Codex, OpenCode, MCP, VS Code) that were written during
+`configure`:
+
+```bash
+atlas tools remove mcp-builder
+atlas tools remove mcp-builder --json
+```
+
+Skills are removed by deleting the cloned directory. Ecosystem tools are
+removed through their package manager.
+
+### `atlas tools update` — update installed tools
+
+Updates all installed tools. Skills are updated via `git pull --ff-only`;
+ecosystem tools are re-installed through the approved adapter:
+
+```bash
+atlas tools update              # updates skills only (no approval for ecosystem)
+atlas tools update --approve    # also re-installs ecosystem tools
+atlas tools update --json
+```
+
+Reports per-tool status: `updated`, `unchanged`, or `error`.
+
+### `atlas tools configure <tool>` — wire into agents
+
+After installing a tool, configure it for the AI agents on your machine:
+
+```bash
+atlas tools configure mcp-builder --dry-run    # preview changes
+atlas tools configure mcp-builder              # apply
+atlas tools configure mcp-builder --json
+```
+
+The configurator detects which agents are installed (Claude, Gemini, Codex,
+OpenCode, Cursor, Cline, VS Code, MCP) and writes the appropriate config
+entries. Existing config is **merged, never clobbered**; a backup is created
+before any write.
+
+### `atlas tools doctor` — health check
+
+Reconciles installed tools against their manifests, runs compatibility
+checks, and detects conflicts (tools sharing a package id):
+
+```bash
+atlas tools doctor
+atlas tools doctor --json
+```
+
+Output per tool: manifest status, integration state, trust level,
+compatibility overall verdict, and any conflicts with other installed tools.
+
+### `atlas init` — recommended tools offer
+
+When initializing a project, `atlas init` offers to install the Top-10
+recommended tools:
+
+```bash
+atlas init                     # interactive: prompts to install Top-10
+atlas init --tools all         # install all Top-10 without prompting
+atlas init --tools none        # skip the offer
+atlas init --tools 1,3,5       # install specific tools by index
+```
+
+### Summary of all commands
+
+| Command | Description |
+|---------|-------------|
+| `atlas tools` | Overview: recommended + installed |
+| `atlas tools --category <cat>` | Filter overview by category |
+| `atlas tools search <query>` | Search the curated registry |
+| `atlas tools categories` | List all tool categories |
+| `atlas tools info <tool>` | Inspect a tool (metadata + compat) |
+| `atlas tools install <tool>` | Plan + approve + install |
+| `atlas tools remove <tool>` | Uninstall + clean config |
+| `atlas tools update` | Update all installed tools |
+| `atlas tools configure <tool>` | Wire tool into agents |
+| `atlas tools doctor` | Health check + conflict detection |
+| `atlas init --tools <sel>` | Init project + offer Top-10 install |
+
+---
+
+## 11. Future: Tool Recommendation Engine
+
+Kept **separate from the Registry** (Registry = *what exists*; Recommendation
+Engine = *what is useful for this user/project*). **[PLANNED / future]**.
+
+Inputs:
+- repository characteristics,
+- agent usage,
+- context usage,
+- token usage,
+- installed tools,
+- developer preferences.
+
+Outputs: recommended tools. Example signals:
+
+```text
+Your agent repeatedly requests the same files → recommend a context-caching tool
+Your agent processes large CLI outputs       → recommend a token-optimization tool
+```
+
+These are **future capabilities** — not part of the MVP.
+
+---
+
+## 12. Future: Benchmarking
+
+**One of the strongest differentiators.** **[PLANNED / future]**.
+
+CodeAtlas will eventually measure, per task:
+
+```
+Token usage · Context size · Latency · Task success · Error rate
+Repeated reads · Tool calls · Agent cost
+```
+
+and compare **Without Tool vs With Tool**.
+
+Important rules:
+
+- **Never promise a specific % of token savings.**
+- Store **third-party claims separately** from CodeAtlas's own benchmarks:
+  `vendor-claim` | `codeatlas-benchmark` | `unverified`.
+- Use precise language — **no "eliminates hallucinations."** The Toolkit
+  describes capabilities as *hallucination mitigation / verification /
+  validation / quality improvement*.
+
+---
+
+## 13. Context + Toolkit integration
+
+The Toolkit composes through the **Context SDK** — it never opens the database
+or imports feature packages directly (same rule as `@prof-bilal/atlas-mcp`, `atlas
+search`, and the VS Code extension). Context signals (repeated reads, large
+outputs, high churn) feed the **future** Recommendation Engine — see
+[CONTEXT_SDK.md](../reference/CONTEXT_SDK.md).
+
+---
+
+## 14. Boundaries — what this subsystem will NOT do
+
+- **Not** copy third-party code into the CodeAtlas repository.
+- **Not** execute arbitrary install scripts / `install.sh` from GitHub.
+- **Not** auto-install tools without explicit user approval (opt-in only).
+- **Not** build a full marketplace or billing (future, out of MVP).
+- **Not** implement automatic recommendation, auto token optimization, or auto
+  hallucination detection in the MVP.
+- **Not** reimplement the internals of the tools it manages (same principle as
+  the orchestrator, ADR-002).
+
+---
+
+## 15. Relationship to the rest of CodeAtlas
+
+| Concern | Owner / seam |
+| ------- | ------------ |
+| Tool catalog | `@prof-bilal/atlas-toolkit` Registry — **implemented** (Task 19) |
+| Installed-tool state | Tool Manifest in `.codeatlas/tools/` — **implemented** (Task 20) |
+| Compatibility | `@prof-bilal/atlas-toolkit` Compatibility Engine — **implemented** (Task 21) |
+| Installers | `InstallerPort` + per-ecosystem adapters — **implemented** (Task 22, MVP subset `npm`/`pip`/`cargo`/`go` + `skill` git-clone) |
+| Configuration | `ConfiguratorPort` + per-target adapters — **implemented** (Task 23) |
+| Security / trust | `SecurityPort` + offline `SecurityAssessor` — **implemented** (Task 24); hard installer gate |
+| AI-CLI detection | `@prof-bilal/atlas-agents` (`AgentPort`) — **implemented** |
+| CLI surface | `atlas tools` overview/search/info/validate/add/create/install/remove/update/configure/doctor — **implemented**; `atlas skills` custom and built-in workflows — **implemented**; `atlas setup` performs deterministic project detection, evidence-based recommendations, explicit-approval installation, CI-safe dry runs, separate TOOLS/SKILLS/SECURITY reporting, and Warden presence detection; `atlas warden status/run` provides explicit policy-based Warden execution; the `atlas tui` slash surface adding `/toolkit` and `/tools-install <tool>` is **v2 / not shipped** (untracked) |
+| AI-CLI catalog | the four npm-installable AI CLIs (`claude`, `gemini`, `codex`, `opencode`) ship as curated Registry entries with official npm install methods, so a missing agent can be installed through the same approval-gated installer (via `atlas tools` or the v2 TUI) |
+| Recommendation | separate future module (planned) |
+| Benchmarking | separate future subsystem (planned) |
+
+See the task order in this document's §6/§11 and
+[SECURITY.md](../reference/SECURITY.md) for the non-negotiable rules this subsystem is
+subject to.

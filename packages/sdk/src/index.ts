@@ -46,21 +46,12 @@ export { indexProject } from "./indexing/indexer";
 export type { IndexRequest, IndexResult } from "./indexing/indexer";
 export { createAtlasCompletion } from "./completion";
 export type { AtlasCompletion, AtlasCompletionInput, AtlasSectionStatus } from "./completion";
-export { runSetup } from "./setup";
-export { createBrowseService, isValidEvidenceLabel } from "./browse";
+export { planSetup, runSetup } from "./setup";
 export type {
-  BrowseRunner,
-  BrowseRunnerResult,
-  BrowseService,
-  BrowseServiceOptions,
-} from "./browse";
-export type {
-  BrowseEvidence,
-  BrowseInteraction,
-  BrowseKey,
-  BrowsePort,
-  BrowseViewport,
-} from "@prof-bilal/atlas-core";
+  SetupAvailableSkill,
+  SetupCandidate,
+  SetupPlan,
+} from "./setup";
 export { createWardenService } from "./warden";
 export type {
   WardenRunPlan,
@@ -485,32 +476,6 @@ export {
   calculateSavings,
   createEmptySnapshot,
 } from "@prof-bilal/atlas-metrics";
-export { createBenchmarkService } from "./benchmark";
-export type { CreateBenchmarkServiceOptions } from "./benchmark";
-export type {
-  BenchmarkAgent,
-  BenchmarkCancelResult,
-  BenchmarkConfig,
-  BenchmarkEvaluation,
-  BenchmarkEvaluationEntry,
-  BenchmarkMode,
-  BenchmarkPort,
-  BenchmarkReport,
-  BenchmarkRunRequest,
-  BenchmarkStatus,
-  BenchmarkSuite,
-  BenchmarkSuiteResult,
-  BenchmarkSuiteRunRequest,
-  BenchmarkTaskResult,
-  ReportOptions,
-  ReportSection,
-  SuiteStatus,
-  TaskCategory,
-  TaskDefinition,
-  TaskFile,
-  TokenMetrics,
-  ToolCallRecord,
-} from "@prof-bilal/atlas-core";
 export type {
   ClaimCheck,
   ClaimCheckInput,

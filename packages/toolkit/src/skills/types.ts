@@ -1,10 +1,9 @@
-// @prof-bilal/atlas-benchmark — Skills (minimal Agent Skills implementation)
+// @prof-bilal/atlas-toolkit — Skills (Agent Skills types)
 //
 // A minimal, dependency-free implementation of the open "Agent Skills" pattern
 // (a folder with a SKILL.md that carries frontmatter metadata + markdown
-// instructions, optionally with supporting `references/` files). Purpose: let a
-// benchmark give a coding agent a reusable, task-specific skill so we can
-// measure WITH-SKILL vs WITHOUT-SKILL outcomes (benchmark Config C vs D).
+// instructions, optionally with supporting `references/` files). Purpose: give
+// a coding agent reusable, task-specific instructions it can load on demand.
 //
 // Nothing here executes skill content — skills are pure instructions plus
 // inert reference material. Loading is size-bounded and path-safe.
@@ -23,8 +22,8 @@ export interface SkillManifest {
   readonly disallowedTools?: readonly string[] | undefined;
   /**
    * If true the skill is intended to be invoked explicitly by the user rather
-   * than auto-activated by the model. Advisory — the benchmark harness still
-   * injects it for configured tasks.
+   * than auto-activated by the model. Advisory — explicit requests (e.g. a
+   * launch with `--skill`) still load it.
    */
   readonly disableModelInvocation?: boolean | undefined;
 }

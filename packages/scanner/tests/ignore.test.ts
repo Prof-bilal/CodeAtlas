@@ -17,7 +17,7 @@ describe("ignore rules", () => {
     expect(ignore("DIST")).toBe(true);
     expect(ignore("Vendor")).toBe(true);
     expect(ignore("Benchmarks")).toBe(true);
-    expect(ignore("OLD-SCHOOL")).toBe(true);
+    expect(ignore(".CodeAtlas")).toBe(true);
   });
 
   it("honors a custom ignore list", () => {

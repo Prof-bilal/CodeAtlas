@@ -1,6 +1,11 @@
 import { existsSync } from "node:fs";
 import { copyFile } from "node:fs/promises";
-import type { ContextIntegration, ContextPlan, ContextSlice, TaskClassification } from "@prof-bilal/atlas-sdk";
+import type {
+  ContextIntegration,
+  ContextPlan,
+  ContextSlice,
+  TaskClassification,
+} from "@prof-bilal/atlas-sdk";
 import {
   createClassifier,
   createContextSDK,

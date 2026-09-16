@@ -1,14 +1,9 @@
-import type { DatabaseSync } from "node:sqlite";
 import type { Budget, UsageScope } from "@prof-bilal/atlas-core";
 import { type Row, colString, count } from "./row";
 import { StatementCache } from "./statement-cache";
 
 /** CRUD for the `Budgets` table (soft targets — never block calls). */
 export class BudgetRepository extends StatementCache {
-  public constructor(db: DatabaseSync) {
-    super(db);
-  }
-
   public upsert(budget: Budget): void {
     this.prepare(
       `INSERT INTO Budgets (id, scope_kind, scope_value, currency, token_limit, cost_limit, created_at)

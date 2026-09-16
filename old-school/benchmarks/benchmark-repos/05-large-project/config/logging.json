@@ -1,6 +1,0 @@
-{
-  "level": "info",
-  "format": "json",
-  "transports": ["console", "file"],
-  "redactFields": ["password", "token"]
-}

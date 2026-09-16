@@ -1,8 +1,8 @@
-import { VERSION } from "@prof-bilal/atlas-sdk";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { VERSION } from "@prof-bilal/atlas-sdk";
 import { type ToolCallBudget, createToolCallBudget } from "./budget";
 import { CodeAtlasContext, type CodeAtlasContextOptions } from "./context";
 import type { FreshnessReport } from "./freshness";
@@ -151,9 +151,8 @@ async function runTool(
 ): Promise<CallToolResult> {
   const startedAt = performance.now();
   logger.debug(`tool call: ${tool.name}`);
-  // Per-session call/count budget (opencod / kilo / browser paths all funnel
-  // through here). Defaults to unlimited, so this is a no-op unless an env
-  // var is set. When tripped, we reject *before* invoking the handler —
+  // Per-session call/count budget. Defaults to unlimited, so this is a no-op
+  // unless an env var is set. When tripped, we reject *before* invoking the handler —
   // critical against read-flush loops like 19× `read_file_range` → 762k
   // tokens — and report it as a structured error result.
   const budgetCheck = budget.check(tool.name);

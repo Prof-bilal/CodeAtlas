@@ -1,5 +1,9 @@
 import { readFileSync } from "node:fs";
-import type { ToolRegistryPort, ToolRegistryRecord, ToolRegistrySource } from "@prof-bilal/atlas-core";
+import type {
+  ToolRegistryPort,
+  ToolRegistryRecord,
+  ToolRegistrySource,
+} from "@prof-bilal/atlas-core";
 import shippedCatalogData from "./catalog.json";
 import { RegistryLoadError } from "./errors";
 import { RegistryStore } from "./registry-store";

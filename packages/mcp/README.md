@@ -4,7 +4,7 @@ A **Model Context Protocol (MCP)** server that exposes a project's CodeAtlas
 context to external AI tools (Claude Desktop, Cursor, VS Code, and any other
 MCP client) over stdio.
 
-It consumes only `@prof-bilal/atlas-sdk` (per the [dependency rules](../../docs/DEPENDENCIES.md))
+It consumes only `@prof-bilal/atlas-sdk` (per the [dependency rules](../../docs/architecture/DEPENDENCIES.md))
 and is **provider-independent**: search, dependencies, module explanation, and
 project overview are deterministic reads of the persisted `.codeatlas/context.db`;
 AI summary generation is opt-in per call and goes through whatever provider is
@@ -22,7 +22,7 @@ wired into the SDK.
 | `project_overview` | Project counts, language breakdown, and stored project summary |
 
 Full documentation for every tool (inputs, outputs, examples) lives in
-[`docs/MCP.md`](../../docs/MCP.md).
+[`docs/reference/MCP.md`](../../docs/reference/MCP.md).
 
 ## Running
 

@@ -44,7 +44,6 @@
       "@prof-bilal/atlas-metrics": ["./packages/metrics/src/index.ts"],
       "@prof-bilal/atlas-toolkit": ["./packages/toolkit/src/index.ts"],
       "@prof-bilal/atlas-mcp": ["./packages/mcp/src/index.ts"],
-      "@prof-bilal/atlas-benchmark": ["./packages/benchmark/src/index.ts"],
       "@prof-bilal/atlas-verifier": ["./packages/verifier/src/index.ts"]
     }
   }

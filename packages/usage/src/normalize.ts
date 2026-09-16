@@ -1,4 +1,9 @@
-import type { MeasuredQuantity, TokenUsageRecord, UsageEventInput, UsageRecord } from "@prof-bilal/atlas-core";
+import type {
+  MeasuredQuantity,
+  TokenUsageRecord,
+  UsageEventInput,
+  UsageRecord,
+} from "@prof-bilal/atlas-core";
 
 /** Produce a normalized `UsageRecord` (minus `cost`) from a raw event. */
 export function normalizeEvent(event: UsageEventInput, id: string): Omit<UsageRecord, "cost"> {

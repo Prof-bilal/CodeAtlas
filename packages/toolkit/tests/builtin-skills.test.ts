@@ -81,17 +81,40 @@ describe("built-in workflow Skills", () => {
     }
   });
 
+  it("never instructs agents to run the removed browser-control layer", () => {
+    for (const id of BUILTIN_SKILL_IDS) {
+      const skill = loadBuiltinSkill(id);
+      const body = skill?.body ?? "";
+      const allowed = skill?.manifest.allowedTools ?? [];
+      expect(
+        allowed.some((tool) => tool.includes("atlas browse")),
+        id,
+      ).toBe(false);
+      // No Skill advertises the removed layer or routes rendering checks to a
+      // browser runner; the word itself must not survive in any Skill body.
+      expect(body, id).not.toContain("atlas browse");
+      expect(body, id).not.toMatch(/playwright/i);
+      expect(body, id).not.toMatch(/browser/i);
+    }
+  });
+
+  it("routes web-dependent Skills through the agent's own web access", () => {
+    for (const id of ["ui-research", "ui-check", "webapp-testing"] as const) {
+      const skill = loadBuiltinSkill(id);
+      const body = skill?.body ?? "";
+      expect(body, id).toContain("web fetch");
+      expect(body, id).toContain("no rendering tooling");
+    }
+  });
+
   describe("ui-research workflow contract", () => {
     it("encodes the autonomous reference flow", () => {
       const skill = loadBuiltinSkill("ui-research");
       expect(skill).not.toBeNull();
       const body = skill?.body ?? "";
-      expect(skill?.manifest.allowedTools).toContain("atlas browse interact");
+      expect(skill?.manifest.allowedTools).toContain("atlas search");
+      expect(skill?.manifest.allowedTools).toContain("atlas inspect");
       expect(body).toContain("design.md");
-      expect(body).toContain("atlas browse snapshot");
-      expect(body).toContain("atlas browse responsive");
-      expect(body).toContain("atlas browse interact");
-      expect(body).toContain("allowlisted");
       expect(body).toContain("closely follow the design");
       expect(body).toContain("adapt it to the project");
       expect(body).toContain("inspiration only");
@@ -99,7 +122,8 @@ describe("built-in workflow Skills", () => {
       expect(body).toContain("Inferred");
       expect(body).toContain("Recommended");
       expect(body).toContain("design-intent question");
-      expect(body).toContain(".codeatlas/evidence/");
+      expect(body).toContain("second artifact");
+      expect(body).toContain("Never claim a rendered");
     });
 
     it("encodes the fresh-UI flow without a reference URL", () => {
@@ -112,15 +136,39 @@ describe("built-in workflow Skills", () => {
   });
 
   describe("ui-build workflow contract", () => {
-    it("consumes design.md and verifies through browser observation", () => {
+    it("consumes design.md and verifies with the project's own tooling", () => {
       const body = loadBuiltinSkill("ui-build")?.body ?? "";
       expect(body).toContain("design.md");
       expect(body).toContain("ui-research");
-      expect(body).toContain("390x844");
-      expect(body).toContain("768x1024");
-      expect(body).toContain("1280x800");
       expect(body).toContain("Never invent accessibility or quality scores");
       expect(body).toContain("could not run");
+      // Verification runs on tooling the repository already has; rendered
+      // checks are recorded as could-not-run, never routed to a runner.
+      expect(body).toContain("tooling the repository already has");
+      expect(body).toContain("Do not add dependencies to the project");
+      expect(body).toContain("not observable with the tooling this release ships");
+    });
+  });
+
+  describe("ui-check workflow contract", () => {
+    it("separates checkable source evidence from unchecked rendering", () => {
+      const body = loadBuiltinSkill("ui-check")?.body ?? "";
+      expect(body).toContain("What can and cannot be checked");
+      expect(body).toContain("@media");
+      expect(body).toContain("could not run");
+      expect(body).toContain("No invented accessibility or quality scores");
+    });
+  });
+
+  describe("webapp-testing workflow contract", () => {
+    it("uses the project's own observable checks as evidence", () => {
+      const body = loadBuiltinSkill("webapp-testing")?.body ?? "";
+      expect(body).toContain("What counts as observable here");
+      expect(body).toContain("project's own test suite");
+      expect(body).toContain("could not run");
+      expect(body).toMatch(/never infer a rendered result from code/i);
+      expect(body).toContain("not observable in this release");
+      expect(body).toContain("Do not add test dependencies to the project");
     });
   });
 });

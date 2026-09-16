@@ -4,7 +4,13 @@
 // Default root is process.cwd(); reads from .codeatlas/skills/ by default.
 
 import { join } from "node:path";
-import type { DiscoveredSkill, RenderOptions, Skill, SkillError, SkillPort } from "@prof-bilal/atlas-core";
+import type {
+  DiscoveredSkill,
+  RenderOptions,
+  Skill,
+  SkillError,
+  SkillPort,
+} from "@prof-bilal/atlas-core";
 import { type Result, fail, ok } from "@prof-bilal/atlas-shared";
 import {
   discoverSkills,

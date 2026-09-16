@@ -1,4 +1,4 @@
-// @prof-bilal/atlas-benchmark — Skills loader
+// @prof-bilal/atlas-toolkit — Skills loader
 //
 // Dependency-free discovery + loading + rendering of Agent Skills. Follows the
 // open standard's three progressive-disclosure stages:

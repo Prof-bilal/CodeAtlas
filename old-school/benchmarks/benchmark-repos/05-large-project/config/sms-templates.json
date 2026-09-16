@@ -1,8 +1,0 @@
-{
-  "verify": {
-    "body": "Your code is {{code}}"
-  },
-  "reset": {
-    "body": "Your reset code is {{code}}"
-  }
-}

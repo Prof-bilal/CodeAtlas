@@ -12,8 +12,8 @@ import type { Result } from "@prof-bilal/atlas-shared";
  *
  * Flow per applicable target: detect → generate → validate → apply → verify.
  *
- * Safety rules the port enforces (see `docs/AGENT_TOOLKIT.md` §9 and
- * `docs/SECURITY.md`):
+ * Safety rules the port enforces (see `docs/architecture/AGENT_TOOLKIT.md` §9 and
+ * `docs/reference/SECURITY.md`):
  * - Configuration is written to **user config only** — never silently into the
  *   analyzed repository (repo files are untrusted input).
  * - Existing configuration is **backed up** before any overwrite.

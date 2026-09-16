@@ -7,6 +7,42 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Releases are cut from the published `codeatlas-cli`; the changelog tracks the
 npm versions.
 
+## [Unreleased] (open-source cleanup)
+
+### Changed
+
+- **Directory layout:** `docs/` is now grouped into `docs/architecture/`,
+  `docs/guides/`, `docs/reference/` and `docs/contributing/`.
+- **`atlas skills`:** bare `atlas skills` now lists the built-in Skill library
+  (previously it printed help), and `atlas skills <name>` shows a Skill in full.
+- **`atlas setup`:** no longer installs anything by default. It detects the
+  environment, shows recommended (but unselected) Tools and Skills, and only
+  installs what you explicitly select and confirm.
+- **Web-facing Skills re-pointed:** `ui-research`, `ui-check`, `ui-build` and
+  `webapp-testing` now use the **agent's own web fetch/search tools** (and the
+  project's own test tooling) instead of the removed browser-control layer. They
+  treat fetched markup/CSS/scripts as source evidence and report
+  rendering-dependent checks as *could not run* instead of inferring them. No
+  Skill body mentions a browser runner or Playwright at all (asserted by
+  `builtin-skills.test.ts`).
+
+### Removed
+
+- **Browser control (Playwright):** the `BrowsePort`/`createBrowseService`
+  browser-control subsystem, the `atlas browse` command, the `playwright-mcp`
+  tool and its catalog entry, and the browser-workflow Skill content.
+- **Benchmark system:** the `@prof-bilal/atlas-benchmark` package, the benchmark
+  API server (`apps/server`), the `atlas benchmark` command, `benchmarks/`,
+  `vitest.benchmark.config.mts`, the retrieval-gates workflow and the benchmark
+  docs. Atlas Benchmark will live in a separate repository.
+- **Dead packages and scripts:** the unused `packages/common` package and the
+  one-off root scripts it belonged to.
+
+### Added
+
+- `docs/REPOSITORY_MAP.md`, `docs/architecture/ARCHITECTURE.md`,
+  `docs/decisions/ADR-023-remove-browser-and-benchmark-subsystems.md`.
+
 ## [Unreleased] (MCP V2 Phase 6 — release cut)
 
 ### Added
@@ -20,7 +56,7 @@ npm versions.
 
 - **Phase 6 release cut:** removed `analyze_task`, `create_plan`,
   `verify_answer`, `explain_module` from the MCP protocol. Calls to these
-  tools now return `Method not found`. See `docs/MCP_MIGRATION.md`.
+  tools now return `Method not found`. See `docs/reference/MCP_MIGRATION.md`.
 - Removed `moduleFile` and `moduleDependencyShape` types (only used by
   `explain_module`).
 - Removed `createClassifier`, `createPlanner`, `createVerifier`,
@@ -30,7 +66,7 @@ npm versions.
 
 - MCP protocol surface reduced from 16 (12 legacy + 4 aliases) to 12
   (8 legacy + 4 aliases) advertised tool names.
-- `docs/MCP_MIGRATION.md` updated to reflect Phase 6 release cut.
+- `docs/reference/MCP_MIGRATION.md` updated to reflect Phase 6 release cut.
 - `benchmarks/retrieval-tasks/BASELINE.md` updated with capture instructions.
 
 ## [0.4.0] - 2026-09-12
@@ -148,7 +184,7 @@ First beta of the 0.4.0 line. Includes everything below plus the never-published
   a package id and lists conflicts.
 - **Dependencies and categories in `atlas tools info`** — surfaces declared
   dependencies and category tags.
-- **User guide** — `docs/AGENT_TOOLKIT.md` §10 rewritten as a complete CLI
+- **User guide** — `docs/architecture/AGENT_TOOLKIT.md` §10 rewritten as a complete CLI
   reference with real commands, examples, and the Top-10 list.
 - **Statement caching in SQLite repositories** — `@prof-bilal/atlas-storage` and
   `@prof-bilal/atlas-usage` now reuse one prepared statement per SQL via a shared
@@ -252,15 +288,15 @@ First beta of the 0.4.0 line. Includes everything below plus the never-published
 - Rewrote the top-level `README.md` (status claims now reflect the implemented
   `@prof-bilal/atlas-context`, `atlas explain`, and `atlas doctor`; the published global
   install is the primary path).
-- New docs: `docs/installation.md`, `docs/getting-started.md`,
-  `docs/configuration.md`, `docs/integrations.md`, `docs/troubleshooting.md`.
+- New docs: `docs/guides/installation.md`, `docs/guides/getting-started.md`,
+  `docs/guides/configuration.md`, `docs/guides/integrations.md`, `docs/guides/troubleshooting.md`.
 - New GitHub-facing files: root `CONTRIBUTING.md`, `SECURITY.md`,
   `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, and `docs/RELEASE_AUDIT.md` (pre-release
   audit: secrets scan, hygiene, quality gates, changeset).
 - Corrected stale claims (incremental indexer, `atlas build`/`update`, MCP tool
-  count, git-repository status) in `docs/CONTEXT.md`, `docs/CONTEXT_STORAGE.md`,
-  `docs/CLI.md`, `docs/CONTEXT_SDK.md`, `docs/MCP.md`, `docs/MODULES.md`,
-  `docs/VSCODE.md`, `docs/DEVELOPMENT.md`, `docs/CONTRIBUTING.md`.
+  count, git-repository status) in `docs/architecture/CONTEXT.md`, `docs/architecture/CONTEXT_STORAGE.md`,
+  `docs/reference/CLI.md`, `docs/reference/CONTEXT_SDK.md`, `docs/reference/MCP.md`, `docs/architecture/MODULES.md`,
+  `docs/guides/VSCODE.md`, `docs/contributing/DEVELOPMENT.md`, `docs/contributing/CONTRIBUTING.md`.
 
 ### Security
 

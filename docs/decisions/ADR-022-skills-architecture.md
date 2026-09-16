@@ -2,6 +2,12 @@
 
 Date: 2026-09-12 · Status: Accepted and implemented
 
+> **Note (2026-09-16):** the benchmark package this ADR extracted the loader
+> from (`packages/benchmark/src/skills/`) was later removed from the
+> repository — see [ADR-023](./ADR-023-remove-browser-and-benchmark-subsystems.md).
+> The Skills architecture defined here is unchanged; the loader lives in
+> `@prof-bilal/atlas-toolkit` and is the single Skills implementation.
+
 > Source: the 2026-09-12 engineering architecture audit (audit-only, cited
 > findings below were verified against code on that date).
 
@@ -118,7 +124,7 @@ a second registry, a new config system, or a new package family.
      before `--yes`). This closes the audit's HIGH finding.
    - **Skills are untrusted content.** Rendered skill blocks are labeled with
      their origin (registry record name + `trust`/`security` snapshot) and are
-     never executed — the loader reads files, nothing more. `docs/SECURITY.md`
+     never executed — the loader reads files, nothing more. `docs/reference/SECURITY.md`
      gains a Skills section documenting the prompt-injection surface.
    - **Tool Manifest extension (additive, schema v2):** per-skill policy
      fields (e.g. `skill: { format: "agent-skills", validatedAt,
@@ -184,13 +190,13 @@ a second registry, a new config system, or a new package family.
   README, "Playwright MCP vs Playwright CLI"). This independently confirms this
   ADR's two central choices: skills as the primary instruction-distribution
   mechanism, and CLI capability commands over wide MCP tool surfaces. It also
-  informs the capability roadmap in `upgrade.md`: **browser/visual
+  informs the capability roadmap in `docs/archive/UPGRADE-RESEARCH.md`: **browser/visual
   capabilities should enter CodeAtlas as curated Toolkit tools + Skills, not
   as a first-party MCP surface**.
 
 ## Amendment 1 — 2026-09-13: research validation & capability-layer scope
 
-The product/technical research pass (2026-09-13, summarized in `upgrade.md`)
+The product/technical research pass (2026-09-13, summarized in `docs/archive/UPGRADE-RESEARCH.md`)
 validates this ADR and bounds its scope:
 
 1. **Format & delivery validated by ecosystem convergence.** Playwright
@@ -204,14 +210,14 @@ validates this ADR and bounds its scope:
    orchestrate. Capability primitives enter via the **existing Toolkit
    pipeline** (registry → compatibility → security → approval → install →
    manifest) or as SDK-composed ports; they do **not** create a new framework.
-   See `upgrade.md` §Capability Map and §Roadmap.
+   See `docs/archive/UPGRADE-RESEARCH.md` §Capability Map and §Roadmap.
 3. **Nothing in this amendment changes the port, placement, or security
    clauses above.** The browser/API capability work is additive and tracked in
-   `upgrade.md`'s P0–P2 roadmap, not here.
+   `docs/archive/UPGRADE-RESEARCH.md`'s P0–P2 roadmap, not here.
 
 ## Follow-ups (tracked, not part of this decision)
 
-1. P1: extend `docs/CONTEXT_STORAGE.md` (`.codeatlas/skills/`, `slices/`) and
+1. P1: extend `docs/architecture/CONTEXT_STORAGE.md` (`.codeatlas/skills/`, `slices/`) and
    `docs/FEATURE_STATUS.md` rows.
 2. P1: audit-finding cleanup adjacent to this ADR — `@prof-bilal/atlas-verifier`
    missing from the ESLint `ALL_PACKAGES`/matrix, unused `@prof-bilal/atlas-storage`

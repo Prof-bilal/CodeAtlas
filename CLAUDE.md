@@ -11,7 +11,7 @@ rules and instruction. Read `AGENTS.md` first; everything there applies here.
 1. `AGENTS.md` is authoritative for repository rules. If anything here or in
    `docs/` seems to conflict, `AGENTS.md` + `docs/CURRENT_STATE.md` win.
 2. Read the relevant `docs/` before implementation — start with
-   `docs/DOCUMENTATION_MAP.md` to find the right file.
+   `docs/README.md` to find the right file.
 3. Inspect the existing code and tests before editing. Never assume planned
    features exist (`docs/CURRENT_STATE.md` is the arbiter).
 
@@ -32,7 +32,7 @@ rules and instruction. Read `AGENTS.md` first; everything there applies here.
 - **Context is read through `createContextSDK` (`@prof-bilal/atlas-sdk`)** — by `atlas
   search`, the MCP tools, and the VS Code extension (`@prof-bilal/atlas-extension`). Do not
   open `.codeatlas/context.db` or use `@prof-bilal/atlas-search`/`@prof-bilal/atlas-storage` directly
-  in consumers (see `docs/CONTEXT_SDK.md`).
+  in consumers (see `docs/reference/CONTEXT_SDK.md`).
 - **MCP (`@prof-bilal/atlas-mcp`) and the VS Code extension (`@prof-bilal/atlas-extension`) are
   implemented** thin SDK consumers. **Direction B's Agent Orchestrator**
   (`/claude`, `/gemini`, agent router) is mostly planned — the
@@ -41,10 +41,10 @@ rules and instruction. Read `AGENTS.md` first; everything there applies here.
   from `@prof-bilal/atlas-sdk`) are implemented; the **router, slash commands, and
   interactive TTY session handling are not** — do not reference the router,
   `/agents`, or slash commands as existing (sessions themselves do exist; see
-  `docs/AGENT_SESSIONS.md`).
+  `docs/architecture/AGENT_SESSIONS.md`).
 - **Dependency direction is enforced by ESLint** (`no-restricted-imports`).
   Feature packages only import `core` + `shared`; the CLI imports only `sdk` +
-  `mcp`; `mcp` and `apps/extension` import only `sdk`. See `docs/DEPENDENCIES.md`.
+  `mcp`; `mcp` and `apps/extension` import only `sdk`. See `docs/architecture/DEPENDENCIES.md`.
 - **Storage uses `node:sqlite`** (Node built-in, needs Node `>=22.5.0`); other
   packages target `>=20.19.0`.
 - Git metadata is present in the workspace; preserve history and avoid
@@ -61,5 +61,5 @@ rules and instruction. Read `AGENTS.md` first; everything there applies here.
   trade-offs in your summary.
 - **Never assume planned features exist** — verify against code and report
   reality honestly.
-- Respect security/privacy (`docs/SECURITY.md`, `docs/PRIVACY.md`): no secrets,
+- Respect security/privacy (`docs/reference/SECURITY.md`, `docs/reference/PRIVACY.md`): no secrets,
   no implicit uploads, no unvalidated process/command execution.

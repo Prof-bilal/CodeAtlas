@@ -25,7 +25,7 @@ export interface ConfigurationContext {
   /** Tool is an MCP server — register it under each agent's MCP section. */
   readonly mcp: boolean;
   /** User-config root; every target path derives from here, never from the
-   *  analyzed repository (`docs/SECURITY.md` — repo files are untrusted). */
+   *  analyzed repository (`docs/reference/SECURITY.md` — repo files are untrusted). */
   readonly configHome: string;
   /** ISO-8601 timestamp of the current run (recorded by the MCP adapter). */
   readonly timestamp: string;

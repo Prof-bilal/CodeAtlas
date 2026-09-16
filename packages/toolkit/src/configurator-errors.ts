@@ -33,7 +33,7 @@ export class ConfigReadError extends ConfiguratorError {
 /**
  * Existing user config cannot be merged safely — the file is not valid JSON,
  * not a JSON object, or the config section the adapter manages is not an
- * object. Per `docs/AGENT_TOOLKIT.md` §9 the Configurator **refuses to
+ * object. Per `docs/architecture/AGENT_TOOLKIT.md` §9 the Configurator **refuses to
  * overwrite unrelated user configuration**, so the change is blocked instead
  * of clobbered.
  */

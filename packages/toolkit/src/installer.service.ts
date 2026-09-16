@@ -82,7 +82,7 @@ const DEFAULT_ADAPTERS: readonly EcosystemAdapter[] = [
  * Flow: validate tool → compatibility gate (Task 21) → security gate (Task 24
  * status) → **user approval** → install → verify → record a Tool Manifest.
  *
- * Security contract (see `docs/AGENT_TOOLKIT.md` §5 and `docs/SECURITY.md`):
+ * Security contract (see `docs/architecture/AGENT_TOOLKIT.md` §5 and `docs/reference/SECURITY.md`):
  * - Every command is spawned as an **argument array** with `shell: false` —
  *   manifest/registry/AI-derived content can never inject shell syntax.
  * - **No automatic install without explicit user approval** — `install()` runs
@@ -506,7 +506,7 @@ function isDirectory(path: string): boolean {
   }
 }
 
-/** Secret-shaped output lines are never logged (`docs/SECURITY.md` §3). */
+/** Secret-shaped output lines are never logged (`docs/reference/SECURITY.md` §3). */
 const SECRET_LINE = /(api[_-]?key|token|secret|password|authorization|bearer)/i;
 
 /** Bounded, redacted excerpt of captured install output for the outcome log. */

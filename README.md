@@ -1,12 +1,12 @@
 # CodeAtlas
 
 > An open-source **AI Context Engine** that helps AI tools and agents understand
-> any codebase — accurately and efficiently.
+> any codebase — accurately, cheaply, and locally.
 
 CodeAtlas scans, parses, and indexes a source tree into a queryable, persistent
 context database, exposes that context to developer tools and AI agents over a
-stable SDK (CLI, MCP, VS Code), and can later route work to installed AI coding
-CLIs and curated open-source tools.
+stable SDK (CLI, MCP, VS Code), and manages the **Tools** and **Skills** those
+agents work with.
 
 ```text
 Repository → scan → hash → parse → graph → context.db → Context SDK → CLI · MCP · VS Code · agents
@@ -22,93 +22,63 @@ LLMs work best with *relevant, fresh context*, not whole repositories:
   `versionMatch`/`stale` signal and always read the current working tree.
 - **Local-first.** Everything runs locally against `<repo>/.codeatlas/`; no
   implicit network calls, no whole-repo uploads (see
-  [PRIVACY.md](docs/PRIVACY.md)).
+  [PRIVACY.md](docs/reference/PRIVACY.md)).
 - **Deterministic before AI.** Facts (symbols, graph, search) are computed
   statically; AI only *adds* summaries and explanations.
 
+## Who it is for
+
+- **Developers** who want to ask an AI coding agent about a large repository
+  without pasting files into a prompt.
+- **AI coding agents and MCP clients** (Claude Desktop, Cursor, VS Code, …) that
+  need structured, attributable context instead of grep output.
+- **Maintainers and contributors** who want to extend the engine, add a Tool, or
+  add a Skill (see [REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md)).
+
 ## Features
 
-- **Context engine** — scanner, SHA-256 hashing/change detection, TypeScript
-  parser, dependency graph, AI-optional summaries, SQLite storage, ranked
+- **Context engine** — scanner, SHA-256 change detection, TypeScript parser,
+  dependency graph, AI-optional summaries, SQLite storage, ranked
   fuzzy-aware search.
-- **Context SDK** (`@prof-bilal/atlas-sdk`) — the single read/write façade
-  (`createContextSDK`) every consumer uses: files, symbols, dependencies,
-  modules, summaries, search, project stats, and freshness.
-- **Freshness & version-aware reads** — `freshness()` reports
-  `fresh`/`stale`/`unknown`/`unavailable`; `files.readRange(path, { expectedHash })`
-  reads the working tree and flags when context is out of date.
-- **Incremental indexing** — `atlas update` re-parses only changed/added files,
-  reuses persisted snapshots, and deletes removed entries.
-- **MCP server** (`@prof-bilal/atlas-mcp`) — 7 read-only tools over stdio for Claude
-  Desktop, Cursor, VS Code, and any MCP client.
-- **VS Code extension** (`@prof-bilal/atlas-extension`) — activity bar, tree views, and
-  palette commands.
-- **Agent infrastructure** — AI CLI connection layer (`@prof-bilal/atlas-agents`),
-  agent sessions (`atlas sessions`), usage & credits (`atlas usage`), and
-  Context → Agent integration (`createContextIntegration`).
-- **Ollama as a first-class agent** — the selected local model
-  (`atlas ollama connect` / `atlas ollama use`) runs inside the session
-  system with a mid-turn tool loop over the same 7 context tools
-  (`atlas context launch --provider ollama`).
-- **Agent Toolkit** (`atlas tools`) — curated tool registry, per-tool
-  manifests, compatibility engine, approval-gated installer, configurator, and
-  a security/trust assessor.
-- **Benchmark framework** (`atlas benchmark`) — baseline-vs-CodeAtlas
-  context-quality evaluation with OpenCode and Ollama runners, automated
-  accuracy scoring, and real token/cost/latency capture.
-
-## Status
-
-**[IMPLEMENTED]** Core pipeline (scanner, hashing, manifest, parser, graph,
-storage, search, summaries, cache, providers), Context SDK, MCP (7 tools),
-VS Code extension, agent connection layer + session manager + orchestrator
-core (`createOrchestrator`), usage tracking, context integration, Ollama
-provider + agent runtime with the context tool loop, the `atlas benchmark`
-framework, and the full Agent Toolkit (56-tool catalog with tier system,
-skill adapter, compatibility engine, approval-gated installer, configurator,
-security/trust assessor, category browsing, config-cleanup on remove, live
-doctor, conflict detection).
-
-**[PARTIAL]** Parser handles TypeScript only (renamed imports and
-`export default <expr>` do not resolve cross-file).
-
-**[PLANNED]** The `/tools` and `/context` slash surfaces, `atlas setup`, the
-standalone agent router / slash commands, and streaming provider responses.
-
-Ground truth: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) and
-[docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md).
-
-### Beta limitations
-
-This is a **beta** (`0.4.0-beta.0`). Known boundaries, by design or by work
-still ahead:
-
-- **TypeScript-only parsing** — other languages are indexed as files but not
-  parsed into symbols/dependencies.
-- **No streaming** — provider responses arrive complete; `stream` plumbing
-  exists on the port but the CLI renders final answers only.
-- **No interactive TUI / slash commands** — `atlas tui` and the `/claude`,
-  `/tools`, `/agents` surfaces are v2 and not shipped.
-- **MCP is tools-only** — no MCP resources or prompts yet.
-- **Search is lexical** — vector/embedding search is a planned seam
-  (`RelevanceScorer`), not wired.
-- **CI runs Ubuntu only**; Windows/macOS are used in development but not
-  exercised in CI.
+- **Context SDK** (`@prof-bilal/atlas-sdk`) — the single read interface every
+  consumer uses: files, symbols, dependencies, modules, summaries, search,
+  project stats, and freshness.
+- **MCP server** (`@prof-bilal/atlas-mcp`) — read-only tools over stdio for any
+  MCP client, including `list_skills` / `get_skill`.
+- **Skills** — 13 first-party workflow Skills (planning, debugging,
+  verification, security review, MCP building, research, UI workflows) shipped
+  as canonical `SKILL.md` files, plus project-local Skills you author yourself.
+  `atlas skills` lists and inspects them.
+- **Tools** (`atlas tools`) — a curated, schema-validated tool registry with a
+  per-tool manifest, a compatibility engine, a security/trust assessor, an
+  approval-gated installer, and a configurator for installed agents.
+- **Setup you control** — `atlas setup` shows what could be installed and
+  installs **only** what you select. Installing CodeAtlas itself never installs
+  optional Tools or Skills.
+- **Agent infrastructure** — AI CLI connection layer, agent sessions
+  (`atlas sessions`), usage & credits (`atlas usage`), and context → agent
+  integration (`atlas context launch`).
+- **VS Code extension** (`@prof-bilal/atlas-extension`) — activity bar, tree
+  views, and palette commands over the SDK.
 
 ## Installation
 
 Requirements: **Node.js `>=22.5.0`** (the storage layer uses the built-in
-`node:sqlite`; all packages share the same engine floor). The quickest path is
-the
-published global CLI:
+`node:sqlite`; every package shares that engine floor).
 
 ```bash
-npm install --global codeatlas-cli@beta
+npm install --global codeatlas-cli
 atlas --version
 ```
 
-or build from source (see [docs/installation.md](docs/installation.md) for
-both):
+This installs **CodeAtlas only** — no Tools, no Skills, no config changes. Then
+choose what you want:
+
+```bash
+atlas setup
+```
+
+Or build from source:
 
 ```bash
 corepack enable
@@ -116,14 +86,44 @@ pnpm install
 pnpm --filter codeatlas-cli build
 ```
 
+See [docs/guides/installation.md](docs/guides/installation.md).
+
+## Setup
+
+`atlas setup` detects what kind of project you have, shows the available
+options, and installs only what you pick:
+
+```text
+$ atlas setup
+
+CodeAtlas setup
+
+Project: /work/my-app
+Project evidence: frontend markers
+
+Recommended Skills — already available, no install needed:
+  ✓ webapp-testing — Test rendered web applications through observable behavior…
+  13 built-in Skills ship with CodeAtlas; see them all with `atlas skills`.
+
+Recommended Tools & Skills — installable (0):
+  none — the curated recommendations are built-in Skills
+
+Optional — installable from the catalog (51):
+   1) changelog-generator [skill] (trust:community) — Turn verified change history into release evidence.
+   2) ... 
+
+Select items to install (numbers/ranges, e.g. 1,3-5; 'all'; 'none') [none]:
+```
+
+Nothing is pre-selected and nothing installs without your confirmation.
+Non-interactive use: `atlas setup --tools <id>[,<id>] --yes`
+(`--dry-run` plans without executing).
+
 ## Quick start
 
 ```bash
 # Index a repository you want to understand.
 atlas init --repo /absolute/path/to/your-project
-
-# See what was scanned (metadata only, no indexing).
-atlas scan --repo /absolute/path/to/your-project
 
 # Search the generated context database.
 atlas search authentication --repo /absolute/path/to/your-project
@@ -131,63 +131,55 @@ atlas search authentication --repo /absolute/path/to/your-project
 # Get safe, budgeted context for an AI task.
 atlas context "fix the authentication tests" --repo /absolute/path/to/your-project
 
-# Check whether the index is up to date with the working tree.
+# See which Skills are available, then inspect one.
+atlas skills
+atlas skills info verification-before-completion
+
+# Launch an agent seeded with that context and a Skill.
+atlas context launch "fix the failing auth tests" --provider claude \
+  --skill verification-before-completion
+
+# Keep the index in sync with the working tree.
 atlas update --repo /absolute/path/to/your-project
 ```
 
-Running from a source checkout uses the same `atlas` binary:
+Full walkthrough: [docs/guides/getting-started.md](docs/guides/getting-started.md).
 
-```bash
-node apps/cli/dist/index.js init --repo /absolute/path/to/your-project
-```
+## CLI
 
-Full walkthrough: [docs/getting-started.md](docs/getting-started.md).
-
-## CLI reference
+29 top-level commands. The common ones:
 
 ```text
-atlas init [--repo <path>] [--json]      Initialize and index a project
-atlas build [--repo <path>] [--json]     Full rebuild of the context index
-atlas update [--repo <path>] [--json]    Incremental index update
-atlas scan [--repo <path>] [--json]      Hierarchical project overview (no indexing)
-atlas search <query...> [-t <kind>] [-l <n>] [--json]
-atlas mcp [--root <path>]                Start the MCP server over stdio
-atlas sessions list|info|stop            Manage AI agent sessions
-atlas usage [summary|list|budgets]       Usage & credits
-atlas metrics [show|export|reset]        Token-efficiency snapshots
-atlas tools search|info|install|remove|update|configure|doctor
-atlas context <task> [--explain] [--json]
-atlas context launch|attach <task>       Launch/attach agent sessions with context
-atlas explain <target> [--ai]            Explain a symbol/file/module/concept
-atlas benchmark init|run|status|report   Baseline-vs-CodeAtlas context evaluation
-atlas agents [status|connect]            Detect AI CLIs; register the MCP server
-atlas ollama status|connect|models|use   Configure the Ollama provider
+atlas init|build|update [--repo <path>]   Index / rebuild / incrementally update
+atlas scan [--repo <path>]                Hierarchical project overview (no indexing)
+atlas search <query...>                   Search symbols, files, modules, summaries
+atlas context <task>|launch|attach        Build, launch, or attach budgeted context
+atlas ask <question>                      Ranked context slice for one question
+atlas explain <target> [--ai]             Explain a symbol/file/module/concept
+atlas skills [list|info|validate|load]    Discover and inspect built-in + installed Skills
+atlas tools  [search|info|install|...]    Registry, install, configure, doctor
+atlas setup                               Choose which Tools/Skills to install
+atlas mcp                                 Start the MCP server over stdio
+atlas sessions|usage|metrics              Sessions, credits, token analytics
+atlas agents|ollama|providers             Detect AI CLIs; configure providers
+atlas doctor [--json]                     Diagnose installation & project health
 atlas claude|gemini|codex|opencode        Launch that agent with context (sugar)
-atlas doctor [--json]                    Diagnose installation & project health
 ```
 
-Every data-returning command supports `--json` for machine-readable output.
-The CLI imports only `@prof-bilal/atlas-sdk` (+ `@prof-bilal/atlas-mcp` for `atlas mcp`) — enforced by
-ESLint. See [docs/CLI.md](docs/CLI.md).
+Every data-returning command supports `--json`. The CLI imports only
+`@prof-bilal/atlas-sdk` (+ `@prof-bilal/atlas-mcp` for `atlas mcp`) — enforced by
+ESLint. See [docs/reference/CLI.md](docs/reference/CLI.md).
 
-## Integrations
+## MCP
 
-- **MCP** — `@prof-bilal/atlas-mcp` exposes 7 read-only tools
-  (`search_symbols`, `search_files`, `get_summary`, `get_dependencies`,
-  `explain_module`, `project_overview`, `read_file_range`) over stdio. See
-  [docs/MCP.md](docs/MCP.md) and [docs/integrations.md](docs/integrations.md).
-- **VS Code** — `@prof-bilal/atlas-extension` reads context through the SDK. See
-  [docs/VSCODE.md](docs/VSCODE.md).
-- **AI coding CLIs** — the connection layer detects Claude / Gemini / Codex /
-  OpenCode; `atlas context launch` (and the v2 TUI slash surface) deliver
-  context to sessions. See [docs/AGENT_SESSIONS.md](docs/AGENT_SESSIONS.md).
-- **Agent Toolkit** — `atlas tools` for registry, install, configure, and
-  doctor. See [docs/AGENT_TOOLKIT.md](docs/AGENT_TOOLKIT.md).
+`@prof-bilal/atlas-mcp` exposes the context engine over stdio to any MCP client:
+search, inspect, dependencies, summaries, project overview, bounded file reads,
+plus `list_skills` / `get_skill`. Register it for installed agents with
+`atlas agents connect`. See [docs/reference/MCP.md](docs/reference/MCP.md).
 
 ## Context SDK
 
-The programmatic read (and indexing-write) API — what every consumer uses
-instead of the database:
+The programmatic API every consumer uses instead of the database:
 
 ```ts
 import { createContextSDK } from "@prof-bilal/atlas-sdk";
@@ -198,130 +190,143 @@ const signal = await context.freshness(); // fresh | stale | unknown | unavailab
 context.close(); // releases the SQLite handle
 ```
 
-See [docs/CONTEXT_SDK.md](docs/CONTEXT_SDK.md).
+See [docs/reference/CONTEXT_SDK.md](docs/reference/CONTEXT_SDK.md).
 
 ## Configuration
 
-`ATLAS_ROOT` and `ATLAS_DB` environment variables control which index the CLI,
-MCP server, and SDK resolve (`ATLAS_DB` wins). Index data lives in
-`<repo>/.codeatlas/` (manifest, `context.db`, tool manifests, `usage.db`) and is
-gitignored. See [docs/configuration.md](docs/configuration.md) and
-[docs/CONTEXT_STORAGE.md](docs/CONTEXT_STORAGE.md).
+`ATLAS_ROOT` and `ATLAS_DB` control which index the CLI, MCP server, and SDK
+resolve (`ATLAS_DB` wins). Index data lives in `<repo>/.codeatlas/` (manifest,
+`context.db`, `tools/`, installed skills, `usage.db`) and is gitignored. See
+[docs/guides/configuration.md](docs/guides/configuration.md) and
+[docs/architecture/CONTEXT_STORAGE.md](docs/architecture/CONTEXT_STORAGE.md).
 
 ## Architecture
 
 Clean architecture in a pnpm + TypeScript monorepo: contracts in `packages/core`,
-implementations in feature packages, composition in `packages/sdk`. Dependencies
-point inward (`cli → sdk → feature packages → core → shared`) and are enforced by
-ESLint. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and
-[docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
+implementations in feature packages, composition in `packages/sdk`.
+Dependencies point inward and are enforced by ESLint.
 
+```text
+                     ┌───────────┐   ┌──────────────┐
+                     │  atlas CLI│   │ VS Code ext. │
+                     └─────┬─────┘   └──────┬───────┘
+                           │  context only  │
+                     ┌─────▼─────┐   ┌──────▼───────┐
+                     │    MCP    │   │     SDK      │  ← composition root
+                     └───────────┘   └──────┬───────┘
+                                            │
+        ┌──────────┬───────────┬────────────┼──────────┬──────────┐
+        ▼          ▼           ▼            ▼          ▼          ▼
+     Context     Tools       Skills      Agents     Usage     Metrics
+        │          │           │            │          │          │
+        └──────────┴───────────┴────────────┴──────────┴──────────┘
+                                            ▼
+                                   core (ports) → shared
 ```
+
+```text
 apps/
   cli/          # End-user CLI (Commander.js)
   extension/    # VS Code extension
 packages/
   shared/       # Base types, Result, branded IDs, VERSION
-  core/         # Domain models + ports (interfaces)
-  scanner/      # File-system walking + ignore rules + manifest
+  core/         # Domain models + port interfaces (type-only)
+  scanner/      # Walking, ignore rules, manifest
   hashing/      # SHA-256 hashing + change detection
   parser/       # TypeScript parsing → normalized symbols
   storage/      # SQLite persistence (node:sqlite)
-  graph/        # Code-dependency graph
-  context/      # Context rank/assembly (deterministic — ADR-001)
+  graph/        # Dependency graph
+  context/      # Context rank & assembly (deterministic — ADR-001)
   cache/        # Generic caching
   providers/    # AI provider adapters
   summary/      # AI-optional summaries
   search/       # Ranked, fuzzy-aware search
-  agents/       # AI CLI connection + session manager
+  agents/       # AI CLI connection layer
   usage/        # Usage & credits
-  toolkit/      # Agent Toolkit
+  metrics/      # Local token/usage analytics
+  toolkit/      # Tool registry, manifests, installer, Skills loader
+  verifier/     # Claim verification
   mcp/          # MCP server
-  sdk/          # Public API + Context SDK
-docs/           # Design & contributor documentation
+  sdk/          # Public API + composition root
+docs/           # Documentation (see docs/README.md)
+examples/       # Copy-paste examples
+scripts/        # Build helpers
 ```
+
+Read [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md),
+[docs/architecture/MODULES.md](docs/architecture/MODULES.md) and
+[docs/REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md).
+
+## Status
+
+**[IMPLEMENTED]** Core pipeline (scanner, hashing, manifest, parser, graph,
+storage, search, summaries, cache, providers), Context SDK, MCP server, VS Code
+extension, agent connection layer + sessions, usage tracking, context → agent
+integration, Ollama tool loop, the Agent Toolkit (tool registry, manifests,
+compatibility engine, installer, configurator, security/trust assessor, Skills
+loader with 13 built-in Skills), and the `atlas setup` selection flow.
+
+**[PARTIAL]** Parser handles TypeScript only (renamed imports and
+`export default <expr>` do not resolve cross-file).
+
+**[PLANNED]** `/tools` and `/context` slash surfaces, the standalone agent
+router / slash commands, the interactive TUI, and browser observation
+(`atlas browse` + the four UI Skills that document it).
+
+Ground truth: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) and
+[docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md).
+
+### Beta limitations
+
+- **TypeScript-only parsing** — other languages are indexed as files but not
+  parsed into symbols/dependencies.
+- **No streaming** — provider responses arrive complete.
+- **No interactive TUI / slash commands** — `atlas tui` and `/claude`, `/tools`,
+  `/agents` are not shipped.
+- **MCP is tools-only** — no MCP resources or prompts yet.
+- **Search is lexical** — vector/embedding search is a planned seam
+  (`RelevanceScorer`), not wired.
+- **No browser control** — the Playwright-based browser layer was removed for
+  this phase; four UI Skills document it as [PLANNED].
+- **CI runs Ubuntu only**; Windows/macOS are used in development but not
+  exercised in CI.
 
 ## Development
 
 ```bash
-pnpm check        # typecheck + lint + format + test (the gate)
-pnpm test         # unit tests
-npx vitest run packages/<pkg> apps/cli   # targeted tests
+pnpm install
+pnpm check                                    # typecheck + lint + format + test
+pnpm test                                     # unit/integration tests
+npx vitest run packages/toolkit apps/cli       # targeted tests
+pnpm --filter codeatlas-cli build              # build the CLI (copies Skills)
 ```
 
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) and
-[docs/TESTING.md](docs/TESTING.md).
-
-## Documentation
-
-- Index & navigation: [docs/DOCUMENTATION_MAP.md](docs/DOCUMENTATION_MAP.md)
-- Current state: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) ·
-  [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md)
-- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
-  [docs/MODULES.md](docs/MODULES.md) · [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)
-- Security & privacy: [docs/SECURITY.md](docs/SECURITY.md) ·
-  [docs/PRIVACY.md](docs/PRIVACY.md)
+See [docs/contributing/DEVELOPMENT.md](docs/contributing/DEVELOPMENT.md),
+[docs/contributing/TESTING.md](docs/contributing/TESTING.md) and
+[docs/REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md).
 
 ## Contributing
 
-Please read [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) and
-[AGENTS.md](AGENTS.md) first. All commits must follow
-[Conventional Commits](https://www.conventionalcommits.org/); hooks enforce
-linting, formatting, typing, and commit conventions on every change. See
-[CONTRIBUTING.md](CONTRIBUTING.md).
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md) first.
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/);
+hooks enforce linting, formatting, typing, and commit conventions.
 
 ## Security
 
 Report vulnerabilities privately — see [SECURITY.md](SECURITY.md) and
-[docs/SECURITY.md](docs/SECURITY.md).
+[docs/reference/SECURITY.md](docs/reference/SECURITY.md).
 
-## Benchmarks
+## Documentation
 
-### Agent context quality (`atlas benchmark`)
-
-The benchmark framework runs identical tasks twice per repository — once
-**baseline** (the agent alone) and once **CodeAtlas** (the agent with the
-context engine in the loop) — with provider-reported tokens and automated
-accuracy scoring. Results with `opencode/nemotron-3-ultra-free` (free tier,
-so cost is $0 everywhere; details in [docs/benchmark.md](docs/benchmark.md)):
-
-| Repository (files) | Tokens (baseline → CodeAtlas) | Accuracy (0–2) |
-|--------|--------|--------|
-| winston (~116) | 2.74M → 2.94M (+206K used) | 1.56 → 1.44 |
-| commander (~216) | 2.34M → 2.63M (+289K used) | 1.22 → 1.67 |
-| axios (~466) | 3.85M → 4.74M (+882K used) | 1.50 → 1.75 |
-| rxjs (~1,288) | 4.13M → 3.21M (**−911K, −22%**) | 1.63 → 1.25 |
-
-**Honest reading:** on smaller repositories with a free model there is no
-context-window pressure, so CodeAtlas context *adds* tokens while accuracy is
-flat-to-higher. At the 1,288-file scale the pattern flips: targeted context
-**saves 22% of the tokens** — the regime CodeAtlas is built for.
-
-### Indexing stress (extreme corpus)
-
-CodeAtlas indexes real repositories locally. Numbers from the
-[extreme stress benchmark](old-school/benchmarks/benchmarks/extreme/) on a shared 7.2 GiB machine
-(1,000 generated TypeScript files, 5 M lines, 251 MB source):
-
-| Metric | Value |
-|--------|-------|
-| Peak RSS | 1,698 MB |
-| Minimum available memory | 1,361 MB |
-| Wall time (build) | 188 s |
-| Symbols indexed | 78,904 |
-| Dependencies indexed | 139,408 |
-| Index size on disk | 353 MB |
-
-A prior native-memory leak (statement-per-row preparation) caused 4,274 MB
-peak RSS / 23 MB minimum available on the same corpus — that is fixed
-([CHANGELOG](CHANGELOG.md)). The 5,000-file corpus (25 M lines, 1.2 GB
-source) exceeds available memory on this machine and is a known limitation.
-
-**Honesty note:** these are *worst-case* generated corpora, not typical
-repositories. Real-world projects with mixed languages and fewer files will
-use less memory.
-
-Full results: [`benchmarks/extreme/results.json`](old-school/benchmarks/benchmarks/extreme/results.json).
+- Index & navigation: [docs/README.md](docs/README.md)
+- Repository map ("where do I add this?"): [docs/REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md)
+- Current state: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) ·
+  [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md)
+- Architecture: [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) ·
+  [docs/architecture/MODULES.md](docs/architecture/MODULES.md) ·
+  [docs/architecture/DEPENDENCIES.md](docs/architecture/DEPENDENCIES.md)
+- Security & privacy: [docs/reference/SECURITY.md](docs/reference/SECURITY.md) ·
+  [docs/reference/PRIVACY.md](docs/reference/PRIVACY.md)
 
 ## License
 

@@ -1,4 +1,9 @@
-import type { DependencyContext, ModuleContext, ProjectOverview, Summary } from "@prof-bilal/atlas-sdk";
+import type {
+  DependencyContext,
+  ModuleContext,
+  ProjectOverview,
+  Summary,
+} from "@prof-bilal/atlas-sdk";
 import { describe, expect, it } from "vitest";
 import type { EditorSymbol } from "../src/client";
 import {

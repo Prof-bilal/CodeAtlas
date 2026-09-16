@@ -148,7 +148,7 @@ export const AGENT_MCP_TOOL_NAME = "codeatlas";
  * Register the CodeAtlas MCP server (`codeatlas` stdio server) into the MCP
  * sections of installed AI coding tools, reusing the Configurator's
  * per-target adapter seam and its merge/backup/verify/rollback machinery
- * (`docs/MCP.md`). Never touches the analyzed repository — configuration is
+ * (`docs/reference/MCP.md`). Never touches the analyzed repository — configuration is
  * written to **user config only**, and an unparseable existing file is
  * reported as blocked rather than overwritten.
  */

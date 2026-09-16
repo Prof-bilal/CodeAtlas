@@ -24,9 +24,7 @@ const ALL_PACKAGES = [
   "@prof-bilal/atlas-metrics",
   "@prof-bilal/atlas-toolkit",
   "@prof-bilal/atlas-mcp",
-  "@prof-bilal/atlas-benchmark",
   "@prof-bilal/atlas-verifier",
-  "@prof-bilal/atlas-common",
 ];
 
 /** Which @prof-bilal/atlas-* packages each package is allowed to depend on. */
@@ -64,22 +62,16 @@ const DEPENDENCY_MATRIX = {
     "@prof-bilal/atlas-usage",
     "@prof-bilal/atlas-metrics",
     "@prof-bilal/atlas-toolkit",
-    "@prof-bilal/atlas-benchmark",
     "@prof-bilal/atlas-verifier",
   ],
-  "apps/cli": ["@prof-bilal/atlas-sdk", "@prof-bilal/atlas-mcp", "@prof-bilal/atlas-benchmark"],
-  "apps/server": ["@prof-bilal/atlas-sdk", "@prof-bilal/atlas-mcp", "@prof-bilal/atlas-benchmark"],
+  "apps/cli": ["@prof-bilal/atlas-sdk", "@prof-bilal/atlas-mcp"],
   "apps/extension": ["@prof-bilal/atlas-sdk"],
   "packages/mcp": ["@prof-bilal/atlas-sdk"],
-  "packages/benchmark": [
+  "packages/verifier": [
     "@prof-bilal/atlas-core",
     "@prof-bilal/atlas-shared",
-    "@prof-bilal/atlas-agents",
-    "@prof-bilal/atlas-usage",
-    "@prof-bilal/atlas-toolkit",
+    "@prof-bilal/atlas-storage",
   ],
-  "packages/verifier": ["@prof-bilal/atlas-core", "@prof-bilal/atlas-shared", "@prof-bilal/atlas-storage"],
-  "packages/common": [],
 };
 
 /** Build per-package `no-restricted-imports` blocks from the matrix. */
@@ -116,14 +108,7 @@ export default tseslint.config(
       "ui/**",
       "go-tui-app/**",
       "tests/fixtures/**",
-      "benchmark-repos/**",
-      "benchmarks/**",
-      "old-school/**",
       "scripts/**",
-      "docs/test-results/**",
-      // Separate npm project with its own oxlint config — not part of the
-      // monorepo's ESLint scope.
-      "CodeAtlas-ui/**",
     ],
   },
   {
@@ -177,8 +162,8 @@ export default tseslint.config(
     // `@modelcontextprotocol/sdk` only maps its `.js` subpath exports to
     // `.d.ts` for extensionless specifiers, so `import/no-unresolved` reports
     // false positives for `@modelcontextprotocol/sdk/server/mcp.js` etc. (TS
-    // and Node both resolve them). Scope an `ignore` to the MCP package and
-    // the benchmark harness that drives a real MCP client.
+    // and Node both resolve them). Scope an `ignore` to the packages that
+    // import the MCP SDK directly.
     files: ["packages/mcp/**/*.ts", "tests/**/*.ts"],
     rules: {
       "import/no-unresolved": ["error", { ignore: ["^@modelcontextprotocol/sdk/"] }],

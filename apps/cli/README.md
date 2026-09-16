@@ -62,7 +62,7 @@ atlas doctor             → wired — health checklist; exit 1 on failure
 
 `atlas search`, `atlas sessions`, `atlas usage`, and the MCP tools read indexed
 context through the **Context SDK** (`createContextSDK`, in `@prof-bilal/atlas-sdk`) — they
-never touch the database directly. See [`docs/CLI.md`](../../docs/CLI.md) for the
+never touch the database directly. See [`docs/reference/CLI.md`](../../docs/reference/CLI.md) for the
 full command contract and [`docs/CURRENT_STATE.md`](../../docs/CURRENT_STATE.md)
 for what is wired vs. stubbed.
 
@@ -75,7 +75,7 @@ can connect to it and query your indexed context with its built-in tools
 with `depth` 1..3, `overview`/`project_overview`, `get_summary`,
 `context_for`, `read_range`, `inspect_symbol`; `analyze_task`,
 `create_plan`, `verify_answer`, `explain_module` are deprecated — see
-`docs/MCP_MIGRATION.md`).
+`docs/reference/MCP_MIGRATION.md`).
 
 ```bash
 # Serve the index for the current directory (or --root / ATLAS_ROOT)
@@ -99,7 +99,7 @@ Client configuration example (Claude Desktop / generic MCP clients):
 The server starts even when no index exists yet; tools return a clear
 `No context index found at <path>` error until you run `atlas init`. Because the
 index is opened lazily, a server started *before* indexing picks it up the
-moment `context.db` appears. See [`docs/MCP.md`](../../docs/MCP.md) for the full
+moment `context.db` appears. See [`docs/reference/MCP.md`](../../docs/reference/MCP.md) for the full
 tool reference and `--root`/`ATLAS_DB` resolution order.
 
 ### Seeding an AI CLI session with context
@@ -121,8 +121,8 @@ atlas sessions stop <id>
 ```
 
 Provider calls are explicit and user-configured; only the assembled, budgeted
-context is sent. See [`docs/CONTEXT.md`](../../docs/CONTEXT.md) and
-[`docs/AGENT_SESSIONS.md`](../../docs/AGENT_SESSIONS.md).
+context is sent. See [`docs/architecture/CONTEXT.md`](../../docs/architecture/CONTEXT.md) and
+[`docs/architecture/AGENT_SESSIONS.md`](../../docs/architecture/AGENT_SESSIONS.md).
 
 ## Development
 
@@ -144,4 +144,4 @@ pnpm test                         # full monorepo suite
 pnpm check                        # typecheck + lint + format + test (CI gate)
 ```
 
-See [`docs/TESTING.md`](../../docs/TESTING.md) for the full testing policy.
+See [`docs/contributing/TESTING.md`](../../docs/contributing/TESTING.md) for the full testing policy.
