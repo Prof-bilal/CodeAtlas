@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-graph",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Code-dependency graph build and query for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -26,11 +26,11 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@prof-bilal/atlas-core": "workspace:*",
-    "@prof-bilal/atlas-shared": "workspace:*"
+    "@prof-bilal/atlas-core": "workspace:^",
+    "@prof-bilal/atlas-shared": "workspace:^"
   },
   "devDependencies": {
-    "@prof-bilal/atlas-parser": "workspace:*"
+    "@prof-bilal/atlas-parser": "workspace:^"
   },
   "license": "MIT",
   "repository": {

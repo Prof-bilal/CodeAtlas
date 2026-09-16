@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-search",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Ranked, fuzzy-aware project search for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -26,8 +26,8 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@prof-bilal/atlas-core": "workspace:*",
-    "@prof-bilal/atlas-shared": "workspace:*"
+    "@prof-bilal/atlas-core": "workspace:^",
+    "@prof-bilal/atlas-shared": "workspace:^"
   },
   "license": "MIT",
   "repository": {

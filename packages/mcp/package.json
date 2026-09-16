@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-mcp",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Model Context Protocol (MCP) server exposing CodeAtlas context to external AI tools.",
   "type": "module",
   "bin": {
@@ -29,7 +29,7 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@prof-bilal/atlas-sdk": "workspace:*",
+    "@prof-bilal/atlas-sdk": "workspace:^",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "ts-morph": "^28.0.0",
     "zod": "^3.23.0"

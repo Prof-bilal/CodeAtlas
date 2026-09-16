@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-core",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Domain entities and ports (interfaces) for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -26,7 +26,7 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@prof-bilal/atlas-shared": "workspace:*"
+    "@prof-bilal/atlas-shared": "workspace:^"
   },
   "license": "MIT",
   "repository": {

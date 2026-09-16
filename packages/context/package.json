@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-context",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Context ranking and assembly for LLM prompts in CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -26,8 +26,8 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@prof-bilal/atlas-core": "workspace:*",
-    "@prof-bilal/atlas-shared": "workspace:*"
+    "@prof-bilal/atlas-core": "workspace:^",
+    "@prof-bilal/atlas-shared": "workspace:^"
   },
   "license": "MIT",
   "repository": {

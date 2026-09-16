@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-verifier",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "type": "module",
   "main": "./dist/index.cjs",
@@ -21,9 +21,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@prof-bilal/atlas-core": "workspace:*",
-    "@prof-bilal/atlas-shared": "workspace:*",
-    "@prof-bilal/atlas-storage": "workspace:*"
+    "@prof-bilal/atlas-core": "workspace:^",
+    "@prof-bilal/atlas-shared": "workspace:^",
+    "@prof-bilal/atlas-storage": "workspace:^"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

@@ -1,7 +1,7 @@
 {
   "name": "@prof-bilal/atlas-usage",
-  "version": "0.5.0",
-  "description": "Usage / credits tracking for CodeAtlas \u2014 local, tri-state (actual/estimated/unknown) token & cost accounting behind a UsagePort.",
+  "version": "0.5.1",
+  "description": "Usage / credits tracking for CodeAtlas — local, tri-state (actual/estimated/unknown) token & cost accounting behind a UsagePort.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -26,8 +26,8 @@
     "node": ">=22.5.0"
   },
   "dependencies": {
-    "@prof-bilal/atlas-core": "workspace:*",
-    "@prof-bilal/atlas-shared": "workspace:*"
+    "@prof-bilal/atlas-core": "workspace:^",
+    "@prof-bilal/atlas-shared": "workspace:^"
   },
   "license": "MIT",
   "repository": {
