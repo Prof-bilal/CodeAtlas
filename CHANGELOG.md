@@ -7,7 +7,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Releases are cut from the published `codeatlas-cli`; the changelog tracks the
 npm versions.
 
-## [Unreleased] (open-source cleanup)
+## [Unreleased]
+
+## [0.5.0] - 2026-09-16 (open-source cleanup)
 
 ### Changed
 
@@ -43,7 +45,7 @@ npm versions.
 - `docs/REPOSITORY_MAP.md`, `docs/architecture/ARCHITECTURE.md`,
   `docs/decisions/ADR-023-remove-browser-and-benchmark-subsystems.md`.
 
-## [Unreleased] (MCP V2 Phase 6 — release cut)
+## [0.5.0-beta.0] - 2026-09-15 (MCP V2 Phase 6 — release cut)
 
 ### Added
 
