@@ -1,5 +1,13 @@
 import type { Result } from "@prof-bilal/atlas-shared";
 
+/** Error thrown when a retry chain is aborted via AbortSignal. */
+export class RetryAbortedError extends Error {
+  override readonly name = "RetryAbortedError";
+  constructor(message = "Retry chain aborted") {
+    super(message);
+  }
+}
+
 /** Options for retry behavior. */
 export interface RetryOptions {
   /** Maximum number of retry attempts (default: 3). */
@@ -12,10 +20,14 @@ export interface RetryOptions {
   readonly jitter?: number;
   /** Predicate to decide if an error is retryable. */
   readonly isRetryable?: (error: unknown) => boolean;
+  /** AbortSignal to cancel the retry chain. If already aborted, no attempt is made. */
+  readonly signal?: AbortSignal;
 }
 
+type RetryDefaults = Omit<Required<RetryOptions>, "signal">;
+
 /** Default retry options. */
-export const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
+export const DEFAULT_RETRY_OPTIONS: RetryDefaults = {
   maxAttempts: 3,
   baseDelayMs: 1000,
   maxDelayMs: 30000,
@@ -41,38 +53,78 @@ export const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
  * @param fn - The async function to execute.
  * @param options - Retry configuration.
  * @returns The successful result or the last error.
+ * @throws {RetryAbortedError} If the chain is aborted before any attempt was made.
  */
 export async function withRetry<T>(
   fn: () => Promise<Result<T>>,
   options: RetryOptions = {},
 ): Promise<Result<T>> {
   const opts = { ...DEFAULT_RETRY_OPTIONS, ...options };
-  let lastError: Error | undefined;
-  let attempt = 0;
+  const signal = opts.signal;
 
-  while (attempt < opts.maxAttempts) {
-    const result = await fn();
-    if (result.ok) {
-      return result;
-    }
-
-    if (result.error instanceof Error) {
-      lastError = result.error;
-    }
-    attempt++;
-
-    if (attempt >= opts.maxAttempts || !opts.isRetryable(result.error)) {
-      break;
-    }
-
-    const delay = Math.min(
-      opts.baseDelayMs * 2 ** (attempt - 1) + Math.random() * opts.baseDelayMs * opts.jitter,
-      opts.maxDelayMs,
-    );
-    await new Promise((resolve) => setTimeout(resolve, delay));
+  // Pre-aborted signal: fail immediately with no attempt.
+  if (signal?.aborted) {
+    throw new RetryAbortedError();
   }
 
-  return { ok: false, error: lastError ?? new Error("Unknown error") };
+  let lastError: Error | undefined;
+  let attempt = 0;
+  let abortHandler: (() => void) | undefined;
+
+  if (signal) {
+    abortHandler = () => {};
+    signal.addEventListener("abort", abortHandler, { once: true });
+  }
+
+  try {
+    while (attempt < opts.maxAttempts) {
+      const result = await fn();
+      if (result.ok) {
+        return result;
+      }
+
+      if (result.error instanceof Error) {
+        lastError = result.error;
+      }
+      attempt++;
+
+      if (attempt >= opts.maxAttempts || !opts.isRetryable(result.error)) {
+        break;
+      }
+
+      const delay = Math.min(
+        opts.baseDelayMs * 2 ** (attempt - 1) + Math.random() * opts.baseDelayMs * opts.jitter,
+        opts.maxDelayMs,
+      );
+
+      // Abort during backoff: stop chain if aborted while waiting.
+      if (signal?.aborted) {
+        throw new RetryAbortedError();
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        const onAbort = () => {
+          clearTimeout(timer);
+          reject(new RetryAbortedError());
+        };
+        if (signal) {
+          signal.addEventListener("abort", onAbort, { once: true });
+        }
+        const timer = setTimeout(() => {
+          if (signal) {
+            signal.removeEventListener("abort", onAbort);
+          }
+          resolve();
+        }, delay);
+      });
+    }
+
+    return { ok: false, error: lastError ?? new Error("Unknown error") };
+  } finally {
+    if (signal && abortHandler) {
+      signal.removeEventListener("abort", abortHandler);
+    }
+  }
 }
 
 /**

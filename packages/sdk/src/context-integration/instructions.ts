@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -59,6 +59,12 @@ function readTextFile(
     return undefined;
   }
   try {
+    // Discovery must never emit a directory or a path that disappeared between
+    // the existence check and the read. The final stat also prevents stale
+    // instruction references from entering a context package.
+    if (!statSync(path).isFile()) {
+      return undefined;
+    }
     return { path, content: readFileSync(path, "utf8") };
   } catch {
     return undefined;

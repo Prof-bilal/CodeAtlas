@@ -573,8 +573,11 @@ export function deriveTestEdges(
     if (testsDirIndex !== -1) {
       // In __tests__/: `__tests__/foo.test.ts` tests `../foo.ts`; a bare
       // `__tests__/foo.ts` tests the same-stem file in the parent of
-      // `__tests__`.
-      const implDir = segments.slice(0, testsDirIndex).join("/");
+      // `__tests__`. Nested paths like `__tests__/session/login.test.ts`
+      // test `../session/login.ts`, preserving the relative subpath.
+      const prefix = segments.slice(0, testsDirIndex);
+      const suffix = segments.slice(testsDirIndex + 1, -1);
+      const implDir = [...prefix, ...suffix].join("/");
       const stem = marker ?? stemOf(filename);
       testCandidates.push({ test: path, implDir, implStem: stem });
     } else if (marker !== null) {

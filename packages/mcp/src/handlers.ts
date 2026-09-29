@@ -209,12 +209,15 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
         kind: item.kind,
         title: item.title,
         path: item.path,
+        content: item.content,
         score: normalized.score,
         rawScore: normalized.rawScore,
         confidence: normalized.confidence,
         source: item.source,
         reason: item.reason,
         ...(item.tier !== undefined ? { tier: item.tier } : {}),
+        ...(item.ranges !== undefined ? { ranges: item.ranges } : {}),
+        ...(item.traversalPath !== undefined ? { traversalPath: item.traversalPath } : {}),
         tokens: item.tokens,
       };
     }),
@@ -233,6 +236,8 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
       predicate: f.predicate,
       message: f.message,
     })),
+    missingContext: finalSufficiency.failures.map((f) => f.message),
+    recommendedNextReads: finalSufficiency.sufficient ? [] : recommendedNextReads(finalPkg),
     ...(!finalSufficiency.sufficient && finalSufficiency.refine !== undefined
       ? { refine: finalSufficiency.refine }
       : {}),
@@ -641,6 +646,23 @@ async function getDependencies(h: HandlerContext, args: ToolArgs): Promise<unkno
     })),
     nextSteps: [],
   };
+}
+
+/**
+ * Return concrete follow-up paths when the sufficiency gate cannot prove the
+ * package complete. Traversal and file items are the highest-signal reads;
+ * instruction/overview items are deliberately excluded.
+ */
+function recommendedNextReads(pkg: ContextPackage): readonly string[] {
+  const paths = new Set<string>();
+  for (const item of pkg.items) {
+    if (item.path === null || item.kind === "instructions" || item.kind === "overview") {
+      continue;
+    }
+    paths.add(item.path);
+    if (paths.size >= 8) break;
+  }
+  return [...paths];
 }
 
 // ── project_overview ─────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@ import type { FilePath } from "@prof-bilal/atlas-shared";
  *
  * Only `./` / `../` specifiers are resolved; bare and `node:` specifiers are
  * not locally indexed. Candidates are tried in order: the resolved path, then
+ * TypeScript source mappings for explicit `.js`/`.jsx` extensions, then
  * `.ts`, `.tsx`, `/index.ts`, `/index.tsx`. `knownFiles` maps forward-slash
  * normalized paths to the original {@link FilePath}s.
  *
@@ -27,6 +28,7 @@ export function resolveModulePath(
   const resolved = resolveRelativePath(fromFile, specifier);
   const candidates = [
     resolved,
+    ...jsToTsCandidates(resolved),
     `${resolved}.ts`,
     `${resolved}.tsx`,
     `${resolved}/index.ts`,
@@ -116,6 +118,22 @@ function lookupExport(
   }
   const importedName = importSymbol.importedName ?? importSymbol.name;
   return byName.get(importedName) ?? [];
+}
+
+/**
+ * For a resolved path ending in `.js`/`.jsx`, yield the TypeScript-source
+ * equivalents (`.ts`/`.tsx`) so TS projects whose imports use explicit JS
+ * extensions still resolve. Mirrors the resolver in
+ * `@prof-bilal/atlas-parser`'s `SymbolIndexer` — keep the two in sync.
+ */
+function jsToTsCandidates(resolved: string): string[] {
+  if (resolved.endsWith(".js")) {
+    return [`${resolved.slice(0, -3)}.ts`, `${resolved.slice(0, -3)}.tsx`];
+  }
+  if (resolved.endsWith(".jsx")) {
+    return [`${resolved.slice(0, -4)}.tsx`];
+  }
+  return [];
 }
 
 /**

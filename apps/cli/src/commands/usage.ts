@@ -5,6 +5,7 @@ import {
   type CostRecord,
   type MeasuredQuantity,
   type UsagePort,
+  type UsageQuery,
   type UsageRecord,
   type UsageScope,
   type UsageStatistics,
@@ -43,6 +44,20 @@ export function formatCost(cost: CostRecord): string {
     return "unknown";
   }
   return `${cost.currency === null ? "" : `${cost.currency} `}${cost.amount.value}`;
+}
+
+/**
+ * Map CLI filter options to a storage {@link UsageQuery}.
+ * Blank / undefined values are ignored so the query stays minimal.
+ */
+export function buildUsageQuery(opts: {
+  provider?: string;
+  task?: string;
+}): UsageQuery {
+  return {
+    ...(opts.provider !== undefined && opts.provider !== "" ? { provider: opts.provider } : {}),
+    ...(opts.task !== undefined && opts.task !== "" ? { taskId: opts.task } : {}),
+  };
 }
 
 /** Render the `atlas usage` summary (totals, latency, budgets). */
@@ -122,7 +137,8 @@ export function registerUsage(program: Command): void {
     .description("List recorded usage events")
     .option("--json", "print results as JSON")
     .option("--provider <provider>", "filter by provider")
-    .action(async (options: { json?: boolean; provider?: string }) => {
+    .option("--task <taskId>", "filter by task ID")
+    .action(async (options: { json?: boolean; provider?: string; task?: string }) => {
       await listUsage(options);
     });
 
@@ -139,7 +155,9 @@ export function registerUsage(program: Command): void {
     .command("summary")
     .description("Show usage totals, latency, and budget status")
     .option("--json", "print results as JSON")
-    .action(async (options: { json?: boolean }) => {
+    .option("--provider <provider>", "filter by provider")
+    .option("--task <taskId>", "filter by task ID")
+    .action(async (options: { json?: boolean; provider?: string; task?: string }) => {
       await showSummary(options);
     });
 
@@ -162,11 +180,13 @@ function withUsage(fn: (usage: UsagePort) => Promise<void>): Promise<void> {
   }
 }
 
-async function listUsage(options: { json?: boolean; provider?: string }): Promise<void> {
+async function listUsage(options: {
+  json?: boolean;
+  provider?: string;
+  task?: string;
+}): Promise<void> {
   await withUsage(async (usage) => {
-    const records = usage.listUsage(
-      options.provider === undefined ? {} : { provider: options.provider },
-    );
+    const records = usage.listUsage(buildUsageQuery(options));
     if (options.json === true) {
       console.log(JSON.stringify({ records }, null, 2));
       return;
@@ -193,9 +213,13 @@ async function showBudgets(options: { json?: boolean }): Promise<void> {
   });
 }
 
-async function showSummary(options: { json?: boolean }): Promise<void> {
+async function showSummary(options: {
+  json?: boolean;
+  provider?: string;
+  task?: string;
+}): Promise<void> {
   await withUsage(async (usage) => {
-    const stats = usage.statistics();
+    const stats = usage.statistics(buildUsageQuery(options));
     const statuses = usage
       .listBudgets()
       .map((budget) => usage.budgetStatus(budget.scope))

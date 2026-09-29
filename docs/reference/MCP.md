@@ -118,9 +118,19 @@ instruction blocks FIRST and follow them while working with the ranked items
 The result may also carry a `recommendedSkills` array (at most one entry): a
 deterministic suggestion when the task meaningfully term-overlaps an available
 skill's description (≥2 significant shared terms — never AI-scored, never
-invented confidence). Skills already injected via `skills` are not
-recommended back. Load a suggestion with `get_skill` or inject it directly on
-the next `find_relevant_context` call.
+invented confidence). Domain-specific UI, web, React, MCP, and security skills
+additionally require an explicit task-domain signal, so generic implementation
+language does not surface an unrelated workflow. Skills already injected via
+`skills` are not recommended back. Load a suggestion with `get_skill` or inject
+it directly on the next `find_relevant_context` call.
+
+Each item includes the budgeted actionable `content` (file excerpt, symbol
+summary, or relationship text), plus `ranges` when a symbol declaration span is
+known and `traversalPath` when graph traversal explains why a file was selected.
+When `sufficient` is false, `missingContext` repeats the failed predicates in a
+compact actionable form and `recommendedNextReads` lists indexed paths to inspect
+next. The `brief` option replaces item content with pointers while retaining
+ranges and relationship attribution.
 
 Returns:
 
@@ -138,11 +148,15 @@ Returns:
       "confidence": "high",
       "source": "explicit",
       "reason": "exact-symbol match",
+      "content": "Symbol: AuthService (class)\nLocation: /src/auth-service.ts:12",
+      "ranges": [{ "startLine": 12, "endLine": 31 }],
       "tokens": 320
     }
   ],
   "synthesis": "Authentication lives in …", // only when a digest was assembled
   "sufficient": true,
+  "missingContext": [],
+  "recommendedNextReads": [],
   "nextSteps": []
 }
 ```

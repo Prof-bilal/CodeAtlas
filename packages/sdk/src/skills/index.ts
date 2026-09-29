@@ -190,7 +190,9 @@ export function recommendSkillsForTask(
 ): readonly SkillRecommendation[] {
   const root = options.root ?? process.cwd();
   const candidates = availableSkills(root).filter(
-    (s) => options.exclude === undefined || !options.exclude.includes(s.id),
+    (s) =>
+      (options.exclude === undefined || !options.exclude.includes(s.id)) &&
+      isSkillDomainRelevant(s.id, task),
   );
   if (candidates.length === 0) return [];
   const scored = resolveSkillForTask(
@@ -208,6 +210,30 @@ export function recommendSkillsForTask(
   if (matched === undefined) return [];
   if (sharedTermCount(task, matched.description) < MIN_RECOMMEND_TERMS) return [];
   return [{ id: matched.id, description: matched.description, source: matched.source }];
+}
+
+/**
+ * Generic term overlap is useful for workflow skills, but it is too weak for
+ * domain-specific skills: words such as "check", "implement", or "verify"
+ * occur in many unrelated tasks. Require an explicit task signal before a UI,
+ * web, React, MCP, or security workflow can be recommended.
+ */
+function isSkillDomainRelevant(id: string, task: string): boolean {
+  const lower = task.toLowerCase();
+  if (/^(ui-|webapp-testing$|react-best-practices$)/.test(id)) {
+    return /\b(ui|ux|web|page|markup|html|css|responsive|accessibility|react|component|frontend)\b/.test(
+      lower,
+    );
+  }
+  if (id === "mcp-builder") {
+    return /\bmcp\b|model context protocol/.test(lower);
+  }
+  if (id === "trail-of-bits-security-skills") {
+    return /\b(secur|auth|permission|secret|hostile|trust|process execution|input validation)\w*/.test(
+      lower,
+    );
+  }
+  return true;
 }
 
 /**

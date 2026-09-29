@@ -627,6 +627,68 @@ describe("find_relevant_context", () => {
     });
   });
 
+  it("returns budgeted implementation content and graph evidence, not only pointers", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Update login behavior while preserving the math dependency",
+      })) as {
+        items: Array<{
+          kind: string;
+          content: string;
+          reason: string;
+          ranges?: Array<{ startLine: number; endLine: number }>;
+          traversalPath?: string[];
+        }>;
+      };
+      expect(
+        result.items.some((item) => item.kind === "file" && item.content.includes("login")),
+      ).toBe(true);
+      expect(
+        result.items.some(
+          (item) => item.kind === "dependency" && item.content.includes("--imports-->"),
+        ),
+      ).toBe(true);
+      expect(result.items.some((item) => item.kind === "symbol" && item.ranges !== undefined)).toBe(
+        true,
+      );
+      expect(
+        result.items.some(
+          (item) =>
+            item.kind === "dependency" &&
+            (item.reason.includes("dependency") || item.reason.includes("selected")),
+        ),
+      ).toBe(true);
+    });
+  });
+
+  it("does not emit instruction paths that are absent from the working tree", async () => {
+    await withFixture(async (ctx) => {
+      const instructionPath = join(ctx.ctx.root, "AGENTS.md");
+      writeFileSync(instructionPath, "# Temporary rules\n", "utf8");
+      rmSync(instructionPath, { force: true });
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Explain the math module",
+      })) as { items: Array<{ kind: string; path: string | null }> };
+      expect(
+        result.items.some((item) => item.kind === "instructions" && item.path === instructionPath),
+      ).toBe(false);
+    });
+  });
+
+  it("does not recommend a domain-specific UI skill for a backend implementation task", async () => {
+    await withFixture(async (ctx) => {
+      const result = (await HANDLERS.find_relevant_context(ctx, {
+        task: "Implement persistence for account settings in the service layer",
+      })) as { recommendedSkills?: Array<{ id: string }> };
+      expect(result.recommendedSkills?.some((skill) => skill.id === "ui-check") ?? false).toBe(
+        false,
+      );
+      expect(result.recommendedSkills?.some((skill) => skill.id === "ui-build") ?? false).toBe(
+        false,
+      );
+    });
+  });
+
   it("supports budget customization", async () => {
     await withFixture(async (ctx) => {
       const result = (await HANDLERS.find_relevant_context(ctx, {

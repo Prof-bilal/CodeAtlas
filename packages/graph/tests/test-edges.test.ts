@@ -76,6 +76,28 @@ describe("tested-by derivation (F4)", () => {
     });
   });
 
+  it("derives nested __tests__ subpath pairs", () => {
+    const edges = deriveTestEdges([
+      "/src/auth/session/login.ts",
+      "/src/auth/__tests__/session/login.test.ts",
+      "/src/auth/__tests__/session/login.spec.ts",
+      "/src/auth/__tests__/service.ts",
+      "/src/auth/service.ts",
+    ]);
+    expect(edges).toContainEqual({
+      impl: "/src/auth/session/login.ts",
+      test: "/src/auth/__tests__/session/login.test.ts",
+    });
+    expect(edges).toContainEqual({
+      impl: "/src/auth/session/login.ts",
+      test: "/src/auth/__tests__/session/login.spec.ts",
+    });
+    expect(edges).toContainEqual({
+      impl: "/src/auth/service.ts",
+      test: "/src/auth/__tests__/service.ts",
+    });
+  });
+
   it("does not invent impl files that do not exist", () => {
     const edges = deriveTestEdges(["/src/auth/service.test.ts", "/src/auth/other.test.ts"]);
     expect(edges).toHaveLength(0);

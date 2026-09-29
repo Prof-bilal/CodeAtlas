@@ -254,6 +254,17 @@ export const TOOLS: readonly ToolDefinition[] = [
               .describe("Item kind (file, symbol, summary, dependency, instructions, overview)."),
             title: z.string().describe("Human-readable title."),
             path: z.string().nullable().describe("File path, when applicable."),
+            content: z
+              .string()
+              .describe("Budgeted actionable excerpt or relationship text for this item."),
+            ranges: z
+              .array(z.object({ startLine: z.number(), endLine: z.number() }))
+              .optional()
+              .describe("Relevant 1-based source ranges, when known."),
+            traversalPath: z
+              .array(z.string())
+              .optional()
+              .describe("Verified graph path explaining how traversal reached this item."),
             score: z.number().describe("Relevance score (0..1)."),
             rawScore: z
               .number()
@@ -296,6 +307,12 @@ export const TOOLS: readonly ToolDefinition[] = [
           }),
         )
         .describe("Why the context may be insufficient."),
+      missingContext: z
+        .array(z.string())
+        .describe("Concrete missing-context explanations; empty when sufficient."),
+      recommendedNextReads: z
+        .array(z.string())
+        .describe("Indexed paths to inspect next when the gate cannot prove sufficiency."),
       refine: z
         .string()
         .optional()
@@ -349,6 +366,8 @@ export const TOOLS: readonly ToolDefinition[] = [
         .describe(
           "Present when a task term-overlaps an available skill's description: at most one deterministic suggestion (no AI scoring). Load it with get_skill before acting if it looks relevant.",
         ),
+      freshness: freshnessField,
+      timings: timingsField,
     },
   },
   {
@@ -413,6 +432,8 @@ export const TOOLS: readonly ToolDefinition[] = [
         .optional()
         .describe("Present when more callees exist than were returned (cap 25)."),
       nextSteps: z.array(z.string()).describe("Suggested next steps."),
+      freshness: freshnessField,
+      timings: timingsField,
     },
   },
   // ── Low-level tools (atomic operations) ────────────────────────────────────
@@ -661,6 +682,8 @@ export const TOOLS: readonly ToolDefinition[] = [
         .describe("Discovered skills, sorted by id."),
       total: z.number().describe("Total number of available skills."),
       nextSteps: z.array(z.string()).describe("Suggested next steps."),
+      freshness: freshnessField,
+      timings: timingsField,
     },
   },
   {
@@ -693,6 +716,8 @@ export const TOOLS: readonly ToolDefinition[] = [
         .array(z.string())
         .describe("Validation problems (non-empty when skill exists but is invalid)."),
       nextSteps: z.array(z.string()).describe("Suggested next steps."),
+      freshness: freshnessField,
+      timings: timingsField,
     },
   },
   {
