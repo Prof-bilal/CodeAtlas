@@ -22,6 +22,8 @@ together) and [REPOSITORY_MAP.md](./REPOSITORY_MAP.md) (where everything lives).
 - [CURRENT_STATE.md](./CURRENT_STATE.md) — what is implemented / partial / planned. **Read first.**
 - [REPOSITORY_MAP.md](./REPOSITORY_MAP.md) — "where do I add this?" map of apps, packages, docs and tests.
 - [FEATURE_STATUS.md](./FEATURE_STATUS.md) — status tags across features.
+- [BETA_READINESS_2026-09-30.md](./BETA_READINESS_2026-09-30.md) — beta release audit,
+  reproducible blockers, validation evidence, and the Remotion tutorial.
 
 ## Architecture
 

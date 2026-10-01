@@ -1,0 +1,463 @@
+1
+00:00:00,100 --> 00:00:03,935
+An AI coding tool can answer a prompt and still miss the project.
+
+2
+00:00:03,885 --> 00:00:10,021
+It may reread the same files, overlook dependencies, or propose a change without understanding its impact.
+
+3
+00:00:10,021 --> 00:00:15,510
+CodeAtlas gives your tools a reusable map of the repository, then selects context for the task.
+
+4
+00:00:15,510 --> 00:00:19,562
+This walkthrough shows what works today and where the beta still needs attention.
+
+5
+00:00:21,308 --> 00:00:27,717
+CodeAtlas scans source files, hashes them, extracts symbols, builds relationships, and stores the index locally.
+
+6
+00:00:27,667 --> 00:00:30,812
+Search and context selection are deterministic.
+
+7
+00:00:30,812 --> 00:00:34,187
+An AI provider is optional for summaries and briefings.
+
+8
+00:00:34,187 --> 00:00:38,031
+Today the strongest parsing support is TypeScript and JavaScript.
+
+9
+00:00:38,031 --> 00:00:44,594
+Treat other languages and unresolved import aliases as limitations, rather than assuming full code intelligence.
+
+10
+00:00:46,392 --> 00:00:51,477
+Use Node twenty two point five or newer because storage uses the built in SQLite module.
+
+11
+00:00:51,427 --> 00:00:55,312
+Install codeatlas cli, check the version, and read help.
+
+12
+00:00:55,312 --> 00:00:57,656
+Installation gives you CodeAtlas.
+
+13
+00:00:57,656 --> 00:01:01,333
+It does not silently install coding agents or toolkit tools.
+
+14
+00:01:01,333 --> 00:01:07,375
+This video follows the local zero point five point one source; confirm the installed version when following along.
+
+15
+00:01:09,142 --> 00:01:12,873
+Enter your project and run atlas scan for a metadata overview.
+
+16
+00:01:12,823 --> 00:01:18,323
+Scan reports files, languages, and framework evidence without building the context database.
+
+17
+00:01:18,323 --> 00:01:21,135
+Run atlas init to index the project.
+
+18
+00:01:21,135 --> 00:01:24,583
+Tools none skips the optional post initialization offer.
+
+19
+00:01:24,583 --> 00:01:30,990
+These commands use the SDK pipeline, and generated project state lives inside the local codeatlas directory.
+
+20
+00:01:32,767 --> 00:01:35,196
+Atlas build rebuilds context.
+
+21
+00:01:35,146 --> 00:01:40,750
+After source changes, use atlas update so unchanged files can reuse their stored information.
+
+22
+00:01:40,750 --> 00:01:43,458
+A no change update avoids reparsing.
+
+23
+00:01:43,458 --> 00:01:49,167
+Summaries is a separate opt in flag that requests provider backed enrichment; configure a provider first.
+
+24
+00:01:49,167 --> 00:01:54,854
+Basic indexing and search do not need a provider, and failed summary requests are reported separately.
+
+25
+00:01:56,642 --> 00:02:00,477
+Search accepts query words and returns ranked indexed results.
+
+26
+00:02:00,427 --> 00:02:05,958
+Limit controls the result count, type narrows the kind, and no fuzzy disables typo tolerance.
+
+27
+00:02:05,958 --> 00:02:08,521
+JSON makes results easy to script.
+
+28
+00:02:08,521 --> 00:02:13,229
+Explain resolves a file, symbol, module, or concept against the index.
+
+29
+00:02:13,229 --> 00:02:18,948
+AI summaries require the explicit AI flag; ordinary explanations use local evidence.
+
+30
+00:02:20,725 --> 00:02:24,342
+Atlas ask returns a ranked context slice for a question.
+
+31
+00:02:24,292 --> 00:02:27,021
+It is not a general chat answer from a model.
+
+32
+00:02:27,021 --> 00:02:35,469
+Set max tokens to bound the estimated context size, save to persist the slice, and plan to include task classification and a deterministic plan.
+
+33
+00:02:35,469 --> 00:02:38,615
+Read the evidence before giving it to your coding agent.
+
+34
+00:02:40,725 --> 00:02:46,227
+Context build assembles a task specific package with selection reasons and an estimated token budget.
+
+35
+00:02:46,177 --> 00:02:48,854
+Explain shows why items were selected.
+
+36
+00:02:48,854 --> 00:02:55,604
+Context mode chooses automatic, digest, full, or disabled assembly, with an automatic escalation option as well.
+
+37
+00:02:55,604 --> 00:02:59,052
+Include instructions and overview flags tune the package.
+
+38
+00:02:59,052 --> 00:03:02,479
+The AI flag adds an optional provider backed briefing.
+
+39
+00:03:04,267 --> 00:03:07,915
+Export writes a self contained markdown slice for your agent.
+
+40
+00:03:07,865 --> 00:03:11,990
+Choose Claude, Gemini, Codex, OpenCode, or generic.
+
+41
+00:03:11,990 --> 00:03:15,083
+Use no inject when you only want the export file.
+
+42
+00:03:15,083 --> 00:03:20,354
+Otherwise an agent instruction file can receive a marked block, with a backup on first injection.
+
+43
+00:03:20,354 --> 00:03:24,615
+Review both the slice and the target instruction file before using the result.
+
+44
+00:03:26,392 --> 00:03:31,133
+Agents status shows MCP registration status for supported coding tools.
+
+45
+00:03:31,083 --> 00:03:37,156
+Connect can register the context server for an installed target; dry run previews the configuration changes.
+
+46
+00:03:37,156 --> 00:03:42,906
+Atlas MCP serves context over standard input and output, so your client normally launches it.
+
+47
+00:03:42,906 --> 00:03:48,344
+That gives the coding agent access to indexed context tools while preserving the SDK boundary.
+
+48
+00:03:50,100 --> 00:03:54,112
+The four agent commands wrap context launch with a provider selection.
+
+49
+00:03:54,062 --> 00:03:59,427
+OpenCode, Claude, Gemini, and Codex must be installed and configured independently.
+
+50
+00:03:59,427 --> 00:04:02,771
+You can add a skill and an estimated context budget.
+
+51
+00:04:02,771 --> 00:04:10,687
+The present launch path does not provide a reliable visible transcript for external CLIs, so test the handoff before relying on it in daily work.
+
+52
+00:04:12,475 --> 00:04:17,415
+Here is a real run of the installed OpenCode CLI on the tiny authentication example.
+
+53
+00:04:17,365 --> 00:04:21,729
+The configured default provider failed because its account had insufficient funds.
+
+54
+00:04:21,729 --> 00:04:24,656
+An explicit Big Pickle model run succeeded.
+
+55
+00:04:24,656 --> 00:04:28,021
+Its actual response explains authenticate and login.
+
+56
+00:04:28,021 --> 00:04:35,219
+This is a direct OpenCode demonstration; the Atlas launcher still needs visible output handoff before it can provide the same experience.
+
+57
+00:04:36,975 --> 00:04:40,269
+Sessions exposes list, info, and stop.
+
+58
+00:04:40,219 --> 00:04:43,573
+However, the current manager keeps sessions in memory.
+
+59
+00:04:43,573 --> 00:04:48,990
+A separate CLI invocation creates a fresh manager and cannot recover the session you just launched.
+
+60
+00:04:48,990 --> 00:04:52,073
+Context attach is limited to a created session.
+
+61
+00:04:52,073 --> 00:04:58,906
+These APIs are useful within a shared SDK manager, but persistent command line session management needs further work.
+
+62
+00:05:00,683 --> 00:05:05,050
+Providers reports which AI providers are configured without printing keys.
+
+63
+00:05:05,000 --> 00:05:11,198
+Ollama offers status, connect, models, use, and disconnect for a local or configured remote service.
+
+64
+00:05:11,198 --> 00:05:14,052
+Pick a model your server actually exposes.
+
+65
+00:05:14,052 --> 00:05:17,198
+AI summaries and briefings are explicit choices.
+
+66
+00:05:17,198 --> 00:05:23,344
+Keep keys in user configuration or the environment, and avoid placing real credentials in tutorial commands.
+
+67
+00:05:25,100 --> 00:05:29,290
+Usage summary, list, and budgets report recorded AI activity.
+
+68
+00:05:29,240 --> 00:05:33,802
+Values can be actual, estimated, or unknown; unknown is not zero.
+
+69
+00:05:33,802 --> 00:05:37,167
+External CLI token usage is often unavailable.
+
+70
+00:05:37,167 --> 00:05:41,500
+Metrics show reports local activity and estimated context compression.
+
+71
+00:05:41,500 --> 00:05:45,635
+Export writes JSON or CSV, and reset requires yes.
+
+72
+00:05:45,635 --> 00:05:50,219
+Estimated savings are a heuristic baseline, not a measured performance guarantee.
+
+73
+00:05:51,975 --> 00:05:59,998
+Tools lists the toolkit overview, categories groups the catalog, search finds entries, and info shows declared metadata and installed state.
+
+74
+00:05:59,948 --> 00:06:03,542
+Setup detects project evidence and proposes a selection.
+
+75
+00:06:03,542 --> 00:06:05,740
+Dry run previews the plan.
+
+76
+00:06:05,740 --> 00:06:08,802
+Nothing should install just because it is recommended.
+
+77
+00:06:08,802 --> 00:06:14,917
+Review compatibility, trust, the official distribution channel, and the exact command before approving a tool.
+
+78
+00:06:16,683 --> 00:06:19,633
+Install requires explicit approval with yes.
+
+79
+00:06:19,583 --> 00:06:23,708
+Configure previews supported host configuration changes with dry run.
+
+80
+00:06:23,708 --> 00:06:27,573
+Tools doctor checks installed manifests and integration state.
+
+81
+00:06:27,573 --> 00:06:33,229
+Update can approve an ecosystem refresh, and remove delegates removal to the appropriate ecosystem.
+
+82
+00:06:33,229 --> 00:06:39,406
+These are real machine changes, so inspect the selected tool and its declared requirements before running the commands.
+
+83
+00:06:41,183 --> 00:06:44,685
+Custom tools use the existing schema and local overlay.
+
+84
+00:06:44,635 --> 00:06:47,906
+Validate checks a JSON definition before writing it.
+
+85
+00:06:47,906 --> 00:06:53,167
+Add persists a valid record, and create builds one from command flags and install metadata.
+
+86
+00:06:53,167 --> 00:06:59,510
+Read create help for the full required shape, including official package and repository information where applicable.
+
+87
+00:06:59,510 --> 00:07:03,135
+Replace must be explicit when overriding an existing record.
+
+88
+00:07:04,892 --> 00:07:09,112
+Skills are reusable instructions in a canonical skill markdown format.
+
+89
+00:07:09,062 --> 00:07:11,771
+List shows built in and installed skills.
+
+90
+00:07:11,771 --> 00:07:17,010
+Info inspects metadata, validate checks the definition, and load renders instructions.
+
+91
+00:07:17,010 --> 00:07:19,208
+The skill alias works too.
+
+92
+00:07:19,208 --> 00:07:22,302
+Inject a named skill with the skill flag on a launcher.
+
+93
+00:07:22,302 --> 00:07:27,625
+Project skills resolve before built ins, and unknown skill identifiers fail before launch.
+
+94
+00:07:29,392 --> 00:07:32,665
+Create generates a validated project skill template.
+
+95
+00:07:32,615 --> 00:07:37,469
+Add validates and copies a skill directory, including supported bounded references.
+
+96
+00:07:37,469 --> 00:07:43,094
+Installed narrows discovery to project skills, and force explicitly replaces an existing entry.
+
+97
+00:07:43,094 --> 00:07:49,385
+The shipped workflows cover areas such as debugging, planning, verification, security, and interface work.
+
+98
+00:07:49,385 --> 00:07:53,760
+They remain instructions for the agent, rather than a second execution engine.
+
+99
+00:07:55,558 --> 00:08:02,956
+Impact follows reverse dependencies to show affected files and a deterministic risk score; breaking change comparison is incomplete.
+
+100
+00:08:02,906 --> 00:08:06,594
+Trace accepts a stack trace, file, or standard input.
+
+101
+00:08:06,594 --> 00:08:10,406
+Verify checks cited paths and can run configured commands.
+
+102
+00:08:10,406 --> 00:08:15,521
+In our demo, symbol verification falsely rejected authenticate even though search found it.
+
+103
+00:08:15,521 --> 00:08:19,271
+Refresh baseline is also not wired into the CLI action.
+
+104
+00:08:21,017 --> 00:08:27,560
+Inspect HTTP probes a running local service with bounded output; remote targets require an explicit flag.
+
+105
+00:08:27,510 --> 00:08:32,490
+Doctor checks runtime, index, agents, registrations, and provider sanity.
+
+106
+00:08:32,490 --> 00:08:37,896
+Evaluate aggregates available evidence and configuration, not a complete live quality audit.
+
+107
+00:08:37,896 --> 00:08:40,323
+Warden status checks availability.
+
+108
+00:08:40,323 --> 00:08:46,042
+Warden run explicitly executes a command through an existing policy; the sandboxing tool is optional.
+
+109
+00:08:47,808 --> 00:08:54,915
+CodeAtlas has a working context engine, toolkit, and MCP integration, with thirteen hundred ninety four tests passing.
+
+110
+00:08:54,865 --> 00:09:03,187
+A broad beta still needs fixes: secret path filtering, implicit update checks, session recovery, visible agent output, and symbol verification.
+
+111
+00:09:03,187 --> 00:09:07,698
+The production dependency audit also reports advisories requiring triage.
+
+112
+00:09:07,698 --> 00:09:12,479
+Passing tests are valuable evidence, but they do not make these launch blockers disappear.
+
+113
+00:09:14,225 --> 00:09:16,331
+Start with a small project.
+
+114
+00:09:16,281 --> 00:09:22,854
+Index it, search a known symbol, ask for a bounded slice, and review an exported package before sending it to your agent.
+
+115
+00:09:22,854 --> 00:09:26,271
+Use help on any command for every subcommand and flag.
+
+116
+00:09:26,271 --> 00:09:33,875
+The companion includes the complete generated reference, real command captures, the beta audit, and editable Remotion source for this walkthrough.

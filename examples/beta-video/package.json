@@ -1,0 +1,24 @@
+{
+  "name": "codeatlas-beta-video",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.tsx",
+    "render": "node render.mjs",
+    "marketing:studio": "remotion studio src/marketing/index.tsx",
+    "marketing:render": "node render.mjs --marketing",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.531",
+    "remotion": "4.0.531",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.0",
+    "@types/react-dom": "19.1.0",
+    "typescript": "5.9.3"
+  }
+}
