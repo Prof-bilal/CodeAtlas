@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-usage",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Usage / credits tracking for CodeAtlas — local, tri-state (actual/estimated/unknown) token & cost accounting behind a UsagePort.",
   "type": "module",
   "main": "./dist/index.cjs",

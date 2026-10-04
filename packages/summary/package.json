@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-summary",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "AI summary engine for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",

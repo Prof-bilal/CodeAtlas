@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-metrics",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Local-first usage & token analytics for CodeAtlas — metrics collection, persistence, and export.",
   "type": "module",
   "main": "./dist/index.cjs",

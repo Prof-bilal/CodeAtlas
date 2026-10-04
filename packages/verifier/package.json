@@ -1,7 +1,7 @@
 {
   "name": "@prof-bilal/atlas-verifier",
-  "version": "0.5.1",
-  "private": true,
+  "version": "0.5.2",
+  "description": "Deterministic claim verification and baselines for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -13,21 +13,35 @@
       "require": "./dist/index.cjs"
     }
   },
+  "files": ["dist"],
+  "sideEffects": false,
   "scripts": {
     "build": "tsup",
-    "check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "lint": "eslint .",
-    "format": "prettier --check .",
-    "test": "vitest run"
+    "format": "biome format --write ."
+  },
+  "engines": {
+    "node": ">=22.5.0"
   },
   "dependencies": {
     "@prof-bilal/atlas-core": "workspace:^",
     "@prof-bilal/atlas-shared": "workspace:^",
     "@prof-bilal/atlas-storage": "workspace:^"
   },
-  "devDependencies": {
-    "tsup": "^8.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^2.0.0"
-  }
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prof-bilal/CodeAtlas.git",
+    "directory": "packages/verifier"
+  },
+  "homepage": "https://github.com/Prof-bilal/CodeAtlas",
+  "bugs": {
+    "url": "https://github.com/Prof-bilal/CodeAtlas/issues"
+  },
+  "author": "CodeAtlas contributors"
 }

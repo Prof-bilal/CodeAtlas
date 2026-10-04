@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-providers",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "AI model provider adapters for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",

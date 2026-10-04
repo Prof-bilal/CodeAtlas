@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-search",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Ranked, fuzzy-aware project search for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",

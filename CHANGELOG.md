@@ -9,6 +9,31 @@ npm versions.
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-10-04
+
+### Added
+
+- **ChatGPT / Codex plugin** (`@prof-bilal/atlas-chatgpt-plugin`, new): a thin
+  adapter over `@prof-bilal/atlas-mcp` that exposes five focused, goal-oriented
+  tools — `analyze_repository`, `search_repository`, `explain_repository`,
+  `impact_analysis`, `get_context` — over stdio (Codex, local MCP clients) and
+  Streamable HTTP (ChatGPT connectors), plus five MCP Apps widgets. It reuses
+  the MCP handlers and Context SDK; no engine logic is duplicated. See
+  `docs/reference/CHATGPT.md`.
+- **`@prof-bilal/atlas-verifier` is now published** to npm. The already-published
+  `@prof-bilal/atlas-sdk` depends on it, so this restores installability of the
+  `@prof-bilal/atlas-*` scope.
+
+### Changed
+
+- **`@prof-bilal/atlas-mcp`** additionally exports its handler registry
+  (`HANDLERS`), `runTool`, the validation helpers/errors, `isDeniedPath`, and
+  the shared zod output fragments for embedders. Additive — the eleven-tool
+  stdio server is unchanged.
+- The dependency-direction config, path aliases, and test aliases now cover the
+  ChatGPT/Codex plugin app, and the previously missing `@prof-bilal/atlas-verifier`
+  alias was added to the vitest/tsup configs.
+
 ## [0.5.0] - 2026-09-16 (open-source cleanup)
 
 ### Changed

@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-context",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Context ranking and assembly for LLM prompts in CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",

@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-shared",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Shared base types, constants, and utilities for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",

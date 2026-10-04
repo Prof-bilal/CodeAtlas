@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-mcp",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Model Context Protocol (MCP) server exposing CodeAtlas context to external AI tools.",
   "type": "module",
   "bin": {

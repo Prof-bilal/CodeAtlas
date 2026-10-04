@@ -1,6 +1,6 @@
 {
   "name": "@prof-bilal/atlas-sdk",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Public programmatic API and composition root for CodeAtlas.",
   "type": "module",
   "main": "./dist/index.cjs",
