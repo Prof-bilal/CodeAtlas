@@ -24,6 +24,7 @@ const ALL_PACKAGES = [
   "@prof-bilal/atlas-metrics",
   "@prof-bilal/atlas-toolkit",
   "@prof-bilal/atlas-mcp",
+  "@prof-bilal/atlas-chatgpt-plugin",
   "@prof-bilal/atlas-verifier",
 ];
 
@@ -66,6 +67,7 @@ const DEPENDENCY_MATRIX = {
   ],
   "apps/cli": ["@prof-bilal/atlas-sdk", "@prof-bilal/atlas-mcp"],
   "apps/extension": ["@prof-bilal/atlas-sdk"],
+  "apps/chatgpt-plugin": ["@prof-bilal/atlas-sdk", "@prof-bilal/atlas-mcp"],
   "packages/mcp": ["@prof-bilal/atlas-sdk"],
   "packages/verifier": [
     "@prof-bilal/atlas-core",
@@ -165,7 +167,7 @@ export default tseslint.config(
     // false positives for `@modelcontextprotocol/sdk/server/mcp.js` etc. (TS
     // and Node both resolve them). Scope an `ignore` to the packages that
     // import the MCP SDK directly.
-    files: ["packages/mcp/**/*.ts", "tests/**/*.ts"],
+    files: ["packages/mcp/**/*.ts", "apps/chatgpt-plugin/**/*.ts", "tests/**/*.ts"],
     rules: {
       "import/no-unresolved": ["error", { ignore: ["^@modelcontextprotocol/sdk/"] }],
     },

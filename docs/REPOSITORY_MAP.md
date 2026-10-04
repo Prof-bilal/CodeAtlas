@@ -10,6 +10,7 @@ the job, extend it instead.
 | ---- | ---------- | ------------------- |
 | `apps/cli/` | The `atlas` CLI (`codeatlas-cli`) — Commander.js commands only | Anything user-facing in the terminal. No business logic: delegate to the SDK. |
 | `apps/extension/` | VS Code extension (`@prof-bilal/atlas-extension`) | IDE integration. Reads context only through the SDK. |
+| `apps/chatgpt-plugin/` | ChatGPT / Codex plugin (`@prof-bilal/atlas-chatgpt-plugin`) — MCP over stdio + Streamable HTTP | ChatGPT/Codex integration. Thin adapter over `packages/mcp`; no engine logic. |
 | `packages/core/` | Domain entities + **port interfaces** (`*Port`) | Only when a new seam is needed (ADR) — ports are type-only contracts. |
 | `packages/sdk/` | Composition root: every service is wired here and exported | Adding a public API surface (`createContextSDK`, `createToolkitSDK`, `planSetup`, `createSkillService`, …). |
 | `packages/toolkit/` | Agent Toolkit: tool registry (`catalog.json`), tool manifests, installer, configurator, security assessor, **Skills loader + built-in Skills** | Tools (`atlas tools`), and Skills (`skills/prebuilt/<id>/SKILL.md`). |

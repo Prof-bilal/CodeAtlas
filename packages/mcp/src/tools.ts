@@ -81,13 +81,18 @@ export const SYMBOL_KINDS = [
 export const SUMMARY_KINDS = ["file", "folder", "module", "project"] as const;
 
 /** A single tool registration: metadata + zod input and output schemas. */
-export interface ToolDefinition {
-  readonly name: ToolName;
+export interface RunnableTool {
+  readonly name: string;
   readonly title: string;
   readonly description: string;
   readonly inputSchema: Record<string, z.ZodType>;
   /** Advertised shape of `structuredContent` (root is always an object). */
   readonly outputSchema: Record<string, z.ZodType>;
+}
+
+/** A canonical CodeAtlas tool (a named member of the built-in registry). */
+export interface ToolDefinition extends RunnableTool {
+  readonly name: ToolName;
 }
 
 /** Integer argument helper: `1..max` with a human-readable schema. */
@@ -109,7 +114,7 @@ function boundedString(description: string): z.ZodString {
 }
 
 /** The freshness verdict attached to every object result. */
-const freshnessField = z
+export const freshnessField = z
   .object({
     state: z
       .enum(["fresh", "stale", "unavailable", "unknown"])
@@ -126,7 +131,7 @@ const freshnessField = z
   .describe("Staleness report attached to every tool result.");
 
 /** Per-call timing attribution (Phase 0). */
-const timingsField = z
+export const timingsField = z
   .object({
     probeMs: z.number().describe("Freshness probe (+ refresh when it ran) in ms."),
     searchMs: z.number().optional().describe("Search time in ms, when the tool searched."),
@@ -172,7 +177,7 @@ const fileHit = {
 };
 
 /** The normalized summary shape returned by `get_summary`. */
-const summaryShape = {
+export const summaryShape = {
   kind: z.string().describe("Summary scope (file/folder/module/project)."),
   target: z.string().describe('Path or "project" the summary covers.'),
   overview: z.string().describe("Short overview of the target."),

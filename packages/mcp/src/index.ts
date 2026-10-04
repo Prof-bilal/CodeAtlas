@@ -15,12 +15,43 @@ export {
 } from "./context";
 export {
   createMcpServer,
+  runTool,
   startStdioServer,
   type CodeAtlasMcpServer,
   type McpServerOptions,
 } from "./server";
 export { createLogger, type LogLevel, type Logger, type LoggerOptions } from "./log";
-export { TOOLS, TOOL_NAMES, type ToolDefinition, type ToolName } from "./tools";
+export {
+  TOOLS,
+  TOOL_ALIASES,
+  TOOL_NAMES,
+  PROTOCOL_TOOL_NAMES,
+  SYMBOL_KINDS,
+  SUMMARY_KINDS,
+  freshnessField,
+  timingsField,
+  summaryShape,
+  resolveToolName,
+  type RunnableTool,
+  type ToolDefinition,
+  type ToolName,
+} from "./tools";
+export { HANDLERS } from "./handlers";
+export { executeHandler } from "./handler-utils";
+export {
+  ToolDomainError,
+  ToolInputError,
+  optionalBoolean,
+  optionalEnum,
+  optionalInt,
+  optionalNumber,
+  optionalString,
+  optionalStringArray,
+  requireInt,
+  requireString,
+  type ToolArgs,
+} from "./validation";
+export { isDeniedPath } from "./deny";
 export {
   FreshnessController,
   type FreshnessControllerOptions,

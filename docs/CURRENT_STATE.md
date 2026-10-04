@@ -38,6 +38,7 @@ every package's source and tests.
 apps/
   cli/          # Commander.js CLI — context, sessions, usage, MCP, and Toolkit commands wired [PARTIAL]
   extension/    # VS Code extension (@prof-bilal/atlas-extension) — SDK consumer         [IMPLEMENTED]
+  chatgpt-plugin/  # ChatGPT/Codex plugin (@prof-bilal/atlas-chatgpt-plugin) — MCP stdio + HTTP [IMPLEMENTED]
 packages/
   shared/       # Base types, Result, branded IDs, VERSION, ComingSoonError  [EXISTING]
   core/         # Domain entities + port interfaces (type-only)              [EXISTING]
@@ -367,6 +368,36 @@ examples/        # README placeholder only (no runnable examples)
   Logs go to stderr only.
 - **Known scope:** resources/prompts are not yet exposed (tools only).
 - See `docs/reference/MCP.md` for the full tool reference.
+
+### ChatGPT / Codex Plugin (`apps/chatgpt-plugin`) — **[IMPLEMENTED]**
+
+- `@prof-bilal/atlas-chatgpt-plugin` is a small **ChatGPT/Codex plugin** that
+  exposes CodeAtlas over MCP. It is a **thin adapter**, not a second engine: it
+  reuses `@prof-bilal/atlas-mcp`'s tool handlers, validation, budget, freshness
+  probe, secret deny-filter, logger, and `runTool` result discipline (the MCP
+  package barrel now additionally exports those internals for embedders). Every
+  answer comes from the Context SDK.
+- Exposes **five focused, goal-oriented tools** — `analyze_repository`,
+  `search_repository`, `explain_repository`, `impact_analysis`, and
+  `get_context` — instead of the raw eleven-tool surface, so assistant
+  tool-routing stays small. Each declares zod `inputSchema`/`outputSchema` and
+  returns `structuredContent`; tool descriptions state when (not) to use each.
+  `impact_analysis` normalizes graph node ids to readable file paths.
+- **Transports:** stdio (`codeatlas-chatgpt-mcp`, default; used by Codex CLI) and
+  **Streamable HTTP** (`--http`, `/mcp`, `GET /healthz`) for ChatGPT connectors;
+  one transport + lazily-opened Context SDK per HTTP session. Binds `127.0.0.1`
+  by default and **requires a bearer token** (`--token` / `ATLAS_CHATGPT_TOKEN`)
+  for non-loopback binds (timing-safe comparison).
+- **MCP Apps UI:** five widgets (`ui://codeatlas/…`,
+  `text/html;profile=mcp-app`) bound to tools via `_meta.ui.resourceUri` (+ the
+  ChatGPT `openai/outputTemplate` key). Widgets are an enhancement only — every
+  tool is fully useful without UI.
+- **Packaging:** `apps/chatgpt-plugin/plugin/` holds `manifest.json`, `mcp.json`,
+  `codex.toml.example`, `icons/`, and `PRIVACY.md`; directory submission still
+  requires manual OpenAI-dashboard steps (see `docs/reference/CHATGPT.md`).
+- Tests: `apps/chatgpt-plugin/tests/` (tool registry, protocol via in-memory
+  transport, HTTP transport, and the ten required prompt scenarios).
+  See [reference/CHATGPT.md](./reference/CHATGPT.md).
 
 ### VS Code integration — **[IMPLEMENTED]** (`@prof-bilal/atlas-extension`)
 

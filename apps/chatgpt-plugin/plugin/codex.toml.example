@@ -1,0 +1,19 @@
+# CodeAtlas MCP server (Codex CLI)
+
+Codex CLI reads MCP servers from `~/.codex/config.toml`. Add:
+
+```toml
+[mcp_servers.codeatlas]
+command = "codeatlas-chatgpt-mcp"
+args = ["--root", "/absolute/path/to/your/project"]
+
+[mcp_servers.codeatlas.env]
+ATLAS_ROOT = "/absolute/path/to/your/project"
+```
+
+The server is the same binary used for the ChatGPT connector; only the
+transport differs (`--http` for ChatGPT, default stdio for Codex).
+
+To let CodeAtlas register this automatically, run `atlas agents connect`
+(from `codeatlas-cli`), which writes the equivalent entry for every installed,
+supported agent.

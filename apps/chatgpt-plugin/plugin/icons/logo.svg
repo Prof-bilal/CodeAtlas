@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CodeAtlas">
+  <rect width="512" height="512" rx="112" fill="#0b0f14"/>
+  <g stroke="#2dd4a7" stroke-width="16" stroke-linecap="round" opacity="0.85">
+    <path d="M256 132 L140 250"/>
+    <path d="M256 132 L372 250"/>
+    <path d="M140 250 L256 384"/>
+    <path d="M372 250 L256 384"/>
+    <path d="M140 250 L372 250"/>
+  </g>
+  <g fill="#2dd4a7">
+    <circle cx="256" cy="132" r="30"/>
+    <circle cx="140" cy="250" r="30"/>
+    <circle cx="372" cy="250" r="30"/>
+    <circle cx="256" cy="384" r="30"/>
+  </g>
+  <circle cx="256" cy="256" r="40" fill="#e6edf3"/>
+  <circle cx="256" cy="256" r="18" fill="#0b0f14"/>
+</svg>

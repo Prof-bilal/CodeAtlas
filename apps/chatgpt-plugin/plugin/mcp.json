@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "codeatlas": {
+      "command": "codeatlas-chatgpt-mcp",
+      "args": ["--root", "/absolute/path/to/your/project"],
+      "env": {
+        "ATLAS_ROOT": "/absolute/path/to/your/project"
+      }
+    }
+  }
+}

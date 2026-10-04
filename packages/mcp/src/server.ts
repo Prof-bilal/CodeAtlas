@@ -9,7 +9,7 @@ import type { FreshnessReport } from "./freshness";
 import { executeHandler } from "./handler-utils";
 import { HANDLERS, type HandlerContext } from "./handlers";
 import { type LogLevel, type Logger, createLogger } from "./log";
-import { TOOLS, TOOL_ALIASES, type ToolDefinition } from "./tools";
+import { type RunnableTool, TOOLS, TOOL_ALIASES, type ToolDefinition } from "./tools";
 import { type ToolArgs, ToolDomainError, ToolInputError } from "./validation";
 
 /** Options for creating or starting a CodeAtlas MCP server. */
@@ -113,7 +113,7 @@ function registerTools(
         inputSchema: tool.inputSchema,
         outputSchema: tool.outputSchema,
       },
-      (args, _extra) => runTool(tool, context, logger, budget, args),
+      (args, _extra) => runTool(tool, HANDLERS[tool.name], context, logger, budget, args),
     );
   }
   // Register the canonical alias names (`context_for`, `dependencies_of`,
@@ -136,14 +136,23 @@ function registerTools(
         inputSchema: tool.inputSchema,
         outputSchema: tool.outputSchema,
       },
-      (args, _extra) => runTool(tool, context, logger, budget, args),
+      (args, _extra) => runTool(tool, HANDLERS[tool.name], context, logger, budget, args),
     );
   }
 }
 
-/** Execute a tool handler, converting success and failure into a tool result. */
-async function runTool(
-  tool: ToolDefinition,
+/**
+ * Execute a tool handler end to end and convert the outcome into a
+ * `CallToolResult`: budget gate → freshness probe → handler → enrichment, with
+ * the same error discipline the stdio server uses.
+ *
+ * Exported so that **adapter** servers built on `@prof-bilal/atlas-mcp` (e.g. the
+ * ChatGPT/Codex plugin) can expose a different, smaller tool surface while
+ * reusing the identical result envelope and safety behavior.
+ */
+export async function runTool(
+  tool: RunnableTool,
+  handler: (h: HandlerContext, args: ToolArgs) => Promise<unknown>,
   context: CodeAtlasContext,
   logger: Logger,
   budget: ToolCallBudget,
@@ -168,7 +177,6 @@ async function runTool(
     probeMs: freshness.probeMs ?? 0,
   };
   const hctx: HandlerContext = { ctx: context, logger, timings };
-  const handler = HANDLERS[tool.name];
   const result = await executeHandler(hctx, handler, args as ToolArgs);
   if (result.ok) {
     const enriched = enrichResult(result.value, freshness, timings);

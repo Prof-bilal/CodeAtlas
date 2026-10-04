@@ -55,6 +55,7 @@ together) and [REPOSITORY_MAP.md](./REPOSITORY_MAP.md) (where everything lives).
 - [reference/CLI.md](./reference/CLI.md) — the `atlas` CLI contract
 - [reference/CONTEXT_SDK.md](./reference/CONTEXT_SDK.md) — the read/query API consumers use
 - [reference/MCP.md](./reference/MCP.md) — MCP server configuration + tool reference
+- [reference/CHATGPT.md](./reference/CHATGPT.md) — ChatGPT / Codex plugin (tools, transports, widgets, submission)
 - [reference/MCP_MIGRATION.md](./reference/MCP_MIGRATION.md) — MCP v2 tool-name migration
 - [reference/USAGE.md](./reference/USAGE.md) — AI usage & credits (provenance, budgets, `atlas usage`)
 - [reference/TOOL_MANIFEST.md](./reference/TOOL_MANIFEST.md) — per-installed-tool manifest schema

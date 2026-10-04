@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "id": "codeatlas",
+  "name": "CodeAtlas",
+  "tagline": "Understand your codebase before you change it.",
+  "description": "Structured repository intelligence for ChatGPT and Codex: analyze a codebase, find where a feature is implemented, understand how modules depend on each other, read focused code, and see what a change could affect.",
+  "longDescription": "CodeAtlas indexes a JavaScript/TypeScript repository into a structured context database — files, symbols, modules, and dependency edges — and exposes that intelligence to the assistant through a small set of focused tools. Answers come from CodeAtlas's indexed repository intelligence, not from guessing. Use it to understand my codebase, analyze my repository, find where a feature is implemented, understand dependencies, and see what files are affected by a code change.",
+  "developer": {
+    "name": "CodeAtlas contributors",
+    "url": "https://github.com/Prof-bilal/CodeAtlas",
+    "supportUrl": "https://github.com/Prof-bilal/CodeAtlas/issues",
+    "email": "PLACEHOLDER@example.com"
+  },
+  "logo": "icons/logo.svg",
+  "logoDark": "icons/logo-dark.svg",
+  "categories": ["Developer Tools", "Coding", "Productivity"],
+  "keywords": [
+    "codebase",
+    "repository",
+    "architecture",
+    "dependencies",
+    "code intelligence",
+    "impact analysis",
+    "typescript",
+    "javascript"
+  ],
+  "repository": "https://github.com/Prof-bilal/CodeAtlas",
+  "homepage": "https://github.com/Prof-bilal/CodeAtlas",
+  "license": "MIT",
+  "privacyPolicy": "plugin/PRIVACY.md",
+  "mcp": {
+    "serverName": "codeatlas",
+    "stdio": {
+      "command": "codeatlas-chatgpt-mcp",
+      "args": ["--root", "<PATH_TO_PROJECT>"],
+      "env": {
+        "ATLAS_ROOT": "<PATH_TO_PROJECT>"
+      },
+      "description": "Local stdio server used by Codex CLI and other local MCP clients."
+    },
+    "streamableHttp": {
+      "url": "https://<YOUR_HOST>/mcp",
+      "transport": "streamable-http",
+      "auth": {
+        "type": "bearer",
+        "header": "Authorization",
+        "env": "ATLAS_CHATGPT_TOKEN"
+      },
+      "description": "Remote transport used by ChatGPT connectors. Expose the server over HTTPS (for local development, tunnel localhost:8787)."
+    }
+  },
+  "tools": [
+    {
+      "name": "analyze_repository",
+      "title": "Analyze repository",
+      "widget": "ui://codeatlas/repository-summary.html",
+      "description": "Overview of the analyzed repository: framework, languages, file/symbol/module/dependency counts, architectural areas, and notable structural findings."
+    },
+    {
+      "name": "search_repository",
+      "title": "Search repository",
+      "widget": "ui://codeatlas/search-results.html",
+      "description": "Find where functionality lives: ranked files and symbols for a natural-language request, with location and a short reason for each hit."
+    },
+    {
+      "name": "explain_repository",
+      "title": "Explain architecture",
+      "widget": "ui://codeatlas/explanation.html",
+      "description": "Explain how something works using the indexed context and dependency graph: relevant files/symbols, relationships between them, and a sufficiency verdict."
+    },
+    {
+      "name": "impact_analysis",
+      "title": "Analyze change impact",
+      "widget": "ui://codeatlas/impact-analysis.html",
+      "description": "Blast radius of a change: transitive dependents of the given file(s), their distance, test/doc classification, and a low/medium/high risk level."
+    },
+    {
+      "name": "get_context",
+      "title": "Get code context",
+      "widget": "ui://codeatlas/context-view.html",
+      "description": "Read focused code for a specific file or symbol, plus callers/callees and test files for symbols."
+    }
+  ],
+  "repositoryAccess": {
+    "model": "local-index",
+    "notes": "CodeAtlas reads a repository that has been indexed on the host running the server (`.codeatlas/context.db`). The plugin exposes no arbitrary filesystem access: only indexed, deny-filtered reads through the CodeAtlas Context SDK. There is no CodeAtlas cloud backend in this release."
+  }
+}

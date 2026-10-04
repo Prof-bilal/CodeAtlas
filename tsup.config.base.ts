@@ -33,6 +33,8 @@ const workspaceAliases: Record<string, string> = {
   "@prof-bilal/atlas-metrics": resolve(ROOT, "packages/metrics/src/index.ts"),
   "@prof-bilal/atlas-toolkit": resolve(ROOT, "packages/toolkit/src/index.ts"),
   "@prof-bilal/atlas-mcp": resolve(ROOT, "packages/mcp/src/index.ts"),
+  "@prof-bilal/atlas-chatgpt-plugin": resolve(ROOT, "apps/chatgpt-plugin/src/index.ts"),
+  "@prof-bilal/atlas-verifier": resolve(ROOT, "packages/verifier/src/index.ts"),
 };
 
 /** Base tsup configuration shared by every package and app. */

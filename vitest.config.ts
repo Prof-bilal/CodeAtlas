@@ -26,6 +26,8 @@ const atlasAliases: Record<string, string> = {
   "@prof-bilal/atlas-metrics": repoPath("packages/metrics/src/index.ts"),
   "@prof-bilal/atlas-toolkit": repoPath("packages/toolkit/src/index.ts"),
   "@prof-bilal/atlas-mcp": repoPath("packages/mcp/src/index.ts"),
+  "@prof-bilal/atlas-chatgpt-plugin": repoPath("apps/chatgpt-plugin/src/index.ts"),
+  "@prof-bilal/atlas-verifier": repoPath("packages/verifier/src/index.ts"),
 };
 
 export default defineConfig({
