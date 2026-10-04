@@ -135,9 +135,10 @@ Non-obvious facts (verified as of 2026-08-14):
   `docs/architecture/AGENT_TOOLKIT.md`; registry details:
   `docs/architecture/TOOL_REGISTRY.md`.
 - Pipelines that are implemented and tested: scanner, hashing, manifest,
-  parser (TypeScript only — **[PARTIAL]**), graph, SQLite storage, search,
-  summaries, cache, providers. Parser known gaps: renamed imports and
-  `export default <expr>` do not resolve cross-file.
+  parser (TypeScript + JavaScript only — **[PARTIAL]**), graph, SQLite storage,
+  search, summaries, cache, providers. Parser known gaps: namespaces and bare
+  expressions are not extracted (renamed imports and `export default <expr>`
+  **do** resolve cross-file).
 - Storage uses `node:sqlite` (needs Node `>=22.5.0`); **all** packages and the
   root share this engine floor (`>=22.5.0`).
 - Git metadata is present in the workspace. Husky/commitlint are configured but

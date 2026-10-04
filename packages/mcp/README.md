@@ -12,14 +12,28 @@ wired into the SDK.
 
 ## Tools
 
+Eleven tools (plus four canonical aliases), all read-only:
+
 | Tool | Purpose |
 | --- | --- |
+| `find_relevant_context` | Flagship: budgeted, ranked, deny-filtered context package for a task |
+| `inspect_symbol` | A symbol's declaration, callers, callees, and test files |
 | `search_symbols` | Ranked, fuzzy search over indexed symbols |
 | `search_files` | Ranked, fuzzy search over indexed files (path + content) |
 | `get_summary` | Read a stored file/folder/module/project summary (or generate one) |
-| `get_dependencies` | Dependency edges from the graph (by node / relation / direction) |
-| `explain_module` | What a folder/package contains: files, symbols, dependencies, summary |
+| `get_dependencies` | Dependency edges from the graph (by node / relation / direction / depth) |
 | `project_overview` | Project counts, language breakdown, and stored project summary |
+| `read_file_range` | Version-aware read of a line range from the working tree |
+| `list_skills` | List built-in and project Agent Skills |
+| `get_skill` | Render a Skill's full body + references |
+| `analyze_impact` | Reverse-dependency blast radius + risk for changed paths |
+
+Canonical aliases (Phase 4 compat window): `context_for` → `find_relevant_context`,
+`dependencies_of` → `get_dependencies`, `overview` → `project_overview`,
+`read_range` → `read_file_range`. Both names work; the canonical names are
+recommended. `analyze_task`, `create_plan`, `verify_answer`, and `explain_module`
+are **removed** and return `Method not found` (see
+[`docs/reference/MCP_MIGRATION.md`](../../docs/reference/MCP_MIGRATION.md)).
 
 Full documentation for every tool (inputs, outputs, examples) lives in
 [`docs/reference/MCP.md`](../../docs/reference/MCP.md).

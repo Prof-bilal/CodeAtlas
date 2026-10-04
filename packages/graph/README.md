@@ -79,9 +79,9 @@ const graph = new GraphService().build(indexer.listSymbols(), indexer.references
 
 ## Limitations
 
-- Renamed imports (`import { a as b }`), namespace imports, and
-  `export default <expr>` do not resolve to their definitions today (the parser
-  indexer does not track the original exported name).
+- Namespace imports are not extracted by the parser, so they produce no edges.
+  Renamed imports (`import { a as b }`) and `export default <expr>` **do**
+  resolve to their definitions.
 - References that resolve to nothing (`targetSymbolId === null`) produce no
   edge; module-scope method calls like `c.area()` do not resolve through `c`.
 - `extends` and `implements` are distinct edge kinds, classified by the parser's

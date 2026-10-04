@@ -266,20 +266,26 @@ integration, Ollama tool loop, the Agent Toolkit (tool registry, manifests,
 compatibility engine, installer, configurator, security/trust assessor, Skills
 loader with 13 built-in Skills), and the `atlas setup` selection flow.
 
-**[PARTIAL]** Parser handles TypeScript only (renamed imports and
-`export default <expr>` do not resolve cross-file).
+**[PARTIAL]** Parser handles TypeScript + JavaScript only; other languages are
+indexed as files but not parsed into symbols/dependencies. Within TS/JS,
+namespaces and bare expressions are not extracted (renamed imports and
+`export default <expr>` **do** resolve cross-file).
 
 **[PLANNED]** `/tools` and `/context` slash surfaces, the standalone agent
-router / slash commands, the interactive TUI, and browser observation
-(`atlas browse` + the four UI Skills that document it).
+router / slash commands, and the interactive TUI.
+
+**[REMOVED — postponed]** Browser observation (`atlas browse` and the
+Playwright-based `BrowsePort` layer) was removed for this phase; the four
+UI/web Skills were re-pointed to the agent's own web fetch/search tools and the
+project's own test tooling (see [FEATURE_STATUS.md](docs/FEATURE_STATUS.md)).
 
 Ground truth: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) and
 [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md).
 
 ### Beta limitations
 
-- **TypeScript-only parsing** — other languages are indexed as files but not
-  parsed into symbols/dependencies.
+- **TypeScript/JavaScript-only parsing** — other languages are indexed as files
+  but not parsed into symbols/dependencies.
 - **No streaming** — provider responses arrive complete.
 - **No interactive TUI / slash commands** — `atlas tui` and `/claude`, `/tools`,
   `/agents` are not shipped.
@@ -287,7 +293,8 @@ Ground truth: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) and
 - **Search is lexical** — vector/embedding search is a planned seam
   (`RelevanceScorer`), not wired.
 - **No browser control** — the Playwright-based browser layer was removed for
-  this phase; four UI Skills document it as [PLANNED].
+  this phase. The four UI/web Skills use the agent's own web fetch/search tools
+  and the project's own test tooling; they never reference a browser runner.
 - **CI runs Ubuntu only**; Windows/macOS are used in development but not
   exercised in CI.
 

@@ -87,10 +87,12 @@ with `ATLAS_MCP_LOG_LEVEL=debug|info|warn|error`.
 
 ## The parser misses a cross-file reference
 
-Known, documented gaps (TypeScript parser, [PARTIAL]): renamed imports
-(`import { a as b }`) and `export default <expr>` do not resolve cross-file.
-Namespaces and bare expressions are not extracted. See
-[CONTEXT.md](../architecture/CONTEXT.md) §2 and [FEATURE_STATUS.md](../FEATURE_STATUS.md).
+The TypeScript/JavaScript parser ([PARTIAL]) **does** resolve renamed imports
+(`import { a as b }`) and `export default <expr>` cross-file. The remaining
+gaps are **namespaces** and **bare expressions**, which are not extracted, plus
+non-TS/JS languages, which are indexed as files but not parsed into symbols.
+See [CONTEXT.md](../architecture/CONTEXT.md) §2 and
+[FEATURE_STATUS.md](../FEATURE_STATUS.md).
 
 ## `pnpm --filter <name>` says "No projects matched"
 
