@@ -24,6 +24,10 @@ together) and [REPOSITORY_MAP.md](./REPOSITORY_MAP.md) (where everything lives).
 - [FEATURE_STATUS.md](./FEATURE_STATUS.md) — status tags across features.
 - [BETA_READINESS_2026-09-30.md](./BETA_READINESS_2026-09-30.md) — beta release audit,
   reproducible blockers, validation evidence, and the Remotion tutorial.
+- [HARDENING_MULTILANG_ROADMAP_2026-10-04.md](./HARDENING_MULTILANG_ROADMAP_2026-10-04.md) —
+  **proposed** roadmap: hardening audit (bugs/weak seams), tree-sitter multi-language support
+  (Python/Java/C#/Go/Rust), and next-gen features (semantic search, `atlas watch`, PageRank repo map).
+  Not implemented yet.
 
 ## Architecture
 
