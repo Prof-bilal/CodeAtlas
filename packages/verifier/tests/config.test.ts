@@ -36,7 +36,7 @@ describe("loadVerifyConfig", () => {
     const config = loadVerifyConfig(tmpDir);
     expect(config).toBeDefined();
     expect(config?.enabled).toBe(true);
-    expect(config?.commands.typecheck).toEqual({
+    expect(config?.commands["typecheck"]).toEqual({
       command: "npx",
       args: ["tsc", "--noEmit"],
       timeoutMs: 60000,
@@ -90,7 +90,7 @@ describe("loadVerifyConfig", () => {
       },
     });
     const config = loadVerifyConfig(tmpDir);
-    expect(config?.commands.lint).toEqual({
+    expect(config?.commands["lint"]).toEqual({
       command: "eslint",
       args: ["."],
     });

@@ -112,6 +112,9 @@ export default tseslint.config(
       "go-tui-app/**",
       "tests/fixtures/**",
       "scripts/**",
+      // Standalone demos with their own lockfile/toolchain (not in the pnpm
+      // workspace), so workspace-external imports like `remotion` don't resolve.
+      "examples/**",
     ],
   },
   {

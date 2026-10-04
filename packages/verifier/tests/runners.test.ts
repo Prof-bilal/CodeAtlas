@@ -1,48 +1,64 @@
 import { EventEmitter } from "node:events";
 import type { VerifyConfig } from "@prof-bilal/atlas-core";
 import { describe, expect, it } from "vitest";
-import { runCommands } from "../src/runners.js";
+import { type CommandRunnerDeps, runCommands } from "../src/runners.js";
 
-function fakeSpawnFn(exitCode: number, stdout = "", stderr = "") {
-  return (
-    _command: string,
-    _args: readonly string[],
-    _options: { cwd?: string; env?: NodeJS.ProcessEnv; shell: boolean },
-  ) => {
-    const proc = new EventEmitter();
-    proc.pid = 12345;
-    proc.stdout = new EventEmitter();
-    proc.stderr = new EventEmitter();
-    proc.kill = () => {};
+type SpawnFn = NonNullable<CommandRunnerDeps["spawnFn"]>;
 
-    // Emit output asynchronously
-    setTimeout(() => {
-      if (stdout) proc.stdout.emit("data", stdout);
-      if (stderr) proc.stderr.emit("data", stderr);
-      proc.emit("close", exitCode);
-    }, 10);
-
-    return proc;
+function fakeProcess(): {
+  handle: ReturnType<SpawnFn>;
+  emitClose: (code: number) => void;
+  emitError: (err: Error) => void;
+  emitStdout: (chunk: string) => void;
+  emitStderr: (chunk: string) => void;
+} {
+  const bus = new EventEmitter();
+  const stdoutBus = new EventEmitter();
+  const stderrBus = new EventEmitter();
+  return {
+    handle: {
+      pid: 12345,
+      stdout: stdoutBus as unknown as NodeJS.ReadableStream,
+      stderr: stderrBus as unknown as NodeJS.ReadableStream,
+      on: (event, cb) => {
+        bus.on(event, cb);
+      },
+      kill: () => {},
+    },
+    emitClose: (code) => {
+      bus.emit("close", code);
+    },
+    emitError: (err) => {
+      bus.emit("error", err);
+    },
+    emitStdout: (chunk) => {
+      stdoutBus.emit("data", chunk);
+    },
+    emitStderr: (chunk) => {
+      stderrBus.emit("data", chunk);
+    },
   };
 }
 
-function fakeSpawnFnError(message: string) {
-  return (
-    _command: string,
-    _args: readonly string[],
-    _options: { cwd?: string; env?: NodeJS.ProcessEnv; shell: boolean },
-  ) => {
-    const proc = new EventEmitter();
-    proc.pid = 12345;
-    proc.stdout = new EventEmitter();
-    proc.stderr = new EventEmitter();
-    proc.kill = () => {};
-
+function fakeSpawnFn(exitCode: number, stdout = "", stderr = ""): SpawnFn {
+  return () => {
+    const proc = fakeProcess();
     setTimeout(() => {
-      proc.emit("error", new Error(message));
+      if (stdout) proc.emitStdout(stdout);
+      if (stderr) proc.emitStderr(stderr);
+      proc.emitClose(exitCode);
     }, 10);
+    return proc.handle;
+  };
+}
 
-    return proc;
+function fakeSpawnFnError(message: string): SpawnFn {
+  return () => {
+    const proc = fakeProcess();
+    setTimeout(() => {
+      proc.emitError(new Error(message));
+    }, 10);
+    return proc.handle;
   };
 }
 
