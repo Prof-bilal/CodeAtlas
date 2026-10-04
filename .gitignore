@@ -43,6 +43,10 @@ apps/cli/src/tui/
 apps/cli/src/commands/tui.ts
 apps/cli/tests/tui.test.ts
 
+# Local-only examples & demos: kept on disk but untracked so they are not
+# published with the repository.
+/examples/
+
 # Local tool / agent state (not part of the product)
 .opencode/
 .freebuff/
