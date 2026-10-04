@@ -17,7 +17,6 @@ the job, extend it instead.
 | `packages/mcp/` | MCP server (`@prof-bilal/atlas-mcp`) over stdio | Exposing context/Skills to MCP clients. |
 | `packages/*` (feature) | One package per capability: scanner, hashing, parser, storage, graph, context, cache, providers, summary, search, agents, usage, metrics, verifier | Implementing a capability behind a `core` port. |
 | `docs/` | Documentation (see [`docs/README.md`](./README.md)) | Any behavior/architecture change. |
-| `examples/` | Copy-paste examples for users | When you add a user-facing workflow worth showing. |
 | `scripts/` | Build helpers (`copy-prebuilt-skills.mjs`) | Build plumbing only. Not runtime code. |
 | `tests/fixtures/` | Shared test fixture repositories | Fixtures used by more than one package. |
 | `.github/workflows/` | CI (typecheck, lint, format, tests) | CI changes. |

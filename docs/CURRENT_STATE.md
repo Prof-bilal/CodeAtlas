@@ -60,7 +60,6 @@ packages/
   mcp/          # MCP server exposing context to AI tools                      [EXISTING]
   sdk/         # Composition root (Container)                                  [EXISTING]
 docs/            # (this documentation system)
-examples/        # README placeholder only (no runnable examples)
 ```
 
 ---

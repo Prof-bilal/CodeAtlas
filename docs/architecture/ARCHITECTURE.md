@@ -91,7 +91,6 @@ packages/
   mcp/          # MCP server exposing context to AI tools (consumes the SDK)
   sdk/          # Composition root (Container) + Context API/SDK (createContextSDK)
 docs/           # This documentation system
-examples/       # Placeholder (no runnable examples yet)
 ```
 
 > `packages/agents` (`@prof-bilal/atlas-agents`) implements the **narrow spawn/detect

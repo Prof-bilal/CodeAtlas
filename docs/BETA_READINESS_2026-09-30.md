@@ -186,8 +186,10 @@ smoke gate and verify the release version/dist-tag intentionally before publishi
 
 ## Video and reproduction
 
-The Remotion tutorial is in `examples/beta-video/`. It explains all 29 top-level
-commands, major subcommand workflows, and the beta boundaries. `COMMANDS.md`
+The Remotion tutorial is in `examples/beta-video/` — kept **local-only** and
+untracked as of 2026-10-04 (see `.gitignore`), so it is not part of a fresh
+clone. It explains all 29 top-level commands, major subcommand workflows, and
+the beta boundaries. `COMMANDS.md`
 is generated recursively from the real Commander tree and includes every
 registered subcommand and flag. `TRANSCRIPT.md`, `CHAPTERS.txt`, timed SRT captions,
 captured-output excerpts and editable composition source accompany the MP4.

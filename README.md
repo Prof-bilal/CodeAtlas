@@ -249,7 +249,6 @@ packages/
   mcp/          # MCP server
   sdk/          # Public API + composition root
 docs/           # Documentation (see docs/README.md)
-examples/       # Copy-paste examples
 scripts/        # Build helpers
 ```
 
