@@ -95,6 +95,13 @@ export {
   type SummaryContextAPI,
   type SymbolContextAPI,
 } from "./context/index";
+export {
+  TREE_SITTER_CONFIGS,
+  createDefaultParserRegistry,
+  isGrammarAvailable,
+} from "@prof-bilal/atlas-parser";
+export { createWatcher } from "./watch/watcher";
+export type { Watcher, WatcherOptions } from "./watch/watcher";
 export type {
   ContextStatus,
   DependencyContext,

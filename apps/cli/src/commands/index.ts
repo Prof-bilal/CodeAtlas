@@ -22,6 +22,7 @@ import { registerTrace } from "./trace";
 import { registerUsage } from "./usage";
 import { registerVerify } from "./verify";
 import { registerWarden } from "./warden";
+import { registerWatch } from "./watch";
 
 /** Register every CLI command on the given program. */
 export function registerCommands(
@@ -71,4 +72,5 @@ export function registerCommands(
   registerInspect(program);
   registerEvaluate(program);
   registerTrace(program);
+  registerWatch(program);
 }

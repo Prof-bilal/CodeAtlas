@@ -32,6 +32,7 @@
     "@prof-bilal/atlas-core": "workspace:^",
     "@prof-bilal/atlas-graph": "workspace:^",
     "@prof-bilal/atlas-hashing": "workspace:^",
+    "@prof-bilal/atlas-metrics": "workspace:^",
     "@prof-bilal/atlas-parser": "workspace:^",
     "@prof-bilal/atlas-providers": "workspace:^",
     "@prof-bilal/atlas-scanner": "workspace:^",
@@ -39,10 +40,10 @@
     "@prof-bilal/atlas-shared": "workspace:^",
     "@prof-bilal/atlas-storage": "workspace:^",
     "@prof-bilal/atlas-summary": "workspace:^",
-    "@prof-bilal/atlas-usage": "workspace:^",
-    "@prof-bilal/atlas-metrics": "workspace:^",
     "@prof-bilal/atlas-toolkit": "workspace:^",
-    "@prof-bilal/atlas-verifier": "workspace:^"
+    "@prof-bilal/atlas-usage": "workspace:^",
+    "@prof-bilal/atlas-verifier": "workspace:^",
+    "chokidar": "^4.0.0"
   },
   "license": "MIT",
   "repository": {

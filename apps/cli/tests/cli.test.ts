@@ -425,6 +425,7 @@ describe("atlas CLI", () => {
       "usage",
       "verify",
       "warden",
+      "watch",
     ]);
   });
 

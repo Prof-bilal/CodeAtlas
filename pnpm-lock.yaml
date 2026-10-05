@@ -267,6 +267,9 @@ importers:
       '@prof-bilal/atlas-verifier':
         specifier: workspace:^
         version: link:../verifier
+      chokidar:
+        specifier: ^4.0.0
+        version: 4.0.3
 
   packages/search:
     dependencies:
