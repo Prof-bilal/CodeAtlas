@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { type Dirent, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Command } from "commander";
 
@@ -96,7 +96,7 @@ export function registerEvaluate(program: Command): void {
           status: pkgExists ? "pass" : "skip",
           note: pkgExists ? "package.json found" : "skipped",
         },
-        tests: { count: 0, path: hasTests ? root : null },
+        tests: { count: countTestFiles(root), path: hasTests ? root : null },
         qa: { screenshots, path: qaDir },
         overall,
         items,
@@ -116,4 +116,46 @@ export function registerEvaluate(program: Command): void {
 
       process.exit(overall === "fail" ? 1 : 0);
     });
+}
+
+const SKIPPED_DIRS = new Set([
+  "node_modules",
+  ".git",
+  ".codeatlas",
+  "dist",
+  "build",
+  "coverage",
+  ".next",
+  "out",
+  "vendor",
+]);
+
+const TEST_FILE_PATTERN = /\.(test|spec)\.[cm]?[jt]sx?$/;
+
+/** Count test files under `root` with a bounded, symlink-safe walk. */
+function countTestFiles(root: string): number {
+  let count = 0;
+  const stack = [root];
+  while (stack.length > 0) {
+    const dir = stack.pop();
+    if (dir === undefined) {
+      break;
+    }
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        if (!SKIPPED_DIRS.has(entry.name)) {
+          stack.push(join(dir, entry.name));
+        }
+      } else if (entry.isFile() && TEST_FILE_PATTERN.test(entry.name)) {
+        count += 1;
+      }
+    }
+  }
+  return count;
 }

@@ -150,6 +150,30 @@ export function registerUsage(program: Command): void {
       await showBudgets(options);
     });
 
+  const budget = usage.command("budget").description("Manage token/cost budgets");
+  budget
+    .command("set")
+    .description("Create or replace a budget for a scope")
+    .requiredOption("--scope <kind:value>", "scope, e.g. provider:openai or agent:claude")
+    .option("--tokens <n>", "token budget")
+    .option("--cost <n>", "cost budget")
+    .option("--currency <code>", "currency for the cost budget")
+    .action(async (options: BudgetSetOptions) => {
+      await setBudgetCommand(options);
+    });
+
+  const limit = usage.command("limit").description("Manage hard token/cost limits");
+  limit
+    .command("set")
+    .description("Create or replace a hard limit for a scope")
+    .requiredOption("--scope <kind:value>", "scope, e.g. provider:openai or agent:claude")
+    .option("--tokens <n>", "hard token cap")
+    .option("--cost <n>", "hard cost cap")
+    .option("--currency <code>", "currency for the cost cap")
+    .action(async (options: BudgetSetOptions) => {
+      await setLimitCommand(options);
+    });
+
   // Bare `atlas usage` prints the summary, mirroring `atlas usage summary`.
   usage
     .command("summary")
@@ -229,6 +253,77 @@ async function showSummary(options: {
       return;
     }
     console.log(renderUsageSummary(stats, statuses));
+  });
+}
+
+interface BudgetSetOptions {
+  readonly scope: string;
+  readonly tokens?: string;
+  readonly cost?: string;
+  readonly currency?: string;
+}
+
+function parseScope(value: string): UsageScope {
+  const index = value.indexOf(":");
+  const kind = index === -1 ? "" : value.slice(0, index);
+  const scopeValue = index === -1 ? "" : value.slice(index + 1);
+  if (
+    (kind !== "agent" && kind !== "provider" && kind !== "session" && kind !== "user") ||
+    scopeValue === ""
+  ) {
+    throw new Error(`Invalid --scope "${value}". Use <agent|provider|session|user>:<value>.`);
+  }
+  return { kind, value: scopeValue };
+}
+
+function parseAmount(raw: string | undefined, flag: string): number | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`Invalid ${flag} "${raw}". Expected a positive number.`);
+  }
+  return value;
+}
+
+async function setBudgetCommand(options: BudgetSetOptions): Promise<void> {
+  const scope = parseScope(options.scope);
+  const tokenLimit = parseAmount(options.tokens, "--tokens");
+  const costLimit = parseAmount(options.cost, "--cost");
+  await withUsage(async (usage) => {
+    const result = usage.setBudget({
+      scope,
+      ...(tokenLimit === undefined ? {} : { tokenLimit }),
+      ...(costLimit === undefined ? {} : { costLimit }),
+      ...(options.currency === undefined ? {} : { currency: options.currency }),
+    });
+    if (!result.ok) {
+      console.error(result.error.message);
+      process.exitCode = 1;
+      return;
+    }
+    console.log(`Budget set for ${scopeLabel(scope)}.`);
+  });
+}
+
+async function setLimitCommand(options: BudgetSetOptions): Promise<void> {
+  const scope = parseScope(options.scope);
+  const tokenLimit = parseAmount(options.tokens, "--tokens");
+  const costLimit = parseAmount(options.cost, "--cost");
+  await withUsage(async (usage) => {
+    const result = usage.setLimit({
+      scope,
+      ...(tokenLimit === undefined ? {} : { tokenLimit }),
+      ...(costLimit === undefined ? {} : { costLimit }),
+      ...(options.currency === undefined ? {} : { currency: options.currency }),
+    });
+    if (!result.ok) {
+      console.error(result.error.message);
+      process.exitCode = 1;
+      return;
+    }
+    console.log(`Limit set for ${scopeLabel(scope)}.`);
   });
 }
 

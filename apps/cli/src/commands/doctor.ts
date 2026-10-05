@@ -12,6 +12,7 @@ import type {
   WardenStatus,
 } from "@prof-bilal/atlas-sdk";
 import {
+  TREE_SITTER_CONFIGS,
   createAgentMcpService,
   createAgentService,
   createAtlasCompletion,
@@ -21,6 +22,7 @@ import {
   createSkillService,
   createToolkitSDK,
   createWardenService,
+  isGrammarAvailable,
 } from "@prof-bilal/atlas-sdk";
 import type { Command } from "commander";
 import { contextDbPath, resolveProjectRoot } from "./search";
@@ -95,6 +97,7 @@ export async function runDoctor(
 ): Promise<DoctorReport> {
   const checks: DoctorCheck[] = [];
   checkNodeRuntime(checks);
+  await checkLanguages(checks);
   await checkIndex(checks, root);
   await checkAgents(checks, services.agents ?? createAgentService());
   await checkAgentMcp(checks, services.agentMcp ?? createAgentMcpService());
@@ -150,6 +153,26 @@ function checkNodeRuntime(checks: DoctorCheck[]): void {
   });
 }
 
+/** Report per-language tree-sitter grammar availability. */
+async function checkLanguages(checks: DoctorCheck[]): Promise<void> {
+  const results = await Promise.all(
+    TREE_SITTER_CONFIGS.map(async (config) => ({
+      language: config.language,
+      available: await isGrammarAvailable(config.grammar),
+    })),
+  );
+  const available = results.filter((entry) => entry.available).map((entry) => entry.language);
+  const missing = results.filter((entry) => !entry.available).map((entry) => entry.language);
+  checks.push({
+    name: "Multi-language parsers",
+    verdict: missing.length === 0 ? "PASS" : "WARN",
+    detail:
+      missing.length === 0
+        ? `TypeScript/JavaScript plus ${available.join(", ")} grammars available.`
+        : `Grammar unavailable for: ${missing.join(", ")} (those languages are skipped).`,
+  });
+}
+
 async function checkIndex(checks: DoctorCheck[], root: string): Promise<void> {
   const dbPath = contextDbPath(root);
   if (!existsSync(dbPath)) {
@@ -175,6 +198,14 @@ async function checkIndex(checks: DoctorCheck[], root: string): Promise<void> {
       verdict: freshnessVerdict(freshness),
       detail: freshnessDetail(freshness),
     });
+    const skippedReferences = context.project.overview().referencesSkipped ?? 0;
+    if (skippedReferences > 0) {
+      checks.push({
+        name: "Reference extraction",
+        verdict: "WARN",
+        detail: `${skippedReferences} file(s) exceeded the reference-line cap; cross-file edges for those files are incomplete.`,
+      });
+    }
   } finally {
     context.close();
   }

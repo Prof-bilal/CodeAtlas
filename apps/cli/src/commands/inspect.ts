@@ -148,9 +148,7 @@ async function probeHttp(
 }
 
 export function registerInspect(program: Command): void {
-  const inspect = program
-    .command("inspect")
-    .description("Inspect running services (HTTP probes, network capture)");
+  const inspect = program.command("inspect").description("Inspect running services (HTTP probes)");
 
   inspect
     .command("http <url>")

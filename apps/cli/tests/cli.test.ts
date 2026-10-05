@@ -2365,6 +2365,76 @@ describe("atlas CLI", () => {
         }
       });
     });
+    it("authors a budget and a limit via `atlas usage budget/limit set`", async () => {
+      await withProject(async (root) => {
+        const program = createCli();
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+          await program.parseAsync([
+            "node",
+            "atlas",
+            "usage",
+            "budget",
+            "set",
+            "--scope",
+            "provider:openai",
+            "--tokens",
+            "5000",
+            "--cost",
+            "2",
+            "--currency",
+            "USD",
+          ]);
+          expect(log.mock.calls.map((call) => call.join(" ")).join("\n")).toContain(
+            "Budget set for provider:openai",
+          );
+
+          log.mockClear();
+          await program.parseAsync([
+            "node",
+            "atlas",
+            "usage",
+            "limit",
+            "set",
+            "--scope",
+            "agent:claude",
+            "--tokens",
+            "1000",
+          ]);
+          expect(log.mock.calls.map((call) => call.join(" ")).join("\n")).toContain(
+            "Limit set for agent:claude",
+          );
+        } finally {
+          log.mockRestore();
+        }
+
+        const usage = createUsageService({ filePath: join(root, ".codeatlas", "usage.db") });
+        try {
+          expect(
+            usage
+              .listBudgets()
+              .some(
+                (budget) =>
+                  budget.scope.kind === "provider" &&
+                  budget.scope.value === "openai" &&
+                  budget.tokenLimit === 5000,
+              ),
+          ).toBe(true);
+          expect(
+            usage
+              .listLimits()
+              .some(
+                (limit) =>
+                  limit.scope.kind === "agent" &&
+                  limit.scope.value === "claude" &&
+                  limit.tokenLimit === 1000,
+              ),
+          ).toBe(true);
+        } finally {
+          usage.close();
+        }
+      });
+    });
   });
 
   describe("providers & ollama commands", () => {
