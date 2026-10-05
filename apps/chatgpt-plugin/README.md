@@ -103,7 +103,7 @@ OpenAI-dashboard steps (the dashboard does not read these files automatically).
 
 - Runs only against a **local** CodeAtlas index (`.codeatlas/context.db`); there
   is no CodeAtlas cloud backend in this release.
-- Parser coverage is TypeScript/JavaScript; other languages are indexed as
-  content only.
+- Parser coverage is TypeScript/JavaScript plus Python, Go, Java, C#, and Rust
+  (tree-sitter); other languages are indexed as content only.
 - Widgets require a host that implements the Apps SDK; without it, tool output
   is still complete.

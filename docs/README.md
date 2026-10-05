@@ -25,9 +25,10 @@ together) and [REPOSITORY_MAP.md](./REPOSITORY_MAP.md) (where everything lives).
 - [BETA_READINESS_2026-09-30.md](./BETA_READINESS_2026-09-30.md) — beta release audit,
   reproducible blockers, validation evidence, and the Remotion tutorial.
 - [HARDENING_MULTILANG_ROADMAP_2026-10-04.md](./HARDENING_MULTILANG_ROADMAP_2026-10-04.md) —
-  **proposed** roadmap: hardening audit (bugs/weak seams), tree-sitter multi-language support
-  (Python/Java/C#/Go/Rust), and next-gen features (semantic search, `atlas watch`, PageRank repo map).
-  Not implemented yet.
+  **partially implemented** roadmap: hardening audit (P0), tree-sitter
+  multi-language support (Python/Java/C#/Go/Rust, P1–P2), `atlas watch` (P4),
+  PageRank repo map + MCP resources (P5–P6) have landed; **semantic/hybrid search
+  (P3) is not implemented**. See the file's status header.
 
 ## Architecture
 

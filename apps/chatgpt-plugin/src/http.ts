@@ -12,11 +12,14 @@ import { type ChatGptServer, type ChatGptServerOptions, createChatGptServer } fr
  * the adapter that makes the plugin installable in ChatGPT (Codex and other
  * local clients use {@link import("./stdio").startStdioServer} instead).
  *
- * Safety: binds to **127.0.0.1 by default**. Exposing it on a non-loopback host
- * is an explicit choice and requires a bearer token (`--token` /
- * `ATLAS_CHATGPT_TOKEN`). The server never touches the filesystem beyond the
- * configured CodeAtlas index, and every tool read is the same read-only,
- * deny-filtered Context SDK path the stdio server uses.
+ * Safety: binds to **127.0.0.1 by default** and **fails closed**. Binding a
+ * non-loopback host without a bearer token (`--token` / `ATLAS_CHATGPT_TOKEN`)
+ * is refused at startup rather than merely warned about. CORS defaults to a
+ * loopback allow-list (never `*`), and DNS-rebinding protection is enabled by
+ * default with an allow-list of loopback hosts plus the bound host/port. The
+ * server never touches the filesystem beyond the configured CodeAtlas index,
+ * and every tool read is the same read-only, deny-filtered Context SDK path the
+ * stdio server uses.
  */
 
 /** Options for the HTTP transport. */
@@ -27,11 +30,17 @@ export interface HttpServerOptions extends ChatGptServerOptions {
   readonly port?: number;
   /** Bearer token required on `/mcp` when set (also `ATLAS_CHATGPT_TOKEN`). */
   readonly token?: string;
-  /** Host header allow-list for DNS-rebinding protection (recommended off-loopback). */
+  /**
+   * Host header allow-list for DNS-rebinding protection. Defaults to loopback
+   * hosts plus the bound host, each with and without the bound port.
+   */
   readonly allowedHosts?: readonly string[];
   /** Return JSON responses instead of SSE streams when possible (default `true`). */
   readonly jsonResponses?: boolean;
-  /** `Access-Control-Allow-Origin` value (default `*`). */
+  /**
+   * `Access-Control-Allow-Origin` value. Defaults to reflecting a loopback
+   * `Origin` header only — never `*`. Set explicitly to allow another origin.
+   */
   readonly corsOrigin?: string;
 }
 
@@ -56,19 +65,26 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
   const host = options.host ?? "127.0.0.1";
   const port = options.port ?? DEFAULT_HTTP_PORT;
   const token = options.token ?? process.env["ATLAS_CHATGPT_TOKEN"];
-  const corsOrigin = options.corsOrigin ?? "*";
+  const corsOrigin = options.corsOrigin;
   const logger =
     options.logger ??
     createLogger(options.logLevel === undefined ? {} : { level: options.logLevel });
 
-  if (!isLoopback(host) && (token === undefined || token.length === 0)) {
-    logger.warn(
-      `binding ${host} without a token — set --token or ATLAS_CHATGPT_TOKEN before exposing this server.`,
+  // Fail closed: a non-loopback bind without a token would expose repository
+  // source reads to anyone who can reach the host. Refuse to start instead of
+  // warning (the module docstring has always claimed a token is required).
+  const hasToken = token !== undefined && token.length > 0;
+  if (!isLoopback(host) && !hasToken) {
+    throw new Error(
+      `refusing to bind non-loopback host "${host}" without a bearer token — set --token or ATLAS_CHATGPT_TOKEN.`,
     );
   }
 
   // One transport (and one lazily-opened Context SDK) per MCP session.
   const sessions = new Map<string, StreamableHTTPServerTransport>();
+  // Filled in after `listen`; read when constructing a session transport so the
+  // default host allow-list includes the actual (possibly ephemeral) port.
+  let boundPort = port;
 
   const httpServer = createServer((req, res) => {
     handleRequest(req, res).catch((error: unknown) => {
@@ -82,7 +98,7 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
 
   async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
-    applyCors(res, corsOrigin);
+    applyCors(req, res, corsOrigin);
 
     if (req.method === "OPTIONS") {
       res.writeHead(204);
@@ -152,9 +168,10 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
       ...(options.jsonResponses === false ? {} : { enableJsonResponse: true }),
-      ...(options.allowedHosts === undefined
-        ? {}
-        : { allowedHosts: [...options.allowedHosts], enableDnsRebindingProtection: true }),
+      // DNS-rebinding protection is on by default: a browser page resolving a
+      // loopback hostname must still send the expected Host header.
+      allowedHosts: [...(options.allowedHosts ?? defaultAllowedHosts(host, boundPort))],
+      enableDnsRebindingProtection: true,
     });
     transport.onclose = () => {
       const id = transport.sessionId;
@@ -202,7 +219,7 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
     });
   });
   const address = httpServer.address();
-  const boundPort = typeof address === "object" && address !== null ? address.port : port;
+  boundPort = typeof address === "object" && address !== null ? address.port : port;
   logger.info(`CodeAtlas ChatGPT plugin listening on http://${host}:${boundPort}${MCP_PATH}`);
 
   return {
@@ -242,14 +259,48 @@ function headerValue(req: IncomingMessage, name: string): string | undefined {
   return Array.isArray(raw) ? raw[0] : raw;
 }
 
-function applyCors(res: ServerResponse, origin: string): void {
-  res.setHeader("Access-Control-Allow-Origin", origin);
+/**
+ * Default Host allow-list for DNS-rebinding protection: the loopback names plus
+ * the bound host, each with and without the bound port (the Host header always
+ * includes the port for non-default ports).
+ */
+function defaultAllowedHosts(bindHost: string, port: number): string[] {
+  const hosts: string[] = [];
+  for (const name of new Set([bindHost, "127.0.0.1", "localhost", "::1", "[::1]"])) {
+    hosts.push(name, `${name}:${port}`);
+  }
+  return hosts;
+}
+
+/**
+ * Apply CORS headers. Without an explicit `corsOrigin`, only a loopback `Origin`
+ * is reflected; any other origin gets no `Access-Control-Allow-Origin`, so the
+ * browser blocks the cross-origin read (never a wildcard by default).
+ */
+function applyCors(req: IncomingMessage, res: ServerResponse, corsOrigin?: string): void {
+  const origin = corsOrigin ?? loopbackOrigin(req);
+  if (origin !== undefined) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader(
     "Access-Control-Allow-Headers",
     "content-type, authorization, mcp-session-id, mcp-protocol-version, last-event-id",
   );
   res.setHeader("Access-Control-Expose-Headers", "mcp-session-id, mcp-protocol-version");
+}
+
+/** The request's `Origin` if it is a loopback origin, else `undefined`. */
+function loopbackOrigin(req: IncomingMessage): string | undefined {
+  const origin = req.headers.origin;
+  if (typeof origin !== "string" || origin.length === 0) {
+    return undefined;
+  }
+  try {
+    return isLoopback(new URL(origin).hostname) ? origin : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function respondJson(res: ServerResponse, status: number, body: unknown): void {

@@ -1,9 +1,18 @@
 # CodeAtlas — Hardening, Multi-Language Support & Next-Gen Features
 
-> **Status: PROPOSED roadmap — not implemented.** This is a deep audit + plan produced in
-> read-only research. Nothing in Part B/C exists yet; Part A records *present* bugs/weak seams
-> and their intended fixes. Feature status stays **[PLANNED]** until code lands and is verified
-> against reality (per `AGENTS.md` §4.12 and `docs/README.md` rules).
+> **Status (updated 2026-10-05): PARTIALLY IMPLEMENTED.** Landed so far:
+> **P0** (all of Part A — A1 fail-closed HTTP, A2 resolver sync, A3 MCP
+> truncation, A4 SDK repo guard, A5 git timeout, A6 skipped-ref reporting, A7
+> doc-truth), **P1** (tree-sitter foundation + Python + Go + kind-union
+> extension + resolver injection + B.5 framework detection), **P2** (Java, C#,
+> Rust + resolvers), **P4** (`atlas watch` via `createWatcher`), **P5**
+> (`computePageRank` + `sdk.project.repoMap()` + `codeatlas://repo-map`
+> resource), and **most of P6** (MCP resources, `atlas usage budget/limit set`,
+> `atlas doctor` per-language grammar check, corrected `inspect`/`evaluate`
+> claims). **P3 (embeddings + hybrid search) is NOT implemented** — it needs a
+> new package, a storage migration, and a local embedding model/provider, and
+> is deferred. Everything below stays the design record; where the code landed,
+> the implementation is the source of truth (per `AGENTS.md` §4.12).
 
 Repo: `/home/abdullah/Projects/CodeAtlas` · pnpm+TS monorepo · 19 packages + 3 apps · v0.5.2 ·
 Node `>=22.5.0` · `node:sqlite`.

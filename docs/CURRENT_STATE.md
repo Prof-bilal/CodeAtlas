@@ -44,7 +44,7 @@ packages/
   core/         # Domain entities + port interfaces (type-only)              [EXISTING]
   scanner/      # File walking, ignore rules, language/framework detection   [EXISTING]
   hashing/      # SHA-256 + change detection + snapshots                     [EXISTING]
-  parser/       # TS (+ JS bridge) → normalized Symbol IR (ts-morph)         [PARTIAL]
+  parser/       # TS/JS (ts-morph) + tree-sitter py/go/java/csharp/rust → IR  [PARTIAL]
   graph/        # Dependency graph, shortest path, cycle detection           [EXISTING]
   storage/      # SQLite context DB (node:sqlite), repos, migrations         [EXISTING]
   cache/        # Generic in-memory/TTL cache (+ JSON persistence)           [EXISTING]
@@ -119,15 +119,23 @@ docs/            # (this documentation system)
   `.js/.jsx/.mjs/.cjs` files are parsed as TS grammar (`allowJs`) so JS repos
   are no longer silently content-only; the overview's parsed-vs-content-only
   split reports the distinction.
+- **Tree-sitter parsers (WASM):** `TreeSitterParser` + per-language configs for
+  **Python, Go, Java, C#, Rust** live under `packages/parser/src/treesitter/**`,
+  registered in `createDefaultParserRegistry()`. Grammars load lazily from
+  `tree-sitter-wasms`; a missing grammar degrades to "language skipped". Symbols
+  reuse the normalized IR (with additive `struct`/`trait`/`namespace`/`macro`
+  kinds). Files above the reference-line cap report `referencesSkipped`.
 - `SymbolIndexer` — in-memory find/list/children/references with cross-file
-  import resolution (`./x`, `../x` → `.ts`/`.tsx`/`/index.ts`/`/index.tsx`),
-  same-file reference resolution. Renamed imports (`import { a as b }`) and
-  `export default <expression>` **do** resolve cross-file (via the import
-  symbol's `importedName`).
-- **Known gap:** namespaces and bare expressions are not extracted; bare/alias
+  import resolution, same-file reference resolution. Renamed imports
+  (`import { a as b }`) and `export default <expression>` **do** resolve
+  cross-file (via the import symbol's `importedName`). Language-specific
+  resolvers (`ModuleResolver` in `core`, implemented in the parser) are
+  injectable for Python/Go/Java/C#/Rust.
+- **Known gap:** TS namespaces and bare expressions are not extracted; bare/alias
   import specifiers (`@/lib/x`, tsconfig-paths style) are not resolved — they
   are counted as `unresolvedImports` (surfaced on `project_overview`) instead
-  of failing silently.
+  of failing silently. Java/C#/Go cross-file resolution is a source-layout
+  heuristic (no build-system/type awareness).
 
 ### Dependency Graph — **[EXISTING]**
 
@@ -135,8 +143,9 @@ docs/            # (this documentation system)
   source file; edges for calls/constructs/accesses/references/reads/writes/
   extends/implements/imports/exports/contains/**tested-by**.
 - `shortestPath` (BFS), `detectCircularDependencies` (Tarjan SCC), `exportJson`.
-- `module-resolution.ts` intentionally duplicates the parser's module-path
-  resolution so the graph stays decoupled from the parser.
+- `module-resolution.ts` keeps the built-in TypeScript resolver; language-specific
+  `ModuleResolver`s (Python/Go/Java/C#/Rust) are injected from the SDK composition
+  root and tried first, so the graph and parser resolve specifiers identically.
 - Import resolution matches the parser: renamed and default imports resolve to
   their definitions cross-file.
 - `tested-by` edges (Phase 2d) link implementation files to same-dir
@@ -273,11 +282,11 @@ docs/            # (this documentation system)
 
 ### CLI (`apps/cli`) — **[IMPLEMENTED]** (command surface re-verified 2026-09-14)
 
-- Commander.js program `atlas`, **29 top-level commands** — `init`, `build`,
+- Commander.js program `atlas`, **30 top-level commands** — `init`, `build`,
   `update`, `scan`, `search`, `sessions`, `usage`, `metrics`, `explain`,
   `doctor`, `mcp`, `context`, `ask`, `tools`, `skills` (alias `skill`), `setup`,
   `providers`, `agents`, `ollama`, `warden`, `verify`, `impact`,
-  `trace`, `inspect`, `evaluate`, and the
+  `trace`, `inspect`, `evaluate`, `watch`, and the
   standalone agent launchers `claude`/`gemini`/`codex`/`opencode` (sugar over
   `atlas context launch --provider <agent>`; the future slash router remains
   planned).

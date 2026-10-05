@@ -1,3 +1,4 @@
+import { type IncomingHttpHeaders, get } from "node:http";
 import { afterEach, describe, expect, it } from "vitest";
 import { type Fixture, createFixture, silentLogger } from "../../../packages/mcp/tests/fixture";
 import { type RunningHttpServer, isLoopback, startHttpServer } from "../src/http";
@@ -82,11 +83,40 @@ async function setup(options: { token?: string } = {}): Promise<{
   return { server, fixture };
 }
 
+function requestHeaders(
+  url: string,
+  headers: Record<string, string>,
+): Promise<IncomingHttpHeaders> {
+  return new Promise((resolve, reject) => {
+    const req = get(url, { headers }, (res) => {
+      res.resume();
+      res.on("end", () => resolve(res.headers));
+    });
+    req.on("error", reject);
+  });
+}
+
 describe("ChatGPT plugin HTTP transport", () => {
   it("classifies loopback hosts", () => {
     expect(isLoopback("127.0.0.1")).toBe(true);
     expect(isLoopback("localhost")).toBe(true);
     expect(isLoopback("0.0.0.0")).toBe(false);
+  });
+
+  it("refuses to start on a non-loopback host without a token", async () => {
+    await expect(
+      startHttpServer({ host: "0.0.0.0", port: 0, logger: silentLogger() }),
+    ).rejects.toThrow(/token/i);
+  });
+
+  it("defaults CORS to a loopback allow-list rather than a wildcard", async () => {
+    const { server } = await setup();
+    const health = server.url.replace("/mcp", "/healthz");
+    const foreign = await requestHeaders(health, { origin: "https://evil.example" });
+    expect(foreign["access-control-allow-origin"]).toBeUndefined();
+
+    const local = await requestHeaders(health, { origin: "http://localhost:5173" });
+    expect(local["access-control-allow-origin"]).toBe("http://localhost:5173");
   });
 
   it("serves /healthz", async () => {

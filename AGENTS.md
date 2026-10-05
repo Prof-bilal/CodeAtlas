@@ -38,10 +38,10 @@ Non-obvious facts (verified as of 2026-08-14):
   `ContextBuilderPort`, ADR-001): it ranks search hits and resolves them to
   source-file `ContextItem`s — no AI. Do not add AI gating or revert it to a
   stub.
-- The CLI has **29** top-level subcommands. `atlas search`, `atlas mcp`,
+- The CLI has **30** top-level subcommands. `atlas search`, `atlas mcp`,
   `atlas sessions`, `atlas usage`, `atlas agents`, `atlas metrics`, the full
   SDK-backed `atlas tools`, `atlas context`, `atlas explain`, `atlas skills`
-  (alias `atlas skill`), `atlas setup`, and `atlas doctor`
+  (alias `atlas skill`), `atlas setup`, `atlas watch`, and `atlas doctor`
   command surface are wired
   (through the **Context SDK**,
   `@prof-bilal/atlas-mcp`, `createSessionManager()`, and `createUsageService()`
@@ -135,10 +135,21 @@ Non-obvious facts (verified as of 2026-08-14):
   `docs/architecture/AGENT_TOOLKIT.md`; registry details:
   `docs/architecture/TOOL_REGISTRY.md`.
 - Pipelines that are implemented and tested: scanner, hashing, manifest,
-  parser (TypeScript + JavaScript only — **[PARTIAL]**), graph, SQLite storage,
-  search, summaries, cache, providers. Parser known gaps: namespaces and bare
-  expressions are not extracted (renamed imports and `export default <expr>`
-  **do** resolve cross-file).
+  parser (TypeScript/JavaScript plus tree-sitter **Python, Go, Java, C#, Rust** —
+  **[PARTIAL]**), graph, SQLite storage, search, summaries, cache, providers.
+  The tree-sitter parsers live in `packages/parser/src/treesitter/**` behind the
+  existing `LanguageParser` seam; a language's grammar loads lazily and a missing
+  grammar degrades to "language skipped". Cross-file import resolution is
+  injected (`ModuleResolver` in `core`, implementations in the parser, wired from
+  the SDK). Parser known gaps: TS namespaces and bare expressions are not
+  extracted (renamed imports and `export default <expr>` **do** resolve
+  cross-file); Java/C#/Go resolution is a source-layout heuristic. See the
+  `docs/HARDENING_MULTILANG_ROADMAP_2026-10-04.md` status header.
+- `atlas watch` incrementally re-indexes on file changes (`createWatcher` in the
+  SDK, chokidar-backed). MCP exposes read-only **resources** (`codeatlas://overview`,
+  `codeatlas://repo-map`, `codeatlas://symbol/{id}`, `codeatlas://skills/{id}`)
+  in addition to tools. Symbol importance is a deterministic PageRank pass
+  (`computePageRank`) persisted for the repo map.
 - Storage uses `node:sqlite` (needs Node `>=22.5.0`); **all** packages and the
   root share this engine floor (`>=22.5.0`).
 - Git metadata is present in the workspace. Husky/commitlint are configured but

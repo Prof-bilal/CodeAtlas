@@ -265,10 +265,12 @@ integration, Ollama tool loop, the Agent Toolkit (tool registry, manifests,
 compatibility engine, installer, configurator, security/trust assessor, Skills
 loader with 13 built-in Skills), and the `atlas setup` selection flow.
 
-**[PARTIAL]** Parser handles TypeScript + JavaScript only; other languages are
-indexed as files but not parsed into symbols/dependencies. Within TS/JS,
-namespaces and bare expressions are not extracted (renamed imports and
-`export default <expr>` **do** resolve cross-file).
+**[PARTIAL]** The parser handles TypeScript/JavaScript plus **Python, Go, Java,
+C#, and Rust** (tree-sitter WASM grammars, behind the same `LanguageParser`
+seam). Within TS/JS, namespaces and bare expressions are not extracted (renamed
+imports and `export default <expr>` **do** resolve cross-file). Cross-file import
+resolution for Java/C#/Go is a source-layout heuristic (no build-system/type
+resolution); unresolved imports are counted, never guessed.
 
 **[PLANNED]** `/tools` and `/context` slash surfaces, the standalone agent
 router / slash commands, and the interactive TUI.
@@ -283,12 +285,13 @@ Ground truth: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) and
 
 ### Beta limitations
 
-- **TypeScript/JavaScript-only parsing** — other languages are indexed as files
-  but not parsed into symbols/dependencies.
+- **Multi-language parsing is syntax-level** — Python/Go/Java/C#/Rust are parsed
+  with tree-sitter (names/references/imports), not a type checker; Java/C#/Go
+  cross-file resolution is a source-layout heuristic.
 - **No streaming** — provider responses arrive complete.
 - **No interactive TUI / slash commands** — `atlas tui` and `/claude`, `/tools`,
   `/agents` are not shipped.
-- **MCP is tools-only** — no MCP resources or prompts yet.
+- **MCP is tools + read-only resources** — no MCP prompts yet.
 - **Search is lexical** — vector/embedding search is a planned seam
   (`RelevanceScorer`), not wired.
 - **No browser control** — the Playwright-based browser layer was removed for

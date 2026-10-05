@@ -32,6 +32,9 @@ import { createConfigurator } from "./configurator";
 import { createInstaller } from "./installer";
 import { createToolRegistry } from "./registry";
 
+/** Bound the network `git pull` so a stalled remote cannot hang `atlas tools update`. */
+const GIT_PULL_TIMEOUT_MS = 60_000;
+
 export interface ToolkitDoctorEntry {
   readonly name: string;
   readonly manifest: "present" | "missing" | "invalid";
@@ -328,7 +331,9 @@ export function createToolkitSDK(options: CreateToolkitSDKOptions = {}): Toolkit
             continue;
           }
           try {
-            await execFileAsync("git", ["-C", skillDir, "pull", "--ff-only"]);
+            await execFileAsync("git", ["-C", skillDir, "pull", "--ff-only"], {
+              timeout: GIT_PULL_TIMEOUT_MS,
+            });
             results.push({
               name: manifest.name,
               status: "updated",
