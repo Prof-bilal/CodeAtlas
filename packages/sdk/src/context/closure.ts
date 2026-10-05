@@ -147,7 +147,7 @@ export function expandDependencyClosure(
   // there are promoted to the `interface` closure kind.
   const interfaceFiles = new Set<string>();
   for (const symbol of snapshot.symbols ?? ([] as readonly CodeSymbol[])) {
-    if (symbol.kind === "interface" || symbol.kind === "type-alias") {
+    if (symbol.kind === "interface" || symbol.kind === "type-alias" || symbol.kind === "trait") {
       interfaceFiles.add(symbol.filePath.replace(/\\/g, "/"));
     }
   }

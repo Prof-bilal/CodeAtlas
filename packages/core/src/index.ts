@@ -1,6 +1,7 @@
 export * from "./domain/entities";
 export * from "./domain/hashing";
 export * from "./domain/scan";
+export type { ModuleResolver } from "./domain/module-resolution";
 export type {
   AgentInfo,
   AgentPort,

@@ -306,13 +306,13 @@ describe("indexProject", () => {
     roots.push(root);
     await mkdir(join(root, "src"));
     await writeFile(join(root, "src", "app.ts"), "export const value = 1;\n");
-    await writeFile(join(root, "src", "main.go"), "package main\nfunc main() {}\n");
-    await writeFile(join(root, "src", "style.py"), "print('hello')\n");
+    await writeFile(join(root, "src", "main.rb"), "puts 'hi'\n");
+    await writeFile(join(root, "src", "style.php"), "<?php echo 1;\n");
 
     const result = await indexProject({ repositoryPath: root, mode: "build" });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    // Only the TypeScript file should be parsed; Go and Python are skipped.
+    // Only the TypeScript file is parsed; Ruby and PHP have no registered parser.
     expect(result.value.files).toBe(1);
     expect(result.value.parsedFiles).toBe(1);
     expect(result.value.skippedFiles).toBe(0);

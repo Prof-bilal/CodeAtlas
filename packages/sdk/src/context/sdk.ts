@@ -837,6 +837,8 @@ class ContextSDKFacade implements ContextSDK {
       const summary = this.reads.findSummary("project", "");
       const unresolvedRaw = snapshot.metadata?.["unresolvedImports"];
       const unresolvedImports = unresolvedRaw === undefined ? undefined : Number(unresolvedRaw);
+      const skippedRaw = snapshot.metadata?.["referencesSkipped"];
+      const referencesSkipped = skippedRaw === undefined ? undefined : Number(skippedRaw);
       const base: ProjectOverview = {
         repositoryPath: this.config.repositoryPath,
         savedAt: snapshot.savedAt,
@@ -845,6 +847,9 @@ class ContextSDKFacade implements ContextSDK {
         counts,
         ...(unresolvedImports !== undefined && Number.isFinite(unresolvedImports)
           ? { unresolvedImports }
+          : {}),
+        ...(referencesSkipped !== undefined && Number.isFinite(referencesSkipped)
+          ? { referencesSkipped }
           : {}),
         ...(summary !== undefined ? { summary } : {}),
       };
@@ -1122,13 +1127,17 @@ function isIdentifierLikeQuery(query: string): boolean {
 /** Symbol kinds that declare a definition (outrank import/export references). */
 const definitionKinds = new Set([
   "class",
+  "struct",
   "interface",
+  "trait",
   "function",
   "method",
   "constructor",
   "property",
   "variable",
   "constant",
+  "namespace",
+  "macro",
   "enum",
   "enum-member",
   "type-alias",

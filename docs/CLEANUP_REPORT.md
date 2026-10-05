@@ -121,9 +121,10 @@ workflow, benchmark docs/plans, ADR-012/013, 3 GB `benchmarks/` corpus.
 
 ## 10. Remaining technical debt (pre-existing, not from this cleanup)
 
-- Parser is **TypeScript + JavaScript only**; other languages are indexed as
-  files but not parsed into symbols. Namespaces and bare expressions are not
-  extracted (renamed imports and `export default <expr>` do resolve).
+- Parser covers **TypeScript/JavaScript plus Python, Go, Java, C#, and Rust**
+  (tree-sitter WASM). Namespaces and bare expressions are still not extracted
+  for TS (renamed imports and `export default <expr>` do resolve); Java/C#/Go
+  cross-file resolution is a source-layout heuristic.
 - `atlas tui` v2 and the slash-command router remain planned/untracked.
 - Cosmetic: `atlas setup`'s "Recommended — installable (0)" heading reads
   slightly odd since the recommended tier is the built-in Skill library

@@ -68,6 +68,16 @@ async function readJson(path: string): Promise<Readonly<Record<string, unknown>>
   }
 }
 
+/** Read a text file (bounded), tolerating read errors. */
+async function readText(path: string, maxChars = 200_000): Promise<string | null> {
+  try {
+    const raw = await readFileAsync(path, "utf8");
+    return raw.length > maxChars ? raw.slice(0, maxChars) : raw;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Recursively scan a project directory and collect metadata using the default
  * configuration.
@@ -308,6 +318,16 @@ export class ScannerService implements ScannerPort {
       hasCargoToml: existsRoot("Cargo.toml"),
       hasPomXml: existsRoot("pom.xml"),
       hasGemfile: existsRoot("Gemfile"),
+      hasGradleBuild: existsRoot("build.gradle") || existsRoot("build.gradle.kts"),
+      hasDotnetProject: rootEntries.some(
+        (name) => name.endsWith(".sln") || name.endsWith(".csproj"),
+      ),
+      requirementsText: await readText(join(root, "requirements.txt")),
+      pyprojectText: await readText(join(root, "pyproject.toml")),
+      pomText: await readText(join(root, "pom.xml")),
+      gradleText:
+        (await readText(join(root, "build.gradle"))) ??
+        (await readText(join(root, "build.gradle.kts"))),
       rootEntries,
     };
   }

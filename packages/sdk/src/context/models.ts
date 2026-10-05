@@ -84,6 +84,12 @@ export interface ProjectOverview {
    * honesty). Absent when the index predates the counter (or the count is 0).
    */
   readonly unresolvedImports?: number;
+  /**
+   * Files whose symbols were indexed but whose reference graph was skipped
+   * because they exceeded the parser's size cap (honesty). Absent when the
+   * index predates the counter or the count is 0.
+   */
+  readonly referencesSkipped?: number;
   /** The stored project summary, when one exists. */
   readonly summary?: Summary;
   /** Included when the overview is requested with `detail: "full"`. */

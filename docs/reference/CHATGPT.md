@@ -143,7 +143,8 @@ These steps cannot be automated from the repository:
 ## Known limitations
 
 - Serves a **local** CodeAtlas index; no cloud backend exists in this release.
-- Parser coverage is TypeScript/JavaScript (other languages are content-only).
+- Parser coverage is TypeScript/JavaScript plus Python, Go, Java, C#, and Rust
+  (tree-sitter); other languages are content-only.
 - Widgets need an Apps-SDK-capable host; without one, output is text/structured
   only.
 - `analyze_repository` reports dependency cycles only when the deterministic

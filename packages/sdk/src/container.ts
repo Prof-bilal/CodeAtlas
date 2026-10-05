@@ -14,7 +14,7 @@ import type {
 } from "@prof-bilal/atlas-core";
 import { GraphService } from "@prof-bilal/atlas-graph";
 import { HashService } from "@prof-bilal/atlas-hashing";
-import { ParserService } from "@prof-bilal/atlas-parser";
+import { ParserService, createDefaultModuleResolvers } from "@prof-bilal/atlas-parser";
 import { ScannerService } from "@prof-bilal/atlas-scanner";
 import { SearchService } from "@prof-bilal/atlas-search";
 import { ContextStore, StorageService } from "@prof-bilal/atlas-storage";
@@ -58,7 +58,7 @@ export class Container {
       scanner: options.scanner ?? new ScannerService(),
       parser: options.parser ?? new ParserService(),
       storage: options.storage ?? new StorageService(),
-      graph: options.graph ?? new GraphService(),
+      graph: options.graph ?? new GraphService({ resolvers: createDefaultModuleResolvers() }),
       context: options.context ?? new ContextBuilderService({ search, db: contextDb }),
       cache,
       provider,

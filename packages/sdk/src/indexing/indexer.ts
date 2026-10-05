@@ -14,7 +14,7 @@ import type {
 } from "@prof-bilal/atlas-core";
 import { GraphService } from "@prof-bilal/atlas-graph";
 import { HashService } from "@prof-bilal/atlas-hashing";
-import { ParserService } from "@prof-bilal/atlas-parser";
+import { ParserService, createDefaultModuleResolvers } from "@prof-bilal/atlas-parser";
 import { ScannerService, generateManifest } from "@prof-bilal/atlas-scanner";
 import {
   DEFAULT_CONCURRENCY,
@@ -70,6 +70,12 @@ export interface IndexResult {
   readonly digestGenerated: boolean;
   /** Import specifiers that could not be resolved to an indexed file (honesty). */
   readonly unresolvedImports: number;
+  /**
+   * Files whose symbols were indexed but whose reference graph was skipped
+   * because they exceeded the parser's reference-line cap (honesty). Cross-file
+   * edges for these files are incomplete.
+   */
+  readonly referencesSkipped: number;
 }
 
 /**
@@ -103,7 +109,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
   const dbPath = resolve(request.dbPath ?? join(repositoryPath, ".codeatlas", "context.db"));
   const hasher = new HashService();
   const parser = new ParserService();
-  const graph = new GraphService();
+  const graph = new GraphService({ resolvers: createDefaultModuleResolvers() });
   let store: ContextStore | undefined;
 
   try {
@@ -169,6 +175,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
         summariesFailed: 0,
         digestGenerated: false,
         unresolvedImports: 0,
+        referencesSkipped: 0,
       });
     }
 
@@ -238,6 +245,19 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
     const references = parsed.parsed.flatMap((file) => file.references);
     graph.build(mergedSymbols, references);
     const unresolvedImports = graph.unresolvedImportCount();
+    // Files whose reference graph was skipped because of the parser's size cap.
+    // Unchanged files are not re-parsed on an incremental update, so carry the
+    // previous count forward rather than reporting a false "0".
+    const parsedSkippedReferences = parsed.parsed.filter(
+      (file) => file.referencesSkipped === true,
+    ).length;
+    const priorSkippedReferences = Number(previousContext?.metadata?.["referencesSkipped"] ?? "0");
+    const referencesSkipped =
+      parsedSkippedReferences > 0
+        ? parsedSkippedReferences
+        : incremental
+          ? priorSkippedReferences
+          : 0;
     const exported = await graph.exportEdges();
     if (!exported.ok) return fail(exported.error);
     const dependencies: PersistedDependency[] = exported.value.map((edge) => ({
@@ -386,6 +406,7 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
       summariesFailed,
       digestGenerated: true,
       unresolvedImports,
+      referencesSkipped,
     };
     if (request.metrics !== undefined) {
       request.metrics.recordScan({

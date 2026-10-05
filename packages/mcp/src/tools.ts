@@ -63,13 +63,17 @@ export const PROTOCOL_TOOL_NAMES: readonly string[] = [
 /** Symbol kinds the parser can emit (mirrors `@prof-bilal/atlas-core` `SymbolKind`). */
 export const SYMBOL_KINDS = [
   "class",
+  "struct",
   "interface",
+  "trait",
   "function",
   "method",
   "constructor",
   "property",
   "variable",
   "constant",
+  "namespace",
+  "macro",
   "import",
   "export",
   "enum",

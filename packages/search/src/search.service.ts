@@ -111,13 +111,17 @@ export class SearchService implements SearchPort {
  */
 const DEFINITION_KINDS = new Set([
   "class",
+  "struct",
   "interface",
+  "trait",
   "function",
   "method",
   "constructor",
   "property",
   "variable",
   "constant",
+  "namespace",
+  "macro",
   "enum",
   "enum-member",
   "type-alias",

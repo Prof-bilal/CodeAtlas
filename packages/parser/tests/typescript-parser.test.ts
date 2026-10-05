@@ -412,6 +412,8 @@ const svc = new Service();
       expect(result.value.symbols.some((s) => s.name === "double")).toBe(true);
       // ...but the identifier-walk/reference-resolution pass is skipped.
       expect(result.value.references).toEqual([]);
+      // ...and the skip is surfaced to callers rather than silently dropped.
+      expect(result.value.referencesSkipped).toBe(true);
     });
 
     it("resolves references normally below maxReferenceLines", async () => {
@@ -420,6 +422,7 @@ const svc = new Service();
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.value.references.length).toBeGreaterThan(0);
+      expect(result.value.referencesSkipped).toBeUndefined();
     });
   });
 

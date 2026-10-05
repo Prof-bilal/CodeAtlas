@@ -22,6 +22,7 @@ describe("module-resolution alias contract (parser ↔ graph)", () => {
     "/repo/src/index.ts",
     "/repo/src/sub/index.ts",
     "/repo/src/app.js",
+    "/repo/src/only-ts.ts",
   ]);
 
   it("resolves relative specifiers through the documented candidate list", () => {
@@ -46,6 +47,12 @@ describe("module-resolution alias contract (parser ↔ graph)", () => {
     expect(
       resolveModulePath("/repo/src/main.ts" as FilePath, "./missing.js", files),
     ).toBeUndefined();
+  });
+
+  it("maps an explicit .js specifier to the .ts source when only .ts is indexed", () => {
+    expect(resolveModulePath("/repo/src/main.ts" as FilePath, "./only-ts.js", files)).toBe(
+      "/repo/src/only-ts.ts",
+    );
   });
 
   it("marks bare / node: / alias specifiers unresolved (never guessed)", () => {

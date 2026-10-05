@@ -23,13 +23,17 @@ export interface SourceFile {
  */
 export type SymbolKind =
   | "class"
+  | "struct"
   | "interface"
+  | "trait"
   | "function"
   | "method"
   | "constructor"
   | "property"
   | "variable"
   | "constant"
+  | "namespace"
+  | "macro"
   | "import"
   | "export"
   | "enum"

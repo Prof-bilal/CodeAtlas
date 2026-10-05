@@ -1,6 +1,7 @@
 /**
  * Information the framework detector uses to identify a project's framework.
- * These are cheap filesystem/lockfile signals — no parsing of file contents.
+ * These are cheap filesystem/lockfile signals — manifest text is read bounded,
+ * never parsed into a full model.
  */
 export interface FrameworkSignals {
   /** Parsed `package.json` contents, or `null` when absent/unreadable. */
@@ -13,6 +14,18 @@ export interface FrameworkSignals {
   readonly hasCargoToml: boolean;
   readonly hasPomXml: boolean;
   readonly hasGemfile: boolean;
+  /** A `build.gradle`/`build.gradle.kts` at the project root. */
+  readonly hasGradleBuild?: boolean;
+  /** A `.sln`/`.csproj` at the project root (.NET). */
+  readonly hasDotnetProject?: boolean;
+  /** `requirements.txt` contents (bounded), or `null`. */
+  readonly requirementsText?: string | null;
+  /** `pyproject.toml` contents (bounded), or `null`. */
+  readonly pyprojectText?: string | null;
+  /** `pom.xml` contents (bounded), or `null`. */
+  readonly pomText?: string | null;
+  /** `build.gradle` contents (bounded), or `null`. */
+  readonly gradleText?: string | null;
 }
 
 /** Known framework identifiers, in priority order. */
@@ -73,6 +86,17 @@ export function detectFramework(signals: FrameworkSignals): string | null {
   const hasAnyNodeDependency = Object.keys(dependencies).length > 0 || signals.packageJson !== null;
 
   if (signals.hasPyprojectFile || signals.hasRequirementsFile) {
+    const python =
+      `${signals.requirementsText ?? ""}\n${signals.pyprojectText ?? ""}`.toLowerCase();
+    if (/\bdjango\b/.test(python)) {
+      return "django";
+    }
+    if (/\bfastapi\b/.test(python)) {
+      return "fastapi";
+    }
+    if (/\bflask\b/.test(python)) {
+      return "flask";
+    }
     return "python";
   }
   if (signals.hasGoMod) {
@@ -81,8 +105,15 @@ export function detectFramework(signals: FrameworkSignals): string | null {
   if (signals.hasCargoToml) {
     return "rust";
   }
-  if (signals.hasPomXml) {
-    return "java";
+  if (signals.hasPomXml || signals.hasGradleBuild === true) {
+    const java = `${signals.pomText ?? ""}\n${signals.gradleText ?? ""}`.toLowerCase();
+    if (java.includes("spring-boot") || java.includes("springframework")) {
+      return "spring";
+    }
+    return signals.hasGradleBuild === true ? "gradle" : "maven";
+  }
+  if (signals.hasDotnetProject === true) {
+    return "dotnet";
   }
   if (signals.hasGemfile) {
     return "ruby";

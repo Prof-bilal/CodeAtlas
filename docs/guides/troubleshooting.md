@@ -89,8 +89,9 @@ with `ATLAS_MCP_LOG_LEVEL=debug|info|warn|error`.
 
 The TypeScript/JavaScript parser ([PARTIAL]) **does** resolve renamed imports
 (`import { a as b }`) and `export default <expr>` cross-file. The remaining
-gaps are **namespaces** and **bare expressions**, which are not extracted, plus
-non-TS/JS languages, which are indexed as files but not parsed into symbols.
+gaps are **namespaces** and **bare expressions**, which are not extracted.
+Python, Go, Java, C#, and Rust are parsed via tree-sitter (names, references,
+imports); Java/C#/Go cross-file resolution is a source-layout heuristic.
 See [CONTEXT.md](../architecture/CONTEXT.md) §2 and
 [FEATURE_STATUS.md](../FEATURE_STATUS.md).
 

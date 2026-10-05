@@ -83,15 +83,21 @@ export class TypeScriptParser implements LanguageParser {
         overwrite: true,
       });
       const symbols = extractSymbols(sourceFile, file.path);
-      const references =
-        countLines(file.content) > this.maxReferenceLines
-          ? []
-          : resolveReferenceTargets(extractReferences(sourceFile, file.path), symbols).filter(
-              (reference) => reference.targetSymbolId !== null,
-            );
+      const referencesSkipped = countLines(file.content) > this.maxReferenceLines;
+      const references = referencesSkipped
+        ? []
+        : resolveReferenceTargets(extractReferences(sourceFile, file.path), symbols).filter(
+            (reference) => reference.targetSymbolId !== null,
+          );
       // Free the AST so a large corpus does not retain every parsed file.
       project.removeSourceFile(sourceFile);
-      return ok({ path: file.path, language: file.language, symbols, references });
+      return ok({
+        path: file.path,
+        language: file.language,
+        symbols,
+        references,
+        ...(referencesSkipped ? { referencesSkipped: true } : {}),
+      });
     } catch (error) {
       return fail(error instanceof Error ? error : new Error(String(error)));
     }

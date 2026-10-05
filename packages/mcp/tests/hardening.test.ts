@@ -220,10 +220,10 @@ describe("MCP behavior with empty and unsupported repositories", () => {
     }
   });
 
-  it("serves tools and returns empty results for a repository with no TypeScript", async () => {
-    const root = await tempRepo("atlas-mcp-no-ts-");
-    await writeFile(join(root, "main.py"), "print('hello')\n");
+  it("serves tools and returns empty results for a repository with no parseable languages", async () => {
+    const root = await tempRepo("atlas-mcp-no-lang-");
     await writeFile(join(root, "app.rb"), "puts 'hi'\n");
+    await writeFile(join(root, "index.php"), "<?php echo 1;\n");
 
     const index = await indexProject({ repositoryPath: root, mode: "build" });
     expect(index.ok).toBe(true);

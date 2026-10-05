@@ -15,6 +15,10 @@ function pythonSource(content: string): SourceFile {
   return { path: "/fixture/a.py" as FilePath, language: "python", content };
 }
 
+function rubySource(content: string): SourceFile {
+  return { path: "/fixture/a.rb" as FilePath, language: "ruby", content };
+}
+
 /** A parser that records how many files it was asked to parse. */
 class CountingParser implements LanguageParser {
   public parseCount = 0;
@@ -74,7 +78,7 @@ describe("ParserService", () => {
 
   it("fails with UnsupportedLanguageError for an unregistered language", async () => {
     const service = new ParserService();
-    const result = await service.parse(pythonSource("x = 1"));
+    const result = await service.parse(rubySource("puts 1"));
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBeInstanceOf(UnsupportedLanguageError);
@@ -85,7 +89,7 @@ describe("ParserService", () => {
     const service = new ParserService();
     const batch = await service.parseFiles([
       tsSource("export const A = 1;", "/fixture/a.ts"),
-      pythonSource("x = 1"),
+      rubySource("puts 1"),
       tsSource("export const B = 2;", "/fixture/b.ts"),
     ]);
 
@@ -94,8 +98,8 @@ describe("ParserService", () => {
     expect(batch.parsed.flatMap((file) => file.symbols)).toHaveLength(2);
 
     expect(batch.skipped).toHaveLength(1);
-    expect(batch.skipped[0].path).toBe("/fixture/a.py");
-    expect(batch.skipped[0].reason).toContain("python");
+    expect(batch.skipped[0].path).toBe("/fixture/a.rb");
+    expect(batch.skipped[0].reason).toContain("ruby");
   });
 
   it("reports failing parses in the batch's skipped list without throwing", async () => {
@@ -127,11 +131,27 @@ describe("ParserService", () => {
     const result = await service.parseFile(pythonSource("x = 1"));
     expect(result.ok).toBe(true);
     expect(python.parseCount).toBe(1);
-    expect(service.supportedLanguages()).toEqual(["typescript", "javascript", "python"]);
+    expect(service.supportedLanguages()).toEqual([
+      "typescript",
+      "javascript",
+      "python",
+      "go",
+      "java",
+      "csharp",
+      "rust",
+    ]);
   });
 
-  it("lists TypeScript and JavaScript (JS bridge) as supported out of the box", () => {
+  it("lists TypeScript, JavaScript, and the tree-sitter languages as supported out of the box", () => {
     const service = new ParserService();
-    expect(service.supportedLanguages()).toEqual(["typescript", "javascript"]);
+    expect(service.supportedLanguages()).toEqual([
+      "typescript",
+      "javascript",
+      "python",
+      "go",
+      "java",
+      "csharp",
+      "rust",
+    ]);
   });
 });

@@ -3,6 +3,7 @@ import type {
   GraphEdge,
   GraphNode,
   GraphPort,
+  ModuleResolver,
   Reference,
   ReferenceKind,
   Symbol,
@@ -11,6 +12,16 @@ import type { EdgeId, FilePath, NodeId, Result } from "@prof-bilal/atlas-shared"
 import { ok } from "@prof-bilal/atlas-shared";
 import { fileNodeId, symbolNodeId } from "./ids";
 import { buildExportIndex, resolveModulePath } from "./module-resolution";
+
+/** Options for {@link GraphService}. */
+export interface GraphServiceOptions {
+  /**
+   * Language-specific import resolvers, injected from the composition root.
+   * Tried in order before the built-in TypeScript resolver, so the graph and
+   * the parser resolve specifiers identically (audit item A2).
+   */
+  readonly resolvers?: readonly ModuleResolver[];
+}
 
 /** Every edge kind the graph emits. */
 export const EDGE_KINDS = {
@@ -58,6 +69,26 @@ export class GraphService implements GraphPort {
   private readonly in = new Map<NodeId, Map<NodeId, string[]>>();
   private readonly seenEdges = new Set<string>();
   private unresolvedImports = 0;
+  private readonly resolvers: readonly ModuleResolver[];
+
+  public constructor(options: GraphServiceOptions = {}) {
+    this.resolvers = options.resolvers ?? [];
+  }
+
+  /** Resolve an import specifier through the injected resolvers, then TS. */
+  private resolveImport(
+    fromFile: FilePath,
+    specifier: string,
+    knownFiles: ReadonlyMap<string, FilePath>,
+  ): FilePath | undefined {
+    for (const resolver of this.resolvers) {
+      const resolved = resolver.resolve(fromFile, specifier, knownFiles);
+      if (resolved !== undefined) {
+        return resolved;
+      }
+    }
+    return resolveModulePath(fromFile, specifier, knownFiles);
+  }
 
   /**
    * Rebuild the graph from parsed symbols and resolved references. Resets any
@@ -120,7 +151,7 @@ export class GraphService implements GraphPort {
       if (symbol.kind !== "import" || symbol.moduleSpecifier === null) {
         continue;
       }
-      const targetFile = resolveModulePath(symbol.filePath, symbol.moduleSpecifier, files);
+      const targetFile = this.resolveImport(symbol.filePath, symbol.moduleSpecifier, files);
       if (targetFile === undefined) {
         // Unresolved import (honesty over silence, Phase 5): a relative
         // specifier that names no indexed file, or a bare/alias specifier that
@@ -150,7 +181,7 @@ export class GraphService implements GraphPort {
       if (symbol.moduleSpecifier === null) {
         continue;
       }
-      const targetFile = resolveModulePath(symbol.filePath, symbol.moduleSpecifier, files);
+      const targetFile = this.resolveImport(symbol.filePath, symbol.moduleSpecifier, files);
       if (targetFile !== undefined) {
         this.addEdgeRaw(fileNodeId(symbol.filePath), fileNodeId(targetFile), "imports");
       }

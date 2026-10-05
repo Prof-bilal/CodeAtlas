@@ -179,6 +179,25 @@ export function go(): string {
       expect(indexer.findReferences(importBinding.id)).toHaveLength(1);
     });
 
+    it("resolves an explicit .js import specifier to the .ts source", async () => {
+      const indexer = await indexFiles([
+        ["/src/utils.ts", `export function format(n: number): string { return String(n); }`],
+        [
+          "/src/main.ts",
+          `import { format } from "./utils.js";
+export function go(): string {
+  return format(1);
+}`,
+        ],
+      ]);
+      const formatDef = indexer
+        .findDefinitions("format")
+        .find((s) => s.filePath === "/src/utils.ts")!;
+      const refs = indexer.findReferences(formatDef.id);
+      expect(refs).toHaveLength(1);
+      expect(refs[0].filePath).toBe("/src/main.ts");
+    });
+
     it("resolves default imports to the module's default export", async () => {
       const indexer = await indexFiles([
         [

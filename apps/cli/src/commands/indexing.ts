@@ -111,6 +111,11 @@ function render(result: IndexResult, withSummaries: boolean): string {
   if (withSummaries) {
     lines.push(`Summaries: ${result.summaries} (${result.summariesFailed} failed)`);
   }
+  if (result.referencesSkipped > 0) {
+    lines.push(
+      `Skipped references: ${result.referencesSkipped} file(s) exceeded the reference-line cap (cross-file edges incomplete).`,
+    );
+  }
   return lines.join("\n");
 }
 

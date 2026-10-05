@@ -24,6 +24,12 @@ export interface ParsedFile {
    * peak-memory cost at repository scale.
    */
   readonly references: readonly Reference[];
+  /**
+   * True when the parser kept this file's symbols but skipped reference
+   * extraction because the file exceeded a size cap. Callers surface this so
+   * the missing cross-file edges are reported, never silently dropped.
+   */
+  readonly referencesSkipped?: boolean;
 }
 
 /** A file the parser did not process, and why. */

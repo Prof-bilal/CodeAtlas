@@ -5,7 +5,24 @@ import { UnsupportedLanguageError } from "./errors";
 import type { LanguageParser } from "./language-parser";
 import type { ParseBatch, ParsedFile, SkippedFile } from "./parsed-file";
 import { ParserRegistry } from "./parser-registry";
+import { CSHARP_CONFIG } from "./treesitter/languages/csharp";
+import { GO_CONFIG } from "./treesitter/languages/go";
+import { JAVA_CONFIG } from "./treesitter/languages/java";
+import { PYTHON_CONFIG } from "./treesitter/languages/python";
+import { RUST_CONFIG } from "./treesitter/languages/rust";
+import { TreeSitterParser } from "./treesitter/tree-sitter-parser";
 import { TypeScriptParser } from "./typescript/typescript-parser";
+
+/** The default parser registry: TypeScript/JavaScript plus the tree-sitter languages. */
+export function createDefaultParserRegistry(): ParserRegistry {
+  return new ParserRegistry()
+    .register(new TypeScriptParser())
+    .register(new TreeSitterParser(PYTHON_CONFIG))
+    .register(new TreeSitterParser(GO_CONFIG))
+    .register(new TreeSitterParser(JAVA_CONFIG))
+    .register(new TreeSitterParser(CSHARP_CONFIG))
+    .register(new TreeSitterParser(RUST_CONFIG));
+}
 
 /**
  * Extracts language-agnostic symbols from source code.
@@ -19,9 +36,7 @@ export class ParserService implements ParserPort {
   private readonly registry: ParserRegistry;
   private readonly symbolIndex = new Map<SymbolId, Symbol>();
 
-  public constructor(
-    registry: ParserRegistry = new ParserRegistry().register(new TypeScriptParser()),
-  ) {
+  public constructor(registry: ParserRegistry = createDefaultParserRegistry()) {
     this.registry = registry;
   }
 

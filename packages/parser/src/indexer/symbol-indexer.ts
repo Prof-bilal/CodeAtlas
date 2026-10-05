@@ -1,6 +1,6 @@
 import { dirname } from "node:path";
 // biome-ignore lint/suspicious/noShadowRestrictedNames: domain Symbol type, not the JS global
-import type { Reference, Symbol, SymbolKind } from "@prof-bilal/atlas-core";
+import type { ModuleResolver, Reference, Symbol, SymbolKind } from "@prof-bilal/atlas-core";
 import type { FilePath, SymbolId } from "@prof-bilal/atlas-shared";
 import { SymbolNotIndexedError } from "../errors";
 import type { ParsedFile } from "../parsed-file";
@@ -43,6 +43,16 @@ export class SymbolIndexer {
   private readonly children = new Map<SymbolId, SymbolId[]>();
   private readonly files = new Map<FilePath, ParsedFile>();
   private readonly order: SymbolId[] = [];
+  private readonly resolvers: readonly ModuleResolver[];
+
+  /**
+   * @param resolvers - language-specific import resolvers (injected by the SDK
+   *   composition root). When provided they are tried before the built-in
+   *   TypeScript candidate list, so Python/Go cross-file references resolve.
+   */
+  public constructor(resolvers: readonly ModuleResolver[] = []) {
+    this.resolvers = resolvers;
+  }
 
   /** Forward-slash normalized paths for robust cross-platform module resolution. */
   private readonly normalizedFilePaths = new Set<string>();
@@ -261,12 +271,19 @@ export class SymbolIndexer {
 
   /** Resolve a relative module specifier to an indexed file path. */
   private resolveModulePath(fromFile: FilePath, specifier: string): FilePath | undefined {
+    for (const resolver of this.resolvers) {
+      const resolved = resolver.resolve(fromFile, specifier, this.pathsByNormalized);
+      if (resolved !== undefined) {
+        return resolved;
+      }
+    }
     if (!specifier.startsWith("./") && !specifier.startsWith("../")) {
       return undefined; // bare / node modules are not locally indexed
     }
     const resolved = resolveRelativePath(fromFile, specifier);
     const candidates = [
       resolved,
+      ...jsToTsCandidates(resolved),
       `${resolved}.ts`,
       `${resolved}.tsx`,
       `${resolved}/index.ts`,
@@ -301,6 +318,22 @@ function pushToMap<K, V>(map: Map<K, V[]>, key: K, value: V): void {
   } else {
     list.push(value);
   }
+}
+
+/**
+ * For a resolved path ending in `.js`/`.jsx`, yield the TypeScript-source
+ * equivalents (`.ts`/`.tsx`) so TS projects whose imports use explicit JS
+ * extensions still resolve. Mirrors `resolveModulePath` in
+ * `@prof-bilal/atlas-graph`'s `module-resolution.ts` — keep the two in sync.
+ */
+function jsToTsCandidates(resolved: string): string[] {
+  if (resolved.endsWith(".js")) {
+    return [`${resolved.slice(0, -3)}.ts`, `${resolved.slice(0, -3)}.tsx`];
+  }
+  if (resolved.endsWith(".jsx")) {
+    return [`${resolved.slice(0, -4)}.tsx`];
+  }
+  return [];
 }
 
 /**

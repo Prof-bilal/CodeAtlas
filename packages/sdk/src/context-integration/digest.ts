@@ -313,7 +313,18 @@ function inferNamingConvention(symbols: readonly DigestSymbol[]): string | null 
 
 /** Find key exported symbols (public, top-level). */
 function findKeyExports(input: DigestInput): readonly DigestSymbol[] {
-  const EXPORT_KINDS = new Set(["function", "class", "interface", "type-alias", "const", "enum"]);
+  const EXPORT_KINDS = new Set([
+    "function",
+    "class",
+    "struct",
+    "interface",
+    "trait",
+    "namespace",
+    "macro",
+    "type-alias",
+    "const",
+    "enum",
+  ]);
 
   // Find which files are "export hubs" — files whose symbols are re-exported
   // heavily. A symbol is "key" when it is exported from a file that other

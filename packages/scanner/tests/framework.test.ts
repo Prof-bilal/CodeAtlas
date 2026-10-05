@@ -43,8 +43,27 @@ describe("detectFramework", () => {
     expect(detectFramework(signals({ hasPyprojectFile: true }))).toBe("python");
     expect(detectFramework(signals({ hasGoMod: true }))).toBe("go");
     expect(detectFramework(signals({ hasCargoToml: true }))).toBe("rust");
-    expect(detectFramework(signals({ hasPomXml: true }))).toBe("java");
+    expect(detectFramework(signals({ hasPomXml: true }))).toBe("maven");
     expect(detectFramework(signals({ hasGemfile: true }))).toBe("ruby");
+  });
+
+  it("detects Python, JVM, and .NET frameworks from manifest contents", () => {
+    expect(
+      detectFramework(signals({ hasRequirementsFile: true, requirementsText: "Django==5.0" })),
+    ).toBe("django");
+    expect(
+      detectFramework(signals({ hasRequirementsFile: true, requirementsText: "fastapi\nuvicorn" })),
+    ).toBe("fastapi");
+    expect(detectFramework(signals({ hasPyprojectFile: true, pyprojectText: "[flask]" }))).toBe(
+      "flask",
+    );
+    expect(
+      detectFramework(
+        signals({ hasPomXml: true, pomText: "<artifactId>spring-boot-starter</artifactId>" }),
+      ),
+    ).toBe("spring");
+    expect(detectFramework(signals({ hasGradleBuild: true }))).toBe("gradle");
+    expect(detectFramework(signals({ hasDotnetProject: true }))).toBe("dotnet");
   });
 
   it("returns null when nothing is detected", () => {
