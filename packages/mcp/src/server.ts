@@ -9,6 +9,7 @@ import type { FreshnessReport } from "./freshness";
 import { executeHandler } from "./handler-utils";
 import { HANDLERS, type HandlerContext } from "./handlers";
 import { type LogLevel, type Logger, createLogger } from "./log";
+import { registerResources } from "./resources";
 import { type RunnableTool, TOOLS, TOOL_ALIASES, type ToolDefinition } from "./tools";
 import { type ToolArgs, ToolDomainError, ToolInputError } from "./validation";
 
@@ -54,6 +55,7 @@ export function createMcpServer(options: McpServerOptions = {}): CodeAtlasMcpSer
   // runner to opencod / kilo / any MCP client.
   const budget = createToolCallBudget();
   registerTools(server, context, logger, budget);
+  registerResources(server, context, logger);
   return {
     server,
     context,

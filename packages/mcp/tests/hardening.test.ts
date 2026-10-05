@@ -241,6 +241,72 @@ describe("MCP behavior with empty and unsupported repositories", () => {
   });
 });
 
+describe("MCP resources", () => {
+  it("lists the overview resource and reads it as JSON", async () => {
+    const root = await tempRepo("atlas-mcp-res-");
+    await mkdir(join(root, "src"), { recursive: true });
+    await writeFile(
+      join(root, "src", "app.ts"),
+      "export function double(x: number) { return x * 2; }\n",
+    );
+    const index = await indexProject({ repositoryPath: root, mode: "build" });
+    expect(index.ok).toBe(true);
+    if (!index.ok) return;
+
+    const conn = await connectTo(root);
+    try {
+      const listed = await conn.client.listResources();
+      expect(listed.resources.map((resource) => resource.uri)).toContain("codeatlas://overview");
+
+      const overview = await conn.client.readResource({ uri: "codeatlas://overview" });
+      const first = overview.contents[0] as { text?: string };
+      expect(first?.text).toBeDefined();
+      expect(JSON.parse(first?.text ?? "{}")).toHaveProperty("counts");
+    } finally {
+      await closeConnection(conn);
+    }
+  });
+});
+
+describe("MCP oversized result handling", () => {
+  it("returns ok for a find_relevant_context result larger than 50k chars", async () => {
+    const root = await tempRepo("atlas-mcp-truncation-");
+    await mkdir(join(root, "src"), { recursive: true });
+    for (let i = 0; i < 50; i += 1) {
+      const body = Array.from(
+        { length: 40 },
+        (_, j) => `  const chunk${j} = "handleRequest payload ${i}-${j}";`,
+      ).join("\n");
+      await writeFile(
+        join(root, "src", `mod${i}.ts`),
+        `export function handleRequest${i}(): void {\n${body}\n}\n`,
+      );
+    }
+    const index = await indexProject({ repositoryPath: root, mode: "build" });
+    expect(index.ok).toBe(true);
+    if (!index.ok) return;
+
+    const conn = await connectTo(root);
+    try {
+      const result = await conn.client.callTool({
+        name: "find_relevant_context",
+        arguments: {
+          task: "handleRequest",
+          contextMode: "full",
+          maxItems: 50,
+          maxTokens: 50000,
+        },
+      });
+      expect(result.isError).not.toBe(true);
+      const structured = result.structuredContent as { items: unknown[] };
+      expect(Array.isArray(structured.items)).toBe(true);
+      expect(structured.items.length).toBeGreaterThan(0);
+    } finally {
+      await closeConnection(conn);
+    }
+  });
+});
+
 describe("MCP output schema conformance", () => {
   it("produces structuredContent that matches each tool's declared output schema", async () => {
     const root = await tempRepo("atlas-mcp-schema-");

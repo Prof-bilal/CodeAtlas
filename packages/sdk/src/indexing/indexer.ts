@@ -29,6 +29,7 @@ import { SummaryService } from "@prof-bilal/atlas-summary";
 import { withUsageTracking } from "@prof-bilal/atlas-usage";
 import { type DigestInput, buildDigest } from "../context-integration/digest";
 import { fileNodeId, symbolNodeId } from "../context/nodes";
+import { computePageRank } from "../context/pagerank";
 import { createProviderService } from "../providers/index";
 
 export interface IndexRequest {
@@ -361,6 +362,9 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
     const digest = buildDigest(digestInput);
     const storedSummaries = [...summaries, digest];
 
+    // Deterministic PageRank symbol importance, persisted for the repo map.
+    const symbolRanks = computeSymbolRanks(dependencies);
+
     const data: ContextData = {
       files: sourceFiles,
       symbols: mergedSymbols,
@@ -371,6 +375,8 @@ export async function indexProject(request: IndexRequest): Promise<Result<IndexR
         repositoryPath,
         manifestPath: manifest.value.path,
         ...(unresolvedImports > 0 ? { unresolvedImports: String(unresolvedImports) } : {}),
+        ...(referencesSkipped > 0 ? { referencesSkipped: String(referencesSkipped) } : {}),
+        ...(symbolRanks === undefined ? {} : { symbolRanks }),
       },
       ...(storedSummaries.length > 0 ? { summaries: storedSummaries } : {}),
     };
@@ -444,6 +450,32 @@ function buildModules(root: string, paths: readonly string[]): PersistedModule[]
     }
   }
   return modules;
+}
+
+/**
+ * Keep only the top-ranked symbol nodes as a compact `{ nodeId: score }` JSON
+ * string, so the repo map survives without a schema migration. Returns
+ * `undefined` when the graph has no symbol edges.
+ */
+function computeSymbolRanks(
+  dependencies: readonly { readonly from: string; readonly to: string }[],
+): string | undefined {
+  if (dependencies.length === 0) {
+    return undefined;
+  }
+  const ranks = computePageRank(dependencies.map((edge) => ({ from: edge.from, to: edge.to })));
+  const top = [...ranks.entries()]
+    .filter(([id]) => id.startsWith("n:") && !id.startsWith("n:file:"))
+    .sort((left, right) => right[1] - left[1] || (left[0] < right[0] ? -1 : 1))
+    .slice(0, 200);
+  if (top.length === 0) {
+    return undefined;
+  }
+  const record: Record<string, number> = {};
+  for (const [id, score] of top) {
+    record[id] = Number(score.toFixed(6));
+  }
+  return JSON.stringify(record);
 }
 
 /** Total line count across the given source files. */

@@ -49,6 +49,8 @@ import type {
   ReadRangeRequest,
   ReadRangeResult,
   RelevantContext,
+  RepoMap,
+  RepoMapEntry,
   SymbolContext,
   SymbolReference,
 } from "./models";
@@ -212,6 +214,11 @@ export interface ProjectContextAPI {
    * lists the modules, top files, and top symbols.
    */
   overview(detail?: ProjectOverviewDetail): ProjectOverview;
+  /**
+   * A compact, budgeted repo map: the top `limit` symbols by deterministic
+   * PageRank importance, grouped by file. Empty when the index has no ranks.
+   */
+  repoMap(limit?: number): RepoMap;
 }
 
 /**
@@ -310,9 +317,12 @@ class ContextSDKFacade implements ContextSDK {
       this.writes = new WriteRepositories(port);
       this.searchService = new SearchService({ db: port });
     } else {
-      // Deliberately throw from any read/write call until an index exists.
-      this.reads = undefined as unknown as ReadRepositories;
-      this.writes = undefined as unknown as WriteRepositories;
+      // No index: any access to the repositories throws the typed
+      // `ContextUnavailableError` (never a raw `TypeError`), so misuse before
+      // `requireAvailable()` fails predictably.
+      const message = `No context index found at ${config.dbPath}. Build the CodeAtlas index first.`;
+      this.reads = unavailableRepositories<ReadRepositories>(message);
+      this.writes = unavailableRepositories<WriteRepositories>(message);
       this.searchService = new SearchService();
     }
   }
@@ -865,6 +875,43 @@ class ContextSDKFacade implements ContextSDK {
         topSymbols: symbols.slice(0, 100),
       };
     },
+    repoMap: (limit = 100): RepoMap => {
+      this.requireAvailable();
+      const raw = this.snapshot().metadata?.["symbolRanks"];
+      if (raw === undefined) {
+        return { entries: [], text: "" };
+      }
+      let parsed: Record<string, number>;
+      try {
+        parsed = JSON.parse(raw) as Record<string, number>;
+      } catch {
+        return { entries: [], text: "" };
+      }
+      const symbols = new Map<string, PersistedSymbol>();
+      for (const symbol of this.reads.listSymbols()) {
+        symbols.set(`n:${symbol.id}`, symbol);
+      }
+      const entries: RepoMapEntry[] = [];
+      for (const [nodeId, score] of Object.entries(parsed)) {
+        const symbol = symbols.get(nodeId);
+        if (symbol !== undefined) {
+          entries.push({
+            id: symbol.id,
+            name: symbol.name,
+            kind: symbol.kind,
+            filePath: symbol.filePath,
+            score,
+          });
+        }
+      }
+      entries.sort(
+        (left, right) =>
+          right.score - left.score ||
+          (left.filePath < right.filePath ? -1 : left.filePath > right.filePath ? 1 : 0),
+      );
+      const top = entries.slice(0, limit);
+      return { entries: top, text: renderRepoMap(top) };
+    },
   };
 
   // â”€â”€ write (indexing pipeline) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1107,6 +1154,40 @@ function symbolIdFromTarget(targetId: string | null): string | null {
     return null;
   }
   return targetId.slice("symbol:".length);
+}
+
+/** Render a repo map as `file\n  kind name` lines, grouped by file. */
+function renderRepoMap(entries: readonly RepoMapEntry[]): string {
+  const byFile = new Map<string, RepoMapEntry[]>();
+  for (const entry of entries) {
+    const list = byFile.get(entry.filePath);
+    if (list === undefined) {
+      byFile.set(entry.filePath, [entry]);
+    } else {
+      list.push(entry);
+    }
+  }
+  const lines: string[] = [];
+  for (const [file, list] of byFile) {
+    lines.push(file);
+    for (const entry of list) {
+      lines.push(`  ${entry.kind} ${entry.name}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+/**
+ * A stand-in for the read/write repositories when no index exists. Reading any
+ * property throws the typed `ContextUnavailableError` so an accidental
+ * pre-`requireAvailable()` access fails predictably instead of as a `TypeError`.
+ */
+function unavailableRepositories<T extends object>(message: string): T {
+  return new Proxy({} as T, {
+    get: (): never => {
+      throw new ContextUnavailableError(message);
+    },
+  });
 }
 
 /**

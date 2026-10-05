@@ -95,6 +95,37 @@ export const HANDLERS: Readonly<
 
 // ── find_relevant_context ───────────────────────────────────────────────────
 
+/** Maximum serialized characters for a single tool result (Phase B B5). */
+const MAX_OUTPUT_CHARS = 50_000;
+
+/**
+ * Keep an oversized result within `maxChars` by operating on the object model:
+ * drop trailing (lowest-ranked) items, then halve the sole remaining item's
+ * content when one item alone overflows. The result is always valid JSON, so
+ * an oversized call still returns `ok` instead of a parse-failure envelope.
+ */
+function capResultSize(
+  result: { readonly items: readonly { content: string }[] } & Record<string, unknown>,
+  maxChars: number,
+): unknown {
+  if (JSON.stringify(result).length <= maxChars) {
+    return result;
+  }
+  const items = result.items.map((item) => ({ ...item, content: item.content }));
+  while (items.length > 0 && JSON.stringify({ ...result, items }).length > maxChars) {
+    if (items.length > 1) {
+      items.pop();
+      continue;
+    }
+    const only = items[0];
+    if (only === undefined || only.content.length === 0) {
+      break;
+    }
+    only.content = only.content.slice(0, Math.floor(only.content.length / 2));
+  }
+  return { ...result, items };
+}
+
 async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<unknown> {
   const task = requireString(args, "task");
   const maxItems = optionalInt(args, "maxItems", 1, 50) ?? 20;
@@ -276,15 +307,11 @@ async function findRelevantContext(h: HandlerContext, args: ToolArgs): Promise<u
       : { escalated: false }),
   };
 
-  // Cap output at 50K chars (Phase B B5)
-  const serialized = JSON.stringify(result);
-  const MAX_OUTPUT_CHARS = 50_000;
-  if (serialized.length > MAX_OUTPUT_CHARS) {
-    const truncated = serialized.slice(0, MAX_OUTPUT_CHARS);
-    return JSON.parse(`${truncated.slice(0, truncated.lastIndexOf(","))}}`) as unknown;
-  }
-
-  return result;
+  // Cap output at 50K chars (Phase B B5), on the object model: drop trailing
+  // (lowest-ranked) items, then trim the last item's content. Slicing the
+  // serialized string used to cut mid-value, so an oversized result failed
+  // `JSON.parse` and degraded an otherwise successful call to an error.
+  return capResultSize(result, MAX_OUTPUT_CHARS);
 }
 
 // ── inspect_symbol ──────────────────────────────────────────────────────────

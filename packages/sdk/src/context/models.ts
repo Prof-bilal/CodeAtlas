@@ -72,6 +72,23 @@ export interface ProjectCounts {
   readonly summaries: number;
 }
 
+/** A symbol importance entry in the repo map. */
+export interface RepoMapEntry {
+  readonly id: string;
+  readonly name: string;
+  readonly kind: string;
+  readonly filePath: string;
+  /** Deterministic PageRank importance (higher = more central). */
+  readonly score: number;
+}
+
+/** A compact, budgeted repo map: the top symbols by importance, grouped by file. */
+export interface RepoMap {
+  readonly entries: readonly RepoMapEntry[];
+  /** Rendered `file\n  kind name` text, ready to include in a prompt. */
+  readonly text: string;
+}
+
 /** A human-readable overview of the whole indexed project. */
 export interface ProjectOverview {
   readonly repositoryPath: string;
