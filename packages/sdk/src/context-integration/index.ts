@@ -13,11 +13,25 @@ import { resolveSkillsInstructions } from "../skills/index";
 import { type AssembleOptions, assembleContextPackage } from "./assemble";
 import { type BriefingPort, createBriefingPort } from "./briefing";
 import { type CriticReview, createCritic } from "./critic";
-import { ContextAttachUnsupportedError } from "./errors";
+import { ContextAttachUnsupportedError, TaskLedgerNotFoundError } from "./errors";
+import { renderHandoffPrompt } from "./handoff";
 import type { ContextBriefing, ContextExplanation, ContextPackage } from "./models";
 import { renderContextPackage, toContextExplanation } from "./render";
 import { type ContextSlice, projectContextSlice } from "./slice";
 import { detectStaleness } from "./staleness";
+import {
+  type TaskLedger,
+  type TaskLedgerSummary,
+  type TaskSessionRecord,
+  computeFilesTouched,
+  createTaskLedgerDocument,
+  listTaskLedgers,
+  loadTaskLedger,
+  resolveTaskLedger,
+  saveTaskLedger,
+  withTaskProgress,
+  withTaskSession,
+} from "./task-ledger";
 
 export {
   BRIEFING_PROMPT_TEMPLATE,
@@ -83,7 +97,45 @@ export {
   ContextPackageError,
   ContextSliceError,
   ContextSliceValidationError,
+  TaskLedgerError,
+  TaskLedgerNotFoundError,
+  TaskLedgerValidationError,
 } from "./errors";
+export {
+  DEFAULT_HANDOFF_MAX_TOKENS,
+  renderHandoffPrompt,
+  renderHandoffSection,
+  sanitizeTaskProgress,
+  type HandoffRenderOptions,
+} from "./handoff";
+export {
+  MAX_FILES_TOUCHED,
+  MAX_TASK_FILE_BYTES,
+  MAX_TASK_OUTPUT_CHARS,
+  SAFE_TASK_ID,
+  TASKS_DIR_NAME,
+  TASK_LEDGER_SCHEMA_VERSION,
+  boundProgress,
+  computeFilesTouched,
+  contextTaskPath,
+  contextTasksDir,
+  createTaskLedgerDocument,
+  emptyProgress,
+  findTaskLedgerBySessionId,
+  listTaskLedgers,
+  loadTaskLedger,
+  relativeHashes,
+  resolveTaskLedger,
+  saveTaskLedger,
+  taskId,
+  validateTaskLedger,
+  withTaskProgress,
+  withTaskSession,
+  type TaskLedger,
+  type TaskLedgerSummary,
+  type TaskProgress,
+  type TaskSessionRecord,
+} from "./task-ledger";
 export { collectInstructions, type ProjectInstruction } from "./instructions";
 export type {
   BudgetRecord,
@@ -165,6 +217,27 @@ export interface LaunchInput extends BuildPackageInput {
    * then `skills`.
    */
   readonly skillInstructions?: string;
+  /**
+   * Pipe the child's stdout/stderr so prior work can be stored on the task
+   * ledger. Default `true` for task-linked launches. Mutually exclusive with
+   * interactive sessions (interactive wins inside SessionPort).
+   */
+  readonly captureOutput?: boolean;
+  /**
+   * Persist / append a task ledger under `.codeatlas/tasks/` (ADR-025).
+   * Default `true`. Set `false` for throwaway launches that must not write.
+   */
+  readonly recordTask?: boolean;
+  /** Reuse an existing task ledger instead of creating a new one. */
+  readonly taskId?: string;
+}
+
+/** Inputs to {@link ContextIntegration.handoff}. */
+export interface HandoffInput extends Omit<LaunchInput, "task" | "taskId" | "recordTask"> {
+  /** Existing 16-hex task id, or omit when `fromSessionId` is set. */
+  readonly taskId?: string;
+  /** Session id recorded on a ledger (resolved when `taskId` is omitted). */
+  readonly fromSessionId?: string;
 }
 
 /** Inputs to {@link ContextIntegration.attach}. */
@@ -228,6 +301,22 @@ export interface ContextIntegration {
    */
   launch(input: LaunchInput): Promise<Result<Session>>;
   /**
+   * Stop the previous session if it is still running, persist captured
+   * progress, assemble the same task's context package, and start a **new**
+   * session on `provider` with a handoff section (ADR-025). Sessions stay
+   * provider-immutable.
+   */
+  handoff(input: HandoffInput): Promise<Result<Session>>;
+  /** List persisted task ledgers for the integration's repository. */
+  listTasks(): Promise<readonly TaskLedgerSummary[]>;
+  /** Load one ledger by task id, or `null` when missing. */
+  getTask(taskId: string): Promise<TaskLedger | null>;
+  /**
+   * Task id recorded for a session started by this process, if known.
+   * Does not hit disk — use {@link getTask} / {@link listTasks} after restart.
+   */
+  getTaskIdForSession(sessionId: string): string | undefined;
+  /**
    * Assemble a package and start an existing **`CREATED`** session with it.
    * Starting a live/terminal session is not supported by the non-interactive
    * adapters — that case reports a typed {@link ContextAttachUnsupportedError}.
@@ -265,6 +354,48 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
   const ai =
     options.ai ?? createBriefingPort(options.usage === undefined ? {} : { usage: options.usage });
   const critic = createCritic(undefined, options.criticConfig);
+  const sessionTaskIds = new Map<string, string>();
+  const repo = (): string => context.config.repositoryPath;
+
+  const recordSessionOnLedger = async (
+    ledger: TaskLedger,
+    session: Session,
+    outputText: string | undefined,
+    options: { readonly keepProgress?: boolean } = {},
+  ): Promise<TaskLedger> => {
+    let next = withTaskSession(ledger, sessionRecord(session));
+    if (options.keepProgress !== true) {
+      const files = await computeFilesTouched(ledger.repositoryPath, ledger.hashSnapshotAtStart);
+      const lastOutput = outputText ?? "";
+      next = withTaskProgress(next, {
+        lastOutput,
+        lastOutputTruncated: false,
+        filesTouched: files.filesTouched,
+        filesTouchedTruncated: files.truncated,
+        filesTouchedUnknown: files.unknown,
+        transcriptAvailable: lastOutput.trim() !== "",
+      });
+    }
+    await saveTaskLedger(ledger.repositoryPath, next);
+    sessionTaskIds.set(session.id, next.id);
+    return next;
+  };
+
+  const startWithContext = async (input: LaunchInput, prompt: string): Promise<Result<Session>> => {
+    const created = sessions.createSession({
+      provider: input.provider,
+      repositoryPath: input.repositoryPath,
+    });
+    if (!created.ok) {
+      return created;
+    }
+    return sessions.startSession(created.value.id, {
+      prompt,
+      captureOutput: input.captureOutput !== false,
+      ...(input.args !== undefined ? { args: input.args } : {}),
+      ...(input.env !== undefined ? { env: input.env } : {}),
+    });
+  };
 
   return {
     async buildPackage(input: BuildPackageInput): Promise<ContextPackage> {
@@ -306,19 +437,105 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
         return skillsResult;
       }
       const skillsBlock = skillsResult.value;
-      const created = sessions.createSession({
-        provider: input.provider,
-        repositoryPath: input.repositoryPath,
-      });
-      if (!created.ok) {
-        return created;
-      }
       const base = input.prompt ?? renderContextPackage(pkg);
-      return sessions.startSession(created.value.id, {
-        prompt: skillsBlock === "" ? base : `${skillsBlock}\n\n${base}`,
-        ...(input.args !== undefined ? { args: input.args } : {}),
-        ...(input.env !== undefined ? { env: input.env } : {}),
+      const started = await startWithContext(
+        input,
+        skillsBlock === "" ? base : `${skillsBlock}\n\n${base}`,
+      );
+      if (!started.ok || input.recordTask === false) {
+        return started;
+      }
+      const existing =
+        input.taskId !== undefined
+          ? await loadTaskLedger(input.repositoryPath, input.taskId)
+          : null;
+      const ledger =
+        existing ??
+        createTaskLedgerDocument({
+          task: input.task,
+          repositoryPath: input.repositoryPath,
+          hashes: context.hashes(),
+        });
+      const output = sessions.getSessionOutput(started.value.id);
+      await recordSessionOnLedger(ledger, started.value, output?.stdout);
+      return started;
+    },
+
+    async handoff(input: HandoffInput): Promise<Result<Session>> {
+      const id = input.taskId ?? input.fromSessionId;
+      if (id === undefined || id.trim() === "") {
+        return fail(new TaskLedgerNotFoundError(""));
+      }
+      let ledger: TaskLedger;
+      try {
+        ledger = await resolveTaskLedger(input.repositoryPath, id);
+      } catch (error) {
+        return fail(error instanceof Error ? error : new TaskLedgerNotFoundError(id));
+      }
+      const previous = ledger.sessions[ledger.sessions.length - 1];
+      if (previous !== undefined) {
+        const live = sessions.getSession(previous.sessionId);
+        if (live !== undefined && isActiveStatus(live.status)) {
+          await sessions.stopSession(live.id);
+        }
+        const snapshot = sessions.getSession(previous.sessionId) ?? live;
+        const output = sessions.getSessionOutput(previous.sessionId);
+        ledger = await recordSessionOnLedger(
+          { ...ledger, sessions: ledger.sessions.slice(0, -1) },
+          snapshot ?? syntheticSession(previous, ledger.repositoryPath),
+          output?.stdout,
+        );
+      }
+      const pkg = await this.buildPackage({
+        task: ledger.task,
+        ...toAssembleOptions(input),
       });
+      const skillsResult = await resolveLaunchSkillsBlock(
+        input.skillInstructions,
+        input.skills,
+        context.config.repositoryPath,
+      );
+      if (!skillsResult.ok) {
+        return skillsResult;
+      }
+      const skillsBlock = skillsResult.value;
+      const base = input.prompt ?? renderHandoffPrompt(pkg, ledger);
+      const started = await startWithContext(
+        {
+          provider: input.provider,
+          repositoryPath: input.repositoryPath,
+          task: ledger.task,
+          recordTask: false,
+          ...toAssembleOptions(input),
+          ...(input.prompt === undefined ? {} : { prompt: input.prompt }),
+          ...(input.args === undefined ? {} : { args: input.args }),
+          ...(input.env === undefined ? {} : { env: input.env }),
+          ...(input.skills === undefined ? {} : { skills: input.skills }),
+          ...(input.skillInstructions === undefined
+            ? {}
+            : { skillInstructions: input.skillInstructions }),
+          ...(input.captureOutput === undefined ? {} : { captureOutput: input.captureOutput }),
+        },
+        skillsBlock === "" ? base : `${skillsBlock}\n\n${base}`,
+      );
+      if (!started.ok) {
+        return started;
+      }
+      const output = sessions.getSessionOutput(started.value.id);
+      await recordSessionOnLedger(ledger, started.value, output?.stdout, { keepProgress: true });
+      return started;
+    },
+
+    listTasks(): Promise<readonly TaskLedgerSummary[]> {
+      return listTaskLedgers(repo());
+    },
+
+    getTask(id: string): Promise<TaskLedger | null> {
+      return loadTaskLedger(repo(), id);
+    },
+
+    getTaskIdForSession(sessionId: string): string | undefined {
+      return sessionTaskIds.get(sessionId);
     },
 
     async attach(input: AttachInput): Promise<Result<Session>> {
@@ -387,7 +604,7 @@ export function createContextIntegration(options: ContextIntegrationOptions): Co
 }
 
 /** Narrow an integration input down to the pure assemble options. */
-function toAssembleOptions(input: BuildPackageInput): AssembleOptions {
+function toAssembleOptions(input: AssembleOptions): AssembleOptions {
   return {
     ...(input.budget !== undefined ? { budget: input.budget } : {}),
     ...(input.searchLimit !== undefined ? { searchLimit: input.searchLimit } : {}),
@@ -402,6 +619,38 @@ function toAssembleOptions(input: BuildPackageInput): AssembleOptions {
     ...(input.taskCategory !== undefined ? { taskCategory: input.taskCategory } : {}),
     ...(input.contextMode !== undefined ? { contextMode: input.contextMode } : {}),
     ...(input.brief !== undefined ? { brief: input.brief } : {}),
+  };
+}
+
+function isActiveStatus(status: Session["status"]): boolean {
+  return status === "STARTING" || status === "RUNNING" || status === "STOPPING";
+}
+
+function sessionRecord(session: Session): TaskSessionRecord {
+  return {
+    sessionId: session.id,
+    provider: session.provider,
+    model: session.model ?? null,
+    status: session.status,
+    startedAt: session.startedAt,
+    endedAt: session.endedAt,
+  };
+}
+
+function syntheticSession(previous: TaskSessionRecord, repositoryPath: string): Session {
+  return {
+    id: previous.sessionId,
+    agentId: previous.provider as Session["agentId"],
+    provider: previous.provider,
+    repositoryPath,
+    status: previous.status as Session["status"],
+    processId: undefined,
+    startedAt: previous.startedAt,
+    endedAt: previous.endedAt,
+    exitCode: undefined,
+    error: undefined,
+    model: previous.model ?? undefined,
+    tokenUsage: undefined,
   };
 }
 

@@ -2,7 +2,11 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { hashContent } from "@prof-bilal/atlas-hashing";
-import { createProjectContainer } from "@prof-bilal/atlas-sdk";
+import {
+  createProjectContainer,
+  createTaskLedgerDocument,
+  saveTaskLedger,
+} from "@prof-bilal/atlas-sdk";
 import { describe, expect, it } from "vitest";
 import { CodeAtlasContext } from "../src/context";
 import { HANDLERS, type HandlerContext } from "../src/handlers";
@@ -1060,5 +1064,82 @@ describe("skill injection for MCP agents", () => {
       ctx.ctx.close();
       fx.cleanup();
     }
+  });
+});
+
+describe("task ledger tools", () => {
+  it("lists and loads a saved task; hostile ids fail closed", async () => {
+    await withEmptyRoot(async (ctx) => {
+      const empty = (await HANDLERS.list_tasks(ctx, {})) as { total: number };
+      expect(empty.total).toBe(0);
+
+      const ledger = createTaskLedgerDocument({
+        task: "fix auth",
+        repositoryPath: ctx.ctx.root,
+      });
+      await saveTaskLedger(ctx.ctx.root, ledger);
+
+      const listed = (await HANDLERS.list_tasks(ctx, {})) as {
+        total: number;
+        tasks: Array<{ id: string }>;
+      };
+      expect(listed.total).toBe(1);
+      expect(listed.tasks[0]?.id).toBe(ledger.id);
+
+      const got = (await HANDLERS.get_task(ctx, { id: ledger.id })) as {
+        found: boolean;
+        handoff: string;
+      };
+      expect(got.found).toBe(true);
+      expect(got.handoff).toContain("# Handoff");
+
+      const continued = (await HANDLERS.continue_task(ctx, { id: ledger.id })) as {
+        found: boolean;
+        prompt: string;
+      };
+      expect(continued.found).toBe(true);
+      expect(continued.prompt).toContain("# Handoff");
+
+      await expect(HANDLERS.get_task(ctx, { id: "../secret" })).rejects.toThrow(ToolInputError);
+      await expect(HANDLERS.continue_task(ctx, { id: "__proto__" })).rejects.toThrow(
+        ToolInputError,
+      );
+    });
+  });
+
+  it("returns found:false for a valid missing id and honors list filter", async () => {
+    await withEmptyRoot(async (ctx) => {
+      const missing = (await HANDLERS.get_task(ctx, { id: "0123456789abcdef" })) as {
+        found: boolean;
+        handoff: string | null;
+      };
+      expect(missing.found).toBe(false);
+      expect(missing.handoff).toBeNull();
+
+      const continued = (await HANDLERS.continue_task(ctx, { id: "0123456789abcdef" })) as {
+        found: boolean;
+        prompt: string | null;
+      };
+      expect(continued.found).toBe(false);
+      expect(continued.prompt).toBeNull();
+
+      const auth = createTaskLedgerDocument({
+        task: "fix authentication",
+        repositoryPath: ctx.ctx.root,
+      });
+      const other = createTaskLedgerDocument({
+        task: "rewrite parser",
+        repositoryPath: ctx.ctx.root,
+      });
+      await saveTaskLedger(ctx.ctx.root, auth);
+      await saveTaskLedger(ctx.ctx.root, other);
+
+      const filtered = (await HANDLERS.list_tasks(ctx, { filter: "auth" })) as {
+        total: number;
+        tasks: Array<{ task: string }>;
+      };
+      expect(filtered.total).toBe(1);
+      expect(filtered.tasks[0]?.task).toContain("authentication");
+    });
   });
 });

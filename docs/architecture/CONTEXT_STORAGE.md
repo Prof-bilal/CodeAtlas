@@ -31,6 +31,8 @@ How CodeAtlas persists project context, and the on-disk `.codeatlas/` layout.
 ├── graph.json          # exported dependency graph (optional)   [PLANNED]
 ├── symbols.json        # exported symbol index (optional)       [PLANNED]
 ├── usage.db            # local AI usage store                   [IMPLEMENTED]
+├── slices/             # saved context slices                   [IMPLEMENTED]
+├── tasks/              # mid-task ledgers (provider handoff)    [IMPLEMENTED]
 └── metadata/           # run logs, migration versions, etc.     [PLANNED]
 ```
 
@@ -48,6 +50,7 @@ How CodeAtlas persists project context, and the on-disk `.codeatlas/` layout.
 | `manifest.json` | `packages/scanner/src/manifest.ts` | Written by `generateManifest(scan)`. Schema versioned; `createdAt` preserved, `updatedAt` refreshed, rest recomputed from the scan. |
 | Versioned hash snapshots | `@prof-bilal/atlas-hashing` (JSON snapshots) | These live wherever the caller chooses (`saveSnapshot(path)`), not yet standardized under `.codeatlas/`. |
 | SQLite context DB | `@prof-bilal/atlas-storage` (`ContextStore`) | Backed by `node:sqlite` (Needs Node ≥22.5.0). `ContextStoreOptions.filePath` selects the file (default `:memory:`); WAL for file-backed stores. Written via `saveContext`/`updateContext`; read by the SDK/CLI/MCP/extension. |
+| Task ledgers (`tasks/`) | `@prof-bilal/atlas-sdk` (`task-ledger.ts`, ADR-025) | Per-task JSON under `.codeatlas/tasks/<id>.json`: session chain, bounded captured output, hash-delta files touched. Untrusted-load (path-safe ids, size bound). Not a session-process database. |
 
 ---
 
@@ -79,10 +82,11 @@ Context storage must be:
 | Change detection / snapshots | `@prof-bilal/atlas-hashing` |
 | Context database (files, symbols, deps, summaries, relationships, hashes, metadata) | `@prof-bilal/atlas-storage` |
 | Graph/symbol JSON exports | `@prof-bilal/atlas-graph` / `@prof-bilal/atlas-parser` (future) |
+| Task ledgers (`tasks/`) | `@prof-bilal/atlas-sdk` (context-integration) |
 
 Persistence **belongs to `storage`** for the context DB; other `.codeatlas/`
 files are owned by the package that defines them (scanner manifest, toolkit
-tool manifests, `@prof-bilal/atlas-usage`'s `usage.db`).
+tool manifests, `@prof-bilal/atlas-usage`'s `usage.db`, SDK task ledgers).
 
 ---
 

@@ -8,11 +8,18 @@ import type {
   SummaryKind,
 } from "@prof-bilal/atlas-sdk";
 import {
+  TaskLedgerValidationError,
+  assembleContextPackage,
   availableSkills,
   createSkillService,
+  detectStaleness,
   evaluateSufficiency,
+  listTaskLedgers,
   loadBuiltinSkill,
+  loadTaskLedger,
   recommendSkillsForTask,
+  renderHandoffPrompt,
+  renderHandoffSection,
   resolveSkillsInstructions,
 } from "@prof-bilal/atlas-sdk";
 import type { CodeAtlasContext } from "./context";
@@ -91,6 +98,9 @@ export const HANDLERS: Readonly<
   list_skills: listSkills,
   get_skill: getSkill,
   analyze_impact: analyzeImpact,
+  list_tasks: listTasks,
+  get_task: getTaskLedger,
+  continue_task: continueTask,
 };
 
 // ── find_relevant_context ───────────────────────────────────────────────────
@@ -927,6 +937,111 @@ async function getSkill(h: HandlerContext, args: ToolArgs): Promise<unknown> {
     problems: [],
     nextSteps: ["Call list_skills to see available skill ids (custom and built-in)."],
   };
+}
+
+// ── list_tasks / get_task / continue_task (ADR-025) ──────────────────────────
+
+async function listTasks(h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const filter = optionalString(args, "filter");
+  const all = await listTaskLedgers(h.ctx.root);
+  const tasks =
+    filter !== undefined && filter !== ""
+      ? all.filter((task) => task.task.toLowerCase().includes(filter.toLowerCase()))
+      : all;
+  return {
+    tasks,
+    total: tasks.length,
+    nextSteps:
+      tasks.length === 0
+        ? ["Launch a task with atlas context launch, then switch with atlas context handoff."]
+        : ["Call get_task or continue_task with an id to load the handoff bundle."],
+  };
+}
+
+async function getTaskLedger(h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const id = requireString(args, "id");
+  try {
+    const ledger = await loadTaskLedger(h.ctx.root, id);
+    if (ledger === null) {
+      return {
+        found: false,
+        id: null,
+        task: null,
+        sessions: null,
+        filesTouched: null,
+        transcriptAvailable: null,
+        handoff: null,
+        nextSteps: ["Call list_tasks to see available task ids."],
+      };
+    }
+    return {
+      found: true,
+      id: ledger.id,
+      task: ledger.task,
+      sessions: ledger.sessions.map((session) => ({
+        sessionId: session.sessionId,
+        provider: session.provider,
+        model: session.model,
+        status: session.status,
+      })),
+      filesTouched: ledger.progress.filesTouched,
+      transcriptAvailable: ledger.progress.transcriptAvailable,
+      handoff: renderHandoffSection(ledger),
+      nextSteps: [
+        "Send the handoff field to the new model, or call continue_task for a full prompt.",
+      ],
+    };
+  } catch (error) {
+    if (error instanceof TaskLedgerValidationError) {
+      throw new ToolInputError(error.message);
+    }
+    throw error;
+  }
+}
+
+async function continueTask(h: HandlerContext, args: ToolArgs): Promise<unknown> {
+  const id = requireString(args, "id");
+  try {
+    const ledger = await loadTaskLedger(h.ctx.root, id);
+    if (ledger === null) {
+      return {
+        found: false,
+        id: null,
+        task: null,
+        prompt: null,
+        nextSteps: ["Call list_tasks to see available task ids."],
+      };
+    }
+    const sdk = h.ctx.open();
+    let prompt: string;
+    if (sdk === null) {
+      prompt = renderHandoffSection(ledger);
+    } else {
+      const staleness = await detectStaleness(sdk);
+      const pkg = assembleContextPackage({
+        context: sdk,
+        repositoryPath: sdk.config.repositoryPath,
+        task: ledger.task,
+        staleness,
+        options: {},
+      });
+      prompt = renderHandoffPrompt(pkg, ledger);
+    }
+    return {
+      found: true,
+      id: ledger.id,
+      task: ledger.task,
+      prompt,
+      nextSteps: [
+        "Give this prompt to the new provider. Do not re-scan the repository; the index is included.",
+      ],
+    };
+  } catch (error) {
+    if (error instanceof TaskLedgerValidationError) {
+      throw new ToolInputError(error.message);
+    }
+    throw error;
+  }
 }
 
 // ── analyze_impact ───────────────────────────────────────────────────────────

@@ -17,7 +17,10 @@ export type ToolName =
   | "read_file_range"
   | "list_skills"
   | "get_skill"
-  | "analyze_impact";
+  | "analyze_impact"
+  | "list_tasks"
+  | "get_task"
+  | "continue_task";
 
 export const TOOL_NAMES: readonly ToolName[] = [
   "find_relevant_context",
@@ -31,6 +34,9 @@ export const TOOL_NAMES: readonly ToolName[] = [
   "list_skills",
   "get_skill",
   "analyze_impact",
+  "list_tasks",
+  "get_task",
+  "continue_task",
 ];
 
 /**
@@ -51,8 +57,8 @@ export function resolveToolName(name: string): ToolName {
 }
 
 /**
- * Every name advertised on `tools/list`: the 8 legacy tools plus the 4
- * canonical aliases. Consumers asserting the protocol surface should compare
+ * Every name advertised on `tools/list`: the canonical tools plus the
+ * legacy aliases. Consumers asserting the protocol surface should compare
  * against this, not `TOOL_NAMES` alone.
  */
 export const PROTOCOL_TOOL_NAMES: readonly string[] = [
@@ -725,6 +731,87 @@ export const TOOLS: readonly ToolDefinition[] = [
         .array(z.string())
         .describe("Validation problems (non-empty when skill exists but is invalid)."),
       nextSteps: z.array(z.string()).describe("Suggested next steps."),
+      freshness: freshnessField,
+      timings: timingsField,
+    },
+  },
+  {
+    name: "list_tasks",
+    title: "List task ledgers",
+    description:
+      "List CodeAtlas mid-task ledgers (`.codeatlas/tasks/`). Use this before get_task or " +
+      "continue_task when switching models/providers so the new agent can continue prior work.",
+    inputSchema: {
+      filter: boundedString("Optional keyword to filter tasks by original task text.").optional(),
+    },
+    outputSchema: {
+      tasks: z
+        .array(
+          z.object({
+            id: z.string().describe("16-hex task id."),
+            task: z.string().describe("Original user task."),
+            createdAt: z.string(),
+            updatedAt: z.string(),
+            sessionCount: z.number(),
+            lastProvider: z.string().nullable(),
+            filesTouched: z.number(),
+            transcriptAvailable: z.boolean(),
+          }),
+        )
+        .describe("Ledgers, newest first."),
+      total: z.number(),
+      nextSteps: z.array(z.string()),
+      freshness: freshnessField,
+      timings: timingsField,
+    },
+  },
+  {
+    name: "get_task",
+    title: "Get task ledger",
+    description:
+      "Load one persisted task ledger by id (progress, sessions, files touched) plus a " +
+      "handoff section the new model should read. Does not spawn an agent. Invalid ids fail.",
+    inputSchema: {
+      id: boundedString("Task id (16 hex characters)."),
+    },
+    outputSchema: {
+      found: z.boolean(),
+      id: z.string().nullable(),
+      task: z.string().nullable(),
+      sessions: z
+        .array(
+          z.object({
+            sessionId: z.string(),
+            provider: z.string(),
+            model: z.string().nullable(),
+            status: z.string(),
+          }),
+        )
+        .nullable(),
+      filesTouched: z.array(z.string()).nullable(),
+      transcriptAvailable: z.boolean().nullable(),
+      handoff: z.string().nullable().describe("Rendered handoff markdown."),
+      nextSteps: z.array(z.string()),
+      freshness: freshnessField,
+      timings: timingsField,
+    },
+  },
+  {
+    name: "continue_task",
+    title: "Continue task (handoff bundle)",
+    description:
+      "Return a provider-independent prompt for continuing a task on a new model: indexed " +
+      "repository context plus the task ledger handoff section. Does not spawn a CLI. " +
+      "The new model still pays its own input tokens for this bundle.",
+    inputSchema: {
+      id: boundedString("Task id (16 hex characters)."),
+    },
+    outputSchema: {
+      found: z.boolean(),
+      id: z.string().nullable(),
+      task: z.string().nullable(),
+      prompt: z.string().nullable().describe("Full handoff prompt to send to the new agent."),
+      nextSteps: z.array(z.string()),
       freshness: freshnessField,
       timings: timingsField,
     },

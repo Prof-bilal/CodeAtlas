@@ -34,3 +34,21 @@ export class ContextSliceError extends ContextPackageError {
 export class ContextSliceValidationError extends ContextSliceError {
   public override readonly name: string = "ContextSliceValidationError";
 }
+
+/** Base class for task-ledger (persistence / handoff) errors. */
+export class TaskLedgerError extends ContextPackageError {
+  public override readonly name: string = "TaskLedgerError";
+}
+
+/** A saved task ledger could not be read as a valid document. */
+export class TaskLedgerValidationError extends TaskLedgerError {
+  public override readonly name: string = "TaskLedgerValidationError";
+}
+
+/** No task ledger exists for the requested id (or session id). */
+export class TaskLedgerNotFoundError extends TaskLedgerError {
+  public override readonly name: string = "TaskLedgerNotFoundError";
+  public constructor(public readonly id: string) {
+    super(`No task ledger found for "${id}".`);
+  }
+}

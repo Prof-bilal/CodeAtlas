@@ -8,7 +8,7 @@ and any MCP-capable client.
 - Package: `@prof-bilal/atlas-mcp` (`packages/mcp`)
 - Protocol: MCP over stdio (JSON-RPC 2.0), via the official
   `@modelcontextprotocol/sdk`
-- Status: **[IMPLEMENTED]** (2026-08-09) — eleven tools
+- Status: **[IMPLEMENTED]** (2026-08-09) — fourteen tools
 
 ## Principles
 
@@ -82,7 +82,7 @@ Every tool call returns one of:
 ## Tool reference
 
 All tools are deterministic reads of the persisted index unless noted. Search
-tools use typo-tolerant fuzzy matching by default. The server exposes **eleven**
+tools use typo-tolerant fuzzy matching by default. The server exposes **fourteen**
 tools plus four **canonical aliases** (Phase 4 compat window):
 `find_relevant_context` ↔ `context_for`, `get_dependencies` ↔
 `dependencies_of`, `project_overview` ↔ `overview`, `read_file_range` ↔
@@ -425,6 +425,20 @@ The same resolution powers `find_relevant_context`'s `skills` argument, so an
 MCP agent can inject skill instructions directly into its context retrieval
 (same precedence, same fail-on-unknown contract as `atlas context launch
 --skill`).
+
+### `list_tasks` / `get_task` / `continue_task`
+
+Mid-task provider handoff (ADR-025). Ledgers live in `.codeatlas/tasks/` and
+outlive in-memory sessions. MCP **never spawns** an AI CLI.
+
+- `list_tasks` — summaries (id, original task, last provider, session count).
+- `get_task <id>` — ledger + rendered handoff markdown. Hostile/invalid ids
+  fail closed (`ToolInputError`); a missing valid id returns `found: false`.
+- `continue_task <id>` — full prompt: indexed `ContextPackage` (when an index
+  exists) plus the handoff section. The new model pays its own input tokens;
+  the tree is not fully re-scanned.
+
+Resource: `codeatlas://task/{id}` (markdown handoff section).
 
 ### `project_overview`
 

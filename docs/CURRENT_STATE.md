@@ -342,8 +342,9 @@ docs/            # (this documentation system)
   provider-independent: dialogue reads are deterministic; AI summary
   generation is opt-in per call (`get_summary ... generate: true`) and fails
   cleanly when no provider is configured.
-- Exposes eleven tools: five task-level (`find_relevant_context`,
-  `inspect_symbol`, `analyze_impact`, `list_skills`, `get_skill`) and six
+- Exposes fourteen tools: five original task-level (`find_relevant_context`,
+  `inspect_symbol`, `analyze_impact`, `list_skills`, `get_skill`), three
+  task-ledger tools (`list_tasks`, `get_task`, `continue_task`, ADR-025), and six
   primitives (`search_symbols`, `search_files`, `get_summary`,
   `get_dependencies`, `project_overview`,
   `read_file_range`). Each has a zod
@@ -369,12 +370,14 @@ docs/            # (this documentation system)
   REMOVED from the server (see `docs/reference/MCP.md` "Removed tools"). Canonical
   aliases
   (`context_for`, `dependencies_of`, `overview`, `read_range`) are registered
-  alongside the 11 canonical tools.
+  alongside the 14 canonical tools. Read-only resources include
+  `codeatlas://overview`, `codeatlas://repo-map`, `codeatlas://symbol/{id}`,
+  `codeatlas://skills/{id}`, and `codeatlas://task/{id}` (handoff markdown).
 - Ships a `codeatlas-mcp` binary (`src/bin.ts`) **and** the `atlas mcp` CLI
   command, plus a library API (`createMcpServer` / `startStdioServer`). The
   Context SDK opens lazily, so the server can start before an index exists.
   Logs go to stderr only.
-- **Known scope:** resources/prompts are not yet exposed (tools only).
+- **Known scope:** MCP prompts remain planned; resources and tools are shipped.
 - See `docs/reference/MCP.md` for the full tool reference.
 
 ### ChatGPT / Codex Plugin (`apps/chatgpt-plugin`) — **[IMPLEMENTED]**
@@ -507,9 +510,14 @@ docs/            # (this documentation system)
   `--ai` appends a provider-backed AI context briefing (success: briefing
   section in text / full `ContextBriefing` in JSON; failure: degrades to the
   deterministic package with `aiMessage` and still exits 0), and
-  `launch`/`attach` deliver through the existing `SessionPort` (`--ai`
+  `launch`/`attach`/`handoff` deliver through the existing `SessionPort` (`--ai`
   prepends the briefing to the session prompt; a failed briefing still
-  launches). Budget, instruction, overview, and repository/provider flags are
+  launches). **Task ledger (ADR-025):** `launch` persists `.codeatlas/tasks/<id>.json`
+  (session chain, bounded captured output, hash-delta files touched);
+  `atlas context handoff <id> --provider <id>` starts a **new** session on
+  another adapter with indexed context plus a handoff section (sessions stay
+  provider-immutable). `atlas context tasks` / `task <id>` inspect ledgers.
+  Budget, instruction, overview, and repository/provider flags are
   forwarded to the SDK. **Slice delivery is also wired**: `atlas ask <question>`
   and `atlas context export <task> --for <agent>` build a budgeted
   `ContextSlice` (auto-refreshing stale indexes) and persist/export it, with

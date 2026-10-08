@@ -52,3 +52,6 @@ apps/cli/tests/tui.test.ts
 .freebuff/
 opencode.json
 .commandcode/
+
+# ContextGit worktrees and repository
+.contextgit/

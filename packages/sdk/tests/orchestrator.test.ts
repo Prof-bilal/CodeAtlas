@@ -230,6 +230,18 @@ function createFakeIntegration(): FakeIntegration {
     getSessionOutput() {
       return undefined;
     },
+    async handoff() {
+      return fail(new Error("unused in orchestrator tests"));
+    },
+    async listTasks() {
+      return [];
+    },
+    async getTask() {
+      return null;
+    },
+    getTaskIdForSession() {
+      return undefined;
+    },
   };
   return { port, buildInputs };
 }

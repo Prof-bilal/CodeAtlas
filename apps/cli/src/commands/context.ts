@@ -11,16 +11,21 @@ import {
   type Session,
   type SkillRecommendation,
   type TaskClassification,
+  type TaskLedger,
+  type TaskLedgerSummary,
   createClassifier,
   createContextIntegration,
   createContextSDK,
   createPlanner,
   createSessionManager,
+  listTaskLedgers,
+  loadTaskLedger,
   recommendSkillsForTask,
   renderContextBriefing,
   renderContextExplanation,
   renderContextPackage,
   renderContextSlice,
+  renderHandoffSection,
   resolveSkillsInstructions,
   saveContextSlice,
 } from "@prof-bilal/atlas-sdk";
@@ -148,6 +153,47 @@ export function registerContext(program: Command, options: ContextCommandOptions
     )
     .action(async (task: string, commandOptions: LaunchOptions) =>
       runLaunch(task, commandOptions, options.integration),
+    );
+
+  context
+    .command("handoff <id>")
+    .description("Continue a task on a new provider with prior-model progress plus indexed context")
+    .requiredOption("--provider <id>", "AI agent provider id for the new session")
+    .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
+    .option("--json", "print the launched session as JSON")
+    .option("--context-mode <mode>", parseContextModeHelp(), parseContextMode)
+    .option("--max-tokens-total <number>", "maximum estimated tokens", parsePositiveInteger)
+    .option("--include-instructions", "include project instruction files")
+    .option("--no-instructions", "exclude project instruction files")
+    .option("--include-overview", "include the project overview")
+    .option("--no-overview", "exclude the project overview")
+    .option(
+      "--skill <id>",
+      "inject a reusable Skill as prompt instructions (custom first, then built-ins); repeatable",
+      collectOption,
+      [],
+    )
+    .action(async (id: string, commandOptions: LaunchOptions) =>
+      runHandoff(id, commandOptions, options.integration),
+    );
+
+  context
+    .command("tasks")
+    .description("List persisted mid-task ledgers (provider-switch history)")
+    .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
+    .option("--json", "print the task list as JSON")
+    .action(async (commandOptions: { readonly json?: boolean; readonly repo?: string }) =>
+      runTasks(commandOptions, options.integration),
+    );
+
+  context
+    .command("task <id>")
+    .description("Show one task ledger (progress, sessions, files touched)")
+    .option("--repo <path>", "repository path (defaults to ATLAS_ROOT or cwd)")
+    .option("--json", "print the ledger as JSON")
+    .action(
+      async (id: string, commandOptions: { readonly json?: boolean; readonly repo?: string }) =>
+        runTaskInfo(id, commandOptions, options.integration),
     );
 
   context
@@ -336,6 +382,7 @@ async function runLaunch(
           task,
           provider: options.provider,
           repositoryPath: root,
+          captureOutput: true,
           ...assembleOptions(options),
           ...(prompt === undefined ? {} : { prompt }),
           ...(skillInstructions === "" ? {} : { skillInstructions }),
@@ -344,12 +391,15 @@ async function runLaunch(
           reportContextError(result.error);
           return;
         }
-        emit(result.value, options.json === true, renderSession);
+        const taskId = integration.getTaskIdForSession(result.value.id);
+        emit({ ...result.value, taskId }, options.json === true, () =>
+          renderSession(result.value, taskId),
+        );
         const output = integration.getSessionOutput(result.value.id);
         if (output?.stdout) {
           console.log(output.stdout);
         }
-        await recordSessionUsage(root, result.value);
+        await recordSessionUsage(root, result.value, taskId);
       } catch (error) {
         reportContextError(error);
       }
@@ -393,7 +443,7 @@ async function runAttach(
         reportContextError(result.error);
         return;
       }
-      emit(result.value, options.json === true, renderSession);
+      emit(result.value, options.json === true, (session) => renderSession(session));
       const output = integration.getSessionOutput(result.value.id);
       if (output?.stdout) {
         console.log(output.stdout);
@@ -402,6 +452,85 @@ async function runAttach(
       reportContextError(error);
     }
   });
+}
+
+async function runHandoff(
+  id: string,
+  options: LaunchOptions,
+  injected?: ContextIntegration,
+): Promise<void> {
+  await withIntegration(
+    injected,
+    async (integration) => {
+      try {
+        const root = options.repo ?? resolveProjectRoot();
+        const skillInstructions = resolveRequestedSkills(options.skill, root);
+        if (skillInstructions === null) {
+          process.exitCode = 1;
+          return;
+        }
+        const result = await integration.handoff({
+          provider: options.provider,
+          repositoryPath: root,
+          taskId: id,
+          fromSessionId: id,
+          captureOutput: true,
+          ...assembleOptions(options),
+          ...(skillInstructions === "" ? {} : { skillInstructions }),
+        });
+        if (!result.ok) {
+          reportContextError(result.error);
+          return;
+        }
+        const taskId = integration.getTaskIdForSession(result.value.id);
+        emit({ ...result.value, taskId }, options.json === true, () =>
+          renderSession(result.value, taskId),
+        );
+        const output = integration.getSessionOutput(result.value.id);
+        if (output?.stdout) {
+          console.log(output.stdout);
+        }
+        await recordSessionUsage(root, result.value, taskId);
+      } catch (error) {
+        reportContextError(error);
+      }
+    },
+    options.repo,
+  );
+}
+
+async function runTasks(
+  options: { readonly json?: boolean; readonly repo?: string },
+  injected?: ContextIntegration,
+): Promise<void> {
+  const root = options.repo ?? resolveProjectRoot();
+  try {
+    const listed =
+      injected !== undefined ? await injected.listTasks() : await listTaskLedgers(root);
+    emit(listed, options.json === true, renderTaskList);
+  } catch (error) {
+    reportContextError(error);
+  }
+}
+
+async function runTaskInfo(
+  id: string,
+  options: { readonly json?: boolean; readonly repo?: string },
+  injected?: ContextIntegration,
+): Promise<void> {
+  const root = options.repo ?? resolveProjectRoot();
+  try {
+    const ledger =
+      injected !== undefined ? await injected.getTask(id) : await loadTaskLedger(root, id);
+    if (ledger === null) {
+      console.error(`No task ledger found for "${id}".`);
+      process.exitCode = 1;
+      return;
+    }
+    emit(ledger, options.json === true, renderTaskLedger);
+  } catch (error) {
+    reportContextError(error);
+  }
 }
 
 /**
@@ -620,7 +749,7 @@ export async function withIntegration(
  * `source: "provider"` event is recorded with the exact counts. Otherwise a
  * `source: "session"` event is recorded. Never fails the launch.
  */
-function recordSessionUsage(root: string, session: Session): Promise<void> {
+function recordSessionUsage(root: string, session: Session, taskId?: string): Promise<void> {
   return (async () => {
     try {
       const usage = openUsage(root);
@@ -632,6 +761,7 @@ function recordSessionUsage(root: string, session: Session): Promise<void> {
             model: session.model ?? "unknown",
             agent: session.provider,
             sessionId: session.id,
+            ...(taskId === undefined ? {} : { taskId }),
             requestCount: 1,
             latencyMs: 0,
             inputTokens: session.tokenUsage.inputTokens,
@@ -644,6 +774,7 @@ function recordSessionUsage(root: string, session: Session): Promise<void> {
             provider: session.provider,
             agent: session.provider,
             sessionId: session.id,
+            ...(taskId === undefined ? {} : { taskId }),
             requestCount: 1,
           });
         }
@@ -720,8 +851,28 @@ function renderSkillRecommendations(recommendations: readonly SkillRecommendatio
 function renderContextAIOutcome(outcome: ContextAIOutcome): string {
   return `${renderContextPackage(outcome.package)}\n\nAI briefing unavailable: ${outcome.aiMessage}`;
 }
-function renderSession(session: Session): string {
-  return `Session ${session.id} started (${session.provider}, ${session.status})`;
+function renderSession(session: Session, taskId?: string): string {
+  const line = `Session ${session.id} started (${session.provider}, ${session.status})`;
+  if (taskId === undefined) {
+    return line;
+  }
+  return `${line}\nTask ${taskId} (switch provider with: atlas context handoff ${taskId} --provider <id>)`;
+}
+
+function renderTaskList(tasks: readonly TaskLedgerSummary[]): string {
+  if (tasks.length === 0) {
+    return "No task ledgers in .codeatlas/tasks/.";
+  }
+  return tasks
+    .map((task) => {
+      const provider = task.lastProvider ?? "none";
+      return `${task.id}  ${provider}  sessions=${task.sessionCount}  ${task.task}`;
+    })
+    .join("\n");
+}
+
+function renderTaskLedger(ledger: TaskLedger): string {
+  return renderHandoffSection(ledger);
 }
 function reportContextError(error: unknown): void {
   console.error(error instanceof Error ? error.message : "Context command failed.");

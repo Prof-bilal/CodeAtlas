@@ -8,12 +8,15 @@ describe("tool registry", () => {
     expect(names).toEqual([...TOOL_NAMES].sort());
     expect(names).toEqual([
       "analyze_impact",
+      "continue_task",
       "find_relevant_context",
       "get_dependencies",
       "get_skill",
       "get_summary",
+      "get_task",
       "inspect_symbol",
       "list_skills",
+      "list_tasks",
       "project_overview",
       "read_file_range",
       "search_files",
@@ -21,22 +24,25 @@ describe("tool registry", () => {
     ]);
   });
 
-  it("has the expected tool count (Phase 6 + capability wave)", () => {
-    // Original 8 core tools + 3 capability tools (list_skills, get_skill, analyze_impact)
-    expect(TOOLS.length).toBe(11);
+  it("has the expected tool count (Phase 6 + capability wave + task ledger)", () => {
+    // Original 8 core tools + 3 capability tools + 3 task-ledger tools
+    expect(TOOLS.length).toBe(14);
   });
 
-  it("advertises the 11 canonical tools plus 4 legacy aliases", () => {
+  it("advertises the 14 canonical tools plus 4 legacy aliases", () => {
     expect(PROTOCOL_TOOL_NAMES).toEqual([
       "analyze_impact",
       "context_for",
+      "continue_task",
       "dependencies_of",
       "find_relevant_context",
       "get_dependencies",
       "get_skill",
       "get_summary",
+      "get_task",
       "inspect_symbol",
       "list_skills",
+      "list_tasks",
       "overview",
       "project_overview",
       "read_file_range",

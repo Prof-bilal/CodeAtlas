@@ -1,5 +1,6 @@
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { loadTaskLedger, renderHandoffSection } from "@prof-bilal/atlas-sdk";
 import type { CodeAtlasContext } from "./context";
 import { executeHandler } from "./handler-utils";
 import { HANDLERS, type HandlerContext } from "./handlers";
@@ -79,5 +80,31 @@ export function registerResources(
     },
     async (uri, variables) =>
       jsonContents(uri, await read("get_skill", { id: String(variables["id"] ?? "") })),
+  );
+
+  server.registerResource(
+    "CodeAtlas task ledger",
+    new ResourceTemplate("codeatlas://task/{id}", { list: undefined }),
+    {
+      mimeType: "text/markdown",
+      description:
+        "Prior-model progress for a CodeAtlas task (handoff markdown). Use when switching providers mid-task.",
+    },
+    async (uri, variables) => {
+      const id = String(variables["id"] ?? "");
+      const ledger = await loadTaskLedger(context.root, id);
+      if (ledger === null) {
+        throw new Error(`No task ledger found for "${id}".`);
+      }
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "text/markdown",
+            text: renderHandoffSection(ledger),
+          },
+        ],
+      };
+    },
   );
 }

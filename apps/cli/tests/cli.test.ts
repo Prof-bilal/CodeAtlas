@@ -247,6 +247,13 @@ function fakeContextIntegration(overrides: Partial<ContextIntegration> = {}): Co
       error: new Error("brief not configured for this fake"),
     })),
     getSessionOutput: vi.fn(() => undefined),
+    handoff: vi.fn(async () => ({
+      ok: true as const,
+      value: session({ id: "s2", provider: "codex", status: "RUNNING" }),
+    })),
+    listTasks: vi.fn(async () => []),
+    getTask: vi.fn(async () => null),
+    getTaskIdForSession: vi.fn(() => "0123456789abcdef"),
     ...overrides,
   };
 }
@@ -764,7 +771,7 @@ describe("atlas CLI", () => {
         expect.objectContaining({ task: "fix auth" }),
       );
       expect(integration.launch).toHaveBeenCalledWith(
-        expect.objectContaining({ task: "fix auth", provider: "claude" }),
+        expect.objectContaining({ task: "fix auth", provider: "claude", captureOutput: true }),
       );
       expect(integration.attach).toHaveBeenCalledWith(
         expect.objectContaining({ task: "fix auth", sessionId: "s1" }),
@@ -772,6 +779,93 @@ describe("atlas CLI", () => {
       expect(log.mock.calls.join(" ")).toContain("fresh");
     } finally {
       log.mockRestore();
+    }
+  });
+
+  it("delegates context handoff and tasks through the SDK integration", async () => {
+    const integration = fakeContextIntegration();
+    const program = createCli({ integration });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "handoff",
+        "0123456789abcdef",
+        "--provider",
+        "codex",
+        "--json",
+      ]);
+      expect(integration.handoff).toHaveBeenCalledWith(
+        expect.objectContaining({
+          provider: "codex",
+          taskId: "0123456789abcdef",
+          fromSessionId: "0123456789abcdef",
+          captureOutput: true,
+        }),
+      );
+      expect(integration.launch).not.toHaveBeenCalled();
+      await program.parseAsync(["node", "atlas", "context", "tasks", "--json"]);
+      expect(integration.listTasks).toHaveBeenCalled();
+      expect(log.mock.calls.join(" ")).toContain("s2");
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("prints the task id after launch and fails closed on a missing task inspect", async () => {
+    const integration = fakeContextIntegration();
+    const program = createCli({ integration });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "launch",
+        "fix auth",
+        "--provider",
+        "claude",
+      ]);
+      expect(log.mock.calls.join(" ")).toContain("Task 0123456789abcdef");
+
+      await program.parseAsync(["node", "atlas", "context", "task", "0123456789abcdef"]);
+      expect(integration.getTask).toHaveBeenCalledWith("0123456789abcdef");
+      expect(err.mock.calls.join(" ")).toContain("No task ledger found");
+      expect(process.exitCode).toBe(1);
+    } finally {
+      process.exitCode = 0;
+      log.mockRestore();
+      err.mockRestore();
+    }
+  });
+
+  it("reports a failed handoff without launching a new provider", async () => {
+    const integration = fakeContextIntegration({
+      handoff: vi.fn(async () => ({
+        ok: false as const,
+        error: new Error('No task ledger found for "deadbeefdeadbeef".'),
+      })),
+    });
+    const program = createCli({ integration });
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await program.parseAsync([
+        "node",
+        "atlas",
+        "context",
+        "handoff",
+        "deadbeefdeadbeef",
+        "--provider",
+        "codex",
+      ]);
+      expect(err.mock.calls.join(" ")).toContain("No task ledger found");
+      expect(process.exitCode).toBe(1);
+    } finally {
+      process.exitCode = 0;
+      err.mockRestore();
     }
   });
 

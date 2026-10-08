@@ -798,6 +798,157 @@ describe("createContextIntegration — brief (AI)", () => {
   });
 });
 
+describe("createContextIntegration — task ledger handoff", () => {
+  it("records a task on launch and hands off to a new provider with prior output", async () => {
+    const repo = tempRepo();
+    const sessions = fakeSessions();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: sessions.port });
+      const launched = await integration.launch({
+        provider: "claude",
+        repositoryPath: repo,
+        task: "double",
+      });
+      expect(launched.ok).toBe(true);
+      if (!launched.ok) {
+        return;
+      }
+      const taskId = integration.getTaskIdForSession(launched.value.id);
+      expect(taskId).toMatch(/^[0-9a-f]{16}$/);
+      const tasks = await integration.listTasks();
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0]?.id).toBe(taskId);
+
+      expect(taskId).toBeDefined();
+      const handed = await integration.handoff({
+        provider: "codex",
+        repositoryPath: repo,
+        ...(taskId === undefined ? {} : { taskId }),
+      });
+      expect(handed.ok).toBe(true);
+      if (!handed.ok) {
+        return;
+      }
+      expect(handed.value.id).not.toBe(launched.value.id);
+      expect(handed.value.provider).toBe("codex");
+      expect(sessions.port.getSession(launched.value.id)?.status).toBe("STOPPED");
+      const prompt = sessions.launchPrompts[1] ?? "";
+      expect(prompt).toContain("# Handoff");
+      expect(prompt).toContain("Prior providers: claude");
+      expect(prompt).toContain(`captured output of ${launched.value.id}`);
+      expect(prompt).toContain("export function double");
+    });
+  });
+
+  it("fails closed when the task id is unknown", async () => {
+    const repo = tempRepo();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: fakeSessions().port });
+      const result = await integration.handoff({
+        provider: "codex",
+        repositoryPath: repo,
+        taskId: "0123456789abcdef",
+      });
+      expect(result.ok).toBe(false);
+    });
+  });
+
+  it("fails closed when neither taskId nor fromSessionId is given", async () => {
+    const repo = tempRepo();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: fakeSessions().port });
+      const result = await integration.handoff({
+        provider: "codex",
+        repositoryPath: repo,
+      });
+      expect(result.ok).toBe(false);
+    });
+  });
+
+  it("does not write a ledger when recordTask is false", async () => {
+    const repo = tempRepo();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: fakeSessions().port });
+      const launched = await integration.launch({
+        provider: "claude",
+        repositoryPath: repo,
+        task: "double",
+        recordTask: false,
+      });
+      expect(launched.ok).toBe(true);
+      expect(integration.getTaskIdForSession(launched.ok ? launched.value.id : "")).toBeUndefined();
+      expect(await integration.listTasks()).toEqual([]);
+    });
+  });
+
+  it("hands off by session id and keeps prior captured output on the ledger", async () => {
+    const repo = tempRepo();
+    const sessions = fakeSessions();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: sessions.port });
+      const launched = await integration.launch({
+        provider: "claude",
+        repositoryPath: repo,
+        task: "double",
+      });
+      expect(launched.ok).toBe(true);
+      if (!launched.ok) {
+        return;
+      }
+      const handed = await integration.handoff({
+        provider: "opencode",
+        repositoryPath: repo,
+        fromSessionId: launched.value.id,
+      });
+      expect(handed.ok).toBe(true);
+      if (!handed.ok) {
+        return;
+      }
+      expect(handed.value.provider).toBe("opencode");
+      expect(handed.value.id).not.toBe(launched.value.id);
+      const taskId = integration.getTaskIdForSession(handed.value.id);
+      expect(taskId).toBeDefined();
+      const ledger = taskId === undefined ? null : await integration.getTask(taskId);
+      expect(ledger?.progress.lastOutput).toContain(`captured output of ${launched.value.id}`);
+      expect(ledger?.sessions.map((row) => row.provider)).toEqual(["claude", "opencode"]);
+      const prompt = sessions.launchPrompts[1] ?? "";
+      expect(prompt).toContain("Prior providers: claude");
+      expect(prompt).toContain(`captured output of ${launched.value.id}`);
+    });
+  });
+
+  it("appends a second launch onto an existing taskId", async () => {
+    const repo = tempRepo();
+    await withSdk(repo, standardData(), async (sdk) => {
+      const integration = createContextIntegration({ context: sdk, sessions: fakeSessions().port });
+      const first = await integration.launch({
+        provider: "claude",
+        repositoryPath: repo,
+        task: "double",
+      });
+      expect(first.ok).toBe(true);
+      if (!first.ok) {
+        return;
+      }
+      const taskId = integration.getTaskIdForSession(first.value.id);
+      expect(taskId).toBeDefined();
+      if (taskId === undefined) {
+        return;
+      }
+      const second = await integration.launch({
+        provider: "gemini",
+        repositoryPath: repo,
+        task: "double",
+        taskId,
+      });
+      expect(second.ok).toBe(true);
+      const ledger = await integration.getTask(taskId);
+      expect(ledger?.sessions).toHaveLength(2);
+      expect(ledger?.sessions[1]?.provider).toBe("gemini");
+    });
+  });
+});
+
 /** An in-memory SessionPort fake that records how sessions were launched. */
 function fakeSessions(options: { running?: boolean } = {}): {
   port: SessionPort;
@@ -805,6 +956,7 @@ function fakeSessions(options: { running?: boolean } = {}): {
 } {
   const sessions: Session[] = [];
   const launchPrompts: string[] = [];
+  const outputs = new Map<string, { stdout: string; stderr: string }>();
   let nextId = 1;
 
   const port: SessionPort = {
@@ -841,6 +993,9 @@ function fakeSessions(options: { running?: boolean } = {}): {
         processId: 1,
       };
       sessions[sessions.indexOf(session)] = started;
+      if (launch?.captureOutput === true) {
+        outputs.set(id, { stdout: `captured output of ${id}`, stderr: "" });
+      }
       return ok(started);
     },
     getSession: (id) => sessions.find((s) => s.id === id),
@@ -849,12 +1004,25 @@ function fakeSessions(options: { running?: boolean } = {}): {
       sessions.filter(
         (s) => s.status === "STARTING" || s.status === "RUNNING" || s.status === "STOPPING",
       ),
-    stopSession: async (id) => ({ ok: false, error: new SessionStateError(id, "not running") }),
+    stopSession: async (id) => {
+      const session = sessions.find((s) => s.id === id);
+      if (session === undefined || session.status !== "RUNNING") {
+        return { ok: false, error: new SessionStateError(id, "not running") };
+      }
+      const stopped: Session = {
+        ...session,
+        status: "STOPPED",
+        endedAt: Date.now(),
+        processId: undefined,
+      };
+      sessions[sessions.indexOf(session)] = stopped;
+      return ok(stopped);
+    },
     terminateSession: async (id) => ({
       ok: false,
       error: new SessionStateError(id, "not running"),
     }),
-    getSessionOutput: () => undefined,
+    getSessionOutput: (id) => outputs.get(id),
     shutdown: async () => {},
   };
 

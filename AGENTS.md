@@ -147,7 +147,8 @@ Non-obvious facts (verified as of 2026-08-14):
   `docs/HARDENING_MULTILANG_ROADMAP_2026-10-04.md` status header.
 - `atlas watch` incrementally re-indexes on file changes (`createWatcher` in the
   SDK, chokidar-backed). MCP exposes read-only **resources** (`codeatlas://overview`,
-  `codeatlas://repo-map`, `codeatlas://symbol/{id}`, `codeatlas://skills/{id}`)
+  `codeatlas://repo-map`, `codeatlas://symbol/{id}`, `codeatlas://skills/{id}`,
+  `codeatlas://task/{id}`)
   in addition to tools. Symbol importance is a deterministic PageRank pass
   (`computePageRank`) persisted for the repo map.
 - Storage uses `node:sqlite` (needs Node `>=22.5.0`); **all** packages and the
@@ -299,3 +300,13 @@ secrets.
 - Development setup: `docs/contributing/DEVELOPMENT.md`. Contributing: `docs/contributing/CONTRIBUTING.md`.
 - Implemented analysis agents: `docs/architecture/AGENT_CATALOG.md`.
 - Agent Toolkit design/current state: `docs/architecture/AGENT_TOOLKIT.md`.
+
+<!-- contextgit:begin -->
+## Parallel runs (managed by ContextGit)
+
+Each run works in its own git worktree. Stay inside the files you own;
+if you must touch a file owned by another run, say so before editing.
+
+- check [claude] - (no scope claimed)
+- check [claude] - (no scope claimed)
+<!-- contextgit:end -->
