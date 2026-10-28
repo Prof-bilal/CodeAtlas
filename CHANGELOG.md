@@ -21,6 +21,18 @@ npm versions.
 - Release packaging repairs: CommonJS module URLs, package-local tree-sitter
   WASM resolution, canonical Skills in bundled consumers and real version metadata.
 - Host command approvals are snapshotted before asynchronous work.
+- **Goal-satisfaction layer (`[EXPERIMENTAL]`, opt-in):** optional goal
+  contracts with explicit draft adoption/dismissal, deterministic coverage and
+  blindspots, four-state goal status (`SATISFIED`, `PARTIALLY_SATISFIED`,
+  `UNSATISFIED`, `UNDETERMINED`), intent debt, structural drift/spec conflicts
+  and conservative differential, goal receipts, export v2, and
+  `atlas prove goals|adopt|coverage` with `--require-goal`. The existing seven
+  MCP tools gain goal inputs/projections; no new tool, package, store or
+  top-level command is added. Test status, proof status and goal status remain
+  separate, and a passing test never implies goal satisfaction. The offline
+  27-case benchmark reports FGSR 0, FUR 0 and gap recall 1; it is not
+  live-agent or general-correctness evidence. See
+  `docs/proof-system/14-goal-satisfaction.md`.
 - Correct minimum Node version to 22.13.0: the previously advertised 22.5.0
   requires an experimental SQLite flag and cannot start the unflagged CLI.
 - Preserve nested context/usage transactions on runtimes that lack SQLite's

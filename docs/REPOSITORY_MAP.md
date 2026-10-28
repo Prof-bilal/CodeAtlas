@@ -39,9 +39,12 @@ the job, extend it instead.
 
 Proof contracts/ports live in core; deterministic rules in `packages/proof`;
 SQLite persistence in `packages/storage/src/proof-store.ts` (separate `proof.db`);
-composition in `packages/sdk/src/proof`. CLI/MCP consume only the SDK. The existing
+composition in `packages/sdk/src/proof`. Goal contracts/ports also live in core,
+with adoption/evaluation/differential in `packages/proof`; the layer adds no
+separate store. CLI/MCP consume only the SDK. The existing
 context database and symbol graph retain repository-intelligence ownership.
-See [proof-system/README.md](proof-system/README.md).
+See [proof-system/README.md](proof-system/README.md) and
+[goal satisfaction release evidence](proof-system/14-goal-satisfaction.md).
 
 ### A Skill
 

@@ -4,8 +4,17 @@ import { lstat, mkdir, readFile, realpath } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { promisify } from "node:util";
 import type {
+  AdoptGoalInput,
+  BehavioralDifferential,
+  GoalContractDraft,
+  GoalCoverageGraph,
+  GoalDismissal,
+  GoalPort,
+  GoalSatisfactionReceipt,
+  GoalSatisfactionReport,
   HttpProbeTarget,
   InspectPort,
+  PortableChangeState,
   ProofHistoryEntry,
   ProofLevel,
   ProofPort,
@@ -19,7 +28,15 @@ import type {
   VerifyCommandConfig,
 } from "@prof-bilal/atlas-core";
 import { buildSnapshot } from "@prof-bilal/atlas-hashing";
-import { createProofEngine, projectProofGraph, proposeObligations } from "@prof-bilal/atlas-proof";
+import {
+  behavioralDifferential,
+  createProofEngine,
+  evaluateGoalSatisfaction,
+  projectGoalCoverage,
+  projectProofGraph,
+  proposeGoalDraft,
+  proposeObligations,
+} from "@prof-bilal/atlas-proof";
 import type { FilePath } from "@prof-bilal/atlas-shared";
 import { ProofStore } from "@prof-bilal/atlas-storage";
 import { withUsageTracking } from "@prof-bilal/atlas-usage";
@@ -66,7 +83,7 @@ export interface ProofSDKOptions {
     readonly probes: Readonly<Record<string, ApprovedRuntimeProof>>;
   };
 }
-export interface ProofSDK extends ProofPort {
+export interface ProofSDK extends ProofPort, GoalPort {
   /** Agent-reported misses affect investigation ranking only, after repeated observations. */
   recordAgentMiss(changeId: string, paths: readonly string[], reason: string): Promise<void>;
   history(
@@ -83,7 +100,18 @@ export interface ProofSDK extends ProofPort {
     changeId: string,
     approval: { approved: boolean; maxTokens?: number },
   ): Promise<readonly ProofProposal[]>;
+  proposeGoal(
+    changeId: string,
+    approval: { approved: boolean; maxTokens?: number },
+  ): Promise<GoalContractDraft>;
+  adoptGoal(changeId: string, input: AdoptGoalInput): Promise<ProofReport>;
+  dismissGoal(changeId: string, decisions: readonly GoalDismissal[]): Promise<ProofReport>;
+  goal(changeId: string): Promise<GoalSatisfactionReport>;
+  differential(changeId: string): Promise<BehavioralDifferential>;
   graph(changeId: string): Promise<TemporalProofGraph>;
+  goalGraph(changeId: string): Promise<GoalCoverageGraph>;
+  prove(changeId: string): Promise<GoalSatisfactionReceipt>;
+  exportState(changeId: string): Promise<PortableChangeState>;
 }
 const runFile = promisify(execFile);
 const digest = (value: unknown): string =>
@@ -513,8 +541,48 @@ export async function createProofSDK(initialOptions: ProofSDKOptions): Promise<P
             level: 1,
             detail: "Deterministic artifact existence check; no behavioral guarantee.",
           };
+        if (action.kind === "symbol-exists") {
+          const tsFamily = targets.some((artifact) => /\.[cm]?[jt]sx?$/i.test(artifact.path));
+          if (!tsFamily)
+            return {
+              result: "unknown",
+              level: 0,
+              detail: "Symbol predicates are limited to observed TS-family artifacts.",
+            };
+          const context = createContextSDK({ repositoryPath: root });
+          try {
+            const matches = context.symbols.listSymbols().filter((symbol) => {
+              if (symbol.name !== action.target) return false;
+              const file = symbol.filePath.replaceAll("\\", "/");
+              return targets.some(
+                (artifact) =>
+                  file === artifact.path ||
+                  file.endsWith(`/${artifact.path}`) ||
+                  artifact.path.endsWith(`/${file}`),
+              );
+            });
+            return {
+              result: matches.length ? "pass" : "fail",
+              level: 1,
+              detail: matches.length
+                ? "Symbol declaration found in the indexed TS-family graph; references may still be dynamic."
+                : "No matching symbol declaration in the indexed TS-family graph; dynamic construction remains unknown.",
+              investigatedPaths: targets.map((artifact) => artifact.path),
+            };
+          } catch {
+            return {
+              result: "unknown",
+              level: 0,
+              detail: "The indexed symbol graph is unavailable for this predicate.",
+            };
+          } finally {
+            context.close();
+          }
+        }
         if (targets.length === 0)
           return { result: "unknown", level: 0, detail: "No observable files in search scope." };
+        if (!["text-absent", "text-present"].includes(action.kind))
+          return { result: "unknown", level: 0, detail: "Unsupported read-only predicate." };
         const investigated: string[] = [];
         for (const artifact of targets) {
           const absolute = join(root, artifact.path);
@@ -522,7 +590,7 @@ export async function createProofSDK(initialOptions: ProofSDKOptions): Promise<P
             return {
               result: "unknown",
               level: 0,
-              detail: "Redirected file cannot establish absence.",
+              detail: "Redirected file cannot establish a literal predicate.",
             };
           const info = await lstat(absolute);
           if (!info.isFile() || info.size > 2 * 1024 * 1024)
@@ -535,7 +603,14 @@ export async function createProofSDK(initialOptions: ProofSDKOptions): Promise<P
               detail: "Binary or denied content prevents a complete search.",
             };
           investigated.push(artifact.path);
-          if (content.includes(action.target))
+          if (action.kind === "text-present" && content.includes(action.target))
+            return {
+              result: "pass",
+              level: 1,
+              detail: `Literal matched in ${artifact.path}; this is a structural presence check.`,
+              investigatedPaths: investigated,
+            };
+          if (action.kind === "text-absent" && content.includes(action.target))
             return {
               result: "fail",
               level: 1,
@@ -543,6 +618,14 @@ export async function createProofSDK(initialOptions: ProofSDKOptions): Promise<P
               investigatedPaths: investigated,
             };
         }
+        if (action.kind === "text-present")
+          return {
+            result: "fail",
+            level: 1,
+            detail:
+              "Literal text was not found in observable scoped files; dynamic construction remains unknown.",
+            investigatedPaths: investigated,
+          };
         return {
           result: "pass",
           level: 1 as ProofLevel,
@@ -562,6 +645,31 @@ export async function createProofSDK(initialOptions: ProofSDKOptions): Promise<P
         ? { ...p, action: { ...p.action, paths: ["."] } }
         : p;
     });
+  const assertProposalAccess = (approval: {
+    approved: boolean;
+    maxTokens?: number;
+  }): { provider: ProviderPort; usage: UsagePort; maxTokens: number } => {
+    const provider = options.proposalProvider;
+    const usage = options.proposalUsage;
+    if (!approval.approved || !provider || !usage)
+      throw new Error(
+        "Model proposals require explicit approval, ProviderPort and usage tracking.",
+      );
+    const maxTokens = approval.maxTokens ?? 4000;
+    if (!Number.isSafeInteger(maxTokens) || maxTokens < 512 || maxTokens > 12000)
+      throw new Error("Invalid proposal token budget.");
+    for (const scope of [
+      { kind: "agent" as const, value: "atlas-proof" },
+      ...usage
+        .listLimits()
+        .filter((l) => l.scope.kind === "user")
+        .map((l) => l.scope),
+    ]) {
+      const limit = usage.checkLimit(scope);
+      if (!limit.ok || !limit.value.allowed) throw new Error("Proof proposal usage limit denied.");
+    }
+    return { provider, usage, maxTokens };
+  };
   const api: ProofSDK = {
     ...engine,
     begin: (input) =>
@@ -623,29 +731,23 @@ export async function createProofSDK(initialOptions: ProofSDKOptions): Promise<P
         return store.history(id, afterVersion, limit);
       }),
     graph: (id) => locked(async () => projectProofGraph(await engine.exportState(id))),
+    goalGraph: (id) => locked(async () => projectGoalCoverage(await engine.exportState(id))),
+    goal: (id) =>
+      locked(async () => {
+        const report = await engine.check(id);
+        return report.goal ?? evaluateGoalSatisfaction(report.session, report);
+      }),
+    differential: (id) =>
+      locked(async () => {
+        const report = await engine.check(id);
+        return report.goal?.differential ?? behavioralDifferential(report.session);
+      }),
     propose: (id, approval) =>
       locked(async () => {
-        if (!approval.approved || !options.proposalProvider || !options.proposalUsage)
-          throw new Error(
-            "Model proposals require explicit approval, ProviderPort and usage tracking.",
-          );
+        const { provider, usage, maxTokens } = assertProposalAccess(approval);
         const report = await engine.check(id);
         if (report.session.proposed?.length)
           throw new Error("Review existing staged proposals before requesting more.");
-        const maxTokens = approval.maxTokens ?? 4000;
-        if (!Number.isSafeInteger(maxTokens) || maxTokens < 512 || maxTokens > 12000)
-          throw new Error("Invalid proposal token budget.");
-        for (const scope of [
-          { kind: "agent" as const, value: "atlas-proof" },
-          ...options.proposalUsage
-            .listLimits()
-            .filter((l) => l.scope.kind === "user")
-            .map((l) => l.scope),
-        ]) {
-          const limit = options.proposalUsage.checkLimit(scope);
-          if (!limit.ok || !limit.value.allowed)
-            throw new Error("Proof proposal usage limit denied.");
-        }
         const context = createContextSDK({ repositoryPath: root });
         try {
           const packet = await buildWorkPacket(context, {
@@ -653,13 +755,13 @@ export async function createProofSDK(initialOptions: ProofSDKOptions): Promise<P
             changeId: id,
             maxTokens,
           });
-          const provider = withUsageTracking(options.proposalProvider, options.proposalUsage, {
+          const tracking = withUsageTracking(provider, usage, {
             agent: "atlas-proof",
             taskId: id,
             recordOnError: true,
           });
           const proposals = await proposeObligations(
-            provider,
+            tracking,
             renderWorkPacket(packet),
             options.proposalModel,
           );
@@ -669,6 +771,67 @@ export async function createProofSDK(initialOptions: ProofSDKOptions): Promise<P
         } finally {
           context.close();
         }
+      }),
+    proposeGoal: (id, approval) =>
+      locked(async () => {
+        const { provider, usage, maxTokens } = assertProposalAccess(approval);
+        const report = await engine.check(id);
+        if (report.session.proposedGoal)
+          throw new Error("Review the existing staged goal draft before requesting more.");
+        const context = createContextSDK({ repositoryPath: root });
+        try {
+          const packet = await buildWorkPacket(context, {
+            task: report.session.goal,
+            changeId: id,
+            maxTokens,
+          });
+          const tracking = withUsageTracking(provider, usage, {
+            agent: "atlas-goal",
+            taskId: id,
+            recordOnError: true,
+          });
+          const draft = await proposeGoalDraft(
+            tracking,
+            renderWorkPacket(packet),
+            options.proposalModel,
+          );
+          if (!denyFilter("goal-draft.txt", JSON.stringify(draft)).accepted)
+            throw new Error("Sensitive goal draft is not permitted.");
+          await engine.stageGoalDraft(id, draft);
+          return draft;
+        } finally {
+          context.close();
+        }
+      }),
+    stageGoalDraft: (id, draft) =>
+      locked(() => {
+        if (!denyFilter("goal-draft.txt", JSON.stringify(draft)).accepted)
+          throw new Error("Sensitive goal draft is not permitted.");
+        return engine.stageGoalDraft(id, draft);
+      }),
+    adoptGoalContract: (id, input) =>
+      locked(() => {
+        if (!denyFilter("goal-adoption.txt", JSON.stringify(input)).accepted)
+          throw new Error("Sensitive goal adoption.");
+        return engine.adoptGoalContract(id, input);
+      }),
+    adoptGoal: (id, input) =>
+      locked(() => {
+        if (!denyFilter("goal-adoption.txt", JSON.stringify(input)).accepted)
+          throw new Error("Sensitive goal adoption.");
+        return engine.adoptGoalContract(id, input);
+      }),
+    dismissGoalDraft: (id, decisions) =>
+      locked(() => {
+        if (!denyFilter("goal-dismissal.txt", JSON.stringify(decisions)).accepted)
+          throw new Error("Sensitive goal dismissal.");
+        return engine.dismissGoalDraft(id, decisions);
+      }),
+    dismissGoal: (id, decisions) =>
+      locked(() => {
+        if (!denyFilter("goal-dismissal.txt", JSON.stringify(decisions)).accepted)
+          throw new Error("Sensitive goal dismissal.");
+        return engine.dismissGoalDraft(id, decisions);
       }),
     async watch(watchOptions = {}) {
       if (closed) throw new Error("Proof SDK is closed.");

@@ -16,6 +16,23 @@ the same complete suite passed on Node 22.13.0. Cold tarball proof/MCP smokes pa
 on Node 22.13.0 and 24.22.0. Registry publication and remote CI remain pending.
 See [public beta contract](proof-system/13-public-beta.md).
 
+**2026-10-28 update — [EXPERIMENTAL]:** The additive goal-satisfaction layer is
+implemented end to end behind `GoalPort` / `ProofSDK`: optional
+`GoalContract` / `GoalContractDraft` contracts, session persistence, portable
+import that re-adopts intent only as an unadopted draft, strict draft
+compilation with explicit adoption/dismissal, deterministic coverage and
+blindspot projection, four-state goal status, intent debt, structural
+drift/specification conflicts, the conservative behavioral differential, goal
+receipts, export v2, the `atlas prove goals|adopt|coverage` operations,
+`--require-goal`, and goal inputs/projections inside the existing seven MCP
+tools. Test status, proof status and goal status are separate; a passing test or
+`completion: "proven"` never sets goal status. The default proof receipt and
+CLI exit behavior are unchanged, and goal gating is opt-in. The offline
+27-case benchmark reports FGSR `0`, FUR `0`, gap recall `1` and deterministic
+output. This is **not** a general correctness claim or live-agent evidence; see
+[implementation and release evidence](proof-system/14-goal-satisfaction.md) and
+[the RFC](rfcs/goal-satisfaction-engine.md).
+
 **2026-10-17 update — [EXPERIMENTAL / PARTIAL]:** Revision-bound change sessions,
 explicit proof obligations, evidence invalidation, proof debt/receipts, conservative
 TS/JS syntax comparison and advisory coupling/history/memory are implemented via

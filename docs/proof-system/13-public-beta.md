@@ -190,3 +190,12 @@ production runtime probe ran. Before publication, maintainer review/clean versio
 state, remote CI (including macOS) and the post-publication registry smoke remain
 required. Windows is not validated. This evidence supports a bounded public beta,
 not GA or a measured improvement claim.
+
+**Goal-satisfaction layer, 2026-10-28:** local `pnpm check` passed under Node
+24.22.1 / pnpm 9.15.0 with **172 files / 1,652 tests**, including the 27-case
+goal benchmark (FGSR `0`, FUR `0`, gap recall `1`, deterministic). The layer is
+`[EXPERIMENTAL]` and opt-in; the default receipt/exit contract is unchanged.
+Goal status is not part of the existing beta gate and does not establish
+live-agent quality. The cold packed-CLI smoke also passed with the goal
+adoption/verification/`--require-goal` lifecycle. See
+[goal satisfaction release evidence](14-goal-satisfaction.md).

@@ -14,6 +14,7 @@ together) and [REPOSITORY_MAP.md](./REPOSITORY_MAP.md) (where everything lives).
 | `docs/guides/` | Task-oriented guides: install, first run, configuration, integrations, providers, VS Code, troubleshooting. |
 | `docs/reference/` | Contracts: CLI, SDK, MCP, tool manifest, usage/credits, security, privacy. |
 | `docs/contributing/` | How to work here: setup, testing, code quality, change policy, PR expectations. |
+| `docs/rfcs/` | Design proposals. Status-tagged and explicitly not evidence of shipped behavior. |
 | `docs/decisions/` | Architecture Decision Records (ADRs). |
 | `docs/archive/` | Superseded plans, audits and research. Historical reference only — never current requirements. |
 
@@ -24,6 +25,12 @@ together) and [REPOSITORY_MAP.md](./REPOSITORY_MAP.md) (where everything lives).
   readiness plan. It is a plan, not a claim that every recommendation has landed.
 - [proof-system/README.md](./proof-system/README.md) — mutation-aware proof audit,
   experimental kernel, API, implementation phases and evaluation plan.
+- [rfcs/goal-satisfaction-engine.md](./rfcs/goal-satisfaction-engine.md) — `[EXPERIMENTAL]`
+  implemented goal satisfaction layer over the proof kernel (test status ≠ proof
+  status ≠ goal status), with a capability matrix, phases 0–12 and offline
+  release evidence.
+- [proof-system/14-goal-satisfaction.md](./proof-system/14-goal-satisfaction.md) —
+  goal-layer implementation, benchmark results, limits and non-goals.
 
 - [CURRENT_STATE.md](./CURRENT_STATE.md) — what is implemented / partial / planned. **Read first.**
 - [REPOSITORY_MAP.md](./REPOSITORY_MAP.md) — "where do I add this?" map of apps, packages, docs and tests.

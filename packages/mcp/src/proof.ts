@@ -28,6 +28,8 @@ const action = z
     kind: z.enum([
       "artifact-exists",
       "text-absent",
+      "text-present",
+      "symbol-exists",
       "command",
       "runtime-probe",
       "public-contract-unchanged",
@@ -81,6 +83,24 @@ function project(report: ProofReport) {
     limitations: report.session.current.limitations,
     proposed: report.session.proposed ?? [],
     contractChanges: report.contractChanges,
+    goalStatus: report.goal?.status ?? "UNDETERMINED",
+    goal: report.goal
+      ? {
+          status: report.goal.status,
+          contractVersion: report.goal.contract?.version ?? null,
+          criteria: report.goal.criteria,
+          testStatus: report.goal.testStatus,
+          proofStatus: report.goal.proofStatus,
+          intentDebt: report.goal.intentDebt,
+          coverage: report.goal.coverage,
+          ceiling: report.goal.ceiling,
+          blockers: report.goal.blockers,
+          blindspots: report.goal.blindspots ?? [],
+          drifts: report.goal.drifts ?? [],
+          conflicts: report.goal.conflicts ?? [],
+          limitations: report.goal.limitations,
+        }
+      : null,
   };
 }
 
@@ -186,6 +206,8 @@ export function registerProofTools(
       authorizedPaths: z.array(z.string().max(1000)).max(64).optional(),
       semanticChangeBudget: z.number().int().min(0).max(10000).optional(),
       proposals: z.array(proposal).max(128).optional(),
+      goalContract: z.record(z.unknown()).optional(),
+      proposedGoal: z.record(z.unknown()).optional(),
       investigationRules: z
         .array(
           z
@@ -211,6 +233,32 @@ export function registerProofTools(
     {
       changeId,
       proposals: z.array(proposal).max(128).optional(),
+      goalDraft: z.record(z.unknown()).optional(),
+      adoptGoal: z
+        .object({
+          approved: z.literal(true),
+          criterionKeys: z.array(z.string().min(1).max(80)).min(1).max(64),
+          outcomeKeys: z.array(z.string().min(1).max(80)).max(128).optional(),
+          decisions: z
+            .array(
+              z
+                .object({ key: z.string().min(1).max(1000), reason: z.string().min(1).max(1000) })
+                .strict(),
+            )
+            .max(32)
+            .optional(),
+        })
+        .strict()
+        .optional(),
+      dismissGoal: z
+        .array(
+          z
+            .object({ key: z.string().min(1).max(80), reason: z.string().min(1).max(1000) })
+            .strict(),
+        )
+        .min(1)
+        .max(32)
+        .optional(),
       propose: z.boolean().optional(),
       approved: z.boolean().optional(),
       dismissals: z
@@ -245,6 +293,24 @@ export function registerProofTools(
     async (args) => {
       const service = await get();
       const id = String(args["changeId"]);
+      if (args["dismissGoal"]) {
+        return project(
+          await service.dismissGoal(
+            id,
+            args["dismissGoal"] as Parameters<ProofSDK["dismissGoal"]>[1],
+          ),
+        );
+      }
+      if (args["adoptGoal"]) {
+        if (args["goalDraft"]) await service.stageGoalDraft(id, args["goalDraft"] as never);
+        return project(
+          await service.adoptGoal(id, args["adoptGoal"] as Parameters<ProofSDK["adoptGoal"]>[1]),
+        );
+      }
+      if (args["goalDraft"]) {
+        await service.stageGoalDraft(id, args["goalDraft"] as never);
+        return project(await service.check(id));
+      }
       if (args["dismissals"]) {
         if (args["approved"] !== true)
           throw new Error("Proposal dismissal requires explicit approval.");
@@ -285,10 +351,12 @@ export function registerProofTools(
     async (args) => {
       const report = await (await get()).check(String(args["changeId"]));
       context.close();
-      const task = `${report.session.goal}\n${report.debt
-        .slice(0, 8)
-        .map((d) => d.reason)
-        .join("\n")}`.slice(0, 10000);
+      const task = `${report.session.goal}\n${[
+        ...(report.goal?.intentDebt.slice(0, 6).map((d) => d.reason) ?? []),
+        ...report.debt.slice(0, 8).map((d) => d.reason),
+      ]
+        .join("\n")
+        .slice(0, 10000)}`;
       return {
         proof: project(report),
         packet: await buildWorkPacket(context.requireSDK(), {

@@ -1,5 +1,5 @@
+import type { GoalContract, GoalContractDraft, GoalSatisfactionReceipt } from "../domain/goal";
 import type {
-  ChangeReceipt,
   ChangeSession,
   InvestigationRule,
   MutationJustification,
@@ -32,6 +32,10 @@ export interface BeginChangeInput {
   readonly proposals?: readonly ProofProposal[];
   readonly investigationRules?: readonly InvestigationRule[];
   readonly justifications?: readonly MutationJustification[];
+  /** Already-adopted goal intent; validated before persistence. */
+  readonly goalContract?: GoalContract;
+  /** Staged, unadopted goal intent; never treated as adopted. */
+  readonly proposedGoal?: GoalContractDraft;
 }
 export interface ProofPort {
   begin(input: BeginChangeInput): Promise<ProofReport>;
@@ -39,7 +43,7 @@ export interface ProofPort {
   revise(id: string, nodeId: string, statement: string): Promise<ProofReport>;
   check(id: string): Promise<ProofReport>;
   verify(id: string, nodeId: string): Promise<ProofReport>;
-  prove(id: string): Promise<ChangeReceipt>;
+  prove(id: string): Promise<GoalSatisfactionReceipt>;
   exportState(id: string): Promise<ChangeSession>;
   /** Recompile intent into a NEW local session; imported evidence/verdicts are never trusted. */
   importState(state: unknown): Promise<ProofReport>;

@@ -109,8 +109,44 @@ try {
   assert.equal(JSON.parse(await cli(["prove", id], 1)).completion, "not-proven");
   await cli(["prove", "verify", id, "--node", started.session.nodes[0].id]);
   assert.equal(JSON.parse(await cli(["prove", id])).completion, "proven");
+  const goalInput = join(parent, "goal.json");
+  await writeFile(
+    goalInput,
+    JSON.stringify({
+      schemaVersion: 1,
+      goal: "No literal JWT",
+      desiredOutcomes: [
+        {
+          key: "no-jwt",
+          statement: "No literal JWT remains in the repository",
+          priority: "MUST",
+          criterionKeys: ["absence"],
+        },
+      ],
+      criteria: [
+        {
+          key: "absence",
+          statement: "Literal JWT is absent from the repository",
+          assertion: "literal-absence",
+          outcomeKeys: ["no-jwt"],
+          evidenceKinds: ["text-absent"],
+        },
+      ],
+      preserveCandidates: [],
+      forbiddenCandidates: [],
+      nonGoals: [],
+      openQuestions: [],
+      limitations: ["Release smoke fixture."],
+    }),
+  );
+  const adopted = JSON.parse(await cli(["prove", "adopt", id, "--input", goalInput]));
+  assert.equal(adopted.session.goalContract?.criteria[0]?.key, "absence");
+  await cli(["prove", "verify", id, "--node", started.session.nodes[0].id]);
+  const goalReceipt = JSON.parse(await cli(["prove", id, "--require-goal"]));
+  assert.equal(goalReceipt.goalStatus, "SATISFIED");
   await writeFile(join(repo, "math.ts"), "export const JWT = 'legacy';\n");
   assert.equal(JSON.parse(await cli(["prove", id], 1)).completion, "not-proven");
+  await cli(["prove", id, "--require-goal"], 1);
 
   // Drive the actual installed CLI stdio transport, not an in-memory server.
   const require = createRequire(join(root, "packages/mcp/package.json"));
@@ -147,7 +183,7 @@ try {
     await transport.close();
   }
   console.log(
-    `PASS packed CLI ${manifest.version}: install, Python WASM, 13 Skills, proof invalidation, MCP stdio`,
+    `PASS packed CLI ${manifest.version}: install, Python WASM, 13 Skills, proof invalidation, goal lifecycle, MCP stdio`,
   );
 } finally {
   // Only the directory created by this process is removed, never project state.

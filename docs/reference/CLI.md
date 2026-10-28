@@ -10,7 +10,15 @@ exits 1 unless proven. `understand --input proposals.json` revises proposals;
 `export <changeId>` exports portable state, `import --input exported.json` safely
 rebinds intent without trusting old proof, `authorize --input justifications.json`
 links edits to intent nodes, `history <changeId>` reads immutable versions and
-`watch` continuously invalidates proof. See [proof API](../proof-system/08-mcp-api.md).
+`watch` continuously invalidates proof.
+
+The additive **goal-satisfaction** surface is `atlas prove goals <changeId>`,
+`adopt <changeId> --input goal.json` and `coverage <changeId>`. `--require-goal`
+adds a separate exit condition for a receipt: exit 1 unless `goalStatus` is
+`SATISFIED`. The default receipt exit behavior is unchanged, and goal status is
+`[EXPERIMENTAL]`, never implied by a passing test or by proof `completion`.
+See [proof API](../proof-system/08-mcp-api.md) and
+[goal satisfaction release evidence](../proof-system/14-goal-satisfaction.md).
 
 The command-line contract for the `atlas` binary.
 

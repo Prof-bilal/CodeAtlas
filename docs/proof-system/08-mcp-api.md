@@ -17,11 +17,16 @@ a claim that existing read-only tools gained execution authority.
 ## Seven tools
 
 - `atlas_begin_change`: goal, optional boundary/authorized paths/budget/proposals;
-  captures baseline and compiles explicit state. Default has an unproven goal.
-  Alternatively portableState rebinds exported intent with new local IDs/baseline,
-  discarding imported evidence and approval.
+  also optional `goalContract` (already-adopted intent) or `proposedGoal`
+  (unadopted draft). Captures baseline and compiles explicit state. Default has
+  an unproven goal. Alternatively portableState rebinds exported intent with new
+  local IDs/baseline, discarding imported evidence and approval.
 - `atlas_understand`: changeId and proposals; adds/revises versioned requirements,
   constraints, claims and obligations with resolved prerequisites.
+  Optional `goalDraft` stages goal intent without adopting it; `adoptGoal` with
+  `approved:true` and explicit criterion keys adopts it; `dismissGoal` requires
+  bounded reasons. Adoption assigns deterministic IDs, links obligations, stales
+  intent-bound evidence and is idempotent for identical contract content.
   `propose:true, approved:true` requests staged model proposals only when a host
   configured ProviderPort/usage. An approved justifications array links mutation
   scopes to existing intent nodes; it never bypasses constraints or evidence.
@@ -35,9 +40,16 @@ a claim that existing read-only tools gained execution authority.
 - `atlas_status`: changeId; same fresh observation and compact status projection.
   Optional exportState exports portable intent/state; historyAfter pages compact
   immutable revision/node history without dumping archived snapshots into context.
+  Goal projections include separate `goalStatus`, criterion/coverage/debt
+  summaries and blockers; they never replace `completion`.
 - `atlas_verify`: changeId and nodeId; executes the node's stored action. No
   executable, verdict or arbitrary evidence body can be supplied by the caller.
-- `atlas_prove`: changeId; computes fresh completion and persists a receipt.
+- `atlas_prove`: changeId; computes fresh completion and persists a receipt. The
+  receipt keeps legacy `completion`/`policyVersion` and adds separate
+  `goalStatus`, `goalPolicyVersion: 1`, intent debt, coverage and criterion buckets.
+
+Goal inputs and projections are additive to the same seven tools; there is no
+`atlas_goal_*` tool. A model, caller or receipt cannot supply a goal status.
 
 Command execution requires `proofCommands` supplied to createMcpServer by the
 host. The stdio/CLI proof profile starts with no approved commands. Static checks
@@ -49,8 +61,10 @@ profile automatically starts and closes the SDK's existing incremental watcher.
 ## SDK and CLI
 
 `createProofSDK({repositoryPath, commands?, historyCommits?})` provides begin,
-understand, revise, check, verify, prove, exportState, importState, authorize,
-stageProposals, dismissProposals, propose, graph, history, watch, recordAgentMiss and close.
+understand, revise, check, verify, prove, goal, goalGraph, adoptGoal,
+stageGoalDraft, dismissGoalDraft, differential, exportState, importState,
+authorize, stageProposals, dismissProposals, propose, graph, history, watch,
+recordAgentMiss and close.
 Inputs/outputs use core types re-exported by the SDK. ProofPort and the store/
 repository ports allow deterministic offline tests without model credentials.
 
@@ -62,7 +76,10 @@ atlas prove understand <changeId> --input proposals.json
 atlas prove check <changeId>
 atlas prove status <changeId>
 atlas prove verify <changeId> --node <nodeId> [--approve-commands]
-atlas prove <changeId>
+atlas prove goals <changeId>
+atlas prove adopt <changeId> --input goal.json
+atlas prove coverage <changeId>
+atlas prove <changeId> [--require-goal]
 atlas prove receipt <changeId>
 atlas prove export <changeId>
 atlas prove import --input exported.json
@@ -72,8 +89,16 @@ atlas prove watch
 ```
 
 `--repo` selects the repository. JSON output is machine-readable. A receipt with
-not-proven/blocked sets exit status 1. Export re-observes first; it is portable
-data, not authority to accept evidence in another checkout. Legacy `atlas verify`
-retains its existing behavior; callers must use proof receipts for the new gate.
-Inputs are bounded, non-redirected JSON files. SDK callers close watches before
-close(); watch shutdown drains the current indexing/invalidation callback.
+not-proven/blocked sets exit status 1. `--require-goal` adds a separate exit
+condition: it exits 1 unless `goalStatus` is `SATISFIED`; it does not change the
+default receipt exit behavior or turn a goal status into proof completion.
+`goals` returns the full goal report, `coverage` returns the coverage projection,
+and `adopt` accepts a staged draft or `{draft, criterionKeys}` with explicit
+adoption. Export re-observes first; it is portable data, not authority to accept
+evidence in another checkout. Legacy `atlas verify` retains its existing
+behavior; callers must use proof receipts for the new gate. Inputs are bounded,
+non-redirected JSON files. SDK callers close watches before close(); watch
+shutdown drains the current indexing/invalidation callback.
+
+Goal status remains `[EXPERIMENTAL]`; see
+[goal satisfaction release evidence](./14-goal-satisfaction.md).

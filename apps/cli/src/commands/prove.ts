@@ -16,18 +16,28 @@ export function registerProve(program: Command): void {
     .description("Manage revision-aware change proofs and emit completion receipts")
     .argument(
       "<operation>",
-      "begin | understand | authorize | check | status | verify | receipt | export | import | history | watch",
+      "begin | understand | goals | adopt | coverage | authorize | check | status | verify | receipt | export | import | history | watch",
     )
     .argument("[changeId]", "change session id")
     .option("--repo <path>", "repository path")
-    .option("--input <path>", "explicit JSON BeginChangeInput or proposal array")
+    .option(
+      "--input <path>",
+      "explicit JSON BeginChangeInput, proposal array or goal adoption input",
+    )
     .option("--node <id>", "verification obligation node id")
     .option("--approve-commands", "approve configured verification commands for this invocation")
+    .option("--require-goal", "exit 1 unless the goal status is SATISFIED")
     .action(
       async (
         operation: string,
         changeId: string | undefined,
-        options: { repo?: string; input?: string; node?: string; approveCommands?: boolean },
+        options: {
+          repo?: string;
+          input?: string;
+          node?: string;
+          approveCommands?: boolean;
+          requireGoal?: boolean;
+        },
       ) => {
         let sdk: Awaited<ReturnType<typeof createProofSDK>> | undefined;
         let displayRoot: string | undefined;
@@ -40,6 +50,9 @@ export function registerProve(program: Command): void {
             ![
               "begin",
               "understand",
+              "goals",
+              "adopt",
+              "coverage",
               "authorize",
               "check",
               "status",
@@ -127,6 +140,41 @@ export function registerProve(program: Command): void {
             if (!Array.isArray(input))
               throw new Error("understand requires --input with a proposal array.");
             result = await sdk.understand(id, input);
+          } else if (resolvedOperation === "goals") {
+            result = await sdk.goal(id);
+          } else if (resolvedOperation === "coverage") {
+            const goal = await sdk.goal(id);
+            result = { coverage: goal.coverage, graph: await sdk.goalGraph(id) };
+          } else if (resolvedOperation === "adopt") {
+            if (!input || typeof input !== "object" || Array.isArray(input))
+              throw new Error("adopt requires --input with criterion keys or a goal draft.");
+            const request = input as Record<string, unknown>;
+            if (request["approved"] === false)
+              throw new Error("Goal adoption requires explicit approval.");
+            const draft =
+              request["draft"] ?? (Array.isArray(request["criteria"]) ? request : undefined);
+            if (draft) await sdk.stageGoalDraft(id, draft as never);
+            const criterionKeys = Array.isArray(request["criterionKeys"])
+              ? (request["criterionKeys"] as string[])
+              : Array.isArray((draft as { criteria?: { key?: string }[] } | undefined)?.criteria)
+                ? (draft as { criteria: { key: string }[] }).criteria.map(
+                    (criterion) => criterion.key,
+                  )
+                : undefined;
+            if (!criterionKeys?.length)
+              throw new Error("adopt requires criterionKeys or a goal draft with criteria.");
+            result = await sdk.adoptGoal(id, {
+              approved: true,
+              criterionKeys,
+              ...(Array.isArray(request["outcomeKeys"])
+                ? { outcomeKeys: request["outcomeKeys"] as string[] }
+                : {}),
+              ...(Array.isArray(request["decisions"])
+                ? {
+                    decisions: request["decisions"] as { key: string; reason: string }[],
+                  }
+                : {}),
+            });
           } else if (resolvedOperation === "verify") {
             if (!options.node) throw new Error("verify requires --node.");
             result = await sdk.verify(id, options.node);
@@ -135,6 +183,7 @@ export function registerProve(program: Command): void {
             const receipt = await sdk.prove(id);
             result = receipt;
             if (receipt.completion !== "proven") process.exitCode = 1;
+            if (options.requireGoal && receipt.goalStatus !== "SATISFIED") process.exitCode = 1;
           } else result = await sdk.check(id);
           console.log(JSON.stringify(result, null, 2));
         } catch (error) {

@@ -26,7 +26,14 @@ propagate loss of support upward.
 - [Risks and difficult problems](11-risks.md)
 - [Implemented follow-through, operation and limitations](12-implementation-status.md)
 - [Public beta guarantees, packaging and release checklist](13-public-beta.md)
+- [Goal satisfaction implementation and release evidence](14-goal-satisfaction.md)
 - [ADR-028](../decisions/ADR-028-temporal-proof-kernel.md)
+- **[EXPERIMENTAL]** [Goal Satisfaction Engine RFC](../rfcs/goal-satisfaction-engine.md)
+  and [capability matrix](../rfcs/goal-satisfaction-matrix.md) — implemented
+  test/proof/goal status separation, goal contracts, evidence adequacy and
+  phases 0–12. Delivery is opt-in; the default receipt/exit contract is
+  unchanged. See [release evidence](14-goal-satisfaction.md) and
+  [ADR-029](../decisions/ADR-029-goal-satisfaction-layer.md).
 
 ## First run
 

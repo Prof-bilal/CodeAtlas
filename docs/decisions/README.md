@@ -1,5 +1,10 @@
 # Architecture Decision Records
 
+- [ADR-029: Goal satisfaction layer over the proof kernel](ADR-029-goal-satisfaction-layer.md) —
+  implemented additive goal-contract, intent-debt, evidence-adequacy and
+  four-state status layer; no new package, store, graph or MCP tool. Delivery is
+  experimental and opt-in.
+
 - [ADR-028: Temporal change proof kernel](ADR-028-temporal-proof-kernel.md) —
   experimental proof ports/package, separate storage-owned proof.db, revision
   invalidation and opt-in MCP profile under the approved implementation plan.

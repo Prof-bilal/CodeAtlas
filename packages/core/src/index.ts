@@ -1,6 +1,8 @@
 export * from "./domain/entities";
 export type * from "./domain/proof";
+export type * from "./domain/goal";
 export type * from "./ports/proof.port";
+export type * from "./ports/goal.port";
 export type {
   ContextRequest,
   EvidenceRef,

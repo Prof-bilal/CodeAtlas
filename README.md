@@ -33,7 +33,11 @@ Start with the [bounded proof example](docs/proof-system/README.md#first-run).
 A `proven` receipt means the explicitly represented checks satisfy the configured
 policy at the observed revision; it is **not** universal correctness, complete
 test coverage, a signed attestation, or proof that an agent interpreted your goal
-correctly. Live-agent quality gains have not been measured.
+correctly. An opt-in `[EXPERIMENTAL]` goal layer adds explicit goal contracts,
+four-state goal status, intent debt and coverage on top of the same proof
+lifecycle; it does not change the default receipt/exit contract. See
+[goal satisfaction release evidence](docs/proof-system/14-goal-satisfaction.md).
+Live-agent quality gains have not been measured.
 See the [beta guarantees and release checklist](docs/proof-system/13-public-beta.md).
 
 ## Why RepoSpine

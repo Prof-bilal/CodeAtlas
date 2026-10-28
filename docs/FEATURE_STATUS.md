@@ -12,6 +12,23 @@ deployment-bound runtime predicates are also implemented and tested. This is
 not arbitrary semantic compatibility or a measured improvement in agent quality.
 [Status and limits](proof-system/12-implementation-status.md).
 
+**[EXPERIMENTAL] Goal satisfaction layer:** the additive layer that keeps
+**test status**, **proof status** and **goal status** separate is implemented
+end to end. It adds optional goal contracts, explicit draft adoption/dismissal,
+deterministic coverage and blindspots, four-state goal status (`SATISFIED`,
+`PARTIALLY_SATISFIED`, `UNSATISFIED`, `UNDETERMINED`), intent debt, drift/spec
+conflicts, a conservative behavioral differential, goal receipts, export v2,
+`atlas prove goals|adopt|coverage`, `--require-goal`, and goal inputs/projections
+inside the existing seven MCP tools. Deterministic code alone owns status; no
+model, caller or receipt can set it, and passing tests never imply goal
+satisfaction. The default receipt/exit behavior is unchanged. The offline
+27-case benchmark reports FGSR `0`, FUR `0`, gap recall `1` and deterministic
+output; this is not live-agent or general-correctness evidence. See
+[release evidence](proof-system/14-goal-satisfaction.md),
+[the RFC](rfcs/goal-satisfaction-engine.md),
+[the capability matrix](rfcs/goal-satisfaction-matrix.md) and
+[ADR-029](decisions/ADR-029-goal-satisfaction-layer.md).
+
 **[EXPERIMENTAL] Local control plane:** SDK WorkPackets, policy/lifecycle control,
 verification feedback, versioned task continuity and read-only MCP packet building.
 Opt-in; legacy remains default. [Contract and limitations](reference/CONTROL_PLANE.md).

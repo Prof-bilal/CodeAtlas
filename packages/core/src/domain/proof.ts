@@ -1,3 +1,11 @@
+import type {
+  GoalContract,
+  GoalContractDraft,
+  GoalProposalDecision,
+  GoalSatisfactionReport,
+  IntentDebtItem,
+} from "./goal";
+
 /** Proof state is distinct from the rebuildable repository context cache. */
 export type ProofLevel = 0 | 1 | 2 | 3 | 4 | 5;
 export type ProofStatus = "unproven" | "supported" | "stale" | "contradicted";
@@ -90,11 +98,16 @@ export interface VerificationAction {
   readonly kind:
     | "artifact-exists"
     | "text-absent"
+    | "text-present"
+    | "symbol-exists"
     | "command"
     | "runtime-probe"
     | "public-contract-unchanged";
   readonly paths: readonly string[];
-  /** Literal text for text-absent; approved configuration key for command. */
+  /**
+   * Literal text for text-absent/text-present, a TS-family symbol name for
+   * symbol-exists, or an approved configuration key for command/runtime-probe.
+   */
   readonly target: string;
 }
 export interface ProofNode {
@@ -146,6 +159,21 @@ export interface Evidence {
   readonly expiresAt?: string;
   /** Actual investigation is separate from the broader invalidation dependency scope. */
   readonly investigatedPaths?: readonly string[];
+  /** Optional, derived goal links. They never establish adequacy by themselves. */
+  readonly criterionIds?: readonly string[];
+  readonly outcomeKind?:
+    | "artifact-exists"
+    | "text-absent"
+    | "text-present"
+    | "symbol-exists"
+    | "type-check"
+    | "build"
+    | "test"
+    | "contract-unchanged"
+    | "runtime-probe"
+    | "manual-review";
+  /** Recomputed on every evaluation; persisted values are never trusted. */
+  readonly adequacy?: "sufficient" | "partial" | "insufficient" | "unknown";
 }
 export interface VerificationResult {
   readonly result: "pass" | "fail" | "unknown";
@@ -205,6 +233,28 @@ export interface ChangeSession {
   /** Explicit, unaccepted compiler output; never participates in truth evaluation. */
   readonly proposed?: readonly ProofProposal[];
   readonly proposalDecisions?: readonly { key: string; reason: string; revision: string }[];
+  /**
+   * Adopted goal intent. Optional, additive and never inferred from a model
+   * draft. Its presence does not by itself establish goal satisfaction.
+   */
+  readonly goalContract?: GoalContract;
+  /** Staged, unadopted goal intent. Never participates in truth evaluation. */
+  readonly proposedGoal?: GoalContractDraft;
+  /** Bounded audit trail for dismissed goal intent. */
+  readonly goalProposalDecisions?: readonly GoalProposalDecision[];
+  /**
+   * Prior adopted contracts, newest last. Optional and bounded. It exists only
+   * so structural weakening can be detected; it is never consulted as truth.
+   */
+  readonly goalContractHistory?: readonly GoalContract[];
+}
+/**
+ * Additive portable export. v1 flat sessions remain accepted; `exportVersion`
+ * and `goalIntentDebt` are optional and never verdicts.
+ */
+export interface PortableChangeState extends ChangeSession {
+  readonly exportVersion?: 1 | 2;
+  readonly goalIntentDebt?: readonly IntentDebtItem[];
 }
 export interface InvestigationRule {
   readonly triggerPaths: readonly string[];
@@ -247,6 +297,9 @@ export interface ProofReport {
     settles: readonly string[];
     requiresAdoption?: boolean;
     reason?: string;
+    /** Falsification planner annotations; they never execute anything. */
+    falsifies?: readonly string[];
+    coversCriteria?: readonly string[];
   }[];
   readonly guaranteeCeiling: ProofLevel;
   readonly contractChanges: readonly {
@@ -254,4 +307,6 @@ export interface ProofReport {
     name: string;
     change: "added" | "removed" | "changed";
   }[];
+  /** Derived goal judgement. Optional so legacy report readers ignore it. */
+  readonly goal?: GoalSatisfactionReport;
 }

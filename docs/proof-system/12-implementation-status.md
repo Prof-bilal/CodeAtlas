@@ -81,6 +81,24 @@ old evidence, receipts and mutation approvals. It cannot certify the historical
 change against the original checkout. Exported records remain untrusted local
 data, not signed portable proof.
 
+## Goal satisfaction layer (2026-10-28)
+
+The additive goal-satisfaction layer is implemented behind `GoalPort` and
+`ProofSDK` and delivered through the existing `atlas prove` lifecycle and
+seven-tool MCP profile. It adds optional goal contracts, explicit adoption,
+evidence adequacy, intent debt, coverage/blindspots, four-state goal status,
+structural drift/specification checks, a conservative behavioral differential,
+goal receipts, export v2 and opt-in `--require-goal`. Deterministic code alone
+computes goal status; models, MCP callers and receipts cannot set it. The
+default receipt and CLI exit contract are unchanged.
+
+Release evidence is the deterministic 27-case corpus in
+`packages/proof/tests/goal-satisfaction-evaluation.test.ts` (FGSR `0`, FUR `0`,
+gap recall `1`, deterministic, no oracle mismatches). This is a safety smoke
+test with hand-authored offline labels, not live-agent or general-correctness
+evidence. See [goal satisfaction implementation and release evidence](14-goal-satisfaction.md)
+for the status model, test locations and non-goals.
+
 ## Migration, safety and remaining release work
 
 Opening v1/v2 proof.db adds history/leases and seeds the latest retained version;

@@ -22,6 +22,14 @@ sanity check, not held-out production evidence or measured agent improvement.
 cross-client leases, proposal approval/usage, conservative contract falsification,
 environment invalidation, action adoption and revision-bound runtime adapters.
 
+`packages/proof/tests/goal-satisfaction-evaluation.test.ts` is a separate offline
+corpus for the goal-satisfaction layer. It measures False Goal-Satisfaction Rate
+(FGSR), False Unsatisfaction Rate (FUR), coverage-gap recall, adequacy-matrix
+rows and determinism. The recorded 27-case run reports FGSR `0`, FUR `0`, gap
+recall `1` and deterministic output. Labels are hand-authored; this is not an
+independent production benchmark. See
+[goal satisfaction release evidence](14-goal-satisfaction.md).
+
 Build baseline repositories with known requirements, explicit obligations,
 source graphs and hidden mutations: function body, shared interface, added
 consumer, removed dependency, failing supporting test, changed configuration,

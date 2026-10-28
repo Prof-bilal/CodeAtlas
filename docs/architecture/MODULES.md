@@ -8,8 +8,13 @@ invalidation, debt, investigation and action ranking behind core proof ports.
 bounded state, immutable compressed history, proof execution leases and advisory
 memory. `packages/sdk/src/proof` owns scanner/hash/context/Git/verifier/watch/
 usage/runtime composition. Core/SDK task contracts carry optional proof linkage.
-CLI and MCP use SDK only. `context.db` remains
-the repository cache; proof state survives its rebuild. See ADR-028 and
+CLI and MCP use SDK only. The additive goal-satisfaction layer keeps its
+contracts in core (`domain/goal.ts`, `ports/goal.port.ts`), its adoption and
+evaluator in `packages/proof` (`service.ts`, `goal-truth.ts`,
+`goal-import.ts`, `differential.ts`) and composition in the SDK. It adds no
+store, table, package or graph. `context.db` remains
+the repository cache; proof state survives its rebuild. See ADR-028,
+[goal satisfaction release evidence](../proof-system/14-goal-satisfaction.md) and
 [proof-system index](../proof-system/README.md).
 
 ## Experimental control-plane ownership

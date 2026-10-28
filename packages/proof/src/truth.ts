@@ -8,6 +8,7 @@ import type {
   RepositoryRevision,
 } from "@prof-bilal/atlas-core";
 import { rankCoupling } from "./coupling";
+import { evaluateGoalSatisfaction } from "./goal-truth";
 
 export function inScope(path: string, scopes: readonly string[]): boolean {
   return scopes.some((scope) => scope === "." || path === scope || path.startsWith(`${scope}/`));
@@ -276,6 +277,11 @@ export function evaluateProof(session: ChangeSession): ProofReport {
     .flatMap((n) => {
       const action = n.action;
       if (!action) return [];
+      const linkedCriteria =
+        session.goalContract?.criteria
+          .filter((criterion) => criterion.obligationIds.includes(n.id))
+          .map((criterion) => criterion.id)
+          .sort() ?? [];
       return [
         {
           nodeId: n.id,
@@ -285,6 +291,9 @@ export function evaluateProof(session: ChangeSession): ProofReport {
             ? ("medium" as const)
             : ("low" as const),
           settles: settles(n.id),
+          ...(linkedCriteria.length
+            ? { falsifies: linkedCriteria, coversCriteria: linkedCriteria }
+            : {}),
         },
       ];
     });
@@ -307,6 +316,18 @@ export function evaluateProof(session: ChangeSession): ProofReport {
         cost: capability.cost,
         settles: settles(node.id),
         requiresAdoption: true,
+        ...(session.goalContract?.criteria.some((criterion) =>
+          criterion.obligationIds.includes(node.id),
+        )
+          ? {
+              falsifies: session.goalContract.criteria
+                .filter((criterion) => criterion.obligationIds.includes(node.id))
+                .map((criterion) => criterion.id),
+              coversCriteria: session.goalContract.criteria
+                .filter((criterion) => criterion.obligationIds.includes(node.id))
+                .map((criterion) => criterion.id),
+            }
+          : {}),
         reason:
           "Host-approved capability meets the requested level; review its behavioral coverage before adopting.",
       });
@@ -326,7 +347,7 @@ export function evaluateProof(session: ChangeSession): ProofReport {
   const ceiling = (
     requirements.length ? Math.min(...requirements.map((n) => states.get(n.id)?.level ?? 0)) : 0
   ) as ProofLevel;
-  return {
+  const report: ProofReport = {
     session,
     nodes: [...states.values()],
     debt,
@@ -338,4 +359,5 @@ export function evaluateProof(session: ChangeSession): ProofReport {
     guaranteeCeiling: ceiling,
     contractChanges,
   };
+  return { ...report, goal: evaluateGoalSatisfaction(session, report) };
 }
